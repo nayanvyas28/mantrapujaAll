@@ -108,7 +108,9 @@ export default function NotificationSettingsPage() {
         setMessage(null);
         try {
             // Broadcast Endpoint: /api/admin/notifications/broadcast
-            const broadcastUrl = apiBase.replace('/astrology/settings', '/notifications/broadcast');
+            // Using the base API URL to construct the broadcast path correctly
+            const baseUrl = apiBase.replace('/astrology/settings', '');
+            const broadcastUrl = `${baseUrl}/notifications/broadcast`;
             
             const res = await fetch(broadcastUrl, {
                 method: 'POST',
@@ -116,11 +118,14 @@ export default function NotificationSettingsPage() {
                 body: JSON.stringify({ 
                     secret: ADMIN_SECRET, 
                     title: notifConfig.title, 
-                    body: notifConfig.body 
+                    message: notifConfig.body // Backend expects 'message'
                 })
             });
 
-            if (!res.ok) throw new Error('Broadcast Failed');
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Broadcast Failed');
+            }
             
             setMessage({ type: 'success', text: 'Live broadcast sent! Check history in the app.' });
         } catch (error: any) {
