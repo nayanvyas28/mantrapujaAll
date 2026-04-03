@@ -1,18 +1,15 @@
 const path = require('path');
 const envPath = path.join(__dirname, '../../.env.local');
-console.log('Loading env from:', envPath);
-const result = require('dotenv').config({ path: envPath });
-if (result.error) {
-    console.error('Dotenv error:', result.error);
-} else {
-    console.log('Dotenv loaded successfully');
+
+// Only try to load .env.local if we are not already in production or if essential vars are missing
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    console.log('Attempting to load env from:', envPath);
+    require('dotenv').config({ path: envPath });
 }
-console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'PRESENT' : 'MISSING');
-console.log('SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'PRESENT' : 'MISSING');
+
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error('CRITICAL: Environment variables are not being fully loaded from .env.local');
+    console.warn('WARNING: Environment variables NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are missing.');
     console.log('Current CWD:', process.cwd());
-    console.log('Searching for env at:', envPath);
 }
 const express = require('express');
 const cors = require('cors');
