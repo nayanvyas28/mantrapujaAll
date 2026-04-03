@@ -1,0 +1,96 @@
+{
+  "featured": [
+    {
+      "id": "45b8b578-c4dc-413d-a019-9969c864b3a0",
+      "name": "Shiv Puja",
+      "images_count": 1
+    },
+    {
+      "id": "7ab3ec0e-3bd6-4b23-8f1a-5f260332f680",
+      "name": "Hanuman Garhi Sindoor Pooja",
+      "images_count": 1
+    },
+    {
+      "id": "9d3e0966-2291-4ed7-9d63-5717aec0b8e6",
+      "name": "Lakshmi Puja",
+      "images_count": 1
+    },
+    {
+      "id": "f8c96f3a-3b22-4419-b61e-1aba0273edd2",
+      "name": "Mangal Dosh Nivaran",
+      "images_count": 0
+    },
+    {
+      "id": "0d757712-e2ea-44e7-a28d-c7a4a2cc3e5d",
+      "name": "Durga Puja",
+      "images_count": 1
+    },
+    {
+      "id": "0ead2de8-5082-4f53-b046-13567f989180",
+      "name": "Ram Puja",
+      "images_count": 1
+    },
+    {
+      "id": "13d2df82-130b-426f-a055-65442e0d10d0",
+      "name": "Kaal Sarp Dosh Puja",
+      "images_count": 0
+    },
+    {
+      "id": "fc9adfbc-d99b-462f-8f08-6c400abfcd15",
+      "name": "Navagraha Puja",
+      "images_count": 1
+    },
+    {
+      "id": "4ecc52ba-33bd-46d6-839b-5cccf1087a35",
+      "name": "Pitru Dosh Puja",
+      "images_count": 0
+    },
+    {
+      "id": "95498e00-82d5-4a5d-8906-3ac3d28daac5",
+      "name": "Shani Shanti Puja",
+      "images_count": 0
+    },
+    {
+      "id": "3dac1515-e39e-4377-8daa-fe9bcf53a95f",
+      "name": "Graha Shanti Puja",
+      "images_count": 0
+    },
+    {
+      "id": "bdbedf52-42ff-4842-b7d0-98fc074bc9ac",
+      "name": "Ganesh Puja",
+      "images_count": 1
+    },
+    {
+      "id": "bfdc2fa0-f73c-4379-aa5f-cc9193c66e6d",
+      "name": "Hanuman Puja",
+      "images_count": 1
+    },
+    {
+      "id": "f4e9ff32-0704-4d88-a19e-e1bdeeab9107",
+      "name": "Saraswati Puja",
+      "images_count": 1
+    }
+  ],
+  "candidates": [
+    {
+      "id": "22757834-7b95-494c-8c81-190f01bbd437",
+      "name": "Vishnu Puja",
+      "images_count": 1
+    },
+    {
+      "id": "f5efcf8f-0bce-4bf4-a748-449130762493",
+      "name": "Krishna Puja",
+      "images_count": 1
+    },
+    {
+      "id": "d7984dae-0e9a-436d-bb34-0f3d769b42f0",
+      "name": "Kali Puja",
+      "images_count": 1
+    },
+    {
+      "id": "7c27ca5c-86eb-4c73-bc96-1c851b0081b8",
+      "name": "बंधा  व्यापार  खोलने  हेतु  प्रयोग",
+      "images_count": 1
+    }
+  ]
+}

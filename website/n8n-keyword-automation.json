@@ -1,0 +1,389 @@
+{
+    "name": "Keyword Content Automation (Multi-Tab)",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "trigger",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                460,
+                460
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "Google_Sheet_ID",
+                            "value": "YOUR_SHEET_ID_HERE"
+                        },
+                        {
+                            "name": "SERP_API_Key",
+                            "value": "YOUR_SERP_API_KEY"
+                        },
+                        {
+                            "name": "OpenAI_API_Key",
+                            "value": "YOUR_OPENAI_KEY"
+                        }
+                    ],
+                    "number": [
+                        {
+                            "name": "Daily_Limit",
+                            "value": 10
+                        }
+                    ]
+                }
+            },
+            "id": "config",
+            "name": "Configuration",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [
+                680,
+                460
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "list",
+                "documentId": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "={{ $json.Google_Sheet_ID }}"
+                },
+                "sheetName": "Page1",
+                "filters": {
+                    "conditions": [
+                        {
+                            "key": "Status",
+                            "method": "isEmpty"
+                        }
+                    ]
+                },
+                "options": {
+                    "returnAllMatches": "never",
+                    "limit": 1
+                }
+            },
+            "id": "check_page1",
+            "name": "Check Page 1",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.5,
+            "position": [
+                900,
+                360
+            ],
+            "notes": "Checks if Page 1 has pending items"
+        },
+        {
+            "parameters": {
+                "operation": "list",
+                "documentId": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "={{ $('Configuration').item.json.Google_Sheet_ID }}"
+                },
+                "sheetName": "Page2",
+                "filters": {
+                    "conditions": [
+                        {
+                            "key": "Status",
+                            "method": "isEmpty"
+                        }
+                    ]
+                },
+                "options": {
+                    "returnAllMatches": "never",
+                    "limit": 1
+                }
+            },
+            "id": "check_page2",
+            "name": "Check Page 2",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.5,
+            "position": [
+                900,
+                560
+            ],
+            "notes": "Fallback: Check Page 2"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.id }}",
+                            "operation": "isNotEmpty"
+                        }
+                    ]
+                }
+            },
+            "id": "switch_page1",
+            "name": "Found in Page 1?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1120,
+                360
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "list",
+                "documentId": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "={{ $('Configuration').item.json.Google_Sheet_ID }}"
+                },
+                "sheetName": "Page1",
+                "filters": {
+                    "conditions": [
+                        {
+                            "key": "Status",
+                            "method": "isEmpty"
+                        }
+                    ]
+                },
+                "options": {
+                    "returnAllMatches": "never",
+                    "limit": "={{ $('Configuration').item.json.Daily_Limit }}"
+                }
+            },
+            "id": "read_page1",
+            "name": "Read Page 1 Data",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.5,
+            "position": [
+                1340,
+                340
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "list",
+                "documentId": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "={{ $('Configuration').item.json.Google_Sheet_ID }}"
+                },
+                "sheetName": "Page2",
+                "filters": {
+                    "conditions": [
+                        {
+                            "key": "Status",
+                            "method": "isEmpty"
+                        }
+                    ]
+                },
+                "options": {
+                    "returnAllMatches": "never",
+                    "limit": "={{ $('Configuration').item.json.Daily_Limit }}"
+                }
+            },
+            "id": "read_page2",
+            "name": "Read Page 2 Data",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.5,
+            "position": [
+                1340,
+                560
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://serpapi.com/search.json",
+                "sendQuery": true,
+                "queryParameters": {
+                    "parameters": [
+                        {
+                            "name": "q",
+                            "value": "={{ $json.keyword }}"
+                        },
+                        {
+                            "name": "api_key",
+                            "value": "={{ $('Configuration').item.json.SERP_API_Key }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "serp_api",
+            "name": "Search Google",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1600,
+                460
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.openai.com/v1/chat/completions",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{ 'Bearer ' + $('Configuration').item.json.OpenAI_API_Key }}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({\n  model: \"gpt-4\",\n  messages: [\n    { \"role\": \"system\", \"content\": \"You are a blog writer. Use the provided search data.\" },\n    { \"role\": \"user\", \"content\": \"Keyword: \" + $json.search_parameters.q + \"\\n\\nSearch Data: \" + JSON.stringify($json.organic_results) }\n  ]\n}) }}",
+                "options": {}
+            },
+            "id": "ai_agent",
+            "name": "Generate Content",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                1820,
+                460
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "documentId": {
+                    "__rl": true,
+                    "mode": "id",
+                    "value": "={{ $('Configuration').item.json.Google_Sheet_ID }}"
+                },
+                "sheetName": "={{ $('Read Page 1 Data').item ? 'Page1' : 'Page2' }}",
+                "updateKey": "keyword",
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "Content": "={{ $json.choices[0].message.content }}",
+                        "Status": "Done"
+                    }
+                }
+            },
+            "id": "update_sheet",
+            "name": "Update Status",
+            "type": "n8n-nodes-base.googleSheets",
+            "typeVersion": 4.5,
+            "position": [
+                2040,
+                460
+            ]
+        }
+    ],
+    "connections": {
+        "Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Configuration",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Configuration": {
+            "main": [
+                [
+                    {
+                        "node": "Check Page 1",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Page 1": {
+            "main": [
+                [
+                    {
+                        "node": "Found in Page 1?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Found in Page 1?": {
+            "main": [
+                [
+                    {
+                        "node": "Read Page 1 Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Check Page 2",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Check Page 2": {
+            "main": [
+                [
+                    {
+                        "node": "Read Page 2 Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Read Page 1 Data": {
+            "main": [
+                [
+                    {
+                        "node": "Search Google",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Read Page 2 Data": {
+            "main": [
+                [
+                    {
+                        "node": "Search Google",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Search Google": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Content",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Generate Content": {
+            "main": [
+                [
+                    {
+                        "node": "Update Status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

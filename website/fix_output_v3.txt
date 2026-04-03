@@ -1,0 +1,24 @@
+--- STARTING FIX WITH SERVICE ROLE KEY ---
+Found 1 Mangal Dosh entries.
+- Mangal Dosh Nivaran (f8c96f3a-3b22-4419-b61e-1aba0273edd2) Featured: true
+  -> Un-featuring...
+  SUCCESS? (Check next line)
+Found 1 Vishnu Puja entries.
+Featuring Vishnu Puja: Vishnu Puja (22757834-7b95-494c-8c81-190f01bbd437)...
+SUCCESS
+
+--- CURRENT FEATURED (Top 20) ---
+- Shiv Puja
+- Vishnu Puja
+- Hanuman Garhi Sindoor Pooja
+- Lakshmi Puja
+- Durga Puja
+- Ram Puja
+- Kaal Sarp Dosh Puja
+- Navagraha Puja
+- Pitru Dosh Puja
+- Shani Shanti Puja
+- Graha Shanti Puja
+- Ganesh Puja
+- Hanuman Puja
+- Saraswati Puja
