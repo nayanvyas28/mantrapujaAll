@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.1",
   "scripts": {
+    "dev": "npm start",
     "start": ".\\dev.bat",
     "android": ".\\run.bat run:android",
     "ios": ".\\run.bat run:ios",

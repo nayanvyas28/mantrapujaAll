@@ -7,8 +7,8 @@ if not exist "%EXPO_HOME%" mkdir "%EXPO_HOME%"
 :: Override USERPROFILE and HOME to point to our local writable directory
 set "USERPROFILE=%EXPO_HOME%"
 set "HOME=%EXPO_HOME%"
-set "HOMEDRIVE=E:"
-set "HOMEPATH=\mantrapuja\app\MP_App1-main\MP_App1-main\.expo_home"
+for %%i in ("%EXPO_HOME%") do set "HOMEDRIVE=%%~di"
+for %%i in ("%EXPO_HOME%") do set "HOMEPATH=%%~pi"
 
 :: Fix for fetch failed errors in Node.js 18+ (especially on Windows)
 set "NODE_OPTIONS=--dns-result-order=ipv4first"
