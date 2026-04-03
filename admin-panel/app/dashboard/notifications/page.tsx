@@ -27,17 +27,19 @@ export default function NotificationSettingsPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isBroadcasting, setIsBroadcasting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const ADMIN_SECRET = 'mantrapuja-admin-keys';
     
-    // Dynamically determine API Base for local development vs production
-    const [apiBase, setApiBase] = useState('https://s1.mantrapuja.com/api/admin/astrology/settings');
+    // Determine API Base, fallback to environment variable
+    const [apiBase, setApiBase] = useState(process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/admin/astrology/settings` : 'http://localhost:4000/api/admin/astrology/settings');
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                setApiBase('http://localhost:4000/api/admin/astrology/settings');
+            // No longer forcing localhost here to support server deployment
+            if (process.env.NEXT_PUBLIC_API_URL) {
+                setApiBase(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/astrology/settings`);
             }
         }
     }, []);
@@ -80,7 +82,7 @@ export default function NotificationSettingsPage() {
         setMessage(null);
         try {
             // Must save via Backend API to trigger scheduler refresh
-            const res = await fetch(apiBase, {
+            const res = await fetch(`${apiBase}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -98,6 +100,34 @@ export default function NotificationSettingsPage() {
             setMessage({ type: 'error', text: `Save failed: ${error.message}` });
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const sendBroadcast = async () => {
+        setIsBroadcasting(true);
+        setMessage(null);
+        try {
+            // Broadcast Endpoint: /api/admin/notifications/broadcast
+            const broadcastUrl = apiBase.replace('/astrology/settings', '/notifications/broadcast');
+            
+            const res = await fetch(broadcastUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    secret: ADMIN_SECRET, 
+                    title: notifConfig.title, 
+                    body: notifConfig.body 
+                })
+            });
+
+            if (!res.ok) throw new Error('Broadcast Failed');
+            
+            setMessage({ type: 'success', text: 'Live broadcast sent! Check history in the app.' });
+        } catch (error: any) {
+            console.error('Broadcast Error:', error);
+            setMessage({ type: 'error', text: `Broadcast failed: ${error.message}` });
+        } finally {
+            setIsBroadcasting(false);
         }
     };
 
@@ -220,15 +250,27 @@ export default function NotificationSettingsPage() {
                             </div>
                         </div>
 
-                        <div className="mt-12 pt-10 border-t border-white/5">
+                        <div className="mt-12 pt-10 border-t border-white/5 space-y-4">
                             <button
                                 onClick={saveConfig}
-                                disabled={isSaving}
+                                disabled={isSaving || isBroadcasting}
                                 className="w-full py-5 bg-white text-black font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-gray-200 active:scale-[0.99] transition-all disabled:opacity-50 shadow-xl shadow-white/5"
                             >
                                 {isSaving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
                                 DEPLOY NOTIFICATION SCHEDULE
                             </button>
+
+                            <button
+                                onClick={sendBroadcast}
+                                disabled={isSaving || isBroadcasting}
+                                className="w-full py-4 bg-purple-600/20 text-purple-400 border border-purple-500/30 font-black rounded-2xl flex items-center justify-center gap-3 hover:bg-purple-600/30 active:scale-[0.99] transition-all disabled:opacity-50"
+                            >
+                                {isBroadcasting ? <Loader2 className="animate-spin" size={18} /> : <AlertCircle size={18} />}
+                                SEND TEST BROADCAST NOW
+                            </button>
+                            <p className="text-[10px] text-gray-600 text-center uppercase tracking-widest font-black">
+                                Sends the above message immediately to all users for testing.
+                            </p>
                         </div>
                     </div>
                 </div>

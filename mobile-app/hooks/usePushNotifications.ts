@@ -48,14 +48,14 @@ export const usePushNotifications = () => {
 
         setupNotifications();
 
-        if (!isExpoGo && Notifications) {
+        if (Notifications) {
             notificationListener.current = Notifications.addNotificationReceivedListener((notification: any) => {
                 setNotification(notification);
             });
 
             responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
                 const { songId, audioUrl, type } = response.notification.request.content.data;
-                console.log("User tapped notification:", response.notification.request.content.body);
+                console.log("User tapped notification. Type:", type);
 
                 if (type === 'ALARM') {
                     // Navigate to music tab with song details
@@ -63,6 +63,9 @@ export const usePushNotifications = () => {
                         pathname: '/music',
                         params: { songId, audioUrl, autoPlay: 'true' }
                     });
+                } else {
+                    // General fallback: Go to notifications history
+                    router.push('/notifications');
                 }
             });
         }
@@ -75,7 +78,7 @@ export const usePushNotifications = () => {
     }, []);
 
     const storeTokenInSupabase = async (token: string) => {
-        if (isExpoGo) return; // No need to store mock tokens in DB
+        // Now storing real tokens even in Expo Go
 
         try {
             // Use a short timeout for the session check
@@ -104,46 +107,51 @@ export const usePushNotifications = () => {
 };
 
 async function registerForPushNotificationsAsync() {
-    if (isExpoGo) {
-        console.log("Expo Go Detected: Mocking Push Token for local development without crashing SDK 53.");
-        return `ExpoPushToken[mock-local-token-for-admin-tests]`;
-    }
-
-    if (!Notifications) return undefined;
-
     let token;
 
-    if (Platform.OS === 'android') {
-        Notifications.setNotificationChannelAsync('default', {
-            name: 'default',
-            importance: Notifications.AndroidImportance.MAX,
-            vibrationPattern: [0, 250, 250, 250],
-            lightColor: '#FF231F7C',
-        });
-    }
+    try {
+        if (!Notifications) return undefined;
 
-    if (Device.isDevice) {
-        const { status: existingStatus } = await Notifications.getPermissionsAsync();
-        let finalStatus = existingStatus;
-        if (existingStatus !== 'granted') {
-            const { status } = await Notifications.requestPermissionsAsync();
-            finalStatus = status;
-        }
-        if (finalStatus !== 'granted') {
-            console.log('Push Provider Error: User denied push notification permissions.');
-            return token;
+        if (Platform.OS === 'android') {
+            await Notifications.setNotificationChannelAsync('default', {
+                name: 'default',
+                importance: Notifications.AndroidImportance.MAX,
+                vibrationPattern: [0, 250, 250, 250],
+                lightColor: '#FF231F7C',
+            });
         }
 
-        try {
-            const projectId = "d877e8ee-efaf-46d5-a8c6-30c6fa4d5de6"; // Based on your app.json
+        if (Device.isDevice) {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            let finalStatus = existingStatus;
+            if (existingStatus !== 'granted') {
+                const { status } = await Notifications.requestPermissionsAsync();
+                finalStatus = status;
+            }
+            if (finalStatus !== 'granted') {
+                console.log('Push Provider Error: User denied push notification permissions.');
+                return undefined;
+            }
+
+            const projectId = "6cb5cb96-7d37-4911-b040-3ee0cbee926f"; // Corrected Project ID from app.json
             token = (await Notifications.getExpoPushTokenAsync({
                 projectId,
             })).data;
-        } catch (error) {
-            console.error("Failed to generate Expo token:", error);
+            console.log("Successfully generated real Push Token:", token);
+        } else {
+            console.log('Must use physical device for real Push Notifications.');
         }
-    } else {
-        console.log('Must use physical device for real Push Notifications (or specific Android Simulators)');
+    } catch (error: any) {
+        // Safe-Mode Fallback: Expo Go (SDK 53+) no longer supports remote notifications for Android
+        if (error?.message?.includes('removed from Expo Go')) {
+            console.warn("⚠️ [SafeMode] Expo Go SDK limitation detected. Using mock token for stability.");
+            console.warn("To test real notifications, please use a Development Build.");
+        } else {
+            console.error("Failed to register for push notifications:", error);
+        }
+        
+        // Return a mock token to prevent app crashes and allow testing of other features
+        return `ExpoPushToken[mock-safe-mode-${Date.now()}]`;
     }
 
     return token;

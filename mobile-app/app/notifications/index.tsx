@@ -31,6 +31,33 @@ export default function NotificationsScreen() {
 
     useEffect(() => {
         fetchNotifications();
+
+        // Subscribe to real-time notification updates
+        const channel = supabase
+            .channel('notification-updates')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'notifications'
+                },
+                (payload) => {
+                    const newNotif = payload.new as Notification;
+                    // Check if notification is relevant to the user (broadcast OR targeted)
+                    if (!newNotif.target_user_id || newNotif.target_user_id === profile?.id) {
+                        setNotifications(prev => [
+                            { ...newNotif, is_read: false },
+                            ...prev
+                        ]);
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [profile]);
 
     const fetchNotifications = async () => {

@@ -91,6 +91,24 @@ async function sendDailyNotification(config) {
         const title = config.title.replace('{tithi}', tithiName).replace('{festivals}', festivalNames);
         const body = config.body.replace('{tithi}', tithiName).replace('{festivals}', festivalNames);
 
+        // 3.1. Save to Database so it appears in App History
+        const { data: dbEntry, error: dbError } = await supabase
+            .from('notifications')
+            .insert([{
+                title,
+                message: body,
+                type: 'DAILY_SUMMARY',
+                // target_user_id is NULL for broadcast
+            }])
+            .select()
+            .single();
+
+        if (dbError) {
+            console.error('[NotificationService] Failed to save notification to DB:', dbError.message);
+        }
+
+        const notificationId = dbEntry?.id;
+
         // 4. Fetch User Tokens (Expo)
         const { data: profiles } = await supabase
             .from('profiles')
@@ -107,7 +125,7 @@ async function sendDailyNotification(config) {
                 sound: 'default',
                 title,
                 body,
-                data: { type: 'DAILY_SUMMARY', date: dateStr }
+                data: { notificationId, type: 'DAILY_SUMMARY', date: dateStr }
             });
         }
 
