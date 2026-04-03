@@ -40,6 +40,20 @@ export default async function DashboardPage() {
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    {/* NEW: Notification Manager at 1st Position */}
+                    <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-900/40 to-indigo-900/30 border border-purple-500/20 flex flex-col justify-between gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-1">Notification Manager</h2>
+                            <p className="text-sm text-gray-300 mb-4">Schedule daily Tithi and Festival alerts. Configure delivery time and message templates.</p>
+                        </div>
+                        <a
+                            href="/dashboard/notifications"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
+                        >
+                            Manage Notifications
+                        </a>
+                    </div>
+
                     <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-900/40 to-orange-900/30 border border-purple-500/20 flex flex-col justify-between gap-4">
                         <div>
                             <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent mb-1">App Home Settings</h2>

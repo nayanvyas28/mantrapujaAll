@@ -11,12 +11,7 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_
     console.warn('WARNING: Environment variables NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are missing.');
     console.log('Current CWD:', process.cwd());
 }
-const express = require('express');
-const cors = require('cors');
-
-const authRoutes = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const astrologyRoutes = require('./routes/astrology');
+const { initializeScheduler } = require('./services/notificationService');
 
 const app = express();
 
@@ -36,4 +31,6 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`🚀 Auth REST API running on http://localhost:${PORT}`);
+    // Start the notification scheduler
+    initializeScheduler();
 });

@@ -74,7 +74,76 @@ const getSettings = async (req, res) => {
     }
 };
 
+/**
+ * Handle saving complex JSON settings in kundli_settings table
+ * This is used for API configs and Notification configs.
+ */
+const saveKundliSettings = async (req, res) => {
+    try {
+        const { secret, key, value } = req.body;
+
+        const ADMIN_SECRET = process.env.ADMIN_SECRET || 'mantrapuja-admin-keys';
+        if (secret !== ADMIN_SECRET) {
+            return res.status(401).json({ error: "Unauthorized access." });
+        }
+
+        if (!key || !value) {
+            return res.status(400).json({ error: "Key and value are required." });
+        }
+
+        const { error } = await supabase
+            .from('kundli_settings')
+            .upsert({ 
+                setting_key: key, 
+                setting_value: value, 
+                updated_at: new Date().toISOString() 
+            }, { onConflict: 'setting_key' });
+
+        if (error) throw error;
+
+        // If it's the notification config, refresh the scheduler
+        if (key === 'notification_config') {
+            const { refreshSettings } = require('../services/notificationService');
+            refreshSettings();
+        }
+
+        return res.status(200).json({ message: "Settings saved and synchronized." });
+
+    } catch (err) {
+        console.error("Save Kundli Settings Error:", err);
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+/**
+ * Get internal kundli_settings (Admin only)
+ */
+const getKundliSettings = async (req, res) => {
+    try {
+        const { secret, key } = req.query;
+        const ADMIN_SECRET = process.env.ADMIN_SECRET || 'mantrapuja-admin-keys';
+        if (secret !== ADMIN_SECRET) {
+            return res.status(401).json({ error: "Unauthorized access." });
+        }
+
+        const { data, error } = await supabase
+            .from('kundli_settings')
+            .select('*')
+            .eq('setting_key', key)
+            .single();
+
+        if (error && error.code !== 'PGRST116') throw error;
+
+        return res.status(200).json({ data: data ? data.setting_value : null });
+    } catch (err) {
+        console.error("Get Kundli Settings Error:", err);
+        return res.status(500).json({ error: err.message });
+    }
+}
+
 module.exports = {
     saveSettings,
-    getSettings
+    getSettings,
+    saveKundliSettings,
+    getKundliSettings
 };
