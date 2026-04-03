@@ -19,6 +19,7 @@ import AssetManager from '@/components/admin/AssetManager';
 import ServerManager from '@/components/admin/ServerManager';
 import CategoryManager from '@/components/admin/CategoryManager';
 import SitemapManager from '@/app/(admin)/admin/sitemaps/page';
+import KundliApiManager from '@/components/admin/KundliApiManager';
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
             case 'assets': return <AssetManager />;
             case 'categories': return <CategoryManager />;
             case 'server': return <ServerManager />;
+            case 'kundli-api': return <KundliApiManager />;
             default: return <Overview stats={stats} recentUsers={recentUsers} />;
         }
     };
@@ -101,6 +103,7 @@ export default function AdminDashboard() {
                     <SidebarItem icon={Globe} label="Sitemap Manager" id="sitemaps" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                     <SidebarItem icon={ImageIcon} label="Asset Library" id="assets" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                     <SidebarItem icon={Server} label="Server Config" id="server" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
+                    <SidebarItem icon={Zap} label="Kundli API" id="kundli-api" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">

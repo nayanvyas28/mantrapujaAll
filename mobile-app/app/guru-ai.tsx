@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FallbackImage } from '../components/ui/FallbackImage';
 import { ResultDisclaimer } from '../components/ui/ResultDisclaimer';
@@ -29,7 +29,7 @@ export default function GuruAIScreen() {
     const router = useRouter();
     const params = useLocalSearchParams();
     const { theme, colors } = useTheme();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const insets = useSafeAreaInsets();
     const scrollRef = useRef<ScrollView>(null);
 
@@ -43,10 +43,16 @@ export default function GuruAIScreen() {
     const [isLoading, setIsLoading] = useState(false);
     const [isLimitReached, setIsLimitReached] = useState(false);
     const [chatHistory, setChatHistory] = useState<Message[]>(DEFAULT_GREETING);
+    
+    // Task-based Unlock Logic
+    const [msgCountSinceTask, setMsgCountSinceTask] = useState(0);
+    const [isTaskModalVisible, setIsTaskModalVisible] = useState(false);
+    const TASK_COUNT_KEY = `guru_task_msg_count_${user?.id || 'anon'}`;
+    const TASK_THRESHOLD = 5;
 
     const handleSend = useCallback(async (overrideText?: string, mode?: ChatMode, skipApiCall: boolean = false) => {
         const textToSend = overrideText || message;
-        if (!textToSend.trim() || isLoading) return;
+        if (!textToSend.trim() || isLoading || isTaskModalVisible) return;
 
         const newUserMessage: Message = { role: 'user', text: textToSend };
         const currentHistory = [...chatHistory, newUserMessage];
@@ -89,6 +95,20 @@ export default function GuruAIScreen() {
             setChatHistory(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
+            
+            // Increment task counter for unpaid users after each successful exchange
+            const isPremium = profile?.is_premium || profile?.role === 'premium';
+            if (!isPremium) {
+                setMsgCountSinceTask(prev => {
+                    const next = prev + 1;
+                    AsyncStorage.setItem(TASK_COUNT_KEY, next.toString());
+                    if (next >= TASK_THRESHOLD) {
+                        setTimeout(() => setIsTaskModalVisible(true), 1500);
+                    }
+                    return next;
+                });
+            }
+
             setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
         }
     }, [message, isLoading, chatHistory, user?.id]);
@@ -138,7 +158,12 @@ export default function GuruAIScreen() {
     // Load chat history: from Supabase first (cloud), fallback to AsyncStorage (local)
     useEffect(() => {
         loadHistory();
-    }, [loadHistory]);
+        
+        // Load task message count
+        AsyncStorage.getItem(TASK_COUNT_KEY).then(val => {
+            if (val) setMsgCountSinceTask(parseInt(val, 10));
+        });
+    }, [loadHistory, TASK_COUNT_KEY]);
 
     const saveHistory = useCallback(async () => {
         try {
@@ -231,9 +256,114 @@ export default function GuruAIScreen() {
         }
     };
 
+    const performTask = async (taskId: string) => {
+        try {
+            switch (taskId) {
+                case 'rate':
+                    // Open Play Store 5-star rating (placeholder package name)
+                    await Linking.openURL('market://details?id=com.mantrapuja.app&showAllReviews=true');
+                    break;
+                case 'refer':
+                    // Open Share dialog for referral
+                    await Share.share({
+                        message: 'I am getting amazing spiritual guidance from GuruJi AI on Mantra Puja! Download now: https://mantrapuja.com/app',
+                        title: 'Mantra Puja Referral'
+                    });
+                    break;
+                case 'social':
+                    // Follow on Instagram
+                    await Linking.openURL('https://instagram.com/mantrapuja_official');
+                    break;
+                case 'story':
+                    // Reshare Story (opens share dialog for story-like reshare)
+                    await Share.share({
+                        message: 'Ask anything to GuruJi AI! 🕉️✨ #MantraPuja #GuruJiAI https://mantrapuja.com/app',
+                    });
+                    break;
+                case 'youtube':
+                    // Subscribe on YouTube
+                    await Linking.openURL('https://youtube.com/@MantraPuja');
+                    break;
+            }
+            
+            // Mark task as done and unlock chat
+            setMsgCountSinceTask(0);
+            await AsyncStorage.setItem(TASK_COUNT_KEY, '0');
+            setIsTaskModalVisible(false);
+        } catch (error) {
+            console.error('Task execution error:', error);
+            // Even if it fails, we let them proceed on error to not block UI forever
+            setIsTaskModalVisible(false);
+        }
+    };
+
+    const TaskUnlockModal = () => (
+        <Modal
+            visible={isTaskModalVisible}
+            transparent={true}
+            animationType="slide"
+        >
+            <View style={styles.modalOverlay}>
+                <View style={[styles.taskModalContent, { backgroundColor: colors.card }]}>
+                    <View style={[styles.modalHeaderDecor, { backgroundColor: colors.saffron }]} />
+                    
+                    <View style={[styles.modalIconCircle, { backgroundColor: colors.saffron + '15' }]}>
+                        <Crown size={32} color={colors.saffron} />
+                    </View>
+
+                    <Typography variant="h2" style={{ textAlign: 'center', marginBottom: 8 }}>Unlock More Wisdom</Typography>
+                    <Typography variant="body" color={colors.mutedForeground} style={{ textAlign: 'center', marginBottom: 24, paddingHorizontal: 10 }}>
+                        To continue your journey with GuruJi, please complete any 1 task below:
+                    </Typography>
+
+                    <View style={styles.taskList}>
+                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('rate')}>
+                            <View style={[styles.taskIcon, { backgroundColor: '#FFD70020' }]}><Star size={20} color="#FFB800" /></View>
+                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>5-Star Rating on Play Store</Typography>
+                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('refer')}>
+                            <View style={[styles.taskIcon, { backgroundColor: '#4ADE8020' }]}><Users size={20} color="#22C55E" /></View>
+                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Refer to 2 Friends</Typography>
+                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('social')}>
+                            <View style={[styles.taskIcon, { backgroundColor: '#EC489920' }]}><Instagram size={20} color="#DB2777" /></View>
+                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Follow on Instagram</Typography>
+                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('story')}>
+                            <View style={[styles.taskIcon, { backgroundColor: '#8B5CF620' }]}><Share2 size={20} color="#7C3AED" /></View>
+                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Reshare our Story</Typography>
+                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted, borderBottomWidth: 0 }]} onPress={() => performTask('youtube')}>
+                            <View style={[styles.taskIcon, { backgroundColor: '#EF444420' }]}><Youtube size={20} color="#DC2626" /></View>
+                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Subscribe on Youtube</Typography>
+                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity 
+                        style={[styles.premiumUnlockBtn, { backgroundColor: colors.saffron + '10', borderColor: colors.saffron }]}
+                        onPress={() => { setIsTaskModalVisible(false); router.push('/guru-ai-upgrade'); }}
+                    >
+                        <Crown size={16} color={colors.saffron} />
+                        <Typography variant="label" color={colors.saffron} style={{ fontWeight: '700', marginLeft: 6 }}>UNLOCK PERMANENTLY (PRO)</Typography>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+    );
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+            <TaskUnlockModal />
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.card, borderBottomColor: colors.borderMuted }]}>
@@ -488,4 +618,61 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 20,
     },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        justifyContent: 'center',
+        padding: 24,
+    },
+    taskModalContent: {
+        borderRadius: 28,
+        padding: 24,
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    modalHeaderDecor: {
+        position: 'absolute',
+        top: 0,
+        height: 6,
+        width: '100%',
+    },
+    modalIconCircle: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
+        marginTop: 10,
+    },
+    taskList: {
+        width: '100%',
+        backgroundColor: 'rgba(0,0,0,0.02)',
+        borderRadius: 20,
+        marginBottom: 20,
+    },
+    taskItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+    },
+    taskIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    premiumUnlockBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        paddingVertical: 14,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+    }
 });

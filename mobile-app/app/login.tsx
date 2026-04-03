@@ -135,7 +135,7 @@ export default function LoginScreen() {
   // This allows physical devices to connect to backend on :4000 without network errors
   const debuggerHost = Constants.expoConfig?.hostUri;
   const localIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  const BACKEND_URL = Config.backendUrl || 
+  const BACKEND_URL = Config.backendUrl ||
     (Platform.OS === 'android' && !debuggerHost ? "http://10.0.2.2:4000/api/auth" : `http://${localIp}:4000/api/auth`);
 
   const showPopup = (msg: string, type: "error" | "success" = "error") => {
@@ -186,7 +186,7 @@ export default function LoginScreen() {
         // New user - Send OTP immediately
         setIsExistingUser(false);
         setAuthPurpose("REGISTER");
-        
+
         const regRes = await fetch(`${BACKEND_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -231,7 +231,7 @@ export default function LoginScreen() {
         return;
       }
       if (email.trim() && !email.includes("@")) {
-        showPopup("Please provide a valid email address.", "error"); 
+        showPopup("Please provide a valid email address.", "error");
         return;
       }
     }
@@ -262,7 +262,7 @@ export default function LoginScreen() {
         password: password
       });
 
-      const timeoutPromise = new Promise<{ data: any, error: any }>((_, reject) => 
+      const timeoutPromise = new Promise<{ data: any, error: any }>((_, reject) =>
         setTimeout(() => reject(new Error("Connection Timeout: Supabase is taking too long to respond.")), 25000)
       );
 
@@ -290,10 +290,10 @@ export default function LoginScreen() {
         AsyncStorage.setItem("hasSeenLogin", "true"),
         supabase.from('profiles').select('rashi, onboarding_data').eq('id', (data.user as any).id).single()
       ];
-      
+
       const [_, profileRes] = await Promise.all(postLoginTasks);
       const profile = (profileRes as any).data;
-      
+
       const hasBirthData = profile?.onboarding_data?.dob;
       const hasRashi = profile?.rashi || profile?.onboarding_data?.rashi;
 
@@ -337,10 +337,10 @@ export default function LoginScreen() {
           if (!response.ok) {
             throw new Error(data.error || "Failed to complete registration");
           }
-          
+
           // Registration successful! Now log them in.
           setIsExistingUser(true);
-          await performLogin(); 
+          await performLogin();
         } catch (fetchError: any) {
           if (fetchError.name === 'AbortError') {
             throw new Error("Backend Timeout: The registration server is not responding.");
@@ -387,7 +387,7 @@ export default function LoginScreen() {
 
         // Success! Now allow the sign-in again
         setIsExistingUser(true);
-        await handleAuthOrInit(); 
+        await handleAuthOrInit();
       } else if (authPurpose === "REGISTER" || authPurpose === "RESET_PASSWORD") {
         // Verify OTP via Custom Backend
         const response = await fetch(`${BACKEND_URL}/verify-otp`, {
@@ -429,10 +429,10 @@ export default function LoginScreen() {
 
   const handleResendOTP = async () => {
     if (resendTimer > 0) return;
-    
+
     setLoading(true);
     setResendTimer(30); // 30s Cooldown
-    
+
     try {
       if (authPurpose === "REGISTER") {
         // Re-call the initial register endpoint which sends the OTP
@@ -461,10 +461,10 @@ export default function LoginScreen() {
         });
         // The endpoint returns 403 when it sends an OTP, so we handle that correctly
         if (response.status === 403 || response.ok) {
-           showPopup("OTP resent successfully", "success");
+          showPopup("OTP resent successfully", "success");
         } else {
-           const data = await response.json();
-           throw new Error(data.error || "Failed to resend OTP");
+          const data = await response.json();
+          throw new Error(data.error || "Failed to resend OTP");
         }
       }
     } catch (error: any) {
@@ -746,13 +746,13 @@ export default function LoginScreen() {
                   <Text style={[styles.resendText, { color: colors.mutedForeground }]}>
                     Didn't receive the code?{' '}
                   </Text>
-                  <TouchableOpacity 
-                    onPress={handleResendOTP} 
+                  <TouchableOpacity
+                    onPress={handleResendOTP}
                     disabled={resendTimer > 0 || loading}
                   >
-                    <Text 
+                    <Text
                       style={[
-                        styles.resendLink, 
+                        styles.resendLink,
                         { color: resendTimer > 0 ? colors.mutedForeground : colors.saffron }
                       ]}
                     >

@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Calendar, ChevronLeft, Clock, MapPin, Sparkles, User } from 'lucide-react-native';
+import { Calendar, ChevronLeft, Clock, MapPin, Sparkles, User, MessageCircle } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
     ScrollView,
@@ -146,11 +146,20 @@ export default function KundliFormScreen() {
                     >
                         <Typography variant="h3" color="#fff">Generate Kundli Details</Typography>
                     </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.secondaryBtn, { borderColor: colors.saffron, borderWidth: 1 }]}
+                        onPress={() => router.push('/guru-ai')}
+                    >
+                        <Typography variant="body" style={[styles.submitBtnText, { color: colors.saffron, marginRight: 8 }]}>Talk to Pandit</Typography>
+                        <MessageCircle size={20} color={colors.saffron} />
+                    </TouchableOpacity>
                 </Card>
             </ScrollView>
         </View>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
@@ -202,5 +211,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 10,
         elevation: 2,
+    },
+    secondaryBtn: {
+        height: 56,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 12,
+        flexDirection: 'row',
+    },
+    submitBtnText: {
+        fontWeight: '700',
+        fontSize: 16,
     }
+
 });

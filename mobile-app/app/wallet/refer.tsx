@@ -72,12 +72,20 @@ export default function ReferralScreen() {
                 <View style={[styles.codeSection, { backgroundColor: isDark ? '#1e293b' : '#fff', borderColor: colors.saffron + '40', shadowColor: colors.saffron }]}>
                     <Typography variant="label" color={colors.mutedForeground} style={{ marginBottom: 12, letterSpacing: 1 }}>YOUR UNIQUE CODE</Typography>
                     <View style={styles.codeRow}>
-                        <Typography variant="h1" color={colors.saffron} style={styles.codeText}>{referralCode}</Typography>
+                        <Typography 
+                            variant="h1" 
+                            color={colors.saffron} 
+                            style={styles.codeText}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                        >
+                            {referralCode}
+                        </Typography>
                         <View style={styles.codeActions}>
                             <TouchableOpacity onPress={handleCopy} style={[styles.iconBtn, { backgroundColor: colors.saffron + '15' }]}>
                                 <Copy size={22} color={colors.saffron} />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={handleShare} style={[styles.iconBtn, { backgroundColor: colors.saffron, marginLeft: 12 }]}>
+                            <TouchableOpacity onPress={handleShare} style={[styles.iconBtn, { backgroundColor: colors.saffron, marginLeft: 10 }]}>
                                 <Share2 size={22} color="#fff" />
                             </TouchableOpacity>
                         </View>
@@ -209,6 +217,8 @@ const styles = StyleSheet.create({
         fontSize: 32,
         letterSpacing: 4,
         fontWeight: '900',
+        flex: 1,
+        marginRight: 10,
     },
     codeActions: {
         flexDirection: 'row',

@@ -23,7 +23,8 @@ import {
     Heart,
     Star,
     Trash2,
-    Wallet
+    Wallet,
+    Settings
 } from 'lucide-react-native';
 import Config from '../../constants/Config';
 import { useAuth } from '../../context/AuthContext';
@@ -163,6 +164,23 @@ export default function ProfileTabScreen() {
                         />
                     </Card>
                 </View>
+
+                {/* Admin Tools - Visible only to Admins */}
+                {(profile?.role === 'admin' || profile?.is_admin) && (
+                    <View style={styles.sectionContainer}>
+                        <Typography variant="label" style={styles.sectionTitle} color={colors.saffron}>
+                            ADMINISTRATIVE TOOLS
+                        </Typography>
+                        <Card variant="solid" style={[styles.cardList, { borderColor: colors.saffron + '30', borderWidth: 1 }]}>
+                            <SettingItem
+                                icon={Settings}
+                                label="Kundli API Manager"
+                                onPress={() => router.push('/admin/kundli-api')}
+                                isLast
+                            />
+                        </Card>
+                    </View>
+                )}
 
 
 

@@ -2,7 +2,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Calendar, ChevronLeft, Clock, MapPin, Wand2, Sparkles, Trash2, CheckCircle2, User, Share2, Download, AlertCircle } from 'lucide-react-native';
+import { Calendar, ChevronLeft, Clock, MapPin, Wand2, Sparkles, Trash2, CheckCircle2, User, Share2, Download, AlertCircle, MessageCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Share, Platform, Modal } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -165,7 +165,7 @@ export default function KundliScreen() {
             if (Platform.OS === 'ios') {
                 await Sharing.shareAsync(uri);
             } else {
-                await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Download Kundli PDF', uti: 'com.adobe.pdf' });
+                await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Download Kundli PDF', UTI: 'com.adobe.pdf' });
             }
         } catch (error) {
             console.error("PDF Generate Error:", error);
@@ -461,6 +461,15 @@ export default function KundliScreen() {
                         >
                             <Typography variant="h3" color="#fff">{t('kundli.continue_btn', 'Continue')}</Typography>
                         </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.secondaryBtn, { borderColor: colors.saffron, borderWidth: 1, marginTop: 12 }]}
+                            onPress={() => router.push('/guru-ai')}
+                        >
+                            <Typography variant="body" style={[styles.btnText, { color: colors.saffron, fontWeight: '700', marginRight: 8 }]}>Talk to Pandit</Typography>
+                            <MessageCircle size={20} color={colors.saffron} />
+                        </TouchableOpacity>
+
 
                         {/* Saved Kundlis History List */}
                         {history.length > 0 && (
@@ -1248,6 +1257,16 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    secondaryBtn: {
+        height: 60,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
+    },
+    btnText: {
+        fontSize: 16,
     },
     generateContainer: {
         marginTop: 20,
