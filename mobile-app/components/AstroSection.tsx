@@ -5,7 +5,7 @@ import { Typography } from './ui/Typography';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { ChevronRight, Sparkles, Moon, Star, Sun } from 'lucide-react-native';
+import { ChevronRight, Sparkles, Moon, Star, Sun, Compass } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { fetchAstroData, prepareAstroRequestData } from '../services/astrologyService';
 
@@ -32,6 +32,7 @@ export const AstroSection = () => {
         }
         
         // Appear animation
+        fadeAnim.setValue(0);
         Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 1000,
@@ -39,7 +40,7 @@ export const AstroSection = () => {
         }).start();
 
         // Subtle pulse for eye-catching effect
-        Animated.loop(
+        const pulseLoop = Animated.loop(
             Animated.sequence([
                 Animated.timing(pulseAnim, {
                     toValue: 1.05,
@@ -52,7 +53,13 @@ export const AstroSection = () => {
                     useNativeDriver: true,
                 }),
             ])
-        ).start();
+        );
+        
+        pulseLoop.start();
+
+        return () => {
+            pulseLoop.stop();
+        };
     }, [hasBirthData, i18n.language]);
 
     const loadAstroDetails = async () => {
@@ -79,12 +86,10 @@ export const AstroSection = () => {
                     style={[styles.premiumCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', width: CARD_WIDTH, borderColor: colors.saffron + '30' }]}
                 >
                     <View style={styles.glowEffect} />
-                    <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                        <Image 
-                            source={require('../assets/images/astro_kundli_v1.png')}
-                            style={styles.iconHero}
-                            contentFit="contain"
-                        />
+                    <Animated.View style={{ transform: [{ scale: pulseAnim }], marginRight: 16 }}>
+                        <View style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
+                            <Compass size={36} color={colors.saffron} />
+                        </View>
                     </Animated.View>
                     <View style={styles.textContainer}>
                         <View style={styles.badgeRow}>
@@ -112,11 +117,9 @@ export const AstroSection = () => {
                 <View style={styles.cardHeader}>
                     <View style={styles.profileBox}>
                         <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                            <Image 
-                                source={require('../assets/images/astro_kundli_v1.png')}
-                                style={styles.miniIcon}
-                                contentFit="contain"
-                            />
+                            <View style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
+                                <Compass size={32} color={colors.saffron} />
+                            </View>
                         </Animated.View>
                     </View>
                     <View style={styles.profileText}>
@@ -186,14 +189,14 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     premiumCardExpanded: {
-        padding: 20,
-        borderRadius: 28,
-        borderWidth: 1,
-        elevation: 12,
+        padding: 24,
+        borderRadius: 32,
+        borderWidth: 1.5,
+        elevation: 14,
         shadowColor: '#f97316',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
         overflow: 'hidden',
     },
     glowEffect: {
@@ -245,18 +248,21 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     profileBox: {
-        width: 60,
-        height: 60,
-        borderRadius: 20,
-        backgroundColor: 'rgba(249, 115, 22, 0.05)',
+        width: 64,
+        height: 64,
+        borderRadius: 22,
+        backgroundColor: 'rgba(249, 115, 22, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(249, 115, 22, 0.12)',
+        borderWidth: 1.5,
+        borderColor: 'rgba(249, 115, 22, 0.2)',
     },
-    miniIcon: {
-        width: 48,
-        height: 48,
+    miniIconBox: {
+        width: 54,
+        height: 54,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     profileText: {
         flex: 1,
