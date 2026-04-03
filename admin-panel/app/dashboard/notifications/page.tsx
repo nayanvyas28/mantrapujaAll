@@ -30,17 +30,28 @@ export default function NotificationSettingsPage() {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     const ADMIN_SECRET = 'mantrapuja-admin-keys';
-    const API_BASE = 'https://s1.mantrapuja.com/api/admin/astrology/settings'; // Adjust based on your production URL
+    
+    // Dynamically determine API Base for local development vs production
+    const [apiBase, setApiBase] = useState('https://s1.mantrapuja.com/api/admin/astrology/settings');
 
     useEffect(() => {
-        fetchSettings();
+        if (typeof window !== 'undefined') {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                setApiBase('http://localhost:4000/api/admin/astrology/settings');
+            }
+        }
     }, []);
 
+    useEffect(() => {
+        if (apiBase) fetchSettings();
+    }, [apiBase]);
+
     const fetchSettings = async () => {
+        if (!apiBase) return;
         setIsLoading(true);
         try {
             // First try fetching from backend for real-time consistency
-            const res = await fetch(`${API_BASE}?secret=${ADMIN_SECRET}&key=notification_config`);
+            const res = await fetch(`${apiBase}?secret=${ADMIN_SECRET}&key=notification_config`);
             const data = await res.json();
             
             if (data.data) {
@@ -69,7 +80,7 @@ export default function NotificationSettingsPage() {
         setMessage(null);
         try {
             // Must save via Backend API to trigger scheduler refresh
-            const res = await fetch(API_BASE, {
+            const res = await fetch(apiBase, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
