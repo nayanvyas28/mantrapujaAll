@@ -118,7 +118,8 @@ export default function NotificationSettingsPage() {
                 body: JSON.stringify({ 
                     secret: ADMIN_SECRET, 
                     title: notifConfig.title, 
-                    message: notifConfig.body // Backend expects 'message'
+                    message: notifConfig.body, // Backend expects 'message'
+                    type: 'DAILY_SUMMARY'
                 })
             });
 
