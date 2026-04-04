@@ -15,6 +15,7 @@
     "android": {
       "package": "com.mantrapooja.app",
       "versionCode": 5,
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/app_icon/1024.png"

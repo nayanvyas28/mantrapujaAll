@@ -23,6 +23,7 @@ interface Message {
     text: string;
     type?: 'suggestion' | 'form' | 'details';
     showFillFormButton?: boolean;
+    showConfirmEditButtons?: boolean;
 }
 
 export default function GuruAIScreen() {
@@ -197,8 +198,8 @@ export default function GuruAIScreen() {
             const { name, gender, dob, time, place } = params;
             const summary = `My Birth Details:\n• Name: ${name}\n• Gender: ${gender}\n• DOB: ${dob}\n• Time: ${time}\n• Place: ${place}`;
 
-            // Remove the "Fill Form" button from previous messages
-            setChatHistory(prev => prev.map(m => ({ ...m, showFillFormButton: false })));
+            // Remove the "Fill Form" and "Confirm" buttons from previous messages
+            setChatHistory(prev => prev.map(m => ({ ...m, showFillFormButton: false, showConfirmEditButtons: false })));
 
             // Send the details as a user message
             handleSend(summary, 'kundli');
@@ -207,6 +208,22 @@ export default function GuruAIScreen() {
             router.setParams({ kundliSubmitted: undefined });
         }
     }, [params, handleSend, router]);
+
+    const handleConfirmDetails = useCallback(() => {
+        const dob = profile?.dob || profile?.onboarding_data?.dob;
+        const time = profile?.time_of_birth || profile?.onboarding_data?.tob || profile?.onboarding_data?.time || 'Not set';
+        const place = profile?.onboarding_data?.pob || profile?.onboarding_data?.place || 'Not set';
+        const name = profile?.full_name || 'User';
+        const gender = profile?.gender || 'Not specified';
+
+        const summary = `My Birth Details:\n• Name: ${name}\n• Gender: ${gender}\n• DOB: ${dob}\n• Time: ${time}\n• Place: ${place}`;
+
+        // Remove the confirmation buttons from previous messages
+        setChatHistory(prev => prev.map(m => ({ ...m, showConfirmEditButtons: false })));
+
+        // Send the details as a user message
+        handleSend(summary, 'kundli');
+    }, [profile, handleSend]);
 
     // Dynamic suggestions that change based on what the user is chatting about
     const SUGGESTIONS = chatMode === 'kundli' ? [
@@ -231,12 +248,27 @@ export default function GuruAIScreen() {
         if (suggestion.id === 'kundli') {
             // Entry-point: show the kundli form prompt
             handleSend(suggestion.text, 'kundli', true);
+            
+            const hasDetails = profile?.full_name && (profile?.dob || profile?.onboarding_data?.dob);
+            
             setTimeout(() => {
-                setChatHistory(prev => [...prev, {
-                    role: 'guru',
-                    text: 'To provide a precise Kundli analysis, I need your birth details. Please tap the button below to fill them in:',
-                    showFillFormButton: true
-                }]);
+                if (hasDetails) {
+                    const dob = profile?.dob || profile?.onboarding_data?.dob;
+                    const time = profile?.time_of_birth || profile?.onboarding_data?.tob || profile?.onboarding_data?.time || 'Not set';
+                    const place = profile?.onboarding_data?.pob || profile?.onboarding_data?.place || profile?.onboarding_data?.place_of_birth || 'Not set';
+                    
+                    setChatHistory(prev => [...prev, {
+                        role: 'guru',
+                        text: `I found your saved birth details:\n\n• Name: ${profile.full_name}\n• DOB: ${dob}\n• Time: ${time}\n• Place: ${place}\n\nShall I use these for the analysis?`,
+                        showConfirmEditButtons: true
+                    }]);
+                } else {
+                    setChatHistory(prev => [...prev, {
+                        role: 'guru',
+                        text: 'To provide a precise Kundli analysis, I need your birth details. Please tap the button below to fill them in:',
+                        showFillFormButton: true
+                    }]);
+                }
                 setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
             }, 600);
         } else if (suggestion.id === 'vastu') {
@@ -437,6 +469,24 @@ export default function GuruAIScreen() {
                                 <Typography variant="body" color={colors.saffron} style={{ fontWeight: '600' }}>Please Fill the Form</Typography>
                             </TouchableOpacity>
                         )}
+                        {chat.showConfirmEditButtons && (
+                            <View style={styles.buttonRow}>
+                                <TouchableOpacity
+                                    style={[styles.inlineFormBtn, { borderColor: colors.saffron, backgroundColor: colors.saffron, flex: 1 }]}
+                                    onPress={handleConfirmDetails}
+                                >
+                                    <Sparkles size={18} color="#fff" />
+                                    <Typography variant="body" color="#fff" style={{ fontWeight: '600' }}>Confirm</Typography>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.inlineFormBtn, { borderColor: colors.saffron, backgroundColor: colors.saffron + '10', flex: 1, marginLeft: 8 }]}
+                                    onPress={() => router.push('/kundli-form')}
+                                >
+                                    <ClipboardList size={18} color={colors.saffron} />
+                                    <Typography variant="body" color={colors.saffron} style={{ fontWeight: '600' }}>Edit Details</Typography>
+                                </TouchableOpacity>
+                            </View>
+                        )}
                     </View>
                 ))}
 
@@ -603,6 +653,11 @@ const styles = StyleSheet.create({
         borderWidth: 1.5,
         marginTop: 8,
         alignSelf: 'flex-start',
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        width: '100%',
+        gap: 0,
     },
     upgradeCard: {
         flexDirection: 'row',

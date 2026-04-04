@@ -11,6 +11,7 @@ dotenv.config({ path: envPath });
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const astrologyRoutes = require('./routes/astrology');
+const chatRoutes = require('./routes/chat');
 
 // Import Services
 const { initializeScheduler } = require('./services/notificationService');
@@ -25,6 +26,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/astrology', astrologyRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

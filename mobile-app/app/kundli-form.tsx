@@ -14,17 +14,20 @@ import { Card } from '../components/ui/Card';
 import { Typography } from '../components/ui/Typography';
 import { useTheme } from '../context/ThemeContext';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function KundliFormScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
+    const { profile } = useAuth();
     const insets = useSafeAreaInsets();
 
     const [formData, setFormData] = useState({
-        name: '',
-        gender: '',
-        dob: '',
-        time: '',
-        place: ''
+        name: profile?.full_name || '',
+        gender: profile?.gender || '',
+        dob: profile?.dob || profile?.onboarding_data?.dob || '',
+        time: profile?.time_of_birth || profile?.onboarding_data?.tob || profile?.onboarding_data?.time || '',
+        place: profile?.onboarding_data?.pob || profile?.onboarding_data?.place || ''
     });
 
     const handleSubmit = () => {

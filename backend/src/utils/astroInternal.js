@@ -59,15 +59,22 @@ async function callInternalAstro(endpoint, body = {}, lang = 'en') {
                     signal: AbortSignal.timeout(10000)
                 });
 
-                const data = await response.json().catch(() => ({ msg: "Internal Error" }));
-                if (response.ok) {
+                const data = await response.json().catch(() => null);
+                
+                if (response.ok && data) {
                     const isLimit = data.msg?.toLowerCase().includes('limit') || data.msg?.toLowerCase().includes('expired');
-                    if (isLimit) continue;
+                    if (isLimit) {
+                        console.warn(`[InternalAstro] Node ${node.id} limit reached:`, data.msg);
+                        continue;
+                    }
                     return data;
                 }
-                lastError = data.msg || response.statusText;
+
+                lastError = data?.msg || data?.message || response.statusText || `HTTP ${response.status}`;
+                console.error(`[InternalAstro] Node ${node.id} failed (${response.status}):`, lastError);
             } catch (err) {
                 lastError = err.message;
+                console.error(`[InternalAstro] Node ${node.id} Exception:`, err.message);
                 continue;
             }
         }
