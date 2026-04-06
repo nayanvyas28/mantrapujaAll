@@ -7,12 +7,15 @@ const debuggerHost = Constants.expoConfig?.hostUri;
 const localIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
 
 const DEFAULT_LOCAL_URL = Platform.OS === 'android' && !debuggerHost 
-    ? 'http://10.0.2.2:3000' 
-    : `http://${localIp}:3000`;
+    ? 'http://10.0.2.2:3001' 
+    : `http://${localIp}:3001`;
 
 // Prioritize dynamic local IP in dev if the env URL points to a local network IP
 // Using environment variable for production readiness
-const ADMIN_API_URL = process.env.EXPO_PUBLIC_ADMIN_URL || 'http://localhost:3001';
+const ENV_ADMIN_API_URL = process.env.EXPO_PUBLIC_ADMIN_URL || 'http://localhost:3001';
+const ADMIN_API_URL = __DEV__ && (ENV_ADMIN_API_URL.includes('localhost') || ENV_ADMIN_API_URL.includes('127.0.0.1'))
+    ? DEFAULT_LOCAL_URL
+    : ENV_ADMIN_API_URL;
 
 export interface ChatMessage {
     role: 'user' | 'model';

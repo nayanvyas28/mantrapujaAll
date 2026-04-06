@@ -12,19 +12,23 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/ui/Card';
 import { Typography } from '../components/ui/Typography';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
 export default function KundliFormScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
+    const { profile } = useAuth();
     const insets = useSafeAreaInsets();
 
+    const onboarding = profile?.onboarding_data;
+
     const [formData, setFormData] = useState({
-        name: '',
-        gender: '',
-        dob: '',
-        time: '',
-        place: ''
+        name: profile?.full_name || '',
+        gender: '', // Gender not in standard profile/onboarding yet
+        dob: profile?.dob || onboarding?.dob || '',
+        time: onboarding?.tob || onboarding?.time_of_birth || onboarding?.time || '',
+        place: onboarding?.place || onboarding?.pob || ''
     });
 
     const handleSubmit = () => {

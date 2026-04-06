@@ -3,13 +3,13 @@
   "main": "expo-router/entry",
   "version": "1.0.1",
   "scripts": {
-    "dev": "npm start",
-    "start": ".\\dev.bat",
-    "android": ".\\run.bat run:android",
-    "ios": ".\\run.bat run:ios",
-    "prebuild": ".\\prebuild.bat",
-    "build:apk": ".\\run-eas.bat build --platform android --profile preview",
-    "lint": ".\\run.bat lint"
+    "dev": "node scripts/dev.js",
+    "start": "node scripts/dev.js",
+    "android": "node scripts/run.js run:android",
+    "ios": "node scripts/run.js run:ios",
+    "prebuild": "node scripts/prebuild.js",
+    "build:apk": "node scripts/run.js build --platform android --profile preview",
+    "lint": "node scripts/run.js lint"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
