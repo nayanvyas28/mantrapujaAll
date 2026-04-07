@@ -18,12 +18,20 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-// 3. Definitive resolution for @react-native/virtualized-lists
-// This specifically points to the nested location inside react-native to fix the resolution error
+// 3. Definitive resolution for monorepo packages
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Handle @react-native/virtualized-lists
   if (moduleName === '@react-native/virtualized-lists') {
     return {
       filePath: path.resolve(projectRoot, 'node_modules/react-native/node_modules/@react-native/virtualized-lists/index.js'),
+      type: 'sourceFile',
+    };
+  }
+
+  // Handle expo-router/entry resolution which often fails in monorepo native builds
+  if (moduleName === 'expo-router/entry' || moduleName.includes('expo-router/entry')) {
+    return {
+      filePath: path.resolve(projectRoot, 'node_modules/expo-router/entry.js'),
       type: 'sourceFile',
     };
   }
@@ -32,7 +40,8 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return context.resolveRequest(context, moduleName, platform);
 };
 
-// 4. Force Metro to resolve (and transform) the app directory correctly
-config.resolver.disableHierarchicalLookup = true;
+// 4. In monorepos, hierarchical lookup should often be false to force nodeModulesPaths,
+// but if we have resolution issues, setting it to false is correct as long as nodeModulesPaths are exhaustive.
+config.resolver.disableHierarchicalLookup = false;
 
 module.exports = config;

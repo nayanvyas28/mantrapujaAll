@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mantra Puja",
     "slug": "mantra-puja",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/app_icon/1024.png",
     "scheme": "mantra-puja",
@@ -14,8 +14,8 @@
     },
     "android": {
       "package": "com.mantrapooja.app",
-      "versionCode": 5,
-      "usesCleartextTraffic": true,
+      "versionCode": 6,
+      "usesCleartextTraffic": false,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/app_icon/1024.png"

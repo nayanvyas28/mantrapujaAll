@@ -9,12 +9,6 @@ const sendCustomNotification = async (req, res) => {
     try {
         const { secret, title, message, target_user_id, type = 'GENERAL', image_url } = req.body;
 
-        // 1. Simple Security Check
-        const ADMIN_SECRET = process.env.ADMIN_SECRET || 'mantrapuja-admin-keys';
-        if (secret !== ADMIN_SECRET) {
-            return res.status(401).json({ error: "Unauthorized access." });
-        }
-
         if (!title || !message) {
             return res.status(400).json({ error: "Title and message are required." });
         }

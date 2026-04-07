@@ -1026,12 +1026,14 @@ export default function HomeScreen() {
         </View>
         */}
 
+        {/* Blog section fully hidden for Play Store compliance
         <View style={{ marginBottom: 24 }}>
           <AnimatedWaveButton
             title={t("home.read_all_insights", "READ ALL SPIRITUAL INSIGHTS")}
             onPress={() => router.push("/blogs" as any)}
           />
         </View>
+        */}
 
         {/* Refer & Earn Promo - Premium Glow Card */}
         <TouchableOpacity 

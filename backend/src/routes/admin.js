@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { sendCustomNotification } = require('../controllers/admin');
-const { saveSettings, getSettings, saveKundliSettings, getKundliSettings } = require('../controllers/settings');
+const { authenticateAdmin } = require('../middleware/auth');
+
+// Apply Auth Middleware to all Admin Routes
+router.use(authenticateAdmin);
 
 // Endpoint: POST /api/admin/notifications/broadcast
 router.post('/notifications/broadcast', sendCustomNotification);
