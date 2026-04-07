@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { FestivalCalendar } from '@/components/festivals/FestivalCalendar';
@@ -32,19 +32,19 @@ export default function FestivalPageWrapper() {
 function FestivalPage() {
     const [allFestivals, setAllFestivals] = useState<any[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [viewingMonth, setViewingMonth] = useState<Date>(new Date());
     const [blogs, setBlogs] = useState<any[]>([]);
     const searchParams = useSearchParams();
-    const [viewMode, setViewMode] = useState<'festivals' | 'calendar'>('festivals');
     const [selectedFestival, setSelectedFestival] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
+    
+    // Refs for auto-scrolling
+    const festivalRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setMounted(true);
-        const view = searchParams.get('view');
-        if (view === 'calendar') {
-            setViewMode('calendar');
-        }
         
         const fetchData = async () => {
             try {
@@ -155,51 +155,25 @@ function FestivalPage() {
         });
         
         setSelectedFestival(festival || null);
+
+        // Auto-scroll to the festival in the sidebar
+        if (festival) {
+            setTimeout(() => {
+                festivalRefs.current[festival.id]?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }, 100);
+        }
     };
 
-    // Corrected filter logic for "Show only 3 cards" and "selected date prioritized"
-    const getDisplayFestivals = () => {
-        if (allFestivals.length === 0) return [];
+    const festivalsInMonth = allFestivals.filter(f => 
+        f.date.getMonth() === viewingMonth.getMonth() && 
+        f.date.getFullYear() === viewingMonth.getFullYear()
+    );
 
-        let result = [];
-        const baseDate = selectedDate || new Date();
-        baseDate.setHours(0, 0, 0, 0);
-
-        // 1. Try to find festival exactly on selected date
-        const onDate = allFestivals.find(f => {
-            const d = new Date(f.date);
-            d.setHours(0, 0, 0, 0);
-            return d.getTime() === baseDate.getTime();
-        });
-
-        if (onDate) {
-            result.push(onDate);
-        }
-
-        // 2. Get upcoming festivals after baseDate (excluding the one already picked)
-        const upcoming = allFestivals.filter(f => {
-            if (onDate && f.id === onDate.id) return false;
-            const d = new Date(f.date);
-            d.setHours(0, 0, 0, 0);
-            return d.getTime() >= baseDate.getTime();
-        });
-
-        result = [...result, ...upcoming];
-
-        // 3. Fallback: if we still need more, take from before baseDate (loop around)
-        if (result.length < 3) {
-            const past = allFestivals.filter(f => {
-                const d = new Date(f.date);
-                d.setHours(0, 0, 0, 0);
-                return d.getTime() < baseDate.getTime();
-            });
-            result = [...result, ...past];
-        }
-
-        return result.slice(0, 3);
-    };
-
-    const displayFestivals = getDisplayFestivals();
+    const monthName = viewingMonth.toLocaleString('default', { month: 'long' });
 
     // Prevent hydration issues
     if (!mounted) return null;
@@ -222,70 +196,44 @@ function FestivalPage() {
             </div>
 
             <div className="container mx-auto px-4 pb-24 relative z-10">
-                {/* Calendar Component - Moved ABOVE for better flow */}
-                {/* View Toggles: High-End Minimalist (Matching Mobile) */}
-                <div className="flex justify-center mb-16 relative z-20">
-                    <div className="inline-flex p-2 bg-white/40 dark:bg-white/5 backdrop-blur-2xl rounded-[24px] border border-white/20 dark:border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.1)]">
-                        <button
-                            onClick={() => setViewMode('festivals')}
-                            className={`px-10 py-4 rounded-[18px] text-[11px] font-black tracking-[0.2em] transition-all duration-500 uppercase ${viewMode === 'festivals' ? 'bg-saffron text-white shadow-2xl shadow-saffron/40 scale-105' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-                        >
-                            Recent / Upcoming
-                        </button>
-                        <button
-                            onClick={() => setViewMode('calendar')}
-                            className={`px-10 py-4 rounded-[18px] text-[11px] font-black tracking-[0.2em] transition-all duration-500 uppercase ${viewMode === 'calendar' ? 'bg-saffron text-white shadow-2xl shadow-saffron/40 scale-105' : 'text-slate-400 hover:text-slate-600 dark:hover:text-white'}`}
-                        >
-                            Hindu Calendar View
-                        </button>
-                    </div>
-                </div>
-
-                {viewMode === 'calendar' ? (
-                    <div className="max-w-5xl mx-auto mb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    {/* Left Column: Interactive Calendar */}
+                    <div className="lg:col-span-8 animate-in fade-in slide-in-from-left-8 duration-1000">
                         <FestivalCalendar
                             festivals={allFestivals}
                             selectedDate={selectedDate}
                             onDateSelect={handleDateSelect}
+                            onMonthChange={setViewingMonth}
                         />
 
-                        {/* Selected Festival Preview Card: "Sacred Scroll" Edition */}
+                        {/* Selected Festival Detail Card */}
                         {selectedDate && (
                             <div className="mt-12 animate-in zoom-in-95 duration-500">
-                                <div className={`relative p-10 md:p-14 rounded-[48px] border overflow-hidden transition-all duration-700 ${selectedFestival ? 'bg-gradient-to-br from-saffron/[0.08] to-amber/[0.02] border-saffron/20 shadow-[0_40px_80px_-15px_rgba(249,115,22,0.15)]' : 'bg-white/50 dark:bg-white/5 border-white/20'}`}>
-                                    
-                                    {/* Scroll Decoration */}
+                                <div className={`relative p-8 md:p-12 rounded-[48px] border overflow-hidden transition-all duration-700 ${selectedFestival ? 'bg-gradient-to-br from-saffron/[0.08] to-amber/[0.02] border-saffron/20 shadow-[0_40px_80px_-15px_rgba(249,115,22,0.15)]' : 'bg-white/50 dark:bg-white/5 border-white/20'}`}>
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-saffron/5 rounded-bl-full -mr-16 -mt-16 blur-3xl" />
                                     
-                                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 relative z-10">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-4 mb-6">
-                                                <div className="px-5 py-2 bg-white dark:bg-white/5 rounded-full text-[11px] font-black text-saffron uppercase tracking-[0.2em] border border-saffron/10 shadow-sm">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="px-4 py-1.5 bg-white dark:bg-white/5 rounded-full text-[10px] font-black text-saffron uppercase tracking-[0.2em] border border-saffron/10 shadow-sm">
                                                     {selectedDate.toLocaleDateString('default', { day: 'numeric', month: 'long', year: 'numeric' })}
                                                 </div>
-                                                {selectedFestival && (
-                                                    <div className="flex items-center gap-2 px-5 py-2 bg-emerald-500/10 rounded-full text-[11px] font-black text-emerald-500 uppercase tracking-[0.2em] border border-emerald-500/20">
-                                                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                                                        Sacred Day
-                                                    </div>
-                                                )}
                                             </div>
-                                            
-                                            <h3 className="text-4xl md:text-5xl font-black mb-4 font-serif text-slate-900 dark:text-white leading-tight">
-                                                {selectedFestival ? selectedFestival.name : "A Peaceful Day"}
+                                            <h3 className="text-3xl md:text-4xl font-black mb-3 font-serif text-slate-900 dark:text-white leading-tight">
+                                                {selectedFestival ? selectedFestival.name : "Peaceful Day"}
                                             </h3>
-                                            <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl font-light">
-                                                {selectedFestival ? selectedFestival.shortDesc : "Take this time for personal reflection and meditation. No major collective festivals are recorded for this date in the Vedic calendar."}
+                                            <p className="text-base text-slate-500 dark:text-slate-400 leading-relaxed font-light line-clamp-3">
+                                                {selectedFestival ? selectedFestival.shortDesc : "A day for personal reflection and spiritual connection with the divine."}
                                             </p>
                                         </div>
 
                                         {selectedFestival && (
                                             <Link
                                                 href={`/festivals/${selectedFestival.slug}`}
-                                                className="group inline-flex items-center justify-center px-12 py-5 bg-saffron text-white font-black rounded-2xl shadow-[0_20px_40px_-10px_rgba(249,115,22,0.4)] hover:shadow-[0_25px_50px_-10px_rgba(249,115,22,0.5)] hover:-translate-y-1 active:translate-y-0 transition-all duration-300 text-[13px] uppercase tracking-widest"
+                                                className="group inline-flex items-center justify-center px-10 py-4 bg-saffron text-white font-black rounded-2xl shadow-lg hover:-translate-y-1 transition-all duration-300 text-xs uppercase tracking-widest whitespace-nowrap"
                                             >
-                                                Discover Significance
-                                                <ArrowRight className="ml-3 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                                Full Insight
+                                                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                             </Link>
                                         )}
                                     </div>
@@ -293,78 +241,72 @@ function FestivalPage() {
                             </div>
                         )}
                     </div>
-                ) : (
-                    /* Upcoming Festivals List: High-End Card Layout */
-                    <div className="mb-24 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                        <div className="text-center mb-12">
-                            <h2 className="text-3xl md:text-4xl font-black font-serif text-slate-900 dark:text-white mb-4">
-                                {selectedDate ? `Events for ${selectedDate.toLocaleDateString('default', { day: 'numeric', month: 'long' })}` : "Upcoming Sacred Timings"}
-                            </h2>
-                            <div className="w-24 h-1 bg-gradient-to-r from-transparent via-saffron to-transparent mx-auto opacity-30" />
-                        </div>
 
-                        <div className="space-y-8">
-                            {displayFestivals.length > 0 ? (
-                                displayFestivals.map((festival) => (
-                                    <Link
-                                        key={festival.id}
-                                        href={`/festivals/${festival.slug}`}
-                                        className={`group block transition-all duration-500 hover:-translate-y-1 ${selectedDate && new Date(festival.date).getDate() === selectedDate.getDate() && new Date(festival.date).getMonth() === selectedDate.getMonth() ? 'scale-105' : ''}`}
-                                    >
-                                        <div className={`p-8 md:p-10 rounded-[40px] border transition-all duration-500 shadow-[0_15px_35px_rgba(0,0,0,0.05)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] flex flex-col md:flex-row gap-8 md:items-center ${selectedDate && new Date(festival.date).getDate() === selectedDate.getDate() && new Date(festival.date).getMonth() === selectedDate.getMonth() ? 'bg-white dark:bg-white/10 border-saffron/40 shadow-[0_30px_70px_-20px_rgba(249,115,22,0.2)]' : 'bg-white/80 dark:bg-white/[0.02] border-white/20 hover:border-saffron/20'}`}>
-                                            
-                                            {/* Date Box: Floating Style */}
-                                            <div className="flex-shrink-0 w-24 h-24 bg-gradient-to-br from-white to-saffron/[0.05] dark:from-white/10 dark:to-saffron/5 rounded-3xl flex flex-col items-center justify-center text-saffron border border-saffron/10 group-hover:border-saffron/30 shadow-sm transition-all duration-500 group-hover:scale-110">
-                                                <span className="text-3xl font-black tracking-tight">{new Date(festival.date).getDate()}</span>
-                                                <span className="text-[11px] uppercase font-black tracking-[0.2em] opacity-60">{new Date(festival.date).toLocaleString('default', { month: 'short' })}</span>
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="flex-grow">
-                                                <div className="flex items-center gap-3 mb-3">
-                                                    <h3 className="text-2xl md:text-3xl font-black font-serif group-hover:text-saffron transition-colors duration-300">
-                                                        {festival.name}
-                                                    </h3>
-                                                    <div className="h-px flex-1 bg-saffron/10" />
-                                                </div>
-                                                <p className="text-slate-500 dark:text-slate-400 text-base leading-relaxed mb-6 line-clamp-2 font-light">
-                                                    {festival.shortDesc}
-                                                </p>
-                                                <div className="flex flex-wrap gap-4">
-                                                    <span className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-saffron text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-saffron/20 hover:shadow-saffron/40 transition-all duration-300">
-                                                        Explore Wisdom <ArrowRight className="w-4 h-4" />
-                                                    </span>
-                                                    <button className="inline-flex items-center gap-2 px-8 py-3 rounded-xl border border-saffron/10 text-saffron text-[11px] font-black uppercase tracking-[0.2em] hover:bg-saffron/5 transition-all duration-300">
-                                                        Prepare Ritual
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))
-                            ) : (
-                                <div className="text-center py-28 bg-white/20 dark:bg-white/[0.02] rounded-[48px] border border-dashed border-saffron/10">
-                                    <Info className="w-16 h-16 text-saffron mx-auto mb-6 opacity-20" />
-                                    <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-[11px]">Heavenly Silence • No Events Found</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {selectedDate && (
-                            <div className="mt-12 text-center animate-in fade-in duration-1000">
-                                <button
-                                    onClick={() => {
-                                        setSelectedDate(null);
-                                        setSelectedFestival(null);
-                                    }}
-                                    className="px-8 py-3 rounded-full border border-saffron/10 text-saffron font-black text-[11px] uppercase tracking-[0.3em] hover:bg-saffron hover:text-white hover:border-saffron transition-all duration-500 shadow-sm"
-                                >
-                                    Universe View / All Upcoming
-                                </button>
+                    {/* Right Column: Month Festival List (Sacred Scroll Sidebar) */}
+                    <div className="lg:col-span-4 animate-in fade-in slide-in-from-right-8 duration-1000 flex flex-col">
+                        <div className="sticky top-24 h-full flex flex-col">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-2xl font-black font-serif text-slate-900 dark:text-white">
+                                    {monthName} <span className="text-saffron">Festivals</span>
+                                </h2>
+                                <span className="px-3 py-1 bg-saffron/10 rounded-full text-[10px] font-black text-saffron uppercase tracking-widest border border-saffron/20">
+                                    {festivalsInMonth.length} Events
+                                </span>
                             </div>
-                        )}
+
+                            <div 
+                                ref={scrollContainerRef}
+                                className="space-y-4 flex-grow overflow-y-auto pr-4 custom-scrollbar lg:max-h-[calc(100vh-350px)]"
+                            >
+                                {festivalsInMonth.length > 0 ? (
+                                    festivalsInMonth.map((festival) => (
+                                        <Link
+                                            key={festival.id}
+                                            ref={(el: HTMLAnchorElement | null) => { if (el) festivalRefs.current[festival.id] = el; }}
+                                            href={`/festivals/${festival.slug}`}
+                                            className={`group block p-6 rounded-[32px] border transition-all duration-500 overflow-hidden relative ${selectedDate && new Date(festival.date).toDateString() === selectedDate.toDateString() ? 'bg-white dark:bg-white/10 border-saffron/40 shadow-xl scale-[1.02]' : 'bg-white/50 dark:bg-white/[0.02] border-white/20 hover:border-saffron/20 hover:bg-white'}`}
+                                        >
+                                            <div className="flex items-center gap-5 relative z-10">
+                                                <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-110 ${selectedDate && new Date(festival.date).toDateString() === selectedDate.toDateString() ? 'bg-saffron text-white border-saffron' : 'bg-white dark:bg-white/10 text-saffron border-saffron/10'}`}>
+                                                    <span className="text-xl font-black">{new Date(festival.date).getDate()}</span>
+                                                    <span className="text-[8px] uppercase font-black tracking-widest opacity-60">{new Date(festival.date).toLocaleString('default', { month: 'short' })}</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="text-lg font-black font-serif mb-1 group-hover:text-saffron transition-colors line-clamp-1">{festival.name}</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-light line-clamp-1">{festival.shortDesc || "Sacred Vedic celebration."}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Subtle Decorative Aura */}
+                                            {selectedDate && new Date(festival.date).toDateString() === selectedDate.toDateString() && (
+                                                <div className="absolute top-0 right-0 w-16 h-16 bg-saffron/10 rounded-bl-full -mr-8 -mt-8 blur-2xl" />
+                                            )}
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="py-20 text-center bg-white/20 dark:bg-white/[0.02] rounded-[40px] border border-dashed border-slate-200 dark:border-white/10">
+                                        <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No major festivals in {monthName}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Today / Scientific View Reset CTA */}
+                            <button 
+                                onClick={() => {
+                                    const today = new Date();
+                                    setSelectedDate(today);
+                                    // Let the calendar component handle its own view month reset if needed, 
+                                    // or we could force a refresh by re-mounting or other state.
+                                }}
+                                className="w-full mt-8 py-4 rounded-2xl border border-dashed border-saffron/30 text-saffron text-[10px] font-black uppercase tracking-[0.2em] hover:bg-saffron/5 transition-all text-center"
+                            >
+                                Jump to Current Date
+                            </button>
+                        </div>
                     </div>
-                )}
+                </div>
+            </div>
 
                 {/* Featured Blog Section - Spiral/Ancient Design (from HomeClient) */}
                 <div className="max-w-6xl mx-auto mt-20">
@@ -443,7 +385,6 @@ function FestivalPage() {
                         </Link>
                     </div>
                 </div>
-            </div>
             <SpiritualFamilySection />
         </div>
     );

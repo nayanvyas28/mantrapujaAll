@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { Festival } from '@/lib/festivalData';
@@ -9,10 +9,18 @@ interface FestivalCalendarProps {
     festivals: Festival[];
     selectedDate: Date | null;
     onDateSelect: (date: Date) => void;
+    onMonthChange?: (date: Date) => void;
 }
 
-export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect }: FestivalCalendarProps) => {
+export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect, onMonthChange }: FestivalCalendarProps) => {
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    // Notify parent when month changes
+    useEffect(() => {
+        if (onMonthChange) {
+            onMonthChange(currentDate);
+        }
+    }, [currentDate.getMonth(), currentDate.getFullYear()]);
 
     const daysInMonth = (date: Date) => {
         return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();

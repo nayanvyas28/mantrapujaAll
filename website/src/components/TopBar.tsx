@@ -21,7 +21,7 @@ const TopBar = () => {
     }, [isCalculatorOpen]);
 
     const topLinks = [
-        { name: "Rashifal", href: "/rashital" },
+        { name: "Rashifal", href: "/rashifal" },
         { name: "Kundli", href: "/kundli" },
         { name: "Calendar 2026", href: "/festivals?view=calendar" },
     ];
