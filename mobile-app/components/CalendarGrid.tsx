@@ -105,6 +105,7 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                 {calendarData.map((item, index) => {
                     const dateKey = formatDateKey(item.date);
                     const isSelected = selectedDate === dateKey;
+                    const isToday = dateKey === formatDateKey(new Date());
                     const festival = festivalsMap[dateKey];
                     const isCurrMonth = item.month === 'current';
                     const isLastInRow = (index + 1) % 7 === 0;
@@ -115,13 +116,16 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                             activeOpacity={0.9}
                             style={[
                                 styles.dayCell,
-                                { borderColor: colors.borderMuted },
+                                { borderColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' },
                                 isLastInRow && { borderRightWidth: 0 },
+                                isToday && {
+                                    backgroundColor: theme === 'dark' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(249, 115, 22, 0.05)',
+                                },
                                 isSelected && {
                                     borderColor: colors.saffron,
                                     borderWidth: 2,
                                     zIndex: 10,
-                                    backgroundColor: theme === 'dark' ? 'rgba(249, 115, 22, 0.05)' : 'rgba(249, 115, 22, 0.02)'
+                                    backgroundColor: theme === 'dark' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(249, 115, 22, 0.08)'
                                 }
                             ]}
                             onPress={() => {
@@ -132,20 +136,33 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                             <View style={styles.dayInner}>
                                 <View style={[
                                     styles.dayNumWrapper,
-                                    isSelected && { backgroundColor: colors.saffron }
+                                    (isSelected || isToday) && { 
+                                        backgroundColor: colors.saffron,
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 16,
+                                        shadowColor: colors.saffron,
+                                        shadowOffset: { width: 0, height: 4 },
+                                        shadowOpacity: 0.3,
+                                        shadowRadius: 8,
+                                        elevation: 6
+                                    }
                                 ]}>
                                     <Typography
                                         variant="body"
-                                        color={isSelected ? '#fff' : (isCurrMonth ? colors.foreground : colors.muted)}
-                                        style={[styles.dayText, isSelected && { fontWeight: 'bold' }]}
+                                        color={(isSelected || isToday) ? '#fff' : (isCurrMonth ? colors.foreground : colors.muted)}
+                                        style={[
+                                            styles.dayText, 
+                                            (isSelected || isToday) && { fontWeight: '900', fontSize: 16 }
+                                        ]}
                                     >
                                         {item.day}
                                     </Typography>
                                 </View>
 
                                 {festival && (
-                                    <View style={[styles.festTag, { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : (theme === 'dark' ? 'rgba(249, 115, 22, 0.15)' : '#fff7ed') }]}>
-                                        <Typography variant="label" color={isSelected ? '#fff' : colors.saffron} numberOfLines={1} style={styles.festTagText}>
+                                    <View style={[styles.festTag, { backgroundColor: (isSelected || isToday) ? 'rgba(255,255,255,0.25)' : (theme === 'dark' ? 'rgba(249, 115, 22, 0.15)' : '#fff7ed') }]}>
+                                        <Typography variant="label" color={(isSelected || isToday) ? '#fff' : colors.saffron} numberOfLines={1} style={styles.festTagText}>
                                             {festival.name.length > 10 ? festival.name.substring(0, 8) + '...' : festival.name}
                                         </Typography>
                                     </View>

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import {
     Users, LayoutDashboard, Settings, LogOut,
     Menu, Bell, Edit3, Package, Globe, FileText,
-    Image as ImageIcon, Server, Database
+    Image as ImageIcon, Server, Database, Zap, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,6 +20,7 @@ import ServerManager from '@/components/admin/ServerManager';
 import CategoryManager from '@/components/admin/CategoryManager';
 import SitemapManager from '@/app/(admin)/admin/sitemaps/page';
 import KundliApiManager from '@/components/admin/KundliApiManager';
+import HoroscopeManager from '@/components/admin/HoroscopeManager';
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -71,6 +72,7 @@ export default function AdminDashboard() {
             case 'categories': return <CategoryManager />;
             case 'server': return <ServerManager />;
             case 'kundli-api': return <KundliApiManager />;
+            case 'horoscope': return <HoroscopeManager />;
             default: return <Overview stats={stats} recentUsers={recentUsers} />;
         }
     };
@@ -104,6 +106,7 @@ export default function AdminDashboard() {
                     <SidebarItem icon={ImageIcon} label="Asset Library" id="assets" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                     <SidebarItem icon={Server} label="Server Config" id="server" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                     <SidebarItem icon={Zap} label="Kundli API" id="kundli-api" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
+                    <SidebarItem icon={Sparkles} label="Rashifal Manager" id="horoscope" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">

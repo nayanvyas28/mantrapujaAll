@@ -52,8 +52,16 @@ export default function NotificationSettingsPage() {
         if (!apiBase) return;
         setIsLoading(true);
         try {
+            // Include Supabase headers for production proxy
+            const headers: any = {
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!}`
+            };
+
             // First try fetching from backend for real-time consistency
-            const res = await fetch(`${apiBase}?secret=${ADMIN_SECRET}&key=notification_config`);
+            const res = await fetch(`${apiBase}?secret=${ADMIN_SECRET}&key=notification_config`, {
+                headers
+            });
             const data = await res.json();
             
             if (data.data) {
@@ -81,18 +89,22 @@ export default function NotificationSettingsPage() {
         setIsSaving(true);
         setMessage(null);
         try {
-            // Must save via Backend API to trigger scheduler refresh
-            const res = await fetch(`${apiBase}`, {
+            // Relay through server-side proxy
+            const res = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    secret: ADMIN_SECRET, 
-                    key: 'notification_config', 
-                    value: notifConfig 
+                    url: apiBase,
+                    method: 'POST',
+                    body: { 
+                        secret: ADMIN_SECRET, 
+                        key: 'notification_config', 
+                        value: notifConfig 
+                    }
                 })
             });
 
-            if (!res.ok) throw new Error('API Synchronization Failed');
+            if (!res.ok) throw new Error('API Proxy Synchronization Failed');
             
             setMessage({ type: 'success', text: 'Notification schedule synchronized and active.' });
         } catch (error: any) {
@@ -112,26 +124,36 @@ export default function NotificationSettingsPage() {
             const baseUrl = apiBase.replace('/astrology/settings', '');
             const broadcastUrl = `${baseUrl}/notifications/broadcast`;
             
-            const res = await fetch(broadcastUrl, {
+            console.log('DIAGNOSTIC_LOG [Auth Check]:', { 
+                hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+                keyPrefix: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.substring(0, 10) 
+            });
+
+            // Relay through server-side proxy
+            const res = await fetch('/api/proxy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    secret: ADMIN_SECRET, 
-                    title: notifConfig.title, 
-                    message: notifConfig.body, // Backend expects 'message'
-                    type: 'DAILY_SUMMARY'
+                    url: broadcastUrl,
+                    method: 'POST',
+                    body: { 
+                        secret: ADMIN_SECRET, 
+                        title: notifConfig.title, 
+                        message: notifConfig.body 
+                    }
                 })
             });
 
             if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || 'Broadcast Failed');
+                const errorData = await res.json().catch(() => ({}));
+                console.error('DIAGNOSTIC_LOG [Proxy Error]:', errorData);
+                throw new Error(`DIAG_ERR_002 [Proxy]: Broadcast failed with status ${res.status}. Error: ${JSON.stringify(errorData)}`);
             }
             
             setMessage({ type: 'success', text: 'Live broadcast sent! Check history in the app.' });
         } catch (error: any) {
-            console.error('Broadcast Error:', error);
-            setMessage({ type: 'error', text: `Broadcast failed: ${error.message}` });
+            console.error('DIAGNOSTIC_LOG [Full Error]:', error);
+            setMessage({ type: 'error', text: `Broadcast failed (DIAG): ${error.message}` });
         } finally {
             setIsBroadcasting(false);
         }

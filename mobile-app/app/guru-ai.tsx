@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2 } from 'lucide-react-native';
+import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2, Check } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +23,13 @@ interface Message {
     text: string;
     type?: 'suggestion' | 'form' | 'details';
     showFillFormButton?: boolean;
-    showConfirmEditButtons?: boolean;
+    showExistingDetailsPrompt?: boolean;
+    existingDetails?: {
+        name: string;
+        dob: string;
+        time: string;
+        place: string;
+    };
 }
 
 export default function GuruAIScreen() {
@@ -252,15 +258,22 @@ export default function GuruAIScreen() {
             const hasDetails = profile?.full_name && (profile?.dob || profile?.onboarding_data?.dob);
             
             setTimeout(() => {
+                const onboarding = profile?.onboarding_data;
+                const hasDetails = profile?.dob && onboarding?.place;
+
                 if (hasDetails) {
-                    const dob = profile?.dob || profile?.onboarding_data?.dob;
-                    const time = profile?.time_of_birth || profile?.onboarding_data?.tob || profile?.onboarding_data?.time || 'Not set';
-                    const place = profile?.onboarding_data?.pob || profile?.onboarding_data?.place || profile?.onboarding_data?.place_of_birth || 'Not set';
-                    
+                    const details = {
+                        name: profile.full_name || 'User',
+                        dob: profile.dob || onboarding.dob || '',
+                        time: onboarding.tob || onboarding.time_of_birth || onboarding.time || '',
+                        place: onboarding.place || onboarding.pob || ''
+                    };
+
                     setChatHistory(prev => [...prev, {
                         role: 'guru',
-                        text: `I found your saved birth details:\n\n• Name: ${profile.full_name}\n• DOB: ${dob}\n• Time: ${time}\n• Place: ${place}\n\nShall I use these for the analysis?`,
-                        showConfirmEditButtons: true
+                        text: `I see your birth details in my cosmic records:\n• Name: ${details.name}\n• DOB: ${details.dob}\n• Time: ${details.time}\n• Place: ${details.place}\n\nWould you like me to use these details for your analysis, or would you like to edit them?`,
+                        showExistingDetailsPrompt: true,
+                        existingDetails: details
                     }]);
                 } else {
                     setChatHistory(prev => [...prev, {
@@ -469,21 +482,29 @@ export default function GuruAIScreen() {
                                 <Typography variant="body" color={colors.saffron} style={{ fontWeight: '600' }}>Please Fill the Form</Typography>
                             </TouchableOpacity>
                         )}
-                        {chat.showConfirmEditButtons && (
-                            <View style={styles.buttonRow}>
+                        {chat.showExistingDetailsPrompt && chat.existingDetails && (
+                            <View style={styles.promptActions}>
                                 <TouchableOpacity
-                                    style={[styles.inlineFormBtn, { borderColor: colors.saffron, backgroundColor: colors.saffron, flex: 1 }]}
-                                    onPress={handleConfirmDetails}
+                                    style={[styles.inlineBtnSmall, { backgroundColor: colors.saffron }]}
+                                    onPress={() => {
+                                        const d = chat.existingDetails!;
+                                        const summary = `My Birth Details:\n• Name: ${d.name}\n• Gender: \n• DOB: ${d.dob}\n• Time: ${d.time}\n• Place: ${d.place}`;
+                                        setChatHistory(prev => prev.map(m => ({ ...m, showExistingDetailsPrompt: false })));
+                                        handleSend(summary, 'kundli');
+                                    }}
                                 >
-                                    <Sparkles size={18} color="#fff" />
-                                    <Typography variant="body" color="#fff" style={{ fontWeight: '600' }}>Confirm</Typography>
+                                    <Check size={16} color="#fff" />
+                                    <Typography variant="label" color="#fff" style={{ fontWeight: '700' }}>CONFIRM & ANALYZE</Typography>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={[styles.inlineFormBtn, { borderColor: colors.saffron, backgroundColor: colors.saffron + '10', flex: 1, marginLeft: 8 }]}
-                                    onPress={() => router.push('/kundli-form')}
+                                    style={[styles.inlineBtnSmall, { borderColor: colors.saffron, borderWidth: 1 }]}
+                                    onPress={() => {
+                                        setChatHistory(prev => prev.map(m => ({ ...m, showExistingDetailsPrompt: false })));
+                                        router.push('/kundli-form');
+                                    }}
                                 >
-                                    <ClipboardList size={18} color={colors.saffron} />
-                                    <Typography variant="body" color={colors.saffron} style={{ fontWeight: '600' }}>Edit Details</Typography>
+                                    <ClipboardList size={16} color={colors.saffron} />
+                                    <Typography variant="label" color={colors.saffron} style={{ fontWeight: '700' }}>EDIT DETAILS</Typography>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -654,10 +675,20 @@ const styles = StyleSheet.create({
         marginTop: 8,
         alignSelf: 'flex-start',
     },
-    buttonRow: {
+    promptActions: {
         flexDirection: 'row',
+        gap: 10,
+        marginTop: 10,
         width: '100%',
-        gap: 0,
+    },
+    inlineBtnSmall: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 12,
+        borderRadius: 14,
     },
     upgradeCard: {
         flexDirection: 'row',

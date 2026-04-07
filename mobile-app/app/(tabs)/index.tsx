@@ -11,7 +11,9 @@ import {
   Heart,
   Sun,
   Users,
-  Wallet
+  Wallet,
+  Sparkles,
+  Search
 } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -105,73 +107,74 @@ export default function HomeScreen() {
     },
   ];
 
+  // 1. Universal Content (Fetched once)
   useEffect(() => {
-    // fetchRecentBlogs(); // Hidden for Play Store Compliance
     fetchPopularPujas();
     fetchOfferPujas();
     fetchUpcomingFestivals();
     fetchDestinations();
     fetchProducts();
+  }, []);
+
+  // 2. User-Specific Content (Fetched when auth/rashi change)
+  useEffect(() => {
     if (!isGuest && userRashi) {
       fetchDailyAstro(userRashi);
-    } else if (!isGuest && !userRashi) {
-      // maybe fetch generic astro or nothing
     }
+  }, [userRashi, isGuest]);
 
-    // --- REALTIME SUBSCRIPTIONS ---
-    // Listen for changes in all 4 main content tables
-    const contentSubscription = supabase
-      .channel('home-content-changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'poojas' },
-        () => {
-          fetchPopularPujas();
-          fetchOfferPujas();
-        }
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'blogs' },
-        () => fetchRecentBlogs()
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'destinations' },
-        () => fetchDestinations()
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'products_99' },
-        () => fetchProducts()
-      )
+  // 3. Realtime Subscriptions (Setup once)
+  useEffect(() => {
+    const channelName = 'home-realtime';
+    const channel = supabase.channel(channelName);
+    
+    channel
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'poojas' }, () => {
+        fetchPopularPujas();
+        fetchOfferPujas();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'blogs' }, () => fetchRecentBlogs())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'destinations' }, () => fetchDestinations())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products_99' }, () => fetchProducts())
       .subscribe();
 
-    // Cleanup subscription on unmount
     return () => {
-      supabase.removeChannel(contentSubscription);
+      supabase.removeChannel(channel);
     };
-  }, [userRashi, isGuest]);
+  }, []);
 
   const fetchDailyAstro = async (rashiName: string) => {
     try {
-      const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const { data, error } = await supabase
-        .from('daily_astro_notif')
-        .select('content')
-        .eq('rashi_name', rashiName)
-        // Adjust date logic depending on timezone, but strictly checking current date string is easiest
-        .eq('target_date', today)
+      const RASHI_MAP: Record<string, string> = {
+        'Mesh': 'aries', 'Vrishabh': 'taurus', 'Mithun': 'gemini',
+        'Karka': 'cancer', 'Simha': 'leo', 'Kanya': 'virgo',
+        'Tula': 'libra', 'Vrishchik': 'scorpio', 'Dhanu': 'sagittarius',
+        'Makar': 'capricorn', 'Kumbh': 'aquarius', 'Meen': 'pisces'
+      };
+      const slug = RASHI_MAP[rashiName] || rashiName.toLowerCase();
+
+      // 1. Get Rashifal Category
+      const { data: category } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', 'rashifal')
         .maybeSingle();
 
-      if (error) {
-        // Silently ignore if table doesn't exist yet (42P01) or row not found (PGRST116)
-        if (error.code !== 'PGRST116' && error.code !== '42P01') {
-          throw error;
-        }
+      if (!category) {
+        setDailyAstro("Your spiritual energy is high today. Check back later for a specific reading.");
+        return;
       }
 
-      if (data && data.content) {
-        // Safe check for JSON reading field
-        const reading = typeof data.content === 'object' ? data.content.reading : data.content;
-        setDailyAstro(sanitizeText(reading) || "Your spiritual energy is high today. Check back later for a specific reading.");
+      // 2. Get Page (Zodiac Sign)
+      const { data: page } = await supabase
+        .from('pages')
+        .select('content')
+        .eq('category_id', category.id)
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (page && page.content && page.content.daily) {
+        setDailyAstro(sanitizeText(page.content.daily));
       } else {
         setDailyAstro("Your spiritual energy is high today. Check back later for a specific reading.");
       }
@@ -440,7 +443,14 @@ export default function HomeScreen() {
       title: "Gau Seva",
       icon: <Heart size={24} color={colors.saffron} />,
       color: theme === "dark" ? "#334155" : "#ffffff",
-      route: "/seva", // Placeholder route
+      route: "/seva", 
+    },
+    {
+      id: "5",
+      title: "Rashifal",
+      icon: <Sparkles size={24} color={colors.saffron} />,
+      color: theme === "dark" ? "#334155" : "#ffffff",
+      route: "/horoscope",
     },
   ];
 
@@ -570,6 +580,31 @@ export default function HomeScreen() {
 
         {/* Astro Section: Kundli & Know Yourself */}
         <AstroSection />
+
+        {/* Daily Rashifal Highlight Card */}
+        {!isGuest && dailyAstro && (
+          <TouchableOpacity 
+            activeOpacity={0.9}
+            onPress={() => router.push("/horoscope")}
+            style={{ marginBottom: 24 }}
+          >
+            <Card variant="solid" style={[styles.astroHighlightCard, { backgroundColor: theme === 'dark' ? '#1e293b' : '#fffcf5', borderColor: colors.saffron + '40' }]}>
+              <View style={styles.astroHighlightHeader}>
+                <View style={styles.astroHighlightIconBox}>
+                  <Sparkles size={20} color={colors.saffron} />
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Typography variant="label" color={colors.saffron} style={{ fontWeight: '800' }}>DAILY RASHIFAL</Typography>
+                  <Typography variant="h3" color={colors.foreground}>{userRashi}</Typography>
+                </View>
+                <ArrowRight size={18} color={colors.saffron} />
+              </View>
+              <Typography variant="bodySmall" color={colors.foreground} numberOfLines={3} style={{ lineHeight: 20 }}>
+                {dailyAstro}
+              </Typography>
+            </Card>
+          </TouchableOpacity>
+        )}
 
         {/* Quick Action Cards (3 cards) */}
         <View style={styles.quickActionsContainer}>
@@ -994,7 +1029,7 @@ export default function HomeScreen() {
         <View style={{ marginBottom: 24 }}>
           <AnimatedWaveButton
             title={t("home.read_all_insights", "READ ALL SPIRITUAL INSIGHTS")}
-            onPress={() => router.push("/blogs")}
+            onPress={() => router.push("/blogs" as any)}
           />
         </View>
 
@@ -1102,6 +1137,8 @@ const styles = StyleSheet.create({
   quickActionsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
+    flexWrap: "wrap",
+    gap: 16,
     marginBottom: 24,
   },
   actionItem: {
@@ -1162,6 +1199,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 16,
     elevation: 3,
+  },
+  astroHighlightCard: {
+    padding: 20,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    elevation: 4,
+    shadowColor: '#f97316',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  astroHighlightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  astroHighlightIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   productImageContainer: {
     width: "100%",

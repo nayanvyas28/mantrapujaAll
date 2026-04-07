@@ -131,12 +131,7 @@ export default function LoginScreen() {
   const [popupMessage, setPopupMessage] = useState("");
   const [popupType, setPopupType] = useState<"error" | "success">("error");
 
-  // Dynamically resolve the local IP address if running via Expo Go
-  // This allows physical devices to connect to backend on :4000 without network errors
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  const BACKEND_URL = Config.backendUrl ||
-    (Platform.OS === 'android' && !debuggerHost ? "http://10.0.2.2:4000/api/auth" : `http://${localIp}:4000/api/auth`);
+  const BACKEND_URL = Config.authApiUrl;
 
   const showPopup = (msg: string, type: "error" | "success" = "error") => {
     setPopupMessage(msg);
@@ -172,10 +167,20 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for initial check
+
     try {
+      console.log(`[Login] Checking user existence: ${BACKEND_URL}/check-user?phone=${normalizedPhone}`);
+      
       // Query the backend to check if the user exists
-      const response = await fetch(`${BACKEND_URL}/check-user?phone=${normalizedPhone}`);
+      const response = await fetch(`${BACKEND_URL}/check-user?phone=${normalizedPhone}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       const checkData = await response.json();
+      console.log("[Login] User check response:", checkData);
 
       if (checkData.exists) {
         // User exists
@@ -184,15 +189,21 @@ export default function LoginScreen() {
         setStep(2); // Go to Password screen for Login
       } else {
         // New user - Send OTP immediately
+        console.log("[Login] New user detected, sending registration OTP...");
         setIsExistingUser(false);
         setAuthPurpose("REGISTER");
+
+        const regController = new AbortController();
+        const regTimeoutId = setTimeout(() => regController.abort(), 15000);
 
         const regRes = await fetch(`${BACKEND_URL}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: normalizedPhone }),
+          signal: regController.signal
         });
 
+        clearTimeout(regTimeoutId);
         if (!regRes.ok) {
           const regData = await regRes.json();
           throw new Error(regData.error || "Failed to send registration OTP");
@@ -203,8 +214,13 @@ export default function LoginScreen() {
         showPopup("Phone number verified. OTP sent for registration.", "success");
       }
     } catch (error: any) {
-      console.error("Phone Check Error:", error.message);
-      showPopup(error.message || "Could not verify phone number. Please try again.", "error");
+      if (error.name === 'AbortError') {
+        console.error("Phone Check Timeout: Server did not respond in 15 seconds.");
+        showPopup("Server Timeout: The backend is taking too long to respond. Please check your internet or try again later.", "error");
+      } else {
+        console.error("Phone Check Error:", error.message);
+        showPopup(error.message || "Could not verify phone number. Please check your connection and try again.", "error");
+      }
     } finally {
       setLoading(false);
     }
@@ -239,11 +255,18 @@ export default function LoginScreen() {
     const performLogin = async () => {
       // --- PRE-LOGIN VERIFICATION CHECK ---
       // Ensure their phone is verified before letting them sign in
+      console.log("[Login] Checking verification status...");
+      const checkVController = new AbortController();
+      const checkVTimeoutId = setTimeout(() => checkVController.abort(), 15000);
+
       const checkRes = await fetch(`${BACKEND_URL}/check-verification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: normalizePhone(phone) }),
+        signal: checkVController.signal
       });
+
+      clearTimeout(checkVTimeoutId);
 
       if (checkRes.status === 403) {
         const checkData = await checkRes.json();
@@ -803,56 +826,58 @@ export default function LoginScreen() {
         </View>
       </ScrollView>
 
-      {/* Custom Popup Modal */}
-      <Modal
-        transparent
-        visible={popupVisible}
-        animationType="fade"
-        onRequestClose={() => setPopupVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: colors.card, borderColor: colors.borderMuted },
-            ]}
-          >
+      {/* Custom Popup Overlay (Replaced Modal to fix Fabric/undefined crash) */}
+      {popupVisible && (
+        <View style={StyleSheet.absoluteFill}>
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity 
+              style={StyleSheet.absoluteFill} 
+              activeOpacity={1} 
+              onPress={() => setPopupVisible(false)} 
+            />
             <View
               style={[
-                styles.popupIconContainer,
-                {
-                  backgroundColor:
-                    popupType === "error"
-                      ? "rgba(239, 68, 68, 0.1)"
-                      : "rgba(34, 197, 94, 0.1)",
-                },
+                styles.modalContent,
+                { backgroundColor: colors.card, borderColor: colors.borderMuted },
               ]}
             >
-              {popupType === "error" ? (
-                <AlertCircle size={32} color="#ef4444" />
-              ) : (
-                <CheckCircle2 size={32} color="#22c55e" />
-              )}
-            </View>
-            <Text style={[styles.popupTitle, { color: colors.foreground }]}>
-              {popupType === "error" ? "Oops!" : "Success!"}
-            </Text>
-            <Text
-              style={[styles.popupMessage, { color: colors.mutedForeground }]}
-            >
-              {popupMessage}
-            </Text>
-            <TouchableOpacity
-              style={[styles.primaryButton, { width: "100%", marginTop: 10 }]}
-              onPress={() => setPopupVisible(false)}
-            >
-              <Text style={styles.primaryButtonText}>
-                {popupType === "error" ? "Try Again" : "Okay"}
+              <View
+                style={[
+                  styles.popupIconContainer,
+                  {
+                    backgroundColor:
+                      popupType === "error"
+                        ? "rgba(239, 68, 68, 0.1)"
+                        : "rgba(34, 197, 94, 0.1)",
+                  },
+                ]}
+              >
+                {popupType === "error" ? (
+                  <AlertCircle size={32} color="#ef4444" />
+                ) : (
+                  <CheckCircle2 size={32} color="#22c55e" />
+                )}
+              </View>
+              <Text style={[styles.popupTitle, { color: colors.foreground }]}>
+                {popupType === "error" ? "Oops!" : "Success!"}
               </Text>
-            </TouchableOpacity>
+              <Text
+                style={[styles.popupMessage, { color: colors.mutedForeground }]}
+              >
+                {popupMessage}
+              </Text>
+              <TouchableOpacity
+                style={[styles.primaryButton, { width: "100%", marginTop: 10 }]}
+                onPress={() => setPopupVisible(false)}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {popupType === "error" ? "Try Again" : "Okay"}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </Modal>
+      )}
     </KeyboardAvoidingView>
   );
 }

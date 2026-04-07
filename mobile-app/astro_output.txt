@@ -1,6 +1,0 @@
-Preparing Astro Data...
-Request Data: {"name":"John Doe","day":12,"month":3,"year":1993,"hour":14,"min":15,"lat":25.3176,"lon":82.9739,"tzone":5.5}
-
-Fetching astro_details...
-SUCCESS! astro_details keys: ascendant, ascendant_lord, Varna, Vashya, Yoni, Gan, Nadi, SignLord, sign, Naksahtra, NaksahtraLord, Charan, Yog, Karan, Tithi, yunja, tatva, name_alphabet, paya
-Sign: Libra Nakshatra: undefined

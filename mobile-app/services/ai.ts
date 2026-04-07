@@ -1,18 +1,6 @@
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
+import { Config } from '../constants/Config';
 
-// The Admin Panel URL where the proxy API is hosted
-// Dynamically resolve local IP for development to fix "Network request failed" in Expo Go
-const debuggerHost = Constants.expoConfig?.hostUri;
-const localIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-
-const DEFAULT_LOCAL_URL = Platform.OS === 'android' && !debuggerHost 
-    ? 'http://10.0.2.2:3000' 
-    : `http://${localIp}:3000`;
-
-// Prioritize dynamic local IP in dev if the env URL points to a local network IP
-// Using environment variable for production readiness
-const ADMIN_API_URL = process.env.EXPO_PUBLIC_ADMIN_URL || 'http://localhost:3001';
+const ADMIN_API_URL = Config.adminApiUrl;
 
 export interface ChatMessage {
     role: 'user' | 'model';

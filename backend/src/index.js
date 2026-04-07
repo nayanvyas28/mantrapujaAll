@@ -3,9 +3,21 @@ const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Load environment variables from the root .env.local
-const envPath = path.join(__dirname, '../../.env.local');
-dotenv.config({ path: envPath });
+// Load environment variables from the root .env or .env.local
+const rootEnvPath = path.join(__dirname, '../../.env');
+const rootEnvLocalPath = path.join(__dirname, '../../.env.local');
+const localEnvPath = path.join(__dirname, '../.env');
+
+// Try each in order of precedence: local .env.local > root .env.local > local .env > root .env
+if (require('fs').existsSync(rootEnvLocalPath)) {
+    dotenv.config({ path: rootEnvLocalPath });
+} else if (require('fs').existsSync(rootEnvPath)) {
+    dotenv.config({ path: rootEnvPath });
+} else if (require('fs').existsSync(localEnvPath)) {
+    dotenv.config({ path: localEnvPath });
+} else {
+    dotenv.config(); // Default to whatever is in the current working directory
+}
 
 // Import Routes
 const authRoutes = require('./routes/auth');

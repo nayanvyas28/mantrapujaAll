@@ -42,17 +42,20 @@ const NorthIndianChart = ({ planets }: { planets: any[] }) => {
     safePlanets.forEach(p => {
         const house = parseInt(p.house);
         if (!housePlanets[house]) housePlanets[house] = [];
-        const name = p.name || '';
-        const shortName = (name === 'Sun' || name === 'सूर्य') ? 'सू' :
-            (name === 'Moon' || name === 'चंद्र') ? 'चं' :
-                (name === 'Mars' || name === 'मंगल') ? 'मं' :
-                    (name === 'Mercury' || name === 'बुध') ? 'बु' :
-                        (name === 'Jupiter' || name === 'गुरु') ? 'गु' :
-                            (name === 'Venus' || name === 'शुक्र') ? 'शु' :
-                                (name === 'Saturn' || name === 'शनि') ? 'श' :
-                                    (name === 'Rahu' || name === 'राहु') ? 'रा' :
-                                        (name === 'Ketu' || name === 'केतु') ? 'के' : name.substring(0, 1);
-        housePlanets[house].push(shortName);
+        const symbolMap: { [key: string]: string } = {
+            'Sun': 'सू', 'सूर्य': 'सू',
+            'Moon': 'चं', 'चंद्र': 'चं',
+            'Mars': 'मं', 'मंगल': 'मं',
+            'Mercury': 'बु', 'बुध': 'बु',
+            'Jupiter': 'गु', 'गुरु': 'गु',
+            'Venus': 'शु', 'शुक्र': 'शु',
+            'Saturn': 'श', 'शनि': 'श',
+            'Rahu': 'रा', 'राहु': 'रा',
+            'Ketu': 'के', 'केतु': 'के',
+            'SUN': 'सू', 'MOON': 'चं', 'MARS': 'मं', 'MERCURY': 'बु', 'JUPITER': 'गु', 'VENUS': 'शु', 'SATURN': 'श', 'RAHU': 'रा', 'KETU': 'के'
+        };
+        const planetSymbol = symbolMap[p.name] || p.name?.substring(0, 1);
+        housePlanets[house].push(planetSymbol);
     });
 
     return (
@@ -233,7 +236,13 @@ export default function KundliPage() {
             birth_location: 'BIRTH LOCATION',
             reveal_chart: 'REVEAL COSMIC CHART',
             node_conn: 'Node-1 Connected: Veda Systems Active',
-            current_age: 'Current Age'
+            current_age: 'Current Age',
+            pdf_report: 'PDF Report',
+            full_name: 'Full Name',
+            birth_date: 'Birth Date',
+            birth_time: 'Birth Time',
+            enter_name: 'Enter Full Name',
+            enter_city: 'Birth City'
         },
         hi: {
             dashboard: 'डैशबोर्ड',
@@ -318,13 +327,19 @@ export default function KundliPage() {
             new_analysis: 'नया विश्लेषण',
             memory: 'स्मृति',
             persistent: 'स्थायी',
-            entity_identity: 'पहचान',
-            calendar_sync: 'कैलेंडर सिंक',
+            entity_identity: 'पूरा नाम',
+            calendar_sync: 'जन्म तिथि',
             chronos_time: 'जन्म समय',
             birth_location: 'जन्म स्थान',
             reveal_chart: 'भाग्य चक्र देखें',
             node_conn: 'नोड-1 कनेक्टेड: वेद सिस्टम्स सक्रिय',
-            current_age: 'वर्तमान आयु'
+            current_age: 'वर्तमान आयु',
+            pdf_report: 'पीडीएफ रिपोर्ट',
+            full_name: 'पूरा नाम',
+            birth_date: 'जन्म तिथि',
+            birth_time: 'जन्म समय',
+            enter_name: 'पूरा नाम दर्ज करें',
+            enter_city: 'जन्म शहर'
         }
     }[language] as any;
 
@@ -592,10 +607,13 @@ export default function KundliPage() {
 
     const formattedBirthDate = isGenerated ? (() => {
         const d = new Date(form.birthDate);
-        const weekday = d.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', { weekday: 'long' }).toUpperCase();
-        const month = d.getMonth() + 1;
+        const dayOfMonth = d.getDate();
+        const weekday = d.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', { weekday: 'long' });
+        const month = d.toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', { month: 'short' });
         const year = d.getFullYear();
-        return `${weekday}/${month}/${year}`;
+        return language === 'hi' 
+            ? `${weekday}, ${dayOfMonth} ${month} ${year}`.toUpperCase()
+            : `${weekday}, ${dayOfMonth} ${month} ${year}`.toUpperCase();
     })() : '';
 
     const { theme, setTheme } = useTheme();
@@ -619,7 +637,7 @@ export default function KundliPage() {
                             <div className="lg:col-span-2 bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-14 border border-zinc-200 dark:border-white/5 relative overflow-hidden group shadow-xl hover:shadow-saffron/5 transition-all">
                                 <Star className="absolute top-10 right-10 text-saffron/5 group-hover:rotate-12 group-hover:scale-125 transition-all duration-1000" size={150} />
                                 <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-saffron/5 rounded-full blur-[80px]" />
-                                <h3 className="text-2xl font-black mb-10 flex items-center gap-3 text-saffron uppercase">
+                                <h3 className="text-xl md:text-2xl font-black mb-10 flex items-center gap-3 text-saffron uppercase">
                                     <Sparkles size={24} className="animate-pulse" /> {t.astrological_core}
                                 </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10 transition-all">
@@ -747,7 +765,18 @@ export default function KundliPage() {
                                         <p className="text-[10px] font-black uppercase text-saffron animate-pulse">{t.syncing}</p>
                                     </div>
                                 ) : apiData?.chart ? (
-                                    <div dangerouslySetInnerHTML={{ __html: apiData.chart }} className="w-full h-full max-w-[500px] aspect-square flex items-center justify-center dark:invert opacity-90 transition-all duration-1000 scale-100 group-hover:scale-105 [&>svg]:w-full [&>svg]:h-auto" />
+                                    <div 
+                                        dangerouslySetInnerHTML={{ 
+                                            __html: apiData.chart.replace(/>([A-Z][a-z]?|Mo|Ra|Ve|Me|Sa|Su|Ju|Ke|Ma)<\/text>/g, (match: string, p1: string) => {
+                                                const mapping: {[key: string]: string} = {
+                                                    'Su': 'सू', 'Mo': 'चं', 'Ma': 'मं', 'Me': 'बु', 'Ju': 'गु', 'Ve': 'शु', 'Sa': 'श', 'Ra': 'रा', 'Ke': 'के',
+                                                    'SUN': 'सू', 'MOON': 'चं', 'MARS': 'मं', 'MERCU': 'बु', 'JUPIT': 'गु', 'VENUS': 'शु', 'SATUR': 'श', 'RAHU': 'रा', 'KETU': 'के'
+                                                };
+                                                return language === 'hi' ? `>${mapping[p1] || p1}</text>` : `>${p1}</text>`;
+                                            })
+                                        }} 
+                                        className="w-full h-full max-w-[500px] aspect-square flex items-center justify-center dark:invert opacity-90 transition-all duration-1000 scale-100 group-hover:scale-105 [&>svg]:w-full [&>svg]:h-auto" 
+                                    />
                                 ) : (
                                     <div className="w-full h-full max-w-[500px] aspect-square flex items-center justify-center">
                                         <NorthIndianChart planets={apiData?.planets || []} />
@@ -1102,7 +1131,7 @@ export default function KundliPage() {
                     {menuItems.map((item) => (
                         <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl transition-all group ${activeTab === item.id ? 'bg-gradient-to-r from-saffron to-amber-500 shadow-xl shadow-saffron/20 text-white' : 'text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}>
                             <item.icon size={20} className={activeTab === item.id ? 'text-white' : 'group-hover:text-saffron transition-all'} />
-                            <span className="hidden md:block font-bold text-[10px] uppercase font-black tracking-widest leading-none">{item.label}</span>
+                            <span className="hidden md:block font-bold text-[14px] uppercase font-black tracking-widest leading-none">{item.label}</span>
                         </button>
                     ))}
                 </nav>
@@ -1129,8 +1158,8 @@ export default function KundliPage() {
                             <form onSubmit={handleGenerate} className="space-y-8 relative z-10 text-left">
                                 <div className="space-y-6">
                                     <div className="group">
-                                        <label className="text-[10px] font-black tracking-widest text-zinc-400 dark:text-zinc-600 block mb-2 px-1 underline decoration-saffron decoration-2 transition-all">{t.entity_identity}</label>
-                                        <input type="text" placeholder="Enter Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 text-xl font-bold outline-none focus:border-saffron text-zinc-900 dark:text-saffron transition-all shadow-sm" required />
+                                        <label className="text-[10px] font-black tracking-widest text-zinc-400 dark:text-zinc-600 block mb-2 px-1 underline decoration-saffron decoration-2 transition-all">{t.full_name}</label>
+                                        <input type="text" placeholder={t.enter_name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 text-xl font-bold outline-none focus:border-saffron text-zinc-900 dark:text-saffron transition-all shadow-sm" required />
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 transition-all">
                                         <div className="group"><label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-2 px-1">{t.calendar_sync}</label><input type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 font-bold text-zinc-900 dark:text-saffron shadow-sm" /></div>
@@ -1139,7 +1168,7 @@ export default function KundliPage() {
                                     <div className="group pt-4 border-t border-zinc-200 dark:border-white/5 transition-all">
                                         <label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-4 px-1 uppercase tracking-tight">{t.birth_location}</label>
                                         <div className="relative">
-                                            <input type="text" placeholder="Birth City" value={form.birthPlace} onChange={(e) => setForm({ ...form, birthPlace: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-3xl p-8 pl-16 outline-none focus:border-saffron font-bold text-zinc-900 dark:text-saffron text-xl shadow-sm transition-all" />
+                                            <input type="text" placeholder={t.enter_city} value={form.birthPlace} onChange={(e) => setForm({ ...form, birthPlace: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-3xl p-8 pl-16 outline-none focus:border-saffron font-bold text-zinc-900 dark:text-saffron text-xl shadow-sm transition-all" />
                                             <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-saffron transition-all" size={28} />
                                         </div>
                                     </div>
@@ -1155,8 +1184,8 @@ export default function KundliPage() {
                         {/* ✨ PREMIUM HEADER (PIXEL-PERFECT MATCH) */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-12 transition-all">
                             <div className="space-y-1">
-                                <h1 className="text-5xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none">
-                                    {menuItems.find(i => i.id === activeTab)?.label || 'Dashboard'}
+                                <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none">
+                                    {menuItems.find(i => i.id === activeTab)?.label || t.dashboard}
                                 </h1>
                                 <p className="text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
                                     ANALYSIS FOR {formattedBirthDate}
@@ -1166,7 +1195,7 @@ export default function KundliPage() {
                             <div className="flex items-center gap-3 flex-wrap">
                                 {/* PDF Report Button */}
                                 <button className="flex items-center gap-2.5 px-6 py-3.5 bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-full font-black text-[11px] uppercase tracking-wider text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all">
-                                    <Download size={16} /> PDF Report
+                                    <Download size={16} /> {t.pdf_report}
                                 </button>
 
                                 {/* Theme Toggle (Circle) */}

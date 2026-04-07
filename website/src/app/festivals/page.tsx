@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { FestivalCalendar } from '@/components/festivals/FestivalCalendar';
 import { festivals, getUpcomingFestivals } from '@/lib/festivalData';
 import EnhancedBackground from '@/components/EnhancedBackground';
@@ -20,15 +21,31 @@ const gradients = [
 
 const icons = ["🕉️", "📜", "🕯️", "✨", "🙏", "🚩"];
 
-export default function FestivalPage() {
+export default function FestivalPageWrapper() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><span className="text-saffron animate-pulse font-black">Aligning Sacred Stars...</span></div>}>
+            <FestivalPage />
+        </Suspense>
+    );
+}
+
+function FestivalPage() {
     const [allFestivals, setAllFestivals] = useState<any[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [viewingMonth, setViewingMonth] = useState<Date>(new Date());
     const [blogs, setBlogs] = useState<any[]>([]);
+    const searchParams = useSearchParams();
+    const [selectedFestival, setSelectedFestival] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [mounted, setMounted] = useState(false);
+    
+    // Refs for auto-scrolling
+    const festivalRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setMounted(true);
+        
         const fetchData = async () => {
             try {
                 const supabase = createClient(
@@ -127,51 +144,36 @@ export default function FestivalPage() {
 
     const handleDateSelect = (date: Date) => {
         setSelectedDate(date);
-    };
-
-    // Corrected filter logic for "Show only 3 cards" and "selected date prioritized"
-    const getDisplayFestivals = () => {
-        if (allFestivals.length === 0) return [];
-
-        let result = [];
-        const baseDate = selectedDate || new Date();
-        baseDate.setHours(0, 0, 0, 0);
-
-        // 1. Try to find festival exactly on selected date
-        const onDate = allFestivals.find(f => {
+        
+        // Find if there is a festival on this date to show in the preview card
+        const festival = allFestivals.find(f => {
             const d = new Date(f.date);
             d.setHours(0, 0, 0, 0);
-            return d.getTime() === baseDate.getTime();
+            const target = new Date(date);
+            target.setHours(0, 0, 0, 0);
+            return d.getTime() === target.getTime();
         });
+        
+        setSelectedFestival(festival || null);
 
-        if (onDate) {
-            result.push(onDate);
+        // Auto-scroll to the festival in the sidebar
+        if (festival) {
+            setTimeout(() => {
+                festivalRefs.current[festival.id]?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                });
+            }, 100);
         }
-
-        // 2. Get upcoming festivals after baseDate (excluding the one already picked)
-        const upcoming = allFestivals.filter(f => {
-            if (onDate && f.id === onDate.id) return false;
-            const d = new Date(f.date);
-            d.setHours(0, 0, 0, 0);
-            return d.getTime() >= baseDate.getTime();
-        });
-
-        result = [...result, ...upcoming];
-
-        // 3. Fallback: if we still need more, take from before baseDate (loop around)
-        if (result.length < 3) {
-            const past = allFestivals.filter(f => {
-                const d = new Date(f.date);
-                d.setHours(0, 0, 0, 0);
-                return d.getTime() < baseDate.getTime();
-            });
-            result = [...result, ...past];
-        }
-
-        return result.slice(0, 3);
     };
 
-    const displayFestivals = getDisplayFestivals();
+    const festivalsInMonth = allFestivals.filter(f => 
+        f.date.getMonth() === viewingMonth.getMonth() && 
+        f.date.getFullYear() === viewingMonth.getFullYear()
+    );
+
+    const monthName = viewingMonth.toLocaleString('default', { month: 'long' });
 
     // Prevent hydration issues
     if (!mounted) return null;
@@ -194,80 +196,117 @@ export default function FestivalPage() {
             </div>
 
             <div className="container mx-auto px-4 pb-24 relative z-10">
-                {/* Calendar Component - Moved ABOVE for better flow */}
-                <div className="max-w-5xl mx-auto mb-20">
-                    <FestivalCalendar
-                        festivals={allFestivals}
-                        selectedDate={selectedDate}
-                        onDateSelect={handleDateSelect}
-                    />
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                    {/* Left Column: Interactive Calendar */}
+                    <div className="lg:col-span-8 animate-in fade-in slide-in-from-left-8 duration-1000">
+                        <FestivalCalendar
+                            festivals={allFestivals}
+                            selectedDate={selectedDate}
+                            onDateSelect={handleDateSelect}
+                            onMonthChange={setViewingMonth}
+                        />
 
-                {/* Upcoming Festivals List */}
-                <div className="mb-20 max-w-4xl mx-auto">
-                    <h2 className="text-3xl font-bold font-serif mb-8 text-center flex items-center justify-center gap-3">
-                        <span className="w-8 h-1 bg-saffron rounded-full"></span>
-                        {selectedDate ? `Festivals for ${selectedDate.toLocaleDateString('default', { day: 'numeric', month: 'long' })}` : "Upcoming Festivals"}
-                        <span className="w-8 h-1 bg-saffron rounded-full"></span>
-                    </h2>
-
-                    <div className="space-y-5">
-                        {displayFestivals.length > 0 ? (
-                            displayFestivals.map((festival) => (
-                                <Link
-                                    key={festival.id}
-                                    href={`/festivals/${festival.slug}`}
-                                    className={`group block bg-card dark:bg-card/80 backdrop-blur-sm border rounded-3xl overflow-hidden hover:border-saffron/30 transition-all duration-300 hover:shadow-lg ${selectedDate && new Date(festival.date).getDate() === selectedDate.getDate() && new Date(festival.date).getMonth() === selectedDate.getMonth() ? 'ring-2 ring-saffron border-saffron/50' : 'border-border/50'}`}
-                                >
-                                    <div className="p-6 md:p-8 flex flex-col md:flex-row gap-6 md:items-center">
-                                        {/* Date Box */}
-                                        <div className="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-saffron/10 to-amber/10 rounded-2xl flex flex-col items-center justify-center text-saffron border border-saffron/20 group-hover:border-saffron/40 group-hover:bg-saffron/5 transition-all">
-                                            <span className="text-2xl font-bold">{festival.date.getDate()}</span>
-                                            <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">{festival.date.toLocaleString('default', { month: 'short' })}</span>
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="flex-grow">
-                                            <h3 className="text-xl md:text-2xl font-bold font-serif mb-2 group-hover:text-saffron transition-colors">
-                                                {festival.name}
-                                                {selectedDate && new Date(festival.date).getDate() === selectedDate.getDate() && new Date(festival.date).getMonth() === selectedDate.getMonth() && (
-                                                    <span className="ml-3 text-xs bg-saffron text-white px-2 py-0.5 rounded-full font-sans uppercase">On Selected Date</span>
-                                                )}
-                                            </h3>
-                                            <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-2">
-                                                {festival.shortDesc}
-                                            </p>
-                                            <div className="flex flex-wrap gap-2">
-                                                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-saffron text-white text-xs font-semibold hover:bg-saffron/90 transition-colors">
-                                                    View Details <ArrowRight className="w-3.5 h-3.5" />
-                                                </span>
-                                                <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border text-muted-foreground text-xs font-semibold hover:border-saffron/50 hover:text-saffron transition-colors">
-                                                    Book Pandit
-                                                </button>
+                        {/* Selected Festival Detail Card */}
+                        {selectedDate && (
+                            <div className="mt-12 animate-in zoom-in-95 duration-500">
+                                <div className={`relative p-8 md:p-12 rounded-[48px] border overflow-hidden transition-all duration-700 ${selectedFestival ? 'bg-gradient-to-br from-saffron/[0.08] to-amber/[0.02] border-saffron/20 shadow-[0_40px_80px_-15px_rgba(249,115,22,0.15)]' : 'bg-white/50 dark:bg-white/5 border-white/20'}`}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-saffron/5 rounded-bl-full -mr-16 -mt-16 blur-3xl" />
+                                    
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="px-4 py-1.5 bg-white dark:bg-white/5 rounded-full text-[10px] font-black text-saffron uppercase tracking-[0.2em] border border-saffron/10 shadow-sm">
+                                                    {selectedDate.toLocaleDateString('default', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                </div>
                                             </div>
+                                            <h3 className="text-3xl md:text-4xl font-black mb-3 font-serif text-slate-900 dark:text-white leading-tight">
+                                                {selectedFestival ? selectedFestival.name : "Peaceful Day"}
+                                            </h3>
+                                            <p className="text-base text-slate-500 dark:text-slate-400 leading-relaxed font-light line-clamp-3">
+                                                {selectedFestival ? selectedFestival.shortDesc : "A day for personal reflection and spiritual connection with the divine."}
+                                            </p>
                                         </div>
+
+                                        {selectedFestival && (
+                                            <Link
+                                                href={`/festivals/${selectedFestival.slug}`}
+                                                className="group inline-flex items-center justify-center px-10 py-4 bg-saffron text-white font-black rounded-2xl shadow-lg hover:-translate-y-1 transition-all duration-300 text-xs uppercase tracking-widest whitespace-nowrap"
+                                            >
+                                                Full Insight
+                                                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                            </Link>
+                                        )}
                                     </div>
-                                </Link>
-                            ))
-                        ) : (
-                            <div className="text-center py-12 bg-card/50 rounded-3xl border border-dashed border-border">
-                                <Info className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                                <p className="text-muted-foreground">No festivals found for this period.</p>
+                                </div>
                             </div>
                         )}
                     </div>
 
-                    {selectedDate && (
-                        <div className="mt-8 text-center">
-                            <button
-                                onClick={() => setSelectedDate(null)}
-                                className="text-saffron font-bold text-sm hover:underline"
+                    {/* Right Column: Month Festival List (Sacred Scroll Sidebar) */}
+                    <div className="lg:col-span-4 animate-in fade-in slide-in-from-right-8 duration-1000 flex flex-col">
+                        <div className="sticky top-24 h-full flex flex-col">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-2xl font-black font-serif text-slate-900 dark:text-white">
+                                    {monthName} <span className="text-saffron">Festivals</span>
+                                </h2>
+                                <span className="px-3 py-1 bg-saffron/10 rounded-full text-[10px] font-black text-saffron uppercase tracking-widest border border-saffron/20">
+                                    {festivalsInMonth.length} Events
+                                </span>
+                            </div>
+
+                            <div 
+                                ref={scrollContainerRef}
+                                className="space-y-4 flex-grow overflow-y-auto pr-4 custom-scrollbar lg:max-h-[calc(100vh-350px)]"
                             >
-                                Clear Selection / Show All Upcoming
+                                {festivalsInMonth.length > 0 ? (
+                                    festivalsInMonth.map((festival) => (
+                                        <Link
+                                            key={festival.id}
+                                            ref={(el: HTMLAnchorElement | null) => { if (el) festivalRefs.current[festival.id] = el; }}
+                                            href={`/festivals/${festival.slug}`}
+                                            className={`group block p-6 rounded-[32px] border transition-all duration-500 overflow-hidden relative ${selectedDate && new Date(festival.date).toDateString() === selectedDate.toDateString() ? 'bg-white dark:bg-white/10 border-saffron/40 shadow-xl scale-[1.02]' : 'bg-white/50 dark:bg-white/[0.02] border-white/20 hover:border-saffron/20 hover:bg-white'}`}
+                                        >
+                                            <div className="flex items-center gap-5 relative z-10">
+                                                <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-110 ${selectedDate && new Date(festival.date).toDateString() === selectedDate.toDateString() ? 'bg-saffron text-white border-saffron' : 'bg-white dark:bg-white/10 text-saffron border-saffron/10'}`}>
+                                                    <span className="text-xl font-black">{new Date(festival.date).getDate()}</span>
+                                                    <span className="text-[8px] uppercase font-black tracking-widest opacity-60">{new Date(festival.date).toLocaleString('default', { month: 'short' })}</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="text-lg font-black font-serif mb-1 group-hover:text-saffron transition-colors line-clamp-1">{festival.name}</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-light line-clamp-1">{festival.shortDesc || "Sacred Vedic celebration."}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Subtle Decorative Aura */}
+                                            {selectedDate && new Date(festival.date).toDateString() === selectedDate.toDateString() && (
+                                                <div className="absolute top-0 right-0 w-16 h-16 bg-saffron/10 rounded-bl-full -mr-8 -mt-8 blur-2xl" />
+                                            )}
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="py-20 text-center bg-white/20 dark:bg-white/[0.02] rounded-[40px] border border-dashed border-slate-200 dark:border-white/10">
+                                        <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No major festivals in {monthName}</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Today / Scientific View Reset CTA */}
+                            <button 
+                                onClick={() => {
+                                    const today = new Date();
+                                    setSelectedDate(today);
+                                    // Let the calendar component handle its own view month reset if needed, 
+                                    // or we could force a refresh by re-mounting or other state.
+                                }}
+                                className="w-full mt-8 py-4 rounded-2xl border border-dashed border-saffron/30 text-saffron text-[10px] font-black uppercase tracking-[0.2em] hover:bg-saffron/5 transition-all text-center"
+                            >
+                                Jump to Current Date
                             </button>
                         </div>
-                    )}
+                    </div>
                 </div>
+            </div>
 
                 {/* Featured Blog Section - Spiral/Ancient Design (from HomeClient) */}
                 <div className="max-w-6xl mx-auto mt-20">
@@ -346,7 +385,6 @@ export default function FestivalPage() {
                         </Link>
                     </div>
                 </div>
-            </div>
             <SpiritualFamilySection />
         </div>
     );

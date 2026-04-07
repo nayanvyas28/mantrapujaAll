@@ -18,6 +18,21 @@ import { useTheme } from '../context/ThemeContext';
 import { sanitizeText } from '../utils/sanitizer';
 import { supabase } from '../utils/supabase';
 
+const RASHI_MAP: Record<string, string> = {
+    'Mesh': 'aries',
+    'Vrishabh': 'taurus',
+    'Mithun': 'gemini',
+    'Karka': 'cancer',
+    'Simha': 'leo',
+    'Kanya': 'virgo',
+    'Tula': 'libra',
+    'Vrishchik': 'scorpio',
+    'Dhanu': 'sagittarius',
+    'Makar': 'capricorn',
+    'Kumbh': 'aquarius',
+    'Meen': 'pisces'
+};
+
 export default function HoroscopeScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
@@ -25,7 +40,8 @@ export default function HoroscopeScreen() {
     const insets = useSafeAreaInsets();
 
     const [loading, setLoading] = useState(true);
-    const [reading, setReading] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'daily' | 'monthly' | 'yearly'>('daily');
+    const [horoscopeData, setHoroscopeData] = useState<any>(null);
     const [rashi, setRashi] = useState<string | null>(profile?.rashi || null);
 
     useEffect(() => {
@@ -40,29 +56,59 @@ export default function HoroscopeScreen() {
     const fetchHoroscope = async (rashiName: string) => {
         setLoading(true);
         try {
-            const now = new Date();
-            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            const { data, error } = await supabase
-                .from('daily_astro_notif')
-                .select('content')
-                .eq('rashi_name', rashiName)
-                .eq('target_date', today)
+            const slug = RASHI_MAP[rashiName] || rashiName.toLowerCase();
+            
+            // 1. Get Rashifal Category
+            const { data: category } = await supabase
+                .from('categories')
+                .select('id')
+                .eq('slug', 'rashifal')
+                .maybeSingle();
+
+            if (!category) {
+                // If category doesn't exist, we'll use fallbacks in the next step
+                setHoroscopeData({
+                    daily: "The stars suggest a day of growth and positive energy. Focus on your spiritual well-being.",
+                    monthly: "Align your intentions with the moon this month for clarity and peace.",
+                    yearly: "2026 is a year of expansion and personal discovery. The cosmos is with you."
+                });
+                setLoading(false);
+                return;
+            }
+
+            // 2. Get Page (Zodiac Sign)
+            const { data: page, error } = await supabase
+                .from('pages')
+                .select('*')
+                .eq('category_id', category.id)
+                .eq('slug', slug)
                 .maybeSingle();
 
             if (error) console.error("Horoscope Fetch Error:", error);
 
-            if (data && data.content) {
-                const content = typeof data.content === 'object' ? data.content.reading : data.content;
-                setReading(sanitizeText(content) || "The cosmic energy today encourages spiritual reflection and inner peace.");
+            if (page && page.content) {
+                setHoroscopeData(page.content);
             } else {
-                setReading(sanitizeText("The stars suggest a day of growth and positive energy for you. Take a moment to meditate on your goals."));
+                // Fallback / Placeholder
+                setHoroscopeData({
+                    daily: "The stars suggest a day of growth and positive energy for you. Take a moment to meditate on your goals.",
+                    monthly: "Align your actions with celestial patterns this month for peak spiritual harmony.",
+                    yearly: "2026 is a year of transformation and deep spiritual realization for your sign."
+                });
             }
         } catch (err) {
-            setReading(sanitizeText("Consult the divine within. Today's forecast is clouded, but your inner light remains bright."));
+            console.error("Fetch Error:", err);
+            setHoroscopeData({
+                daily: "Consult the divine within. Today's forecast is clouded, but your inner light remains bright.",
+                monthly: "Focus on inner peace and character building throughout this lunar cycle.",
+                yearly: "Your journey this year is one of discovery and spiritual awakening."
+            });
         } finally {
             setLoading(false);
         }
     };
+
+    const reading = horoscopeData ? horoscopeData[activeTab] : null;
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -94,9 +140,12 @@ export default function HoroscopeScreen() {
                     </Card>
                 ) : (
                     <>
-                        <Card variant="solid" style={styles.readingCard}>
+                        <Card variant="solid" style={[styles.readingCard, { backgroundColor: theme === 'dark' ? colors.card : '#fffcf5' }]}>
                             <View style={styles.rashiHeader}>
-                                <Typography variant="h2" color={colors.saffron}>{rashi}</Typography>
+                                <View>
+                                    <Typography variant="h2" color={colors.saffron}>{rashi}</Typography>
+                                    <Typography variant="label" color={colors.mutedForeground} style={{ marginTop: 2 }}>Zodiac Insight</Typography>
+                                </View>
                                 <TouchableOpacity onPress={() => router.push("/zodiac")}>
                                     <View style={[styles.changeBadge, { backgroundColor: colors.saffron + '15' }]}>
                                         <RefreshCw size={14} color={colors.saffron} />
@@ -105,7 +154,29 @@ export default function HoroscopeScreen() {
                                 </TouchableOpacity>
                             </View>
 
-                            <View style={styles.divider} />
+                            {/* Tab Selection */}
+                            <View style={[styles.tabContainer, { backgroundColor: theme === 'dark' ? colors.background : '#f8f4e9', borderColor: colors.borderMuted }]}>
+                                {(['daily', 'monthly', 'yearly'] as const).map((tab) => (
+                                    <TouchableOpacity 
+                                        key={tab}
+                                        onPress={() => setActiveTab(tab)}
+                                        style={[
+                                            styles.tabItem, 
+                                            activeTab === tab && [styles.activeTabItem, { backgroundColor: colors.saffron }]
+                                        ]}
+                                    >
+                                        <Typography 
+                                            variant="label" 
+                                            color={activeTab === tab ? '#fff' : colors.mutedForeground}
+                                            style={{ fontWeight: '800', textTransform: 'uppercase' }}
+                                        >
+                                            {tab}
+                                        </Typography>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            <View style={[styles.divider, { backgroundColor: colors.borderMuted }]} />
 
                             {loading ? (
                                 <View style={styles.loaderContainer}>
@@ -114,8 +185,8 @@ export default function HoroscopeScreen() {
                                 </View>
                             ) : (
                                 <View style={styles.readingBox}>
-                                    <Typography variant="body" style={styles.readingText}>
-                                        {reading}
+                                    <Typography variant="body" style={[styles.readingText, { color: colors.foreground }]}>
+                                        {sanitizeText(reading)}
                                     </Typography>
                                 </View>
                             )}
@@ -125,7 +196,7 @@ export default function HoroscopeScreen() {
                             style={[styles.aiButton, { backgroundColor: colors.card, borderColor: colors.saffron }]}
                             onPress={() => router.push({
                                 pathname: "/guru-ai",
-                                params: { message: `Analyze my horoscope for ${rashi}` }
+                                params: { message: `Analyze my ${activeTab} horoscope for ${rashi}` }
                             })}
                         >
                             <MessageSquare size={20} color={colors.saffron} />
@@ -168,30 +239,52 @@ const styles = StyleSheet.create({
     },
     readingCard: {
         padding: 24,
-        borderRadius: 24,
-        minHeight: 300,
-        elevation: 4,
+        borderRadius: 32,
+        minHeight: 400,
+        elevation: 8,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+        borderWidth: 1.5,
+        borderColor: 'rgba(249, 115, 22, 0.1)',
     },
     rashiHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 24,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        padding: 4,
+        borderRadius: 20,
+        marginBottom: 24,
+        borderWidth: 1,
+    },
+    tabItem: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 16,
+    },
+    activeTabItem: {
+        elevation: 4,
+        shadowColor: '#f97316',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
     changeBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 8,
         borderRadius: 20,
     },
     divider: {
         height: 1,
-        backgroundColor: '#e2e8f0',
-        marginVertical: 20,
+        marginBottom: 24,
     },
     loaderContainer: {
         padding: 40,
@@ -201,16 +294,22 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
     readingText: {
-        lineHeight: 28,
+        lineHeight: 30,
         fontSize: 18,
+        fontWeight: '500',
     },
     aiButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 16,
-        borderRadius: 16,
-        borderWidth: 1.5,
+        paddingVertical: 18,
+        borderRadius: 24,
+        borderWidth: 2,
         marginTop: 24,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
     }
 });
