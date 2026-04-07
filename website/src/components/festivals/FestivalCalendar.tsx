@@ -99,35 +99,35 @@ export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect, onMont
                 </svg>
             </div>
 
-            {/* Calendar Header: Centered & Premium (Sacred Theme) */}
-            <div className="flex flex-col items-center justify-center p-10 md:p-14 bg-gradient-to-b from-saffron/[0.08] to-transparent border-b border-saffron/10 relative z-10">
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-2xl flex items-center justify-center shadow-lg border border-saffron/20 group-hover/cal:scale-110 transition-transform duration-500">
-                        <CalendarIcon className="w-7 h-7 text-saffron drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+            {/* Calendar Header: Slimmer & More Proportional */}
+            <div className="flex flex-col items-center justify-center p-4 md:p-6 bg-gradient-to-b from-saffron/[0.08] to-transparent border-b border-saffron/10 relative z-10">
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="w-8 h-8 bg-white dark:bg-white/5 rounded-lg flex items-center justify-center shadow-md border border-saffron/20 group-hover/cal:scale-110 transition-transform duration-500">
+                        <CalendarIcon className="w-4 h-4 text-saffron drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-saffron/60 mb-1">Sacred Timings</span>
-                        <h2 className="text-4xl md:text-5xl font-black font-serif text-slate-900 dark:text-white tracking-tight">
+                        <span className="text-[8px] font-black uppercase tracking-[0.3em] text-saffron/60 mb-0.5">Sacred Timings</span>
+                        <h2 className="text-2xl md:text-3xl font-black font-serif text-slate-900 dark:text-white tracking-tight">
                             {monthNames[currentDate.getMonth()]} <span className="text-saffron italic">{currentDate.getFullYear()}</span>
                         </h2>
                     </div>
                 </div>
                 
-                <div className="flex bg-white dark:bg-white/5 rounded-2xl border border-saffron/10 p-1.5 shadow-xl backdrop-blur-md">
+                <div className="flex bg-white dark:bg-white/5 rounded-lg border border-saffron/10 p-0.5 shadow-md backdrop-blur-md">
                     <button
                         onClick={prevMonth}
-                        className="p-4 rounded-xl hover:bg-saffron/10 text-slate-400 hover:text-saffron transition-all active:scale-90"
+                        className="p-2 rounded-md hover:bg-saffron/10 text-slate-400 hover:text-saffron transition-all active:scale-90"
                         aria-label="Previous Month"
                     >
-                        <ChevronLeft className="w-6 h-6" />
+                        <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <div className="w-px h-8 bg-saffron/10 self-center mx-2" />
+                    <div className="w-px h-5 bg-saffron/10 self-center mx-1.5" />
                     <button
                         onClick={nextMonth}
-                        className="p-4 rounded-xl hover:bg-saffron/10 text-slate-400 hover:text-saffron transition-all active:scale-90"
+                        className="p-2 rounded-md hover:bg-saffron/10 text-slate-400 hover:text-saffron transition-all active:scale-90"
                         aria-label="Next Month"
                     >
-                        <ChevronRight className="w-6 h-6" />
+                        <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -142,7 +142,7 @@ export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect, onMont
                     {/* Weekday Headers - Strong & Structured */}
                     <div className="grid grid-cols-7 border-b-2 border-saffron/10 bg-saffron/[0.05] dark:bg-white/[0.03]">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                            <div key={day} className="py-6 text-center text-[11px] md:text-xs font-black uppercase tracking-[0.25em] text-saffron/80 dark:text-saffron">
+                            <div key={day} className="py-4 text-center text-[10px] md:text-xs font-black uppercase tracking-[0.2em] text-saffron/80 dark:text-saffron">
                                 {day}
                             </div>
                         ))}
@@ -152,7 +152,7 @@ export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect, onMont
                     <div className="grid grid-cols-7 auto-rows-fr relative z-10">
                         {calendarDays.map((date, index) => {
                             if (!date) {
-                                return <div key={`empty-${index}`} className="min-h-[110px] md:min-h-[140px] border-b border-r border-saffron/10 bg-white/[0.01] dark:bg-black/[0.1]"></div>;
+                                return <div key={`empty-${index}`} className="min-h-[75px] md:min-h-[95px] border-b border-r border-saffron/10 bg-white/[0.01] dark:bg-black/[0.1]"></div>;
                             }
 
                             const dayFestivals = getFestivalsForDate(date);
@@ -163,10 +163,10 @@ export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect, onMont
                                 <div
                                     key={date.toISOString()}
                                     onClick={() => onDateSelect(date)}
-                                    className={`min-h-[110px] md:min-h-[140px] border-b border-r border-saffron/20 p-5 relative group/cell cursor-pointer transition-all duration-300 hover:bg-saffron/[0.06] dark:hover:bg-white/[0.03] ${today ? 'bg-saffron/[0.08]' : 'bg-white/40 dark:bg-transparent'} ${selected ? 'bg-saffron/[0.12] ring-[3px] ring-inset ring-saffron shadow-lg' : ''}`}
+                                    className={`min-h-[75px] md:min-h-[95px] border-b border-r border-saffron/20 p-3 relative group/cell cursor-pointer transition-all duration-300 hover:bg-saffron/[0.06] dark:hover:bg-white/[0.03] ${today ? 'bg-saffron/[0.08]' : 'bg-white/40 dark:bg-transparent'} ${selected ? 'bg-saffron/[0.12] ring-[3px] ring-inset ring-saffron shadow-lg' : ''}`}
                                 >
                                     <div className="flex flex-col h-full bg-transparent">
-                                        <span className={`text-[18px] font-black inline-flex w-11 h-11 items-center justify-center rounded-[18px] transition-all duration-500 transform group-hover/cell:scale-110 shadow-sm ${today ? 'bg-saffron text-white shadow-2xl shadow-saffron/40 scale-115 rotate-3' : (selected ? 'bg-saffron text-white shadow-xl shadow-saffron/30' : 'text-slate-800 dark:text-slate-200 group-hover/cell:text-saffron group-hover/cell:bg-white dark:group-hover/cell:bg-white/10 group-hover/cell:shadow-md')}`}>
+                                        <span className={`text-[15px] font-black inline-flex w-9 h-9 items-center justify-center rounded-[14px] transition-all duration-500 transform group-hover/cell:scale-110 shadow-sm ${today ? 'bg-saffron text-white shadow-2xl shadow-saffron/40 scale-110 rotate-3' : (selected ? 'bg-saffron text-white shadow-xl shadow-saffron/30' : 'text-slate-800 dark:text-slate-200 group-hover/cell:text-saffron group-hover/cell:bg-white dark:group-hover/cell:bg-white/10 group-hover/cell:shadow-md')}`}>
                                             {date.getDate()}
                                         </span>
 

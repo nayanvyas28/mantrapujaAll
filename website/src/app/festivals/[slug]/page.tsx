@@ -26,6 +26,30 @@ export default async function FestivalDetailPage({ params }: PageProps) {
         notFound();
     }
 
+    // --- INTELLIGENT FALLBACKS ---
+    // Standard Vedic Rituals if the DB is empty
+    const defaultRituals = [
+        { name: "Mantra Japa", description: "Sacred chanting of specialized mantras to align with the cosmic energy of this day.", timing: "Brahma Muhurat" },
+        { name: "Daan (Charity)", description: "Offering food, clothes, or support to the needy as a gesture of selflessness.", timing: "During the day" },
+        { name: "Sattvic Aahar", description: "Consuming pure, light, and vegetarian food to maintain spiritual clarity.", timing: "Whole day" }
+    ];
+
+    // Standard Festival FAQs if the DB is empty
+    const defaultFaqs = [
+        { 
+            question: "What is the primary spiritual goal of this festival?", 
+            answer: "The goal is to cleanse the mind, seek divine blessings, and align one's inner consciousness with the cyclic patterns of the universe." 
+        },
+        { 
+            question: "How can I participate if I am far from a temple?", 
+            answer: "Physical presence is secondary to internal devotion. You can light a lamp (Diya), meditate on the deity, and perform simple puja at your home altar." 
+        },
+        { 
+            question: "Are there specific dietary guidelines for this day?", 
+            answer: "Most Vedic festivals recommend a Sattvic diet—avoiding onion, garlic, and non-vegetarian food to keep the body light for meditation." 
+        }
+    ];
+
     // Map database structure to the interface expected by FestivalDetailClient
     const mappedFestival: any = {
         ...festivalData,
@@ -33,21 +57,24 @@ export default async function FestivalDetailPage({ params }: PageProps) {
         name: festivalData.name,
         slug: festivalData.slug,
         date: new Date(festivalData.date),
-        shortDesc: festivalData.description,
-        description: festivalData.description,
+        shortDesc: festivalData.description || "A sacred day of Vedic significance.",
         heroImage: festivalData.images?.[0] || 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220',
         significance: {
-            mythology: festivalData.content?.significance || festivalData.description,
-            cultural: festivalData.content?.rituals?.join(', ') || 'Authentic Vedic traditions and celebrations.',
-            spiritual: festivalData.content?.spiritual || 'Seeking divine blessings and inner purification.'
+            mythology: festivalData.content?.significance || festivalData.description || "Ancient scriptures highlight this as a day of divine victory and spiritual awakening.",
+            cultural: festivalData.content?.cultural || "Observed with traditional prayers, regional gatherings, and sacred observances.",
+            spiritual: festivalData.content?.spiritual || festivalData.description || "Focusing on 'Antaryatra' (inner journey) to attain higher consciousness."
         },
-        rituals: festivalData.content?.rituals?.map((r: string) => ({
-            name: r,
-            description: "Traditional vedic ritual performed with devotion.",
-            timing: "Auspicious Muhurat"
-        })) || [],
-        regionalVariations: festivalData.content?.regional_names || {},
-        faqs: festivalData.content?.faqs || [],
+        rituals: (festivalData.content?.rituals && festivalData.content.rituals.length > 0) 
+            ? festivalData.content.rituals.map((r: any) => ({
+                name: typeof r === 'string' ? r : (r.name || "Sacred Ritual"),
+                description: r.description || "Traditional Vedic ritual performed with deep devotion.",
+                timing: r.timing || "Auspicious Muhurat"
+            })) 
+            : defaultRituals,
+        regionalVariations: festivalData.content?.regional_names || null, // Set to null to trigger hiding if empty
+        faqs: (festivalData.content?.faqs && festivalData.content.faqs.length > 0)
+            ? festivalData.content.faqs
+            : defaultFaqs,
         gallery: []
     };
 
