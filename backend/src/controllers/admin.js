@@ -1,4 +1,5 @@
 const { supabase } = require('../utils/supabase');
+const { resolveNotificationPlaceholders } = require('../utils/astroResolver');
 
 /**
  * Handle Notification Broadcasts from Admin Panel
@@ -18,10 +19,14 @@ const sendCustomNotification = async (req, res) => {
             return res.status(400).json({ error: "Title and message are required." });
         }
 
+        // 1.1 Resolve Placeholders for Broadcasts (e.g. {tithi}, {festivals})
+        const resolvedTitle = await resolveNotificationPlaceholders(title);
+        const resolvedMessage = await resolveNotificationPlaceholders(message);
+
         // 2. Insert into Supabase `notifications` table so it appears in the App Inbox permanently
         const { data: newNotification, error: dbError } = await supabase
             .from('notifications')
-            .insert([{ title, message, target_user_id, type, image_url }])
+            .insert([{ title: resolvedTitle, message: resolvedMessage, target_user_id, type, image_url }])
             .select()
             .single();
 
@@ -53,8 +58,8 @@ const sendCustomNotification = async (req, res) => {
             messages.push({
                 to: pushToken,
                 sound: 'default',
-                title: title,
-                body: message,
+                title: resolvedTitle,
+                body: resolvedMessage,
                 data: { notificationId: newNotification.id, type },
             });
         }

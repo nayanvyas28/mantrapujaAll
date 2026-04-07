@@ -9,6 +9,8 @@ import { ArrowLeft, Bell, Gift, Info } from 'lucide-react-native';
 import { supabase } from '../../utils/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Sun, Sparkles, Megaphone, Calendar as CalendarIcon } from 'lucide-react-native';
 
 type Notification = {
     id: string;
@@ -121,15 +123,51 @@ export default function NotificationsScreen() {
 
     const getIconForType = (type: string) => {
         switch (type) {
-            case 'PROMO': return <Gift size={20} color={colors.saffron} />;
-            case 'BOOKING_UPDATE': return <Bell size={20} color={colors.saffron} />;
-            default: return <Info size={20} color={colors.saffron} />;
+            case 'DAILY_SUMMARY': return <Sun size={22} color={colors.saffron} />;
+            case 'PROMO': return <Gift size={22} color="#f43f5e" />;
+            case 'NEWS': return <Megaphone size={22} color="#0ea5e9" />;
+            case 'BOOKING_UPDATE': return <CalendarIcon size={22} color="#10b981" />;
+            default: return <Sparkles size={22} color={colors.saffron} />;
         }
     };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const renderMessageWithChips = (message: string) => {
+        // Regex to find [TYPE: content]
+        const markerRegex = /\[(TITHI|FEST):\s*([^\]]+)\]/g;
+        const chips: React.ReactNode[] = [];
+        let cleanMessage = message;
+
+        let match;
+        while ((match = markerRegex.exec(message)) !== null) {
+            const type = match[1];
+            const content = match[2];
+            
+            chips.push(
+                <View key={`${type}-${content}`} style={[styles.dataChip, { backgroundColor: type === 'TITHI' ? colors.saffron + '15' : 'rgba(16, 185, 129, 0.1)' }]}>
+                    {type === 'TITHI' ? <Moon size={12} color={colors.saffron} /> : <Sparkles size={12} color="#10b981" />}
+                    <Typography variant="label" style={{ fontSize: 10, marginLeft: 4, textTransform: 'none' }} color={type === 'TITHI' ? colors.saffron : '#10b981'}>
+                        {content}
+                    </Typography>
+                </View>
+            );
+            
+            // Remove the marker from the clean message
+            cleanMessage = cleanMessage.replace(match[0], '');
+        }
+
+        return (
+            <View>
+                {chips.length > 0 && <View style={styles.chipsContainer}>{chips}</View>}
+                <Typography variant="bodySmall" color={colors.foreground} style={{ marginTop: 6, lineHeight: 20, opacity: 0.9, fontWeight: '400' }}>
+                    {cleanMessage.trim().replace(/\s+/g, ' ')}
+                </Typography>
+            </View>
+        );
     };
 
     return (
@@ -142,7 +180,14 @@ export default function NotificationsScreen() {
                     <ArrowLeft size={24} color={colors.foreground} />
                 </TouchableOpacity>
                 <Typography variant="h2" color={colors.foreground}>{t('notifications.title', 'Notifications')}</Typography>
-                <View style={{ width: 40 }} />
+                
+                {notifications.some(n => !n.is_read) ? (
+                    <TouchableOpacity onPress={() => notifications.forEach(n => markAsRead(n.id, n.is_read))}>
+                        <Typography variant="label" color={colors.saffron} style={{ fontSize: 10 }}>Mark All Read</Typography>
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 60 }} />
+                )}
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -162,35 +207,57 @@ export default function NotificationsScreen() {
                             activeOpacity={0.8}
                             onPress={() => markAsRead(notif.id, notif.is_read)}
                             style={[
-                                styles.notifCard,
-                                { backgroundColor: notif.is_read ? (theme === 'dark' ? '#1e293b' : '#f8fafc') : (theme === 'dark' ? '#334155' : '#ffffff'), borderColor: colors.borderMuted },
-                                !notif.is_read && { borderColor: colors.saffron, borderWidth: 1 }
+                                styles.premiumCard,
+                                { 
+                                    backgroundColor: theme === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff',
+                                    borderColor: notif.is_read ? colors.borderMuted : colors.saffron + '60',
+                                    borderWidth: notif.is_read ? 1 : 1.5,
+                                }
                             ]}
                         >
+                            {!notif.is_read && (
+                                <LinearGradient
+                                    colors={[colors.saffron, '#fb923c']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.newBadgeGradient}
+                                >
+                                    <Typography variant="label" style={{ fontSize: 9, color: '#fff', fontWeight: '900' }}>NEW</Typography>
+                                </LinearGradient>
+                            )}
+                            
                             <View style={styles.cardHeader}>
-                                <View style={[styles.iconBox, { backgroundColor: notif.is_read ? 'transparent' : colors.saffron + '15' }]}>
+                                <View style={[styles.styledIconBox, { backgroundColor: theme === 'dark' ? '#1e293b' : '#f8fafc', borderColor: notif.is_read ? colors.borderMuted : colors.saffron + '30' }]}>
                                     {getIconForType(notif.type)}
                                 </View>
                                 <View style={styles.notifInfo}>
                                     <View style={styles.titleRow}>
-                                        <Typography variant="body" style={{ fontWeight: notif.is_read ? '500' : '700' }} color={colors.foreground}>
+                                        <Typography variant="body" style={{ fontWeight: '800', letterSpacing: -0.3, fontSize: 17 }} color={colors.foreground}>
                                             {notif.title}
                                         </Typography>
-                                        {!notif.is_read && <View style={[styles.unreadDot, { backgroundColor: colors.saffron }]} />}
                                     </View>
 
-                                    <Typography variant="bodySmall" color={colors.mutedForeground} style={{ marginTop: 4, opacity: notif.is_read ? 0.8 : 1 }}>
-                                        {notif.message}
-                                    </Typography>
+                                    {renderMessageWithChips(notif.message)}
 
-                                    <Typography variant="label" color={colors.muted} style={{ marginTop: 8 }}>
-                                        {formatDate(notif.created_at)}
-                                    </Typography>
+                                    <View style={styles.metaRow}>
+                                        <Typography variant="label" color={colors.muted} style={{ fontSize: 10, fontWeight: '700' }}>
+                                            {formatDate(notif.created_at)}
+                                        </Typography>
+                                        <View style={[styles.typeTag, { backgroundColor: notif.type === 'DAILY_SUMMARY' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(99, 102, 241, 0.1)' }]}>
+                                            <Typography variant="label" style={{ fontSize: 9, color: notif.type === 'DAILY_SUMMARY' ? colors.saffron : '#6366f1' }}>
+                                                {notif.type === 'DAILY_SUMMARY' ? '✨ SPIRITUAL' : notif.type}
+                                            </Typography>
+                                        </View>
+                                    </View>
                                 </View>
                             </View>
 
                             {notif.image_url && (
-                                <Image source={{ uri: notif.image_url }} style={styles.notificationImage} resizeMode="cover" />
+                                <Image source={{ uri: notif.image_url }} style={styles.premiumImage} resizeMode="cover" />
+                            )}
+                            
+                            {!notif.is_read && (
+                                <View style={[styles.unreadGlow, { backgroundColor: colors.saffron }]} />
                             )}
                         </TouchableOpacity>
                     ))
@@ -225,28 +292,44 @@ const styles = StyleSheet.create({
         padding: 24,
         paddingBottom: 40,
     },
-    notifCard: {
-        padding: 16,
-        borderRadius: 12,
-        shadowColor: '#0f172a',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.04,
-        shadowRadius: 12,
-        elevation: 1,
+    premiumCard: {
+        padding: 18,
+        borderRadius: 24,
         marginBottom: 16,
-        borderWidth: 1,
+        position: 'relative',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 15,
+        elevation: 4,
+    },
+    newBadgeGradient: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderBottomLeftRadius: 16,
+        zIndex: 5,
     },
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'flex-start',
     },
-    iconBox: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+    styledIconBox: {
+        width: 56,
+        height: 56,
+        borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 16,
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
     },
     notifInfo: {
         flex: 1,
@@ -256,15 +339,44 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    unreadDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 14,
     },
-    notificationImage: {
+    typeTag: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    premiumImage: {
         width: '100%',
-        height: 150,
-        borderRadius: 12,
+        height: 160,
+        borderRadius: 16,
         marginTop: 16,
+    },
+    chipsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 4,
+        marginBottom: 4,
+    },
+    dataChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.05)',
+    },
+    unreadGlow: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: 4,
     }
 });

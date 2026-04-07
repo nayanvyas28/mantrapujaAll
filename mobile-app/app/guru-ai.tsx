@@ -204,8 +204,8 @@ export default function GuruAIScreen() {
             const { name, gender, dob, time, place } = params;
             const summary = `My Birth Details:\n• Name: ${name}\n• Gender: ${gender}\n• DOB: ${dob}\n• Time: ${time}\n• Place: ${place}`;
 
-            // Remove the "Fill Form" button from previous messages
-            setChatHistory(prev => prev.map(m => ({ ...m, showFillFormButton: false })));
+            // Remove the "Fill Form" and "Confirm" buttons from previous messages
+            setChatHistory(prev => prev.map(m => ({ ...m, showFillFormButton: false, showConfirmEditButtons: false })));
 
             // Send the details as a user message
             handleSend(summary, 'kundli');
@@ -214,6 +214,22 @@ export default function GuruAIScreen() {
             router.setParams({ kundliSubmitted: undefined });
         }
     }, [params, handleSend, router]);
+
+    const handleConfirmDetails = useCallback(() => {
+        const dob = profile?.dob || profile?.onboarding_data?.dob;
+        const time = profile?.time_of_birth || profile?.onboarding_data?.tob || profile?.onboarding_data?.time || 'Not set';
+        const place = profile?.onboarding_data?.pob || profile?.onboarding_data?.place || 'Not set';
+        const name = profile?.full_name || 'User';
+        const gender = profile?.gender || 'Not specified';
+
+        const summary = `My Birth Details:\n• Name: ${name}\n• Gender: ${gender}\n• DOB: ${dob}\n• Time: ${time}\n• Place: ${place}`;
+
+        // Remove the confirmation buttons from previous messages
+        setChatHistory(prev => prev.map(m => ({ ...m, showConfirmEditButtons: false })));
+
+        // Send the details as a user message
+        handleSend(summary, 'kundli');
+    }, [profile, handleSend]);
 
     // Dynamic suggestions that change based on what the user is chatting about
     const SUGGESTIONS = chatMode === 'kundli' ? [
@@ -238,6 +254,9 @@ export default function GuruAIScreen() {
         if (suggestion.id === 'kundli') {
             // Entry-point: show the kundli form prompt
             handleSend(suggestion.text, 'kundli', true);
+            
+            const hasDetails = profile?.full_name && (profile?.dob || profile?.onboarding_data?.dob);
+            
             setTimeout(() => {
                 const onboarding = profile?.onboarding_data;
                 const hasDetails = profile?.dob && onboarding?.place;

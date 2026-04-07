@@ -120,7 +120,9 @@ export default function NotificationSettingsPage() {
         setMessage(null);
         try {
             // Broadcast Endpoint: /api/admin/notifications/broadcast
-            const broadcastUrl = apiBase.replace('/astrology/settings', '/notifications/broadcast');
+            // Using the base API URL to construct the broadcast path correctly
+            const baseUrl = apiBase.replace('/astrology/settings', '');
+            const broadcastUrl = `${baseUrl}/notifications/broadcast`;
             
             console.log('DIAGNOSTIC_LOG [Auth Check]:', { 
                 hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
