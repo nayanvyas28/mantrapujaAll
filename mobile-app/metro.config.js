@@ -23,11 +23,11 @@ config.resolver.nodeModulesPaths = [
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (moduleName === '@react-native/virtualized-lists') {
     return {
-      filePath: path.resolve(projectRoot, 'node_modules/react-native/node_modules/@react-native/virtualized-lists/Lists/VirtualizedList.js'),
+      filePath: path.resolve(projectRoot, 'node_modules/react-native/node_modules/@react-native/virtualized-lists/index.js'),
       type: 'sourceFile',
     };
   }
-  
+
   // Chain to the default resolver
   return context.resolveRequest(context, moduleName, platform);
 };
