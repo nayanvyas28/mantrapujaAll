@@ -26,7 +26,7 @@ const env = {
     // Injected Expo Public variables (Production defaults as failover)
     EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://s1.mantrapuja.com',
     EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3MDkxNDk0MCwiZXhwIjo0OTI2NTg4NTQwLCJyb2xlIjoiYW5vbiJ9.8wPYbdpzTQ-caeOvS3nRH11ivAdTETmjmAoTivV2T80',
-    EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:4000',
+    EXPO_PUBLIC_BACKEND_URL: process.env.EXPO_PUBLIC_BACKEND_URL || 'http://lk8ogw0kkok0sso484swc0wc.34.93.68.183.sslip.io/',
     EXPO_PUBLIC_ADMIN_URL: process.env.EXPO_PUBLIC_ADMIN_URL || 'http://localhost:3001',
     EXPO_PUBLIC_SESSION_SALT: process.env.EXPO_PUBLIC_SESSION_SALT || 'sg6XisTlL2QcXSuE',
     EXPO_PUBLIC_EXPO_ROUTER_APP_ROOT: 'app',

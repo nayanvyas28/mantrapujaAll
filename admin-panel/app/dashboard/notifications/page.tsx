@@ -33,7 +33,7 @@ export default function NotificationSettingsPage() {
     const ADMIN_SECRET = 'mantrapuja-admin-keys';
     
     // Determine API Base, fallback to environment variable
-    const [apiBase, setApiBase] = useState(process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/admin/astrology/settings` : 'http://localhost:4000/api/admin/astrology/settings');
+    const [apiBase, setApiBase] = useState(process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/admin/astrology/settings` : 'http://lk8ogw0kkok0sso484swc0wc.34.93.68.183.sslip.io/api/admin/astrology/settings');
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
