@@ -590,6 +590,24 @@ export default function HomeScreen() {
         {/* Astro Section: Kundli & Know Yourself */}
         <AstroSection />
 
+        {/* Daily Rashi Phal Section */}
+        {!isGuest && userRashi && dailyAstro && (
+            <View style={{ marginHorizontal: 24, marginBottom: 24 }}>
+                <Card variant="solid" style={{ padding: 16 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <Sun size={20} color={colors.saffron} style={{ marginRight: 8 }} />
+                        <Typography variant="h3" color={colors.foreground}>Today's Rashi Phal</Typography>
+                    </View>
+                    <Typography variant="label" color={colors.saffron} style={{ marginBottom: 12 }}>
+                         {userRashi.toUpperCase()} • {new Date().getDate().toString().padStart(2, '0')} {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]} {new Date().getFullYear()}
+                    </Typography>
+                    <Typography variant="bodySmall" color={colors.mutedForeground} style={{ lineHeight: 20 }}>
+                        {dailyAstro}
+                    </Typography>
+                </Card>
+            </View>
+        )}
+
         {/* Quick Action Cards (3 cards) */}
         <View style={styles.quickActionsContainer}>
           {QUICK_ACTIONS.map((action) => (
