@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mantra Puja",
     "slug": "mantra-puja",
-    "version": "1.0.1",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/app_icon/1024.png",
     "scheme": "mantra-puja",
@@ -10,11 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mantrapooja.app"
+      "bundleIdentifier": "com.mantrapuja.official"
     },
     "android": {
-      "package": "com.mantrapooja.app",
-      "versionCode": 5,
+      "package": "com.mantrapuja.official",
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/app_icon/1024.png"
