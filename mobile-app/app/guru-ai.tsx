@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2 } from 'lucide-react-native';
+import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2, User, Calendar, Clock, MapPin } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FallbackImage } from '../components/ui/FallbackImage';
 import { ResultDisclaimer } from '../components/ui/ResultDisclaimer';
@@ -21,7 +21,7 @@ type ChatMode = 'normal' | 'kundli' | 'vastu' | 'horoscope';
 interface Message {
     role: 'user' | 'guru' | 'system';
     text: string;
-    type?: 'suggestion' | 'form' | 'details';
+    type?: 'suggestion' | 'form' | 'details' | 'inline_kundli_form';
     showFillFormButton?: boolean;
 }
 
@@ -49,6 +49,14 @@ export default function GuruAIScreen() {
     const [isTaskModalVisible, setIsTaskModalVisible] = useState(false);
     const TASK_COUNT_KEY = `guru_task_msg_count_${user?.id || 'anon'}`;
     const TASK_THRESHOLD = 5;
+
+    // Inline Form State
+    const [kundliForm, setKundliForm] = useState({
+        name: profile?.onboarding_data?.name || profile?.full_name || '',
+        dob: profile?.onboarding_data?.dob || '',
+        time: profile?.onboarding_data?.time || '',
+        place: profile?.onboarding_data?.place_of_birth || ''
+    });
 
     const handleSend = useCallback(async (overrideText?: string, mode?: ChatMode, skipApiCall: boolean = false) => {
         const textToSend = overrideText || message;
@@ -229,16 +237,29 @@ export default function GuruAIScreen() {
 
     const handleSuggestionPress = (suggestion: { id: string; text: string }) => {
         if (suggestion.id === 'kundli') {
-            // Entry-point: show the kundli form prompt
-            handleSend(suggestion.text, 'kundli', true);
-            setTimeout(() => {
-                setChatHistory(prev => [...prev, {
-                    role: 'guru',
-                    text: 'To provide a precise Kundli analysis, I need your birth details. Please tap the button below to fill them in:',
-                    showFillFormButton: true
-                }]);
-                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-            }, 600);
+            // Check if user already has data in profile
+            const ob = profile?.onboarding_data;
+            if (ob?.dob || profile?.dob) {
+                handleSend(suggestion.text, 'kundli', true);
+                setTimeout(() => {
+                    setChatHistory(prev => [...prev, {
+                        role: 'guru',
+                        text: `I have your birth details on record (DOB: ${ob?.dob || profile?.dob}). Would you like to use these or provide new details?`,
+                        type: 'details'
+                    }]);
+                    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+                }, 600);
+            } else {
+                handleSend(suggestion.text, 'kundli', true);
+                setTimeout(() => {
+                    setChatHistory(prev => [...prev, {
+                        role: 'guru',
+                        text: 'To provide a precise Kundli analysis, I need your birth details. Please fill them in below:',
+                        type: 'inline_kundli_form'
+                    }]);
+                    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+                }, 600);
+            }
         } else if (suggestion.id === 'vastu') {
             // Entry-point: show the vastu form prompt
             handleSend(suggestion.text, 'vastu', true);
@@ -431,11 +452,110 @@ export default function GuruAIScreen() {
                         {chat.showFillFormButton && (
                             <TouchableOpacity
                                 style={[styles.inlineFormBtn, { borderColor: colors.saffron, backgroundColor: colors.saffron + '10' }]}
-                                onPress={() => router.push('/kundli-form')}
+                                onPress={() => {
+                                    setChatHistory(prev => prev.map(m => m === chat ? { ...m, showFillFormButton: false, type: 'inline_kundli_form' } : m));
+                                }}
                             >
                                 <ClipboardList size={18} color={colors.saffron} />
                                 <Typography variant="body" color={colors.saffron} style={{ fontWeight: '600' }}>Please Fill the Form</Typography>
                             </TouchableOpacity>
+                        )}
+                        {chat.type === 'details' && (
+                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                                <TouchableOpacity
+                                    style={[styles.inlineFormBtn, { flex: 1, marginTop: 0, borderColor: colors.borderMuted, backgroundColor: colors.background }]}
+                                    onPress={() => {
+                                        setChatHistory(prev => prev.map(m => m === chat ? { ...m, type: 'inline_kundli_form' } : m));
+                                    }}
+                                >
+                                    <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Typography variant="body" color={colors.foreground} style={{ fontWeight: '600' }}>Edit Details</Typography>
+                                    </View>
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity
+                                    style={[styles.inlineFormBtn, { flex: 1, marginTop: 0, borderColor: colors.saffron, backgroundColor: colors.saffron }]}
+                                    onPress={() => {
+                                        const ob = profile?.onboarding_data;
+                                        const summary = `My Birth Details:\n• Name: ${ob?.name || profile?.full_name || 'N/A'}\n• Gender: ${ob?.gender || 'N/A'}\n• DOB: ${ob?.dob}\n• Time: ${ob?.time}\n• Place: ${ob?.place_of_birth}`;
+                                        
+                                        // Remove details buttons manually
+                                        setChatHistory(prev => prev.map(m => m === chat ? { ...m, type: undefined } : m));
+                                        handleSend(summary, 'kundli');
+                                    }}
+                                >
+                                    <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Typography variant="body" color="#FFF" style={{ fontWeight: '600' }}>Continue Chat</Typography>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                        {chat.type === 'inline_kundli_form' && (
+                            <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderMuted, borderRadius: 20, padding: 16, marginTop: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, width: '100%' }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                                        <Sparkles size={16} color={colors.saffron} />
+                                    </View>
+                                    <Typography variant="h3" color={colors.foreground} style={{ fontSize: 16 }}>Confirm Details</Typography>
+                                </View>
+
+                                <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, marginBottom: 16 }}>
+                                   <User size={18} color={colors.mutedForeground} style={{ marginTop: 2, marginRight: 10 }} />
+                                   <TextInput
+                                        style={{ flex: 1, color: colors.foreground, fontSize: 15, padding: 0 }}
+                                        placeholder="Full Name"
+                                        placeholderTextColor={colors.mutedForeground}
+                                        value={kundliForm.name}
+                                        onChangeText={(t) => setKundliForm(prev => ({ ...prev, name: t }))}
+                                   />
+                                </View>
+
+                                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+                                    <View style={{ flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, alignItems: 'center' }}>
+                                        <Calendar size={18} color={colors.mutedForeground} style={{ marginRight: 6 }} />
+                                        <TextInput
+                                            style={{ flex: 1, color: colors.foreground, fontSize: 14, padding: 0 }}
+                                            placeholder="DD/MM/YYYY"
+                                            placeholderTextColor={colors.mutedForeground}
+                                            value={kundliForm.dob}
+                                            onChangeText={(t) => setKundliForm(prev => ({ ...prev, dob: t }))}
+                                        />
+                                    </View>
+                                    <View style={{ flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, alignItems: 'center' }}>
+                                        <Clock size={18} color={colors.mutedForeground} style={{ marginRight: 6 }} />
+                                        <TextInput
+                                            style={{ flex: 1, color: colors.foreground, fontSize: 14, padding: 0 }}
+                                            placeholder="HH:MM"
+                                            placeholderTextColor={colors.mutedForeground}
+                                            value={kundliForm.time}
+                                            onChangeText={(t) => setKundliForm(prev => ({ ...prev, time: t }))}
+                                        />
+                                    </View>
+                                </View>
+
+                                <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, marginBottom: 24, alignItems: 'center' }}>
+                                   <MapPin size={18} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+                                   <TextInput
+                                        style={{ flex: 1, color: colors.foreground, fontSize: 14, padding: 0 }}
+                                        placeholder="City, State"
+                                        placeholderTextColor={colors.mutedForeground}
+                                        value={kundliForm.place}
+                                        onChangeText={(t) => setKundliForm(prev => ({ ...prev, place: t }))}
+                                   />
+                                </View>
+
+                                <TouchableOpacity
+                                    style={{ backgroundColor: colors.saffron, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+                                    onPress={() => {
+                                        const summary = `My Birth Details:\n• Name: ${kundliForm.name || 'Not provided'}\n• DOB: ${kundliForm.dob || 'Not provided'}\n• Time: ${kundliForm.time || 'Not provided'}\n• Place: ${kundliForm.place || 'Not provided'}`;
+                                        setChatHistory(prev => prev.map(m => m === chat ? { ...m, type: undefined } : m));
+                                        handleSend(summary, 'kundli');
+                                    }}
+                                >
+                                    <Typography variant="body" color="#FFF" style={{ fontWeight: '700', textAlign: 'center' }}>Confirm & Send</Typography>
+                                    <ChevronLeft size={18} color="#FFF" style={{ transform: [{ rotate: '180deg' }], marginLeft: 6 }} />
+                                </TouchableOpacity>
+                            </View>
                         )}
                     </View>
                 ))}
