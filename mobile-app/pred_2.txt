@@ -1,0 +1,15 @@
+
+==== /career_report FAILED ====
+Your subscribed plan is not authorized to access this API. Kindly visit your dashboard.
+
+==== /finance_report FAILED ====
+Your subscribed plan is not authorized to access this API. Kindly visit your dashboard.
+
+==== /match_astakoot_points FAILED ====
+Your subscribed plan is not authorized to access this API. Kindly visit your dashboard.
+
+==== /life_reports/career FAILED ====
+Your subscribed plan is not authorized to access this API. Kindly visit your dashboard.
+
+==== /varshaphal_details FAILED ====
+Request data validation failed. Kindly check your request data again.

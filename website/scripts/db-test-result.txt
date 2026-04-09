@@ -1,0 +1,10 @@
+Testing connection with ANON KEY...
+--- Attempting fetch WITHOUT login ---
+No-Auth Fetch Result (system_logs): Data length: 0, Error: {"code":"42P01","details":null,"hint":null,"message":"relation \"public.system_logs\" does not exist"}
+--- Attempting fetch seo_metadata WITHOUT login ---
+No-Auth Fetch Result (seo_metadata): Data length: 0, Error: {"code":"42P01","details":null,"hint":null,"message":"relation \"public.seo_metadata\" does not exist"}
+--- Attempting Login ---
+Login Successful! User ID: 6f5dc1df-8279-4133-b689-55764f89aded, Role: authenticated
+--- Attempting fetch WITH login ---
+Success! system_logs count (Auth): null
+Success! seo_metadata count (Auth): null

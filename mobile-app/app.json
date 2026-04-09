@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "Mantra Puja",
+    "slug": "mantra-puja",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/app_icon/1024.png",
+    "scheme": "mantra-puja",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mantrapooja.app"
+    },
+    "android": {
+      "package": "com.mantrapooja.app",
+      "versionCode": 5,
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/app_icon/1024.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/MP_logo.png"
+    },
+    "plugins": [
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      "expo-secure-store",
+      "expo-notifications",
+      "expo-location",
+      "expo-image-picker"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6cb5cb96-7d37-4911-b040-3ee0cbee926f"
+      }
+    },
+    "owner": "nayan.vyas"
+  }
+}

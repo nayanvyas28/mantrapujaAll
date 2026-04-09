@@ -1,0 +1,19 @@
+--- STARTING VERIFICATION ---
+Mangal Dosh: Mangal Dosh Nivaran (Featured: true)
+Vishnu Puja: Vishnu Puja (Featured: false)
+FIXING: Un-featuring Mangal Dosh...
+SUCCESS: Un-featured Mangal Dosh
+FIXING: Featuring Vishnu Puja...
+SUCCESS: Featured Vishnu Puja
+
+--- CURRENT TOP 10 FEATURED ---
+- Shiv Puja
+- Hanuman Garhi Sindoor Pooja
+- Lakshmi Puja
+- Mangal Dosh Nivaran
+- Durga Puja
+- Ram Puja
+- Kaal Sarp Dosh Puja
+- Navagraha Puja
+- Pitru Dosh Puja
+- Shani Shanti Puja

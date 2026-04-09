@@ -1,0 +1,3 @@
+Verification of project directory for admin-panel. 
+If you can see this at localhost:3001/test.txt, then we are in the correct folder: e:\mantrapuja\mantrapuja all\admin-panel.
+Current Time: 2026-04-03T17:28:00Z

@@ -1,0 +1,105 @@
+import fs from 'fs';
+import path from 'path';
+
+function runTest() {
+  const sqlFilePath = path.join(process.cwd(), 'docs', 'mant_main (1).sql');
+  const sqlContent = fs.readFileSync(sqlFilePath, 'utf8');
+
+  const allInsertBlocks: string[] = [];
+  let currentIndex = 0;
+
+  while (true) {
+    const startIndex = sqlContent.indexOf('INSERT INTO `tbl_product`', currentIndex);
+    if (startIndex === -1) break;
+
+    // Find the end of the INSERT block by searching for ';' outside of single quotes
+    let endIndex = startIndex;
+    let inQuotes = false;
+    let found = false;
+    while (endIndex < sqlContent.length) {
+      let char = sqlContent[endIndex];
+      if (char === "'") {
+        if (endIndex === 0 || sqlContent[endIndex - 1] !== '\\') {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ';' && !inQuotes) {
+        found = true;
+        break;
+      }
+      endIndex++;
+    }
+
+    if (!found) break;
+
+    allInsertBlocks.push(sqlContent.substring(startIndex, endIndex));
+    currentIndex = endIndex + 1;
+  }
+
+  let successCount = 0;
+  let totalRows = 0;
+
+  for (const insertBlock of allInsertBlocks) {
+    const valuesIndex = insertBlock.indexOf('VALUES');
+    const valuesBlock = insertBlock.substring(valuesIndex + 6).trim();
+
+    const rows = valuesBlock.split(/\),\s*\(/);
+
+    for (let i = 0; i < rows.length; i++) {
+      let rowStr = rows[i];
+      if (i === 0) rowStr = rowStr.replace(/^\s*\(/, '');
+      if (i === rows.length - 1) rowStr = rowStr.replace(/\)\s*$/, '');
+
+      const columnsArray: string[] = [];
+      let currentVal = '';
+      let insideQuotes = false;
+
+      for (let j = 0; j < rowStr.length; j++) {
+        const char = rowStr[j];
+
+        if (char === "'") {
+          if (j > 0 && rowStr[j - 1] === '\\') {
+            currentVal += char;
+          } else if (j + 1 < rowStr.length && rowStr[j + 1] === "'") {
+            currentVal += char;
+            j++;
+            currentVal += "'";
+          } else {
+            insideQuotes = !insideQuotes;
+            currentVal += char;
+          }
+        } else if (char === ',' && !insideQuotes) {
+          columnsArray.push(currentVal.trim());
+          currentVal = '';
+        } else {
+          currentVal += char;
+        }
+      }
+      columnsArray.push(currentVal.trim());
+
+      for (let k = 0; k < columnsArray.length; k++) {
+        let val = columnsArray[k];
+        if (val.startsWith("'") && val.endsWith("'")) {
+          val = val.substring(1, val.length - 1);
+        }
+        if (val === 'NULL') val = '';
+        columnsArray[k] = val;
+      }
+
+      totalRows++;
+
+      if (columnsArray.length !== 40) {
+        console.log(`Failed row has ${columnsArray.length} columns! index: ${totalRows}`);
+        continue;
+      }
+
+      const pStatus = columnsArray[35]; // product_status
+      if (pStatus === '1') {
+        successCount++;
+      }
+    }
+  }
+  console.log(`Total rows checked: ${totalRows}`);
+  console.log(`Total active products: ${successCount}`);
+}
+
+runTest();

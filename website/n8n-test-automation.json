@@ -1,0 +1,56 @@
+{
+    "name": "Simple Connection Test",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "trigger",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                460,
+                460
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://localhost:3000/api/blogs",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({\n  title: 'Connection Test ' + new Date().toISOString(),\n  content: '<h2>It Works!</h2><p>This post confirms that n8n can successfully talk to your Mantra Pooja App.</p>',\n  secret: 'your_n8n_secret_here',\n  tags: ['test', 'automation'],\n  published: true\n}) }}",
+                "options": {}
+            },
+            "id": "post_app",
+            "name": "Post to App (Test)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                680,
+                460
+            ]
+        }
+    ],
+    "connections": {
+        "Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Post to App (Test)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

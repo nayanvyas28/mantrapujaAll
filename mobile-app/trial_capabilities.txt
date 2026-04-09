@@ -1,0 +1,15 @@
+
+==== /general_ascendant_report SUCCESS ====
+Data: {"asc_report":{"ascendant":"Gemini","report":"Your Ascendant (also known as your Rising sign) is the...
+
+==== /general_house_report/sun SUCCESS ====
+Data: You may wish to find, understand, live and accept a higher ideal or philosophy. But, then again, you...
+
+==== /bhav_madhya SUCCESS ====
+Keys: ascendant, midheaven, ayanamsha, bhav_madhya, bhav_sandhi
+
+==== /varshaphal_details FAILED ====
+Request data validation failed. Kindly check your request data again.
+
+==== /horoscope_prediction/daily FAILED ====
+Request failed with status code 404

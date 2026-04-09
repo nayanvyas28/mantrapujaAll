@@ -1,0 +1,53 @@
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { View } from 'react-native';
+import 'react-native-reanimated';
+import { GuruFloatingButton } from '../components/GuruFloatingButton';
+import { AnimatedStarfield } from '../components/ui/AnimatedStarfield';
+import { AuthProvider } from '../context/AuthContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
+import '../utils/i18n'; // Initialize i18next
+
+function RootLayoutContent() {
+  const { theme, colors } = useTheme();
+  usePushNotifications();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {theme === 'dark' && <AnimatedStarfield />}
+      <Stack screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: 'transparent' },
+        animation: 'fade'
+      }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="intro" />
+
+        <Stack.Screen name="login" />
+        <Stack.Screen name="zodiac" />
+        <Stack.Screen name="permissions" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      <GuruFloatingButton />
+      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
+    </View>
+  );
+}
+
+import { GuruAssistantProvider } from '../context/GuruAssistantContext';
+import { WalletProvider } from '../context/WalletContext';
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <WalletProvider>
+          <GuruAssistantProvider>
+            <RootLayoutContent />
+          </GuruAssistantProvider>
+        </WalletProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
