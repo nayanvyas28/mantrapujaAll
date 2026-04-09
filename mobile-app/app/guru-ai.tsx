@@ -205,16 +205,19 @@ export default function GuruAIScreen() {
             const { name, gender, dob, time, place } = params;
             const summary = `My Birth Details:\n• Name: ${name}\n• Gender: ${gender}\n• DOB: ${dob}\n• Time: ${time}\n• Place: ${place}`;
 
-            // Remove the "Fill Form" button from previous messages
             setChatHistory(prev => prev.map(m => ({ ...m, showFillFormButton: false })));
-
-            // Send the details as a user message
             handleSend(summary, 'kundli');
-
-            // Clear params to avoid re-triggering on re-render
             router.setParams({ kundliSubmitted: undefined });
         }
     }, [params, handleSend, router]);
+
+    const handleBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/');
+        }
+    };
 
     // Dynamic suggestions that change based on what the user is chatting about
     const SUGGESTIONS = chatMode === 'kundli' ? [
@@ -388,7 +391,7 @@ export default function GuruAIScreen() {
 
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.card, borderBottomColor: colors.borderMuted }]}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                     <ChevronLeft size={24} color={colors.foreground} />
                 </TouchableOpacity>
 

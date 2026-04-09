@@ -10,10 +10,24 @@ const DEFAULT_LOCAL_URL = Platform.OS === 'android' && !debuggerHost
     ? 'http://10.0.2.2:3000' 
     : `http://${localIp}:3000`;
 
-const ADMIN_API_URL = process.env.EXPO_PUBLIC_ADMIN_URL;
+const getAdminUrl = () => {
+    // 1. Check if an explicit environment variable exists (e.g. from .env)
+    if (process.env.EXPO_PUBLIC_ADMIN_URL) return process.env.EXPO_PUBLIC_ADMIN_URL;
 
-if (!ADMIN_API_URL) {
-    console.warn("⚠️ [AiService] EXPO_PUBLIC_ADMIN_URL is not defined in .env! Chat might fail.");
+    // 2. Fallback to auto-detected debugger host (Metro IP)
+    if (debuggerHost) {
+        const ip = debuggerHost.split(':')[0];
+        return `http://${ip}:3001`;
+    }
+
+    // 3. Last resort fallbacks
+    return Platform.OS === 'android' ? 'http://10.0.2.2:3001' : 'http://localhost:3001';
+};
+
+const BASE_URL = getAdminUrl();
+
+if (__DEV__) {
+    console.log(`[AiService] Initialized with Base URL: ${BASE_URL}`);
 }
 
 export interface ChatMessage {
@@ -22,16 +36,20 @@ export interface ChatMessage {
 }
 
 class AiService {
-    private apiUrl: string;
-
-    constructor(url: string) {
-        this.apiUrl = url;
+    private getApiUrl() {
+        // Re-evaluate URL dynamically in case of network shifts
+        return getAdminUrl();
     }
 
     // userId is passed to the Admin API for query limit tracking & chat history logging
     async chat(message: string, history: ChatMessage[] = [], userId?: string) {
-        const fullUrl = `${this.apiUrl}/api/chat`;
-        if (__DEV__) console.log(`[AiService] Sending message to: ${fullUrl}`);
+        const adminUrl = this.getApiUrl();
+        const fullUrl = `${adminUrl}/api/chat`;
+        
+        if (__DEV__) {
+            console.log(`[AiService] Sending message to: ${fullUrl}`);
+        }
+
         try {
             const response = await fetch(fullUrl, {
                 method: 'POST',
@@ -45,24 +63,27 @@ class AiService {
                 }),
             });
 
+            // Defensive Check: Next.js might return HTML on 404/500 if not handled
             const contentType = response.headers.get("content-type");
             if (contentType && contentType.includes("application/json")) {
                 const data = await response.json();
                 if (!response.ok) {
-                    throw new Error(data.error || 'Failed to get AI response');
+                    throw new Error(data.error || `Server responded with ${response.status}`);
                 }
                 return data.text;
             } else {
                 const text = await response.text();
-                if (__DEV__) console.error('CRITICAL_DEBUG_MARKER - Non-JSON Response:', text.substring(0, 300));
-                throw new Error(`[DEBUG_3001] AI Server returned HTML (Status: ${response.status}) - Target URL: ${fullUrl}`);
+                console.error('CRITICAL_DEBUG_MARKER - Non-JSON Response:', text.substring(0, 300));
+                throw new Error(`AI Server returned unexpected content (Status: ${response.status}). Check if the Proxy API is running at ${fullUrl}`);
             }
         } catch (error: any) {
-            if (__DEV__) console.error('CRITICAL_DEBUG_MARKER - AiService Error:', error);
+            if (__DEV__) {
+                console.error('CRITICAL_DEBUG_MARKER - AiService Error:', error.message || error);
+            }
             throw error;
         }
     }
 }
 
 // Export a singleton instance
-export const aiService = new AiService(ADMIN_API_URL);
+export const aiService = new AiService(BASE_URL);

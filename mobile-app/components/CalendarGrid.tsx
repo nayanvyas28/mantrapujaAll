@@ -30,6 +30,14 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+    const todayKey = useMemo(() => {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }, []);
+
     const calendarData = useMemo(() => {
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
@@ -105,6 +113,7 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                 {calendarData.map((item, index) => {
                     const dateKey = formatDateKey(item.date);
                     const isSelected = selectedDate === dateKey;
+                    const isToday = todayKey === dateKey;
                     const festival = festivalsMap[dateKey];
                     const isCurrMonth = item.month === 'current';
                     const isLastInRow = (index + 1) % 7 === 0;
@@ -117,6 +126,11 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                                 styles.dayCell,
                                 { borderColor: colors.borderMuted },
                                 isLastInRow && { borderRightWidth: 0 },
+                                isToday && {
+                                    backgroundColor: theme === 'dark' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(249, 115, 22, 0.08)',
+                                    borderColor: colors.saffron + '60',
+                                    borderWidth: 1,
+                                },
                                 isSelected && {
                                     borderColor: colors.saffron,
                                     borderWidth: 2,
@@ -136,11 +150,14 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                                 ]}>
                                     <Typography
                                         variant="body"
-                                        color={isSelected ? '#fff' : (isCurrMonth ? colors.foreground : colors.muted)}
-                                        style={[styles.dayText, isSelected && { fontWeight: 'bold' }]}
+                                        color={isSelected ? '#fff' : (isToday ? colors.saffron : (isCurrMonth ? colors.foreground : colors.muted))}
+                                        style={[styles.dayText, (isSelected || isToday) && { fontWeight: 'bold' }]}
                                     >
                                         {item.day}
                                     </Typography>
+                                    {!isSelected && isToday && (
+                                        <View style={[styles.todayIndicator, { backgroundColor: colors.muted }]} />
+                                    )}
                                 </View>
 
                                 {festival && (
@@ -244,5 +261,12 @@ const styles = StyleSheet.create({
     festTagText: {
         fontSize: 8,
         fontWeight: '600',
+    },
+    todayIndicator: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        position: 'absolute',
+        bottom: -6,
     },
 });

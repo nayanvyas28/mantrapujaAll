@@ -65,6 +65,14 @@ export default function FestivalDetailScreen() {
         } catch (err) { }
     }, []);
 
+    const handleBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/');
+        }
+    };
+
     useEffect(() => {
         if (id && id !== 'undefined' && typeof id === 'string') {
             fetchFestivalDetails();
@@ -86,7 +94,7 @@ export default function FestivalDetailScreen() {
         return (
             <View style={[styles.container, { backgroundColor: themeColors.background, justifyContent: 'center', alignItems: 'center' }]}>
                 <Typography variant="h3" color={themeColors.foreground}>Festival not found</Typography>
-                <Button title="Go Back" onPress={() => router.back()} style={{ marginTop: 20 }} />
+                <Button title="Go Back" onPress={handleBack} style={{ marginTop: 20 }} />
             </View>
         );
     }
@@ -106,7 +114,7 @@ export default function FestivalDetailScreen() {
                     />
                     <View style={styles.heroOverlay} />
 
-                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                         <ArrowLeft size={24} color="#fff" />
                     </TouchableOpacity>
 
