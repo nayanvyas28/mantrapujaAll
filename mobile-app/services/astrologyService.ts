@@ -7,7 +7,23 @@ const API_KEYS = [
     "ak-66b9096f4750db40bac3636c3ab52a00122319d0"  // Secondary
 ];
 
-const BACKEND_URL = (process.env.EXPO_PUBLIC_BACKEND_URL || "http://10.228.144.64:4000/api/auth").replace('/auth', '/astrology/proxy');
+const getAstroBackendUrl = () => {
+    const rawUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+    
+    // If we are in dev mode and hitting a production-looking URL or localhost, 
+    // we should fallback to the known local IP of the machine running the backend.
+    if (__DEV__) {
+        if (!rawUrl || rawUrl.includes('mantrapuja.com') || rawUrl.includes('localhost')) {
+            // Priority: the local IP address of your dev machine. 
+            // 4000 is the backend port.
+            return "http://10.228.144.64:4000/api/astrology/proxy";
+        }
+    }
+    
+    return (rawUrl || "http://10.228.144.64:4000/api/auth").replace('/auth', '/astrology/proxy');
+};
+
+const BACKEND_URL = getAstroBackendUrl();
 const DIRECT_API_URL = "https://json.astrologyapi.com/v1";
 
 /**

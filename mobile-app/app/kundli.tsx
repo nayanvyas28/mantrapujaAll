@@ -62,14 +62,37 @@ export default function KundliScreen() {
         setPayModalVisible(true);
     };
 
-    const processPayment = () => {
+    const processPayment = async () => {
         setLoading(true);
         // Simulate payment logic
-        setTimeout(() => {
+        setTimeout(async () => {
             setIsPremium(true);
             setPayModalVisible(false);
             setLoading(false);
             showInfo("Payment Successful ✨", "Unlock completed! Your premium astrological insights are now ready to explore.", 'success');
+
+            // Persist premium status in the history entry if possible
+            if (reportData) {
+                try {
+                    const existing = await AsyncStorage.getItem('saved_kundlis');
+                    let savedList = existing ? JSON.parse(existing) : [];
+                    
+                    // Find the current one by name, DOB and pob (the unique identifer used in handleGenerate)
+                    const index = savedList.findIndex((k: any) => 
+                        k.name === (personName || 'User') && 
+                        k.dobFormatted.includes(`${dob.getDate()}/${dob.getMonth() + 1}/${dob.getFullYear()}`) &&
+                        k.pob === pob
+                    );
+
+                    if (index !== -1) {
+                        savedList[index].isPremium = true;
+                        await AsyncStorage.setItem('saved_kundlis', JSON.stringify(savedList));
+                        setHistory(savedList);
+                    }
+                } catch (err) {
+                    console.warn('Failed to persist premium status', err);
+                }
+            }
         }, 1500);
     };
 
@@ -484,6 +507,7 @@ export default function KundliScreen() {
                                             style={{ flex: 1, paddingVertical: 8 }} 
                                             onPress={() => {
                                                 setReportData(record.reportData);
+                                                setIsPremium(!!record.isPremium);
                                                 setStep(3);
                                             }}
                                         >
