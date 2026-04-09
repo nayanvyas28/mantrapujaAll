@@ -19,6 +19,13 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { Wallet, CreditCard, Lock, Check, X } from 'lucide-react-native';
 
+const formatToDMY = (d: Date) => {
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+};
+
 export default function KundliScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
@@ -80,7 +87,7 @@ export default function KundliScreen() {
                     // Find the current one by name, DOB and pob (the unique identifer used in handleGenerate)
                     const index = savedList.findIndex((k: any) => 
                         k.name === (personName || 'User') && 
-                        k.dobFormatted.includes(`${dob.getDate()}/${dob.getMonth() + 1}/${dob.getFullYear()}`) &&
+                        (k.dobFormatted.includes(formatToDMY(dob)) || k.dobFormatted.includes(`${dob.getDate()}/${dob.getMonth() + 1}/${dob.getFullYear()}`)) &&
                         k.pob === pob
                     );
 
@@ -103,7 +110,7 @@ export default function KundliScreen() {
     const handleShareReport = async () => {
         if (!reportData) return;
         try {
-            const summary = `✨ Kundli Report ✨\n\nName: ${personName || profile?.name}\nBirth: ${dob.toLocaleDateString()}\nPlace: ${pob}\n\n🌙 Rashi: ${reportData.details?.sign}\n☀️ Sun: ${reportData.details?.sun_sign || '--'}\n🌟 Nakshatra: ${reportData.details?.Naksahtra}\n\nGenerated via Mantra Puja App`;
+            const summary = `✨ Kundli Report ✨\n\nName: ${personName || profile?.name}\nBirth: ${formatToDMY(dob)}\nPlace: ${pob}\n\n🌙 Rashi: ${reportData.details?.sign}\n☀️ Sun: ${reportData.details?.sun_sign || '--'}\n🌟 Nakshatra: ${reportData.details?.Naksahtra}\n\nGenerated via Mantra Puja App`;
             await Share.share({
                 message: summary,
                 title: 'My Kundli Report'
@@ -150,7 +157,7 @@ export default function KundliScreen() {
                         <div class="section-title">Birth Details</div>
                         <div class="grid">
                             <div class="grid-item"><div class="label">Name</div><div class="value">${personName || 'User'}</div></div>
-                            <div class="grid-item"><div class="label">Date of Birth</div><div class="value">${dob.toLocaleDateString()}</div></div>
+                            <div class="grid-item"><div class="label">Date of Birth</div><div class="value">${formatToDMY(dob)}</div></div>
                             <div class="grid-item"><div class="label">Time of Birth</div><div class="value">${tob.toLocaleTimeString()}</div></div>
                             <div class="grid-item"><div class="label">Place of Birth</div><div class="value">${pob}</div></div>
                         </div>
@@ -342,7 +349,7 @@ export default function KundliScreen() {
                     generatedAt: new Date().toISOString(),
                     reqData: req,
                     pob: pob,
-                    dobFormatted: `${req.day}/${req.month}/${req.year} at ${req.hour}:${req.min.toString().padStart(2, '0')}`,
+                    dobFormatted: `${req.day.toString().padStart(2, '0')}-${req.month.toString().padStart(2, '0')}-${req.year} at ${req.hour.toString().padStart(2, '0')}:${req.min.toString().padStart(2, '0')}`,
                     reportData: fetchedReport
                 };
                 const existing = await AsyncStorage.getItem('saved_kundlis');
@@ -438,7 +445,7 @@ export default function KundliScreen() {
                             <View style={{ flex: 1 }}>
                                 <Typography variant="label" color={colors.mutedForeground}>{t('kundli.date_of_birth')}</Typography>
                                 <Typography variant="body" color={dobSet ? colors.foreground : colors.mutedForeground}>
-                                    {dobSet ? dob.toLocaleDateString('en-IN') : 'Select Date'}
+                                    {dobSet ? formatToDMY(dob) : 'Select Date'}
                                 </Typography>
                             </View>
                         </TouchableOpacity>
@@ -512,7 +519,7 @@ export default function KundliScreen() {
                                             }}
                                         >
                                             <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }}>{record.name}</Typography>
-                                            <Typography variant="bodySmall" color={colors.mutedForeground}>{record.pob}</Typography>
+                                            <Typography variant="bodySmall" color={colors.mutedForeground}>{record.pob} | {record.dobFormatted?.split(' at ')[0] || '--'}</Typography>
                                             <Typography variant="bodySmall" color={colors.saffron} style={{ fontSize: 10, marginTop: 4 }}>{t('common.view_all', 'VIEW CHART')}</Typography>
                                         </TouchableOpacity>
                                         <TouchableOpacity 
@@ -540,7 +547,7 @@ export default function KundliScreen() {
                         <View style={styles.previewBox}>
                             <Typography variant="label" color={colors.saffron}>{t('kundli.ready_to_calc')}</Typography>
                             <Typography variant="h1" align="center" style={{ marginVertical: 8 }}>{pob}</Typography>
-                            <Typography variant="body" color={colors.mutedForeground}>{dob.toLocaleDateString()} at {tob.toLocaleTimeString()}</Typography>
+                            <Typography variant="body" color={colors.mutedForeground}>{formatToDMY(dob)} at {tob.toLocaleTimeString()}</Typography>
 
                             <TouchableOpacity onPress={() => setStep(1)} style={{ marginTop: 16 }}>
                                 <Typography variant="label" color={colors.saffron}>{t('kundli.edit_details')}</Typography>
@@ -576,7 +583,7 @@ export default function KundliScreen() {
                         handleUnlock={handleUnlock}
                         userDetails={{
                             name: personName || profile?.name || 'Vedic Soul',
-                            dob: dob.toLocaleDateString(),
+                            dob: formatToDMY(dob),
                             tob: tob.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                             pob: pob
                         }}
