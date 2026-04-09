@@ -27,35 +27,58 @@ export default function HoroscopeScreen() {
     const [loading, setLoading] = useState(true);
     const [reading, setReading] = useState<string | null>(null);
     const [rashi, setRashi] = useState<string | null>(profile?.rashi || null);
+    const [activeTab, setActiveTab] = useState<'daily' | 'monthly' | 'yearly'>('daily');
 
     useEffect(() => {
         if (profile?.rashi) {
             setRashi(profile.rashi);
-            fetchHoroscope(profile.rashi);
+            fetchHoroscope(profile.rashi, activeTab);
         } else {
             setLoading(false);
         }
-    }, [profile?.rashi]);
+    }, [profile?.rashi, activeTab]);
 
-    const fetchHoroscope = async (rashiName: string) => {
+    const fetchHoroscope = async (rashiName: string, tab: string) => {
         setLoading(true);
         try {
-            const now = new Date();
-            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            const { data, error } = await supabase
-                .from('daily_astro_notif')
-                .select('content')
-                .eq('rashi_name', rashiName)
-                .eq('target_date', today)
-                .maybeSingle();
+            if (tab === 'daily') {
+                const now = new Date();
+                const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                const { data, error } = await supabase
+                    .from('daily_astro_notif')
+                    .select('content')
+                    .eq('rashi_name', rashiName)
+                    .eq('target_date', today)
+                    .maybeSingle();
 
-            if (error) console.error("Horoscope Fetch Error:", error);
+                if (error && error.code !== 'PGRST116') console.error("Horoscope Fetch Error:", error);
 
-            if (data && data.content) {
-                const content = typeof data.content === 'object' ? data.content.reading : data.content;
-                setReading(sanitizeText(content) || "The cosmic energy today encourages spiritual reflection and inner peace.");
+                if (data && data.content) {
+                    const content = typeof data.content === 'object' ? data.content.reading : data.content;
+                    setReading(sanitizeText(content));
+                } else {
+                    setReading(sanitizeText(`[Mock Data] The cosmic energy today encourages spiritual reflection and inner peace for ${rashiName}. The alignment of stars suggests a day of growth and positive energy. Take a moment to meditate on your goals.`));
+                }
             } else {
-                setReading(sanitizeText("The stars suggest a day of growth and positive energy for you. Take a moment to meditate on your goals."));
+                const { data, error } = await supabase
+                    .from('pages')
+                    .select('content')
+                    .eq('slug', `${rashiName.toLowerCase()}-${tab}`)
+                    .maybeSingle();
+
+                if (error && error.code !== 'PGRST116') console.error(`${tab} Horoscope Fetch Error:`, error);
+                
+                if (data && data.content) {
+                    setReading(sanitizeText(data.content));
+                } else {
+                    if (tab === 'monthly') {
+                        setReading(sanitizeText(`[Mock Data] The month ahead brings significant shifts in your cosmic alignment. The first half focuses on career opportunities and material growth, while the second half brings emotional fulfillment and relationship growth for ${rashiName}. Jupiter's influence provides a protective aura around your personal endeavors.`));
+                    } else if (tab === 'yearly') {
+                        setReading(sanitizeText(`[Mock Data] This year marks a major cycle of transformation for ${rashiName}. Saturn's transit promises discipline and long-term rewards in your spiritual and financial realms. Stay grounded as the middle of the year will bring pivotal choices that shape your ultimate destiny. Focus on your karma and consistency.`));
+                    } else {
+                        setReading(sanitizeText(`Your ${tab} reading will be available soon.`));
+                    }
+                }
             }
         } catch (err) {
             setReading(sanitizeText("Consult the divine within. Today's forecast is clouded, but your inner light remains bright."));
@@ -87,7 +110,7 @@ export default function HoroscopeScreen() {
                         </Typography>
                         <TouchableOpacity 
                             style={[styles.primaryButton, { backgroundColor: colors.saffron }]}
-                            onPress={() => router.push("/zodiac")}
+                            onPress={() => router.push("/zodiac?from=horoscope")}
                         >
                             <Typography variant="h3" color="#fff">Select Rashi</Typography>
                         </TouchableOpacity>
@@ -97,12 +120,29 @@ export default function HoroscopeScreen() {
                         <Card variant="solid" style={styles.readingCard}>
                             <View style={styles.rashiHeader}>
                                 <Typography variant="h2" color={colors.saffron}>{rashi}</Typography>
-                                <TouchableOpacity onPress={() => router.push("/zodiac")}>
+                                <TouchableOpacity onPress={() => router.push("/zodiac?from=horoscope")}>
                                     <View style={[styles.changeBadge, { backgroundColor: colors.saffron + '15' }]}>
                                         <RefreshCw size={14} color={colors.saffron} />
                                         <Typography variant="label" color={colors.saffron} style={{ marginLeft: 6 }}>Change</Typography>
                                     </View>
                                 </TouchableOpacity>
+                            </View>
+
+                            <View style={[styles.tabsContainer, { backgroundColor: theme === 'dark' ? '#1e293b' : '#f1f5f9' }]}>
+                                {['daily', 'monthly', 'yearly'].map((tab) => (
+                                    <TouchableOpacity 
+                                        key={tab} 
+                                        style={[styles.tabButton, activeTab === tab && { backgroundColor: colors.saffron }]}
+                                        onPress={() => setActiveTab(tab as any)}
+                                    >
+                                        <Typography 
+                                            variant="label" 
+                                            color={activeTab === tab ? '#FFF' : colors.mutedForeground}
+                                        >
+                                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                        </Typography>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
 
                             <View style={styles.divider} />
@@ -187,6 +227,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
+    },
+    tabsContainer: {
+        flexDirection: 'row',
+        marginTop: 16,
+        borderRadius: 12,
+        padding: 4,
+    },
+    tabButton: {
+        flex: 1,
+        paddingVertical: 8,
+        alignItems: 'center',
+        borderRadius: 8,
     },
     divider: {
         height: 1,

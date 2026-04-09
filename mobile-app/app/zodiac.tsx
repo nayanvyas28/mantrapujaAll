@@ -109,10 +109,20 @@ export default function RashiSelectionScreen() {
 
             await AsyncStorage.setItem('hasSeenZodiac', 'true');
             await AsyncStorage.setItem('selectedRashi', JSON.stringify(selectedRashi));
-            router.replace('/permissions');
+            
+            if (params.from === 'horoscope') {
+                // Return to horoscope
+                router.replace('/horoscope');
+            } else {
+                router.replace('/permissions');
+            }
         } catch (e) {
             console.error('Failed to save Rashi state:', e);
-            router.replace('/permissions');
+            if (params.from === 'horoscope') {
+                router.replace('/horoscope');
+            } else {
+                router.replace('/permissions');
+            }
         } finally {
             setLoading(false);
         }
@@ -121,9 +131,17 @@ export default function RashiSelectionScreen() {
     const handleSkip = async () => {
         try {
             await AsyncStorage.setItem('hasSeenZodiac', 'true');
-            router.replace('/permissions');
+            if (params.from === 'horoscope') {
+                router.replace('/horoscope');
+            } else {
+                router.replace('/permissions');
+            }
         } catch (e) {
-            router.replace('/permissions');
+            if (params.from === 'horoscope') {
+                router.replace('/horoscope');
+            } else {
+                router.replace('/permissions');
+            }
         }
     };
 

@@ -592,20 +592,41 @@ export default function HomeScreen() {
 
         {/* Daily Rashi Phal Section */}
         {!isGuest && userRashi && dailyAstro && (
-            <View style={{ marginHorizontal: 24, marginBottom: 24 }}>
-                <Card variant="solid" style={{ padding: 16 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                        <Sun size={20} color={colors.saffron} style={{ marginRight: 8 }} />
-                        <Typography variant="h3" color={colors.foreground}>Today's Rashi Phal</Typography>
+            <TouchableOpacity 
+                style={{ marginHorizontal: 24, marginBottom: 24 }} 
+                activeOpacity={0.9} 
+                onPress={() => router.push('/horoscope')}
+            >
+                <Card 
+                    variant="solid" 
+                    style={{ 
+                        padding: 20, 
+                        borderRadius: 20, 
+                        borderWidth: 1, 
+                        borderColor: colors.saffron + '30', 
+                        backgroundColor: theme === 'dark' ? colors.card : '#fffaf0' 
+                    }}
+                >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                                <Sun size={24} color={colors.saffron} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Typography variant="h3" color={colors.foreground} style={{ fontSize: 18 }}>Daily Rashifal</Typography>
+                                <Typography variant="label" color={colors.saffron} style={{ marginTop: 2, fontWeight: '600' }}>
+                                    {userRashi.charAt(0).toUpperCase() + userRashi.slice(1)} • {new Date().getDate().toString().padStart(2, '0')} {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]} {new Date().getFullYear()}
+                                </Typography>
+                            </View>
+                        </View>
+                        <ArrowRight size={20} color={colors.mutedForeground} style={{ marginTop: 12 }} />
                     </View>
-                    <Typography variant="label" color={colors.saffron} style={{ marginBottom: 12 }}>
-                         {userRashi.toUpperCase()} • {new Date().getDate().toString().padStart(2, '0')} {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]} {new Date().getFullYear()}
-                    </Typography>
-                    <Typography variant="bodySmall" color={colors.mutedForeground} style={{ lineHeight: 20 }}>
-                        {dailyAstro}
+                    
+                    <Typography variant="body" color={theme === 'dark' ? colors.mutedForeground : '#334155'} style={{ lineHeight: 24 }} numberOfLines={3}>
+                        {dailyAstro.replace('[Mock Data] ', '')}
                     </Typography>
                 </Card>
-            </View>
+            </TouchableOpacity>
         )}
 
         {/* Quick Action Cards (3 cards) */}
