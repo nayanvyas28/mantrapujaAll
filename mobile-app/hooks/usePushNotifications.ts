@@ -9,22 +9,21 @@ const isExpoGo = Constants.appOwnership === 'expo';
 
 let Notifications: any = null;
 
-if (!isExpoGo) {
-    try {
-        Notifications = require('expo-notifications');
-        // Behavior for how incoming notifications should behave when app is foregrounded
-        Notifications.setNotificationHandler({
-            handleNotification: async () => ({
-                shouldShowAlert: true,
-                shouldPlaySound: true,
-                shouldSetBadge: true,
-                shouldShowBanner: true,
-                shouldShowList: true,
-            }),
-        });
-    } catch (error) {
-        console.log("Warning: expo-notifications not loaded in this environment.");
-    }
+try {
+    // Attempt to load notifications package — works in development builds and latest Expo Go (SDK 53+)
+    Notifications = require('expo-notifications');
+    // Behavior for how incoming notifications should behave when app is foregrounded
+    Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+            shouldShowAlert: true,
+            shouldPlaySound: true,
+            shouldSetBadge: true,
+            shouldShowBanner: true,
+            shouldShowList: true,
+        }),
+    });
+} catch (error) {
+    console.log("Warning: expo-notifications package not available in this environment.");
 }
 
 export const usePushNotifications = () => {

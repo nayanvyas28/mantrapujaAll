@@ -116,7 +116,7 @@ export default function NotificationSettingsPage() {
                 body: JSON.stringify({ 
                     secret: ADMIN_SECRET, 
                     title: notifConfig.title, 
-                    body: notifConfig.body 
+                    message: notifConfig.body 
                 })
             });
 
