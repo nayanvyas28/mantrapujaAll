@@ -10,10 +10,11 @@ const DEFAULT_LOCAL_URL = Platform.OS === 'android' && !debuggerHost
     ? 'http://10.0.2.2:3000' 
     : `http://${localIp}:3000`;
 
-// Prioritize dynamic local IP in dev if the env URL points to a local network IP
-// Using environment variable for production readiness
-// Using dynamic IP resolution for Expo Go physical device testing
-const ADMIN_API_URL = process.env.EXPO_PUBLIC_ADMIN_URL || 'http://10.228.144.64:3001';
+const ADMIN_API_URL = process.env.EXPO_PUBLIC_ADMIN_URL;
+
+if (!ADMIN_API_URL) {
+    console.warn("⚠️ [AiService] EXPO_PUBLIC_ADMIN_URL is not defined in .env! Chat might fail.");
+}
 
 export interface ChatMessage {
     role: 'user' | 'model';

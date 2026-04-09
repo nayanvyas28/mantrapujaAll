@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 import { GuruFloatingButton } from '../components/GuruFloatingButton';
 import { AnimatedStarfield } from '../components/ui/AnimatedStarfield';
@@ -14,21 +14,23 @@ function RootLayoutContent() {
   usePushNotifications();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {theme === 'dark' && <AnimatedStarfield />}
-      <Stack screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: 'transparent' },
-        animation: 'fade'
-      }}>
+    <View style={{ flex: 1, backgroundColor: colors?.background || '#000' }}>
+      {theme === 'dark' && (
+        <View style={StyleSheet.absoluteFill}>
+          <AnimatedStarfield />
+        </View>
+      )}
+      
+      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+        <Stack.Screen name="guru-ai" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="index" />
         <Stack.Screen name="intro" />
-
         <Stack.Screen name="login" />
         <Stack.Screen name="zodiac" />
         <Stack.Screen name="permissions" />
         <Stack.Screen name="(tabs)" />
       </Stack>
+
       <GuruFloatingButton />
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
     </View>
