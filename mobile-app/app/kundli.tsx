@@ -21,9 +21,10 @@ import { Wallet, CreditCard, Lock, Check, X } from 'lucide-react-native';
 
 const formatToDMY = (d: Date) => {
     const day = d.getDate().toString().padStart(2, '0');
-    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
     const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
+    return `${day} ${month} ${year}`;
 };
 
 export default function KundliScreen() {
@@ -349,7 +350,7 @@ export default function KundliScreen() {
                     generatedAt: new Date().toISOString(),
                     reqData: req,
                     pob: pob,
-                    dobFormatted: `${req.day.toString().padStart(2, '0')}-${req.month.toString().padStart(2, '0')}-${req.year} at ${req.hour.toString().padStart(2, '0')}:${req.min.toString().padStart(2, '0')}`,
+                    dobFormatted: `${formatToDMY(dob)} at ${tob.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
                     reportData: fetchedReport
                 };
                 const existing = await AsyncStorage.getItem('saved_kundlis');
@@ -519,7 +520,12 @@ export default function KundliScreen() {
                                             }}
                                         >
                                             <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }}>{record.name}</Typography>
-                                            <Typography variant="bodySmall" color={colors.mutedForeground}>{record.pob} | {record.dobFormatted?.split(' at ')[0] || '--'}</Typography>
+                                            <Typography variant="bodySmall" color={colors.mutedForeground}>{record.dobFormatted?.split(' at ')[0] || '--'} | {record.pob}</Typography>
+                                            {record.reportData?.details?.sign && (
+                                                <Typography variant="bodySmall" color={colors.foreground} style={{ marginTop: 2 }}>
+                                                    Rashi: <Typography variant="bodySmall" style={{ fontWeight: 'bold' }}>{record.reportData.details.sign}</Typography>
+                                                </Typography>
+                                            )}
                                             <Typography variant="bodySmall" color={colors.saffron} style={{ fontSize: 10, marginTop: 4 }}>{t('common.view_all', 'VIEW CHART')}</Typography>
                                         </TouchableOpacity>
                                         <TouchableOpacity 
