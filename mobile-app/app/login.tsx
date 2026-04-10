@@ -4,19 +4,30 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
+  ActivityIndicator as RNActivityIndicator,
   Dimensions,
-  Image,
-  KeyboardAvoidingView,
-  Modal,
+  Image as RNImage,
+  KeyboardAvoidingView as RNKeyboardAvoidingView,
+  Modal as RNModal,
   Platform,
-  ScrollView,
+  ScrollView as RNScrollView,
   StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  Text as RNText,
+  TextInput as RNTextInput,
+  TouchableOpacity as RNTouchableOpacity,
+  View as RNView,
 } from "react-native";
+
+// Type-safe aliases for React 19/Expo 54 compatibility
+const View = RNView as any;
+const Text = RNText as any;
+const TextInput = RNTextInput as any;
+const TouchableOpacity = RNTouchableOpacity as any;
+const ScrollView = RNScrollView as any;
+const ActivityIndicator = RNActivityIndicator as any;
+const KeyboardAvoidingView = RNKeyboardAvoidingView as any;
+const Modal = RNModal as any;
+const Image = RNImage as any;
 import {
   AlertCircle,
   CheckCircle2,
@@ -577,6 +588,7 @@ export default function LoginScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.content}>
           <View style={styles.header}>

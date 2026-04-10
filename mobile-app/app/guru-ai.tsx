@@ -14,6 +14,14 @@ import { aiService, ChatMessage } from '../services/ai';
 import { sanitizeText } from '../utils/sanitizer';
 import { supabase } from '../utils/supabase';
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNScrollView = ScrollView as any;
+const RNTextInput = TextInput as any;
+const RNActivityIndicator = ActivityIndicator as any;
+const RNModal = Modal as any;
+const RNKeyboardAvoidingView = KeyboardAvoidingView as any;
+
 // { width } = Dimensions.get('window'); // width removed as it was unused
 
 type ChatMode = 'normal' | 'kundli' | 'vastu' | 'horoscope';
@@ -31,7 +39,7 @@ export default function GuruAIScreen() {
     const { theme, colors } = useTheme();
     const { user, profile } = useAuth();
     const insets = useSafeAreaInsets();
-    const scrollRef = useRef<ScrollView>(null);
+    const scrollRef = useRef<any>(null);
 
     const CHAT_STORAGE_KEY = `guru_chat_history_${user?.id || 'anon'}`;
     const DEFAULT_GREETING: Message[] = [
@@ -321,95 +329,96 @@ export default function GuruAIScreen() {
         }
     };
 
-    const TaskUnlockModal = () => (
-        <Modal
-            visible={isTaskModalVisible}
-            transparent={true}
-            animationType="slide"
-        >
-            <View style={styles.modalOverlay}>
-                <View style={[styles.taskModalContent, { backgroundColor: colors.card }]}>
-                    <View style={[styles.modalHeaderDecor, { backgroundColor: colors.saffron }]} />
-                    
-                    <View style={[styles.modalIconCircle, { backgroundColor: colors.saffron + '15' }]}>
-                        <Crown size={32} color={colors.saffron} />
-                    </View>
-
-                    <Typography variant="h2" style={{ textAlign: 'center', marginBottom: 8 }}>Unlock More Wisdom</Typography>
-                    <Typography variant="body" color={colors.mutedForeground} style={{ textAlign: 'center', marginBottom: 24, paddingHorizontal: 10 }}>
-                        To continue your journey with GuruJi, please complete any 1 task below:
-                    </Typography>
-
-                    <View style={styles.taskList}>
-                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('rate')}>
-                            <View style={[styles.taskIcon, { backgroundColor: '#FFD70020' }]}><Star size={20} color="#FFB800" /></View>
-                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>5-Star Rating on Play Store</Typography>
-                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('refer')}>
-                            <View style={[styles.taskIcon, { backgroundColor: '#4ADE8020' }]}><Users size={20} color="#22C55E" /></View>
-                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Refer to 2 Friends</Typography>
-                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('social')}>
-                            <View style={[styles.taskIcon, { backgroundColor: '#EC489920' }]}><Instagram size={20} color="#DB2777" /></View>
-                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Follow on Instagram</Typography>
-                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('story')}>
-                            <View style={[styles.taskIcon, { backgroundColor: '#8B5CF620' }]}><Share2 size={20} color="#7C3AED" /></View>
-                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Reshare our Story</Typography>
-                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted, borderBottomWidth: 0 }]} onPress={() => performTask('youtube')}>
-                            <View style={[styles.taskIcon, { backgroundColor: '#EF444420' }]}><Youtube size={20} color="#DC2626" /></View>
-                            <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Subscribe on Youtube</Typography>
-                            <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
-                        </TouchableOpacity>
-                    </View>
-
-                    <TouchableOpacity 
-                        style={[styles.premiumUnlockBtn, { backgroundColor: colors.saffron + '10', borderColor: colors.saffron }]}
-                        onPress={() => { setIsTaskModalVisible(false); router.push('/guru-ai-upgrade'); }}
-                    >
-                        <Crown size={16} color={colors.saffron} />
-                        <Typography variant="label" color={colors.saffron} style={{ fontWeight: '700', marginLeft: 6 }}>UNLOCK PERMANENTLY (PRO)</Typography>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    );
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <RNKeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={[styles.container, { backgroundColor: colors.background }]}
+            keyboardVerticalOffset={0}
+        >
             <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-            <TaskUnlockModal />
+            <RNModal
+                visible={isTaskModalVisible}
+                transparent={true}
+                animationType="slide"
+            >
+                <RNView style={styles.modalOverlay}>
+                    <RNView style={[styles.taskModalContent, { backgroundColor: colors.card }]}>
+                        <RNView style={[styles.modalHeaderDecor, { backgroundColor: colors.saffron }]} />
+                        
+                        <RNView style={[styles.modalIconCircle, { backgroundColor: colors.saffron + '15' }]}>
+                            <Crown size={32} color={colors.saffron} />
+                        </RNView>
+
+                        <Typography variant="h2" style={{ textAlign: 'center', marginBottom: 8 }}>Unlock More Wisdom</Typography>
+                        <Typography variant="body" color={colors.mutedForeground} style={{ textAlign: 'center', marginBottom: 24, paddingHorizontal: 10 }}>
+                            To continue your journey with GuruJi, please complete any 1 task below:
+                        </Typography>
+
+                        <RNView style={styles.taskList}>
+                            <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('rate')}>
+                                <RNView style={[styles.taskIcon, { backgroundColor: '#FFD70020' }]}><Star size={20} color="#FFB800" /></RNView>
+                                <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>5-Star Rating on Play Store</Typography>
+                                <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('refer')}>
+                                <RNView style={[styles.taskIcon, { backgroundColor: '#4ADE8020' }]}><Users size={20} color="#22C55E" /></RNView>
+                                <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Refer to 2 Friends</Typography>
+                                <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('social')}>
+                                <RNView style={[styles.taskIcon, { backgroundColor: '#EC489920' }]}><Instagram size={20} color="#DB2777" /></RNView>
+                                <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Follow on Instagram</Typography>
+                                <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted }]} onPress={() => performTask('story')}>
+                                <RNView style={[styles.taskIcon, { backgroundColor: '#8B5CF620' }]}><Share2 size={20} color="#7C3AED" /></RNView>
+                                <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Reshare our Story</Typography>
+                                <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.taskItem, { borderColor: colors.borderMuted, borderBottomWidth: 0 }]} onPress={() => performTask('youtube')}>
+                                <RNView style={[styles.taskIcon, { backgroundColor: '#EF444420' }]}><Youtube size={20} color="#DC2626" /></RNView>
+                                <Typography variant="body" style={{ flex: 1, fontWeight: '600' }}>Subscribe on Youtube</Typography>
+                                <ChevronLeft size={18} color={colors.muted} style={{ transform: [{ rotate: '180deg'}] }} />
+                            </TouchableOpacity>
+                        </RNView>
+
+                        <TouchableOpacity 
+                            style={[styles.premiumUnlockBtn, { backgroundColor: colors.saffron + '10', borderColor: colors.saffron }]}
+                            onPress={() => { setIsTaskModalVisible(false); router.push('/guru-ai-upgrade'); }}
+                        >
+                            <Crown size={16} color={colors.saffron} />
+                            <Typography variant="label" color={colors.saffron} style={{ fontWeight: '700', marginLeft: 6 }}>UNLOCK PERMANENTLY (PRO)</Typography>
+                        </TouchableOpacity>
+                    </RNView>
+                </RNView>
+            </RNModal>
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.card, borderBottomColor: colors.borderMuted }]}>
+            <RNView style={[styles.header, { paddingTop: insets.top, backgroundColor: colors.card, borderBottomColor: colors.borderMuted }]}>
                 <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                     <ChevronLeft size={24} color={colors.foreground} />
                 </TouchableOpacity>
 
-                <View style={styles.headerTitle}>
-                    <View style={[styles.avatarSmall, { borderColor: colors.saffron }]}>
+                <RNView style={styles.headerTitle}>
+                    <RNView style={[styles.avatarSmall, { borderColor: colors.saffron }]}>
                         <FallbackImage
                             source={require('../assets/images/guru_avatar.png')}
                             style={styles.avatarImage}
                         />
-                    </View>
-                    <View>
+                    </RNView>
+                    <RNView>
                         <Typography variant="h3" color={colors.foreground}>GuruJi AI</Typography>
-                        <View style={styles.onlineBadge}>
-                            <View style={styles.greenDot} />
+                        <RNView style={styles.onlineBadge}>
+                            <RNView style={styles.greenDot} />
                             <Typography variant="label" color={colors.mutedForeground} style={{ fontSize: 10 }}>Wisdom Real-time</Typography>
-                        </View>
-                    </View>
-                </View>
+                        </RNView>
+                    </RNView>
+                </RNView>
 
                 <TouchableOpacity
                     onPress={() => { setChatHistory([{ role: 'guru', text: 'Pranam! How can I help?' }]); setChatMode('normal'); }}
@@ -417,28 +426,29 @@ export default function GuruAIScreen() {
                 >
                     <Sparkles size={18} color={colors.saffron} />
                 </TouchableOpacity>
-            </View>
+            </RNView>
 
-            <ScrollView
+            <RNScrollView
                 ref={scrollRef}
                 contentContainerStyle={[styles.scrollContent]}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
                 <ResultDisclaimer style={{ marginBottom: 16 }} />
                 {chatHistory.map((chat, index) => (
-                    <View key={index} style={[
+                    <RNView key={index} style={[
                         styles.messageWrapper,
                         chat.role === 'user' ? styles.userWrapper :
                             chat.role === 'system' ? styles.systemWrapper : styles.guruWrapper
                     ]}>
                         {chat.role === 'system' ? (
-                            <View style={[styles.systemMessage, { backgroundColor: colors.saffron + '10', borderColor: colors.saffron + '30' }]}>
+                            <RNView style={[styles.systemMessage, { backgroundColor: colors.saffron + '10', borderColor: colors.saffron + '30' }]}>
                                 <Typography variant="bodySmall" color={colors.saffron} style={{ textAlign: 'center', fontStyle: 'italic' }}>
                                     {sanitizeText(chat.text)}
                                 </Typography>
-                            </View>
+                            </RNView>
                         ) : (
-                            <View style={[
+                            <RNView style={[
                                 styles.bubble,
                                 chat.role === 'user'
                                     ? [styles.userBubble, { backgroundColor: colors.saffron }]
@@ -450,7 +460,7 @@ export default function GuruAIScreen() {
                                 >
                                     {chat.role === 'user' ? chat.text : sanitizeText(chat.text)}
                                 </Typography>
-                            </View>
+                            </RNView>
                         )}
                         {chat.showFillFormButton && (
                             <TouchableOpacity
@@ -464,16 +474,16 @@ export default function GuruAIScreen() {
                             </TouchableOpacity>
                         )}
                         {chat.type === 'details' && (
-                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                            <RNView style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
                                 <TouchableOpacity
                                     style={[styles.inlineFormBtn, { flex: 1, marginTop: 0, borderColor: colors.borderMuted, backgroundColor: colors.background }]}
                                     onPress={() => {
                                         setChatHistory(prev => prev.map(m => m === chat ? { ...m, type: 'inline_kundli_form' } : m));
                                     }}
                                 >
-                                    <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                    <RNView style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                                         <Typography variant="body" color={colors.foreground} style={{ fontWeight: '600' }}>Edit Details</Typography>
-                                    </View>
+                                    </RNView>
                                 </TouchableOpacity>
                                 
                                 <TouchableOpacity
@@ -487,65 +497,65 @@ export default function GuruAIScreen() {
                                         handleSend(summary, 'kundli');
                                     }}
                                 >
-                                    <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                    <RNView style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                                         <Typography variant="body" color="#FFF" style={{ fontWeight: '600' }}>Continue Chat</Typography>
-                                    </View>
+                                    </RNView>
                                 </TouchableOpacity>
-                            </View>
+                            </RNView>
                         )}
                         {chat.type === 'inline_kundli_form' && (
-                            <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderMuted, borderRadius: 20, padding: 16, marginTop: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, width: '100%' }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-                                    <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                            <RNView style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderMuted, borderRadius: 20, padding: 16, marginTop: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, width: '100%' }}>
+                                <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                                    <RNView style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
                                         <Sparkles size={16} color={colors.saffron} />
-                                    </View>
+                                    </RNView>
                                     <Typography variant="h3" color={colors.foreground} style={{ fontSize: 16 }}>Confirm Details</Typography>
-                                </View>
+                                </RNView>
 
-                                <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, marginBottom: 16 }}>
+                                <RNView style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, marginBottom: 16 }}>
                                    <User size={18} color={colors.mutedForeground} style={{ marginTop: 2, marginRight: 10 }} />
-                                   <TextInput
+                                   <RNTextInput
                                         style={{ flex: 1, color: colors.foreground, fontSize: 15, padding: 0 }}
                                         placeholder="Full Name"
                                         placeholderTextColor={colors.mutedForeground}
                                         value={kundliForm.name}
-                                        onChangeText={(t) => setKundliForm(prev => ({ ...prev, name: t }))}
+                                        onChangeText={(t: string) => setKundliForm(prev => ({ ...prev, name: t }))}
                                    />
-                                </View>
+                                </RNView>
 
-                                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
-                                    <View style={{ flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, alignItems: 'center' }}>
+                                <RNView style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+                                    <RNView style={{ flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, alignItems: 'center' }}>
                                         <Calendar size={18} color={colors.mutedForeground} style={{ marginRight: 6 }} />
-                                        <TextInput
+                                        <RNTextInput
                                             style={{ flex: 1, color: colors.foreground, fontSize: 14, padding: 0 }}
                                             placeholder="DD/MM/YYYY"
                                             placeholderTextColor={colors.mutedForeground}
                                             value={kundliForm.dob}
-                                            onChangeText={(t) => setKundliForm(prev => ({ ...prev, dob: t }))}
+                                            onChangeText={(t: string) => setKundliForm(prev => ({ ...prev, dob: t }))}
                                         />
-                                    </View>
-                                    <View style={{ flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, alignItems: 'center' }}>
+                                    </RNView>
+                                    <RNView style={{ flex: 1, flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, alignItems: 'center' }}>
                                         <Clock size={18} color={colors.mutedForeground} style={{ marginRight: 6 }} />
-                                        <TextInput
+                                        <RNTextInput
                                             style={{ flex: 1, color: colors.foreground, fontSize: 14, padding: 0 }}
                                             placeholder="HH:MM"
                                             placeholderTextColor={colors.mutedForeground}
                                             value={kundliForm.time}
-                                            onChangeText={(t) => setKundliForm(prev => ({ ...prev, time: t }))}
+                                            onChangeText={(t: string) => setKundliForm(prev => ({ ...prev, time: t }))}
                                         />
-                                    </View>
-                                </View>
+                                    </RNView>
+                                </RNView>
 
-                                <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, marginBottom: 24, alignItems: 'center' }}>
+                                <RNView style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.borderMuted, paddingBottom: 8, marginBottom: 24, alignItems: 'center' }}>
                                    <MapPin size={18} color={colors.mutedForeground} style={{ marginRight: 8 }} />
-                                   <TextInput
+                                   <RNTextInput
                                         style={{ flex: 1, color: colors.foreground, fontSize: 14, padding: 0 }}
                                         placeholder="City, State"
                                         placeholderTextColor={colors.mutedForeground}
                                         value={kundliForm.place}
-                                        onChangeText={(t) => setKundliForm(prev => ({ ...prev, place: t }))}
+                                        onChangeText={(t: string) => setKundliForm(prev => ({ ...prev, place: t }))}
                                    />
-                                </View>
+                                </RNView>
 
                                 <TouchableOpacity
                                     style={{ backgroundColor: colors.saffron, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
@@ -558,89 +568,84 @@ export default function GuruAIScreen() {
                                     <Typography variant="body" color="#FFF" style={{ fontWeight: '700', textAlign: 'center' }}>Confirm & Send</Typography>
                                     <ChevronLeft size={18} color="#FFF" style={{ transform: [{ rotate: '180deg' }], marginLeft: 6 }} />
                                 </TouchableOpacity>
-                            </View>
+                            </RNView>
                         )}
-                    </View>
+                    </RNView>
                 ))}
 
                 {isLoading && (
-                    <View style={[styles.messageWrapper, styles.guruWrapper]}>
-                        <View style={[styles.bubble, styles.guruBubble, { backgroundColor: colors.card, borderColor: colors.borderMuted, flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
-                            <ActivityIndicator size="small" color={colors.saffron} />
+                    <RNView style={[styles.messageWrapper, styles.guruWrapper]}>
+                        <RNView style={[styles.bubble, styles.guruBubble, { backgroundColor: colors.card, borderColor: colors.borderMuted, flexDirection: 'row', alignItems: 'center', gap: 8 }]}>
+                            <RNActivityIndicator size="small" color={colors.saffron} />
                             <Typography variant="bodySmall" color={colors.mutedForeground}>Guruji is thinking...</Typography>
-                        </View>
-                    </View>
+                        </RNView>
+                    </RNView>
                 )}
 
                 {/* Upgrade Banner — shows when query limit is reached */}
                 {isLimitReached && (
-                    <View style={[styles.upgradeCard, { backgroundColor: colors.saffron + '15', borderColor: colors.saffron }]}>
+                    <RNView style={[styles.upgradeCard, { backgroundColor: colors.saffron + '15', borderColor: colors.saffron }]}>
                         <Crown size={20} color={colors.saffron} />
-                        <View style={{ flex: 1, marginLeft: 10 }}>
+                        <RNView style={{ flex: 1, marginLeft: 10 }}>
                             <Typography variant="h3" color={colors.foreground} style={{ fontSize: 14 }}>You&apos;ve reached your limit</Typography>
                             <Typography variant="bodySmall" color={colors.mutedForeground}>Upgrade to Pro to continue chatting with GuruJi</Typography>
-                        </View>
+                        </RNView>
                         <TouchableOpacity
                             onPress={() => router.push('/guru-ai-upgrade')}
                             style={[styles.upgradeBtn, { backgroundColor: colors.saffron }]}
                         >
                             <Typography variant="label" color="#fff" style={{ fontWeight: '700' }}>Upgrade</Typography>
                         </TouchableOpacity>
-                    </View>
+                    </RNView>
                 )}
-            </ScrollView>
+            </RNScrollView>
 
             {/* Input & Suggestions Area */}
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-                style={{ flex: 0 }}
-            >
-                <View style={[styles.bottomArea, { backgroundColor: colors.card }]}>
-                    {/* Horizontal Suggestion Chips */}
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.suggestionsScroll}
-                    >
-                        {SUGGESTIONS.map((suggestion) => (
-                            <TouchableOpacity
-                                key={suggestion.id}
-                                style={[styles.chip, { backgroundColor: colors.saffron + '10', borderColor: colors.saffron + '40' }]}
-                                onPress={() => handleSuggestionPress(suggestion)}
-                            >
-                                <Typography variant="label" color={colors.saffron} style={{ fontWeight: '600' }}>
-                                    {suggestion.text}
-                                </Typography>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-
-                    <View style={[styles.inputContainer, { paddingBottom: insets.bottom + 10, backgroundColor: colors.card, borderTopColor: colors.borderMuted }]}>
-                        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.saffron + '15' }]}>
-                            <Mic size={22} color={colors.saffron} />
-                        </TouchableOpacity>
-
-                        <TextInput
-                            style={[styles.input, { color: colors.foreground, backgroundColor: colors.background, borderColor: colors.borderMuted }]}
-                            placeholder={chatMode !== 'normal' ? `Asking about ${chatMode}...` : "Ask GuruJi..."}
-                            placeholderTextColor={colors.mutedForeground}
-                            value={message}
-                            onChangeText={setMessage}
-                            multiline
-                        />
-
+            <RNView style={[styles.bottomArea, { backgroundColor: colors.card }]}>
+                {/* Horizontal Suggestion Chips */}
+                <RNScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.suggestionsScroll}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {SUGGESTIONS.map((suggestion) => (
                         <TouchableOpacity
-                            style={[styles.sendBtn, { backgroundColor: message.trim() ? colors.saffron : colors.mutedForeground + '50' }]}
-                            onPress={() => handleSend()}
-                            disabled={!message.trim()}
+                            key={suggestion.id}
+                            style={[styles.chip, { backgroundColor: colors.saffron + '10', borderColor: colors.saffron + '40' }]}
+                            onPress={() => handleSuggestionPress(suggestion)}
                         >
-                            <Send size={20} color="#ffffff" />
+                            <Typography variant="label" color={colors.saffron} style={{ fontWeight: '600' }}>
+                                {suggestion.text}
+                            </Typography>
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </KeyboardAvoidingView>
-        </View>
+                    ))}
+                </RNScrollView>
+
+                <RNView style={[styles.inputContainer, { paddingBottom: insets.bottom + 10, backgroundColor: colors.card, borderTopColor: colors.borderMuted }]}>
+                    <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.saffron + '15' }]}>
+                        <Mic size={22} color={colors.saffron} />
+                    </TouchableOpacity>
+
+                    <RNTextInput
+                        style={[styles.input, { color: colors.foreground, backgroundColor: colors.background, borderColor: colors.borderMuted }]}
+                        placeholder={chatMode !== 'normal' ? `Asking about ${chatMode}...` : "Ask GuruJi..."}
+                        placeholderTextColor={colors.mutedForeground}
+                        value={message}
+                        onChangeText={setMessage}
+                        multiline
+                    />
+
+                    <TouchableOpacity
+                        style={[styles.sendBtn, { backgroundColor: message.trim() ? colors.saffron : colors.mutedForeground + '50' }]}
+                        onPress={() => handleSend()}
+                        disabled={!message.trim()}
+                    >
+                        <Send size={20} color="#ffffff" />
+                    </TouchableOpacity>
+                </RNView>
+            </RNView>
+        </RNKeyboardAvoidingView>
     );
 }
 

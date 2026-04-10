@@ -5,6 +5,12 @@ import { StatusBar } from 'expo-status-bar';
 import { Calendar, ChevronLeft, Clock, MapPin, Wand2, Sparkles, Trash2, CheckCircle2, User, Share2, Download, AlertCircle, MessageCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Share, Platform, Modal } from 'react-native';
+
+const RNView = View as any;
+const RNScrollView = ScrollView as any;
+const RNTextInput = TextInput as any;
+const RNActivityIndicator = ActivityIndicator as any;
+const RNModal = Modal as any;
 import { WebView } from 'react-native-webview';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -211,16 +217,21 @@ export default function KundliScreen() {
         loadHistory();
         
         // Pre-fill if profile exists
-        if (profile?.onboarding_data) {
-            if (profile.name) {
-                setPersonName(profile.name);
+        if (profile) {
+            const onboarding = profile.onboarding_data || {};
+            const dobStr = onboarding.dob || profile.dob;
+            const timeStr = onboarding.time || profile.time || profile.tob;
+            const placeStr = onboarding.place || profile.place || profile.birth_place;
+            const nameStr = profile.full_name || profile.name || personName;
+
+            if (nameStr) {
+                setPersonName(nameStr);
             }
-            if (profile.onboarding_data.dob) {
-                setDob(new Date(profile.onboarding_data.dob));
+            if (dobStr) {
+                setDob(new Date(dobStr));
                 setDobSet(true);
             }
-            if (profile.onboarding_data.time) {
-                const timeStr = profile.onboarding_data.time;
+            if (timeStr) {
                 const parts = timeStr.split(':');
                 if (parts.length >= 2) {
                     let h = parseInt(parts[0]);
@@ -237,8 +248,8 @@ export default function KundliScreen() {
                     setTobSet(true);
                 }
             }
-            if (profile.onboarding_data.place) {
-                setPob(profile.onboarding_data.place);
+            if (placeStr) {
+                setPob(placeStr);
             }
         }
     }, [profile]);
@@ -391,18 +402,18 @@ export default function KundliScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <RNView style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar style={isDark ? 'light' : 'dark'} />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.borderMuted }]}>
+            <RNView style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.borderMuted }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <ChevronLeft size={24} color={colors.foreground} />
                 </TouchableOpacity>
-                <View style={{ flex: 1, alignItems: 'center' }}>
+                <RNView style={{ flex: 1, alignItems: 'center' }}>
                     <Typography variant="h2" color={colors.foreground} adjustsFontSizeToFit numberOfLines={1}>{t('kundli.title')}</Typography>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                </RNView>
+                <RNView style={{ flexDirection: 'row', alignItems: 'center' }}>
                     {step === 3 && (
                         <>
                             <TouchableOpacity onPress={handleDownloadReport} style={{ marginRight: 16 }}>
@@ -413,29 +424,29 @@ export default function KundliScreen() {
                             </TouchableOpacity>
                         </>
                     )}
-                    {!reportData && <View style={{ width: 44 }} />}
-                </View>
-            </View>
+                    {!reportData && <RNView style={{ width: 44 }} />}
+                </RNView>
+            </RNView>
 
-            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}>
+            <RNScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}>
                 {step === 1 && (
-                    <View style={styles.formContainer}>
+                    <RNView style={styles.formContainer}>
                         <Typography variant="h3" style={{ marginBottom: 24 }} color={colors.foreground}>Enter Personal Details</Typography>
 
                         {/* Name Input */}
-                        <View style={[styles.inputWrapper, { marginBottom: 16, backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
+                        <RNView style={[styles.inputWrapper, { marginBottom: 16, backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
                             <Typography variant="label" color={colors.saffron} style={{ marginRight: 16 }}>{'@'}</Typography>
-                            <View style={{ flex: 1 }}>
+                            <RNView style={{ flex: 1 }}>
                                 <Typography variant="label" color={colors.mutedForeground}>PERSON NAME</Typography>
-                                <TextInput
+                                <RNTextInput
                                     style={[styles.textInput, { color: colors.foreground }]}
                                     placeholder="Enter name..."
                                     placeholderTextColor={colors.mutedForeground}
                                     value={personName}
                                     onChangeText={setPersonName}
                                 />
-                            </View>
-                        </View>
+                            </RNView>
+                        </RNView>
 
                         {/* DOB Picker */}
                         <TouchableOpacity
@@ -443,12 +454,12 @@ export default function KundliScreen() {
                             style={[styles.inputWrapper, { backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}
                         >
                             <Calendar size={20} color={colors.saffron} style={styles.inputIcon} />
-                            <View style={{ flex: 1 }}>
+                            <RNView style={{ flex: 1 }}>
                                 <Typography variant="label" color={colors.mutedForeground}>{t('kundli.date_of_birth')}</Typography>
                                 <Typography variant="body" color={dobSet ? colors.foreground : colors.mutedForeground}>
                                     {dobSet ? formatToDMY(dob) : 'Select Date'}
                                 </Typography>
-                            </View>
+                            </RNView>
                         </TouchableOpacity>
 
                         {/* TOB Picker */}
@@ -457,28 +468,28 @@ export default function KundliScreen() {
                             style={[styles.inputWrapper, { marginTop: 16, backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}
                         >
                             <Clock size={20} color={colors.saffron} style={styles.inputIcon} />
-                            <View style={{ flex: 1 }}>
+                            <RNView style={{ flex: 1 }}>
                                 <Typography variant="label" color={colors.mutedForeground}>{t('kundli.time_of_birth')}</Typography>
                                 <Typography variant="body" color={tobSet ? colors.foreground : colors.mutedForeground}>
                                     {tobSet ? tob.toLocaleTimeString('en-IN', { hour12: true, hour: '2-digit', minute: '2-digit' }) : 'Select Time'}
                                 </Typography>
-                            </View>
+                            </RNView>
                         </TouchableOpacity>
 
                         {/* POB Input */}
-                        <View style={[styles.inputWrapper, { marginTop: 16, backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
+                        <RNView style={[styles.inputWrapper, { marginTop: 16, backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
                             <MapPin size={20} color={colors.saffron} style={styles.inputIcon} />
-                            <View style={{ flex: 1 }}>
+                            <RNView style={{ flex: 1 }}>
                                 <Typography variant="label" color={colors.mutedForeground}>{t('kundli.place_of_birth')}</Typography>
-                                <TextInput
+                                <RNTextInput
                                     style={[styles.textInput, { color: colors.foreground }]}
                                     placeholder="City, State"
                                     placeholderTextColor={colors.mutedForeground}
                                     value={pob}
                                     onChangeText={setPob}
                                 />
-                            </View>
-                        </View>
+                            </RNView>
+                        </RNView>
 
                         <TouchableOpacity
                             style={[styles.primaryBtn, { backgroundColor: colors.saffron, marginTop: 32 }]}
@@ -504,13 +515,13 @@ export default function KundliScreen() {
 
                         {/* Saved Kundlis History List */}
                         {history.length > 0 && (
-                            <View style={{ marginTop: 40, width: '100%' }}>
+                            <RNView style={{ marginTop: 40, width: '100%' }}>
                                 <Typography variant="label" color={colors.mutedForeground} style={{ marginBottom: 12, textTransform: 'uppercase' }}>PAST KUNDLIS</Typography>
                                 {history.map(record => (
-                                    <View key={record.id} style={[styles.inputWrapper, { padding: 8, paddingLeft: 16, marginBottom: 16, backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
-                                        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.saffron + '20', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                    <RNView key={record.id} style={[styles.inputWrapper, { padding: 8, paddingLeft: 16, marginBottom: 16, backgroundColor: isDark ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
+                                        <RNView style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.saffron + '20', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
                                             <Typography variant="h3" color={colors.saffron}>{record.name.charAt(0)}</Typography>
-                                        </View>
+                                        </RNView>
                                         <TouchableOpacity 
                                             style={{ flex: 1, paddingVertical: 8 }} 
                                             onPress={() => {
@@ -534,9 +545,9 @@ export default function KundliScreen() {
                                         >
                                             <Trash2 size={20} color="#ef4444" />
                                         </TouchableOpacity>
-                                    </View>
+                                    </RNView>
                                 ))}
-                            </View>
+                            </RNView>
                         )}
 
                         {showDatePicker && (
@@ -545,12 +556,12 @@ export default function KundliScreen() {
                         {showTimePicker && (
                             <DateTimePicker value={tob} mode="time" onChange={handleTimeChange} />
                         )}
-                    </View>
+                    </RNView>
                 )}
 
                 {step === 2 && (
-                    <View style={styles.generateContainer}>
-                        <View style={styles.previewBox}>
+                    <RNView style={styles.generateContainer}>
+                        <RNView style={styles.previewBox}>
                             <Typography variant="label" color={colors.saffron}>{t('kundli.ready_to_calc')}</Typography>
                             <Typography variant="h1" align="center" style={{ marginVertical: 8 }}>{pob}</Typography>
                             <Typography variant="body" color={colors.mutedForeground}>{formatToDMY(dob)} at {tob.toLocaleTimeString()}</Typography>
@@ -558,7 +569,7 @@ export default function KundliScreen() {
                             <TouchableOpacity onPress={() => setStep(1)} style={{ marginTop: 16 }}>
                                 <Typography variant="label" color={colors.saffron}>{t('kundli.edit_details')}</Typography>
                             </TouchableOpacity>
-                        </View>
+                        </RNView>
 
                         <TouchableOpacity
                             style={[styles.megaBtn, { backgroundColor: colors.saffron, borderColor: colors.gold + '50' }]}
@@ -566,7 +577,7 @@ export default function KundliScreen() {
                             disabled={loading}
                         >
                             {loading ? (
-                                <ActivityIndicator color="#fff" />
+                                <RNActivityIndicator color="#fff" />
                             ) : (
                                 <>
                                     <Wand2 size={24} color="#fff" style={{ marginRight: 12 }} />
@@ -577,7 +588,7 @@ export default function KundliScreen() {
                         <Typography variant="bodySmall" align="center" color={colors.mutedForeground} style={{ marginTop: 20 }}>
                             Using official AstrologyAPI servers with your private access.
                         </Typography>
-                    </View>
+                    </RNView>
                 )}
 
                 {step === 3 && reportData && (
@@ -597,23 +608,23 @@ export default function KundliScreen() {
                 )}
 
                 {/* GENERIC INFO/WARNING MODAL */}
-                <Modal
+                <RNModal
                     visible={infoModalVisible}
                     transparent
                     animationType="fade"
                     onRequestClose={() => setInfoModalVisible(false)}
                 >
-                    <View style={styles.modalOverlay}>
-                        <View style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
+                    <RNView style={styles.modalOverlay}>
+                        <RNView style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
                             {/* Top decorative bar */}
-                            <View style={[styles.modalTopBar, { backgroundColor: infoType === 'warning' ? '#f59e0b' : (infoType === 'error' ? '#dc2626' : (infoType === 'success' ? '#16a34a' : colors.saffron)) }]} />
+                            <RNView style={[styles.modalTopBar, { backgroundColor: infoType === 'warning' ? '#f59e0b' : (infoType === 'error' ? '#dc2626' : (infoType === 'success' ? '#16a34a' : colors.saffron)) }]} />
                             
-                            <View style={[styles.modalIconBox, { backgroundColor: infoType === 'warning' ? '#fffbeb' : (infoType === 'error' ? '#fee2e2' : (infoType === 'success' ? '#f0fdf4' : colors.saffron + '15')) }]}>
+                            <RNView style={[styles.modalIconBox, { backgroundColor: infoType === 'warning' ? '#fffbeb' : (infoType === 'error' ? '#fee2e2' : (infoType === 'success' ? '#f0fdf4' : colors.saffron + '15')) }]}>
                                 {infoType === 'warning' && <AlertCircle size={36} color="#f59e0b" />}
                                 {infoType === 'error' && <X size={36} color="#dc2626" />}
                                 {infoType === 'success' && <Check size={36} color="#16a34a" />}
                                 {infoType === 'info' && <User size={36} color={colors.saffron} />}
-                            </View>
+                            </RNView>
 
                             <Typography variant="h2" align="center" style={{ marginBottom: 12, paddingHorizontal: 12 }}>{infoTitle}</Typography>
                             <Typography variant="body" align="center" color={colors.mutedForeground} style={{ marginBottom: 32, paddingHorizontal: 20 }}>
@@ -626,20 +637,20 @@ export default function KundliScreen() {
                             >
                                 <Typography variant="h3" color="#fff">Continue</Typography>
                             </TouchableOpacity>
-                        </View>
-                    </View>
-                </Modal>
+                        </RNView>
+                    </RNView>
+                </RNModal>
 
                 {/* PREMIUM PAYMENT MODAL */}
-                <Modal
+                <RNModal
                     visible={payModalVisible}
                     transparent
                     animationType="fade"
                     onRequestClose={() => setPayModalVisible(false)}
                 >
-                    <View style={styles.modalOverlay}>
-                        <View style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
-                            <View style={[styles.modalTopBar, { backgroundColor: colors.saffron, width: '40%', opacity: 0.5 }]} />
+                    <RNView style={styles.modalOverlay}>
+                        <RNView style={[styles.modalContent, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
+                            <RNView style={[styles.modalTopBar, { backgroundColor: colors.saffron, width: '40%', opacity: 0.5 }]} />
                             
                             <TouchableOpacity 
                                 style={styles.closeBtn} 
@@ -648,34 +659,34 @@ export default function KundliScreen() {
                                 <X size={20} color={colors.mutedForeground} />
                             </TouchableOpacity>
 
-                            <View style={[styles.modalIconBox, { backgroundColor: colors.saffron + '15', marginTop: 12 }]}>
+                            <RNView style={[styles.modalIconBox, { backgroundColor: colors.saffron + '15', marginTop: 12 }]}>
                                 <Lock size={36} color={colors.saffron} />
-                            </View>
+                            </RNView>
 
                             <Typography variant="h2" align="center" style={{ marginBottom: 12 }}>Unlock Full Kundli</Typography>
                             <Typography variant="body" align="center" color={colors.mutedForeground} style={{ marginBottom: 28, paddingHorizontal: 24 }}>
                                 Get instant access to Detailed Predictions, Dosha Remedies, and Dasha Analysis for life.
                             </Typography>
 
-                            <View style={[styles.priceTag, { backgroundColor: isDark ? '#334155' : '#f8fafc', paddingVertical: 24 }]}>
+                            <RNView style={[styles.priceTag, { backgroundColor: isDark ? '#334155' : '#f8fafc', paddingVertical: 24 }]}>
                                 <Typography variant="label" color={colors.mutedForeground} style={{ letterSpacing: 2 }}>ONE TIME ACCESS</Typography>
                                 <Typography variant="h1" style={{ fontSize: 40, marginTop: 8, color: colors.saffron }}>₹21</Typography>
-                            </View>
+                            </RNView>
 
-                            <View style={{ marginBottom: 32, width: '100%', paddingHorizontal: 16 }}>
-                                <View style={styles.benefitRow}>
+                            <RNView style={{ marginBottom: 32, width: '100%', paddingHorizontal: 16 }}>
+                                <RNView style={styles.benefitRow}>
                                     <CheckCircle2 size={18} color="#16a34a" />
                                     <Typography variant="bodySmall" style={{ marginLeft: 12, fontWeight: '500' }}>Vimshottari Dasha Analysis</Typography>
-                                </View>
-                                <View style={styles.benefitRow}>
+                                </RNView>
+                                <RNView style={styles.benefitRow}>
                                     <CheckCircle2 size={18} color="#16a34a" />
                                     <Typography variant="bodySmall" style={{ marginLeft: 12, fontWeight: '500' }}>Manglik & Kalsarpa Dosha Reports</Typography>
-                                </View>
-                                <View style={styles.benefitRow}>
+                                </RNView>
+                                <RNView style={styles.benefitRow}>
                                     <CheckCircle2 size={18} color="#16a34a" />
                                     <Typography variant="bodySmall" style={{ marginLeft: 12, fontWeight: '500' }}>Download High-Quality PDF</Typography>
-                                </View>
-                            </View>
+                                </RNView>
+                            </RNView>
 
                             <TouchableOpacity 
                                 style={[styles.primaryBtn, { width: '100%', backgroundColor: colors.saffron, height: 60, borderRadius: 20, elevation: 8, shadowColor: colors.saffron, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }]}
@@ -683,23 +694,23 @@ export default function KundliScreen() {
                                 disabled={loading}
                             >
                                 {loading ? (
-                                    <ActivityIndicator color="#fff" />
+                                    <RNActivityIndicator color="#fff" />
                                 ) : (
-                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <RNView style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <Wallet size={20} color="#fff" style={{ marginRight: 10 }} />
                                         <Typography variant="h3" color="#fff" style={{ fontSize: 18 }}>Pay ₹21 & Unlock</Typography>
-                                    </View>
+                                    </RNView>
                                 )}
                             </TouchableOpacity>
 
                             <Typography variant="bodySmall" align="center" color={colors.mutedForeground} style={{ marginTop: 20, fontSize: 11 }}>
                                 ✨ Secure transaction via SSL & Razorpay
                             </Typography>
-                        </View>
-                    </View>
-                </Modal>
-            </ScrollView>
-        </View>
+                        </RNView>
+                    </RNView>
+                </RNModal>
+            </RNScrollView>
+        </RNView>
     );
 }
 
@@ -711,10 +722,10 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
     const tabs = [t('kundli.tab_dashboard', 'Dashboard'), t('kundli.tab_charts'), t('kundli.tab_dasha_dosha', 'Dasha & Dosha'), t('kundli.tab_predictions', 'Predictions'), t('kundli.tab_numero')];
 
     const PremiumLock = ({ title, desc }: any) => (
-        <View style={{ padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
-            <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: colors.saffron + '10', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+        <RNView style={{ padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
+            <RNView style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: colors.saffron + '10', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <Sparkles size={40} color={colors.saffron} />
-            </View>
+            </RNView>
             <Typography variant="h2" align="center" style={{ marginBottom: 8 }}>{title}</Typography>
             <Typography variant="body" align="center" color={colors.mutedForeground} style={{ marginBottom: 32 }}>{desc}</Typography>
             
@@ -724,7 +735,7 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
             >
                 <Typography variant="h3" color="#fff">Unlock for ₹21</Typography>
             </TouchableOpacity>
-        </View>
+        </RNView>
     );
 
     const predCategories = [
@@ -755,29 +766,29 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
     };
 
     return (
-        <View style={{ padding: 16 }}>
+        <RNView style={{ padding: 16 }}>
             {/* BIRTH PROFILE HEADER */}
             <Card variant="solid" style={{ padding: 16, marginBottom: 20, borderLeftWidth: 4, borderLeftColor: colors.saffron }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <Typography variant="h3" color={colors.saffron}>{userDetails.name}</Typography>
-                    <View style={{ backgroundColor: colors.saffron + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                    <RNView style={{ backgroundColor: colors.saffron + '15', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
                         <Typography variant="label" style={{ fontSize: 10 }} color={colors.saffron}>MALE</Typography>
-                    </View>
-                </View>
-                <View style={{ flexDirection: 'row', gap: 16 }}>
-                    <View style={{ flex: 1 }}>
+                    </RNView>
+                </RNView>
+                <RNView style={{ flexDirection: 'row', gap: 16 }}>
+                    <RNView style={{ flex: 1 }}>
                         <Typography variant="label" style={{ fontSize: 10 }} color={colors.mutedForeground}>DATE & TIME</Typography>
                         <Typography variant="bodySmall" style={{ fontWeight: '600' }}>{userDetails.dob} | {userDetails.tob}</Typography>
-                    </View>
-                    <View style={{ flex: 1 }}>
+                    </RNView>
+                    <RNView style={{ flex: 1 }}>
                         <Typography variant="label" style={{ fontSize: 10 }} color={colors.mutedForeground}>PLACE</Typography>
                         <Typography variant="bodySmall" style={{ fontWeight: '600' }} numberOfLines={1}>{userDetails.pob}</Typography>
-                    </View>
-                </View>
+                    </RNView>
+                </RNView>
             </Card>
 
             {/* Custom Mini Tab Navigation */}
-            <ScrollView 
+            <RNScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false} 
                 contentContainerStyle={{ gap: 8, marginBottom: 24, paddingHorizontal: 4 }}
@@ -802,40 +813,40 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                         </Typography>
                     </TouchableOpacity>
                 ))}
-            </ScrollView>
+            </RNScrollView>
 
             {/* TAB: DASHBOARD (Rich UI mapping AstroDekho) */}
             {activeTab === t('kundli.tab_dashboard', 'Dashboard') && (
-                <View style={{ animationDuration: '0.3s' }}>
+                <RNView style={{ animationDuration: '0.3s' }}>
                     {/* TOP STATS */}
-                    <View style={styles.summaryGrid}>
-                        <View style={[styles.summaryItem, { borderLeftColor: colors.saffron }]}>
+                    <RNView style={styles.summaryGrid}>
+                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.saffron }]}>
                             <Typography variant="label" style={{marginBottom: 4}}>Rashi (Moon Sign)</Typography>
                             <Typography variant="h3" color={colors.foreground}>{reportData.details?.sign || '--'}</Typography>
-                        </View>
-                        <View style={[styles.summaryItem, { borderLeftColor: colors.gold }]}>
+                        </RNView>
+                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.gold }]}>
                             <Typography variant="label" style={{marginBottom: 4}}>Ascendant (Lagna)</Typography>
                             <Typography variant="h3" color={colors.foreground}>{reportData.details?.ascendant || '--'}</Typography>
-                        </View>
-                    </View>
-                    <View style={[styles.summaryGrid, { marginTop: 12 }]}>
-                        <View style={[styles.summaryItem, { borderLeftColor: colors.blue }]}>
+                        </RNView>
+                    </RNView>
+                    <RNView style={[styles.summaryGrid, { marginTop: 12 }]}>
+                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.blue }]}>
                             <Typography variant="label" style={{marginBottom: 4}}>Nakshatra</Typography>
                             <Typography variant="h3" color={colors.foreground}>{reportData.details?.Naksahtra || reportData.details?.nakshatra || '--'}</Typography>
-                        </View>
-                        <View style={[styles.summaryItem, { borderLeftColor: '#10b981' }]}>
+                        </RNView>
+                        <RNView style={[styles.summaryItem, { borderLeftColor: '#10b981' }]}>
                             <Typography variant="label" style={{marginBottom: 4}}>Charan / Pada</Typography>
                             <Typography variant="h3" color={colors.foreground}>{reportData.details?.Charan || reportData.details?.charan || '--'}</Typography>
-                        </View>
-                    </View>
+                        </RNView>
+                    </RNView>
 
                     {/* BIRTH PANCHANG */}
-                    <View style={{ marginTop: 24 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <RNView style={{ marginTop: 24 }}>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                             <Calendar size={18} color={colors.saffron} style={{ marginRight: 8 }} />
                             <Typography variant="h3">Birth Panchang</Typography>
-                        </View>
-                        <View style={styles.summaryGrid}>
+                        </RNView>
+                        <RNView style={styles.summaryGrid}>
                             {[
                                 { label: 'Tithi', value: reportData.details?.Tithi || reportData.details?.tithi || '--', color: colors.saffron },
                                 { label: 'Karan', value: reportData.details?.Karan || reportData.details?.karan || '--', color: colors.gold },
@@ -843,21 +854,21 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                 { label: 'Sunrise', value: reportData.details?.Sunrise || reportData.details?.sunrise || reportData.details?.sun_rise || '--', color: '#10b981' },
                                 { label: 'Sunset', value: reportData.details?.Sunset || reportData.details?.sunset || reportData.details?.sun_set || '--', color: '#f43f5e' }
                             ].map((item, i) => (
-                                <View key={i} style={[styles.summaryItem, { borderLeftColor: item.color }]}>
+                                <RNView key={i} style={[styles.summaryItem, { borderLeftColor: item.color }]}>
                                     <Typography variant="label" color={colors.mutedForeground} style={{ fontSize: 10, textTransform: 'uppercase' }}>{item.label}</Typography>
                                     <Typography variant="body" style={{ fontWeight: '600', marginTop: 4 }} color={colors.foreground}>{item.value}</Typography>
-                                </View>
+                                </RNView>
                             ))}
-                        </View>
-                    </View>
+                        </RNView>
+                    </RNView>
 
                     {/* ASTROLOGICAL PROFILE GRID */}
-                    <View style={{ marginTop: 24 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <RNView style={{ marginTop: 24 }}>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                             <User size={18} color={colors.blue} style={{ marginRight: 8 }} />
                             <Typography variant="h3">Astrological Profile</Typography>
-                        </View>
-                        <View style={styles.summaryGrid}>
+                        </RNView>
+                        <RNView style={styles.summaryGrid}>
                             {[
                                 { label: 'Varna', value: reportData.details?.Varna || reportData.details?.varna || '--', color: colors.blue },
                                 { label: 'Yoni', value: reportData.details?.Yoni || reportData.details?.yoni || '--', color: colors.saffron },
@@ -868,36 +879,36 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                 { label: 'Paya', value: reportData.details?.Paya || reportData.details?.paya || '--', color: colors.blue },
                                 { label: 'Name Char', value: reportData.details?.name_alphabet || '--', color: colors.saffron }
                             ].map((item, i) => (
-                                <View key={i} style={[styles.summaryItem, { borderLeftColor: item.color }]}>
+                                <RNView key={i} style={[styles.summaryItem, { borderLeftColor: item.color }]}>
                                     <Typography variant="label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label.toUpperCase()}</Typography>
                                     <Typography variant="body" style={{ fontWeight: '600' }}>{item.value}</Typography>
-                                </View>
+                                </RNView>
                             ))}
-                        </View>
-                    </View>
+                        </RNView>
+                    </RNView>
 
                     {/* DESTINY SNAPSHOT */}
-                    <View style={{ marginTop: 24, marginBottom: 20 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                    <RNView style={{ marginTop: 24, marginBottom: 20 }}>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                             <Sparkles size={18} color={colors.gold} style={{ marginRight: 8 }} />
                             <Typography variant="h3">Quick Destiny Snapshot</Typography>
-                        </View>
-                        <View style={styles.summaryGrid}>
+                        </RNView>
+                        <RNView style={styles.summaryGrid}>
                             {[
                                 { label: 'Destiny No.', value: reportData.numeroTable?.destiny_number || reportData.numeroTable?.destiny_num || '--', sub: 'Life Path' },
                                 { label: 'Radical No.', value: reportData.numeroTable?.radical_number || reportData.numeroTable?.radical_num || '--', sub: 'Core Trait' },
                                 { label: 'Lucky Color', value: reportData.numeroTable?.fav_color || '--', sub: 'Aura' },
                                 { label: 'Lucky Stone', value: reportData.numeroTable?.fav_stone || '--', sub: 'Gem' }
                             ].map((item, i) => (
-                                <View key={i} style={[styles.summaryItem, { borderLeftColor: colors.gold, alignItems: 'center', paddingVertical: 16 }]}>
+                                <RNView key={i} style={[styles.summaryItem, { borderLeftColor: colors.gold, alignItems: 'center', paddingVertical: 16 }]}>
                                     <Typography variant="label" style={{ fontSize: 10, marginBottom: 4 }}>{item.label.toUpperCase()}</Typography>
                                     <Typography variant="h2" color={colors.gold}>{item.value}</Typography>
                                     {item.sub && <Typography variant="bodySmall" style={{ fontSize: 10, marginTop: 4, opacity: 0.6 }}>{item.sub}</Typography>}
-                                </View>
+                                </RNView>
                             ))}
-                        </View>
-                    </View>
-                </View>
+                        </RNView>
+                    </RNView>
+                </RNView>
             )}
 
             {/* TAB: PREDICTIONS */}
@@ -908,11 +919,11 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                         desc="Unlock Career, Marriage, Health and Gemstone recommendations based on your birth chart."
                     />
                 : 
-                    <View style={{ animationDuration: '0.3s' }}>
+                    <RNView style={{ animationDuration: '0.3s' }}>
                         {reportData.gems && (
-                            <View style={{ marginBottom: 24 }}>
+                            <RNView style={{ marginBottom: 24 }}>
                                 <Typography variant="h3" style={{ marginBottom: 12 }}>Gemstone Recommendations</Typography>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
+                                <RNScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16 }}>
                                     {[
                                         { key: 'LIFE', label: 'LIFE GEM', data: reportData.gems.LIFE, color: colors.blue },
                                         { key: 'BENEFIC', label: 'BENEFIC GEM', data: reportData.gems.BENEFIC, color: colors.saffron },
@@ -922,44 +933,44 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                             <Typography variant="label" color={gemType.color} style={{ marginBottom: 4 }}>{gemType.label}</Typography>
                                             <Typography variant="h3" style={{ marginBottom: 16 }} color={colors.foreground}>{gemType.data.name}</Typography>
                                             
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                            <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                                                 <Typography variant="bodySmall" color={colors.mutedForeground}>Finger</Typography>
                                                 <Typography variant="bodySmall" color={colors.foreground} style={{ fontWeight: '600' }}>{gemType.data.wear_finger}</Typography>
-                                            </View>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                                            </RNView>
+                                            <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
                                                 <Typography variant="bodySmall" color={colors.mutedForeground}>Metal</Typography>
                                                 <Typography variant="bodySmall" color={colors.foreground} style={{ fontWeight: '600' }}>{gemType.data.wear_metal}</Typography>
-                                            </View>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                            </RNView>
+                                            <RNView style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                                 <Typography variant="bodySmall" color={colors.mutedForeground}>Day</Typography>
                                                 <Typography variant="bodySmall" color={colors.foreground} style={{ fontWeight: '600' }}>{gemType.data.wear_day}</Typography>
-                                            </View>
+                                            </RNView>
                                         </Card>
                                     ))}
-                                </ScrollView>
-                            </View>
+                                </RNScrollView>
+                            </RNView>
                         )}
 
                         {reportData.rudra && (
-                            <View style={{ marginBottom: 24 }}>
+                            <RNView style={{ marginBottom: 24 }}>
                                 <Typography variant="label" color={colors.saffron} style={{ marginBottom: 8, textTransform: 'uppercase' }}>Divine Protection</Typography>
                                 <Card variant="solid" style={{ padding: 16, borderColor: 'rgba(245, 158, 11, 0.2)', backgroundColor: isDark ? 'rgba(245, 158, 11, 0.05)' : '#fffbeb' }}>
-                                    <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
+                                    <RNView style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8}}>
                                         <Typography variant="h3" color={colors.foreground}>{reportData.rudra.name}</Typography>
                                         <Sparkles size={18} color={colors.saffron} />
-                                    </View>
+                                    </RNView>
                                     <Typography variant="body" color={colors.mutedForeground} style={{ fontStyle: 'italic', marginBottom: 12 }}>{reportData.rudra.recommend}</Typography>
                                     <Typography variant="bodySmall" color={colors.foreground} style={{ lineHeight: 20 }}>
                                         {reportData.rudra.detail}
                                     </Typography>
                                 </Card>
-                            </View>
+                            </RNView>
                         )}
 
                         <Typography variant="h3" style={{ marginTop: 8, marginBottom: 16 }}>Life Predictions</Typography>
                         
                         <Card variant="solid" style={{ padding: 0, overflow: 'hidden' }}>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 12, gap: 8, borderBottomWidth: 1, borderBottomColor: colors.borderMuted }}>
+                            <RNScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ padding: 12, gap: 8, borderBottomWidth: 1, borderBottomColor: colors.borderMuted }}>
                                 {predCategories.map(cat => (
                                     <TouchableOpacity 
                                         key={cat.id} 
@@ -976,27 +987,27 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                         <Typography variant="label" color={predTab === cat.id ? colors.saffron : colors.mutedForeground}>{cat.label}</Typography>
                                     </TouchableOpacity>
                                 ))}
-                            </ScrollView>
-                            <View style={{ padding: 20 }}>
+                            </RNScrollView>
+                            <RNView style={{ padding: 20 }}>
                                 <Typography variant="label" color={activePred?.color} style={{ marginBottom: 8 }}>{activePred?.label.toUpperCase()}</Typography>
                                 <Typography variant="body" color={colors.foreground} style={{ lineHeight: 24 }}>
                                     {activePred?.data ? stripHtml(activePred.data) : "Analysis pending celestial calculations..."}
                                 </Typography>
-                            </View>
+                            </RNView>
                         </Card>
-                    </View>
+                    </RNView>
             )}
 
             {/* TAB: PLANETS AND CHARTS */}
             {activeTab === t('kundli.tab_charts') && (
-                <View>
+                <RNView>
                     <Typography variant="h3" style={{ marginBottom: 16 }}>{t('kundli.chart_title')}</Typography>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingBottom: 16 }}>
+                    <RNScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingBottom: 16 }}>
                         {reportData.d1Chart?.svg && (
                             <Card variant="solid" style={styles.chartCardHorizontal}>
                                 <Typography variant="label" style={{ marginBottom: 12 }} color={colors.saffron}>{t('kundli.lagna_d1')}</Typography>
-                                <View style={styles.chartFrameHorizontal}>
-                                    <View style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
+                                <RNView style={styles.chartFrameHorizontal}>
+                                    <RNView style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
                                         <WebView
                                             source={{ html: `<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><style>body,html{margin:0;padding:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:transparent;overflow:hidden;} svg{width:100%;height:100%;max-width:100vmin;}</style></head><body>${responsiveSvg(reportData.d1Chart.svg)}</body></html>` }}
                                             style={{ flex: 1, backgroundColor: 'transparent' }}
@@ -1005,16 +1016,16 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                             bounces={false}
                                             scrollEnabled={false}
                                         />
-                                    </View>
-                                </View>
+                                    </RNView>
+                                </RNView>
                             </Card>
                         )}
 
                         {reportData.moonChart?.svg && (
                             <Card variant="solid" style={styles.chartCardHorizontal}>
                                 <Typography variant="label" style={{ marginBottom: 12 }} color={colors.gold}>{t('kundli.moon_chart')}</Typography>
-                                <View style={styles.chartFrameHorizontal}>
-                                    <View style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
+                                <RNView style={styles.chartFrameHorizontal}>
+                                    <RNView style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
                                         <WebView
                                             source={{ html: `<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><style>body,html{margin:0;padding:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:transparent;overflow:hidden;} svg{width:100%;height:100%;max-width:100vmin;}</style></head><body>${responsiveSvg(reportData.moonChart.svg)}</body></html>` }}
                                             style={{ flex: 1, backgroundColor: 'transparent' }}
@@ -1023,16 +1034,16 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                             bounces={false}
                                             scrollEnabled={false}
                                         />
-                                    </View>
-                                </View>
+                                    </RNView>
+                                </RNView>
                             </Card>
                         )}
 
                         {reportData.sunChart?.svg && (
                             <Card variant="solid" style={styles.chartCardHorizontal}>
                                 <Typography variant="label" style={{ marginBottom: 12 }} color={colors.saffron}>{t('kundli.sun_chart', 'SUN CHART')}</Typography>
-                                <View style={styles.chartFrameHorizontal}>
-                                    <View style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
+                                <RNView style={styles.chartFrameHorizontal}>
+                                    <RNView style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
                                         <WebView
                                             source={{ html: `<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><style>body,html{margin:0;padding:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:transparent;overflow:hidden;} svg{width:100%;height:100%;max-width:100vmin;}</style></head><body>${responsiveSvg(reportData.sunChart.svg)}</body></html>` }}
                                             style={{ flex: 1, backgroundColor: 'transparent' }}
@@ -1041,16 +1052,16 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                             bounces={false}
                                             scrollEnabled={false}
                                         />
-                                    </View>
-                                </View>
+                                    </RNView>
+                                </RNView>
                             </Card>
                         )}
 
                         {reportData.d9Chart?.svg && (
                             <Card variant="solid" style={styles.chartCardHorizontal}>
                                 <Typography variant="label" style={{ marginBottom: 12 }} color={colors.blue}>{t('kundli.navamsha_chart', 'NAVAMSHA (D9)')}</Typography>
-                                <View style={styles.chartFrameHorizontal}>
-                                    <View style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
+                                <RNView style={styles.chartFrameHorizontal}>
+                                    <RNView style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
                                         <WebView
                                             source={{ html: `<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><style>body,html{margin:0;padding:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:transparent;overflow:hidden;} svg{width:100%;height:100%;max-width:100vmin;}</style></head><body>${responsiveSvg(reportData.d9Chart.svg)}</body></html>` }}
                                             style={{ flex: 1, backgroundColor: 'transparent' }}
@@ -1059,16 +1070,16 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                             bounces={false}
                                             scrollEnabled={false}
                                         />
-                                    </View>
-                                </View>
+                                    </RNView>
+                                </RNView>
                             </Card>
                         )}
 
                         {reportData.chalitChart?.svg && (
                             <Card variant="solid" style={styles.chartCardHorizontal}>
                                 <Typography variant="label" style={{ marginBottom: 12 }} color={'#10b981'}>{t('kundli.chalit_chart', 'BHAV CHALIT')}</Typography>
-                                <View style={styles.chartFrameHorizontal}>
-                                    <View style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
+                                <RNView style={styles.chartFrameHorizontal}>
+                                    <RNView style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}>
                                         <WebView
                                             source={{ html: `<html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /><style>body,html{margin:0;padding:0;width:100%;height:100%;display:flex;justify-content:center;align-items:center;background:transparent;overflow:hidden;} svg{width:100%;height:100%;max-width:100vmin;}</style></head><body>${responsiveSvg(reportData.chalitChart.svg)}</body></html>` }}
                                             style={{ flex: 1, backgroundColor: 'transparent' }}
@@ -1077,28 +1088,28 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                             bounces={false}
                                             scrollEnabled={false}
                                         />
-                                    </View>
-                                </View>
+                                    </RNView>
+                                </RNView>
                             </Card>
                         )}
-                    </ScrollView>
+                    </RNScrollView>
 
                     <Typography variant="h3" style={{ marginTop: 24, marginBottom: 12 }}>{t('kundli.planet_positions')}</Typography>
                     <Card variant="solid" style={styles.planetCard}>
-                        <View style={styles.planetHeader}>
+                        <RNView style={styles.planetHeader}>
                             <Typography variant="label" style={{ flex: 1.5, paddingRight: 4 }} adjustsFontSizeToFit numberOfLines={1}>{t('kundli.planet_name')}</Typography>
                             <Typography variant="label" style={{ flex: 1.5, paddingRight: 4 }} adjustsFontSizeToFit numberOfLines={1}>{t('kundli.planet_sign')}</Typography>
                             <Typography variant="label" style={{ flex: 1, textAlign: 'right' }} adjustsFontSizeToFit numberOfLines={1}>{t('kundli.planet_deg')}</Typography>
-                        </View>
+                        </RNView>
                         {reportData.planets?.map((p: any, i: number) => (
-                            <View key={i} style={[styles.planetRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                            <RNView key={i} style={[styles.planetRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
                                 <Typography variant="label" style={{ flex: 1.5, fontWeight: 'bold', paddingRight: 4 }} adjustsFontSizeToFit numberOfLines={1}>{p.name}</Typography>
                                 <Typography variant="bodySmall" style={{ flex: 1.5, paddingRight: 4 }} adjustsFontSizeToFit numberOfLines={1}>{p.sign}</Typography>
                                 <Typography variant="bodySmall" style={{ flex: 1, textAlign: 'right' }}>{Math.floor(p.normDegree || p.fullDegree || 0)}°</Typography>
-                            </View>
+                            </RNView>
                         ))}
                     </Card>
-                </View>
+                </RNView>
             )}
 
             {/* TAB: DASHA & DOSHA */}
@@ -1109,11 +1120,11 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                         desc="Identify Manglik/Kalsarpa Doshas and check your current Vimshottari Mahadasha timeline."
                     />
                 : 
-                    <View>
+                    <RNView>
                         {/* Dosha Highlights */}
-                        <View style={{ marginBottom: 24 }}>
+                        <RNView style={{ marginBottom: 24 }}>
                             <Typography variant="h3" style={{ marginBottom: 12 }}>Major Doshas</Typography>
-                            <View style={{ flexDirection: 'row', gap: 12 }}>
+                            <RNView style={{ flexDirection: 'row', gap: 12 }}>
                                 <Card variant="solid" style={{ flex: 1, padding: 16, alignItems: 'center', borderLeftWidth: 4, borderLeftColor: reportData.manglik?.is_manglik_present ? '#ef4444' : '#10b981' }}>
                                     <Typography variant="label" color={colors.mutedForeground}>MANGLIK</Typography>
                                     <Typography variant="h3" color={reportData.manglik?.is_manglik_present ? '#ef4444' : '#10b981'} style={{ marginTop: 4 }}>
@@ -1126,13 +1137,13 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                         {reportData.kalsarpa?.present ? "YES" : "NO"}
                                     </Typography>
                                 </Card>
-                            </View>
+                            </RNView>
                             {reportData.manglik?.report && (
                                 <Typography variant="bodySmall" color={colors.mutedForeground} style={{ marginTop: 12, fontStyle: 'italic' }}>
                                     {reportData.manglik.report}
                                 </Typography>
                             )}
-                        </View>
+                        </RNView>
 
                         <Typography variant="h3" style={{ marginBottom: 12 }}>{t('kundli.dasha_title')}</Typography>
                         <Typography variant="body" color={colors.mutedForeground} style={{ marginBottom: 16 }}>
@@ -1140,23 +1151,23 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                         </Typography>
                         
                         <Card variant="solid" style={styles.planetCard}>
-                            <View style={styles.planetHeader}>
+                            <RNView style={styles.planetHeader}>
                                 <Typography variant="label" style={{ flex: 1.2, paddingRight: 4 }} adjustsFontSizeToFit numberOfLines={1}>{t('kundli.dasha_lord')}</Typography>
                                 <Typography variant="label" style={{ flex: 1, paddingRight: 4 }} adjustsFontSizeToFit numberOfLines={1}>{t('kundli.start_date')}</Typography>
                                 <Typography variant="label" style={{ flex: 1, textAlign: 'right' }} adjustsFontSizeToFit numberOfLines={1}>{t('kundli.end_date')}</Typography>
-                            </View>
+                            </RNView>
                             {reportData.dasha?.map((d: any, i: number) => (
-                                <View key={i} style={[styles.planetRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
-                                    <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', paddingRight: 4 }}>
-                                        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.saffron, marginRight: 8 }} />
+                                <RNView key={i} style={[styles.planetRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+                                    <RNView style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center', paddingRight: 4 }}>
+                                        <RNView style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.saffron, marginRight: 8 }} />
                                         <Typography variant="label" style={{ fontWeight: 'bold', flex: 1 }} adjustsFontSizeToFit numberOfLines={1}>{d.planet}</Typography>
-                                    </View>
+                                    </RNView>
                                     <Typography variant="bodySmall" style={{ flex: 1, paddingRight: 4 }} adjustsFontSizeToFit numberOfLines={1}>{d.start}</Typography>
                                     <Typography variant="bodySmall" style={{ flex: 1, textAlign: 'right' }} adjustsFontSizeToFit numberOfLines={1}>{d.end}</Typography>
-                                </View>
+                                </RNView>
                             ))}
                         </Card>
-                    </View>
+                    </RNView>
             )}
 
             {/* TAB: NUMEROLOGY */}
@@ -1167,66 +1178,66 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                         desc="Unlock your Radical, Destiny, and Name numbers with detailed character reports and lucky factors."
                     />
                 : 
-                    <View>
+                    <RNView>
                         <Typography variant="h3" style={{ marginBottom: 12 }}>{t('kundli.numero_title')}</Typography>
                         
                         {reportData.numeroTable && (
-                            <View style={{ marginBottom: 24 }}>
-                                <View style={[styles.summaryGrid, { marginBottom: 24 }]}>
-                                    <View style={[styles.summaryItem, { borderLeftColor: colors.saffron }]}>
+                            <RNView style={{ marginBottom: 24 }}>
+                                <RNView style={[styles.summaryGrid, { marginBottom: 24 }]}>
+                                    <RNView style={[styles.summaryItem, { borderLeftColor: colors.saffron }]}>
                                         <Typography variant="label" adjustsFontSizeToFit numberOfLines={1}>{t('kundli.radical')}</Typography>
                                         <Typography variant="h2" align="center" style={{ marginTop: 8 }}>{reportData.numeroTable.radical_number || '--'}</Typography>
-                                    </View>
-                                    <View style={[styles.summaryItem, { borderLeftColor: colors.gold }]}>
+                                    </RNView>
+                                    <RNView style={[styles.summaryItem, { borderLeftColor: colors.gold }]}>
                                         <Typography variant="label" adjustsFontSizeToFit numberOfLines={1}>{t('kundli.destiny')}</Typography>
                                         <Typography variant="h2" align="center" style={{ marginTop: 8 }}>{reportData.numeroTable.destiny_number || '--'}</Typography>
-                                    </View>
-                                    <View style={[styles.summaryItem, { borderLeftColor: colors.saffron }]}>
+                                    </RNView>
+                                    <RNView style={[styles.summaryItem, { borderLeftColor: colors.saffron }]}>
                                         <Typography variant="label" adjustsFontSizeToFit numberOfLines={1}>{t('kundli.name')}</Typography>
                                         <Typography variant="h2" align="center" style={{ marginTop: 8 }}>{reportData.numeroTable.name_number || '--'}</Typography>
-                                    </View>
-                                </View>
+                                    </RNView>
+                                </RNView>
 
                                 <Typography variant="h3" style={{ marginBottom: 12 }}>{t('kundli.lucky_numbers', 'Numbers Profile')}</Typography>
-                                <View style={[styles.summaryGrid, { gap: 12, marginBottom: 24, marginTop: 0 }]}>
+                                <RNView style={[styles.summaryGrid, { gap: 12, marginBottom: 24, marginTop: 0 }]}>
                                     {reportData.numeroTable.friendly_num && (
-                                        <View style={[styles.summaryItem, { borderLeftColor: colors.saffron, flexBasis: '47%' }]}>
+                                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.saffron, flexBasis: '47%' }]}>
                                             <Typography variant="label" color={colors.mutedForeground}>{t('kundli.friendly_num', 'FRIENDLY NUMBERS')}</Typography>
                                             <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }} numberOfLines={2}>{reportData.numeroTable.friendly_num}</Typography>
-                                        </View>
+                                        </RNView>
                                     )}
                                     {reportData.numeroTable.fav_stone && (
-                                        <View style={[styles.summaryItem, { borderLeftColor: colors.gold, flexBasis: '47%' }]}>
+                                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.gold, flexBasis: '47%' }]}>
                                             <Typography variant="label" color={colors.mutedForeground}>{t('kundli.fav_stone', 'FAVORABLE STONE')}</Typography>
                                             <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }} numberOfLines={2}>{reportData.numeroTable.fav_stone}</Typography>
-                                        </View>
+                                        </RNView>
                                     )}
                                     {reportData.numeroTable.fav_day && (
-                                        <View style={[styles.summaryItem, { borderLeftColor: colors.blue, flexBasis: '47%' }]}>
+                                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.blue, flexBasis: '47%' }]}>
                                             <Typography variant="label" color={colors.mutedForeground}>{t('kundli.fav_day', 'LUCKY DAY')}</Typography>
                                             <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }} numberOfLines={2}>{reportData.numeroTable.fav_day}</Typography>
-                                        </View>
+                                        </RNView>
                                     )}
                                     {reportData.numeroTable.fav_metal && (
-                                        <View style={[styles.summaryItem, { borderLeftColor: '#94a3b8', flexBasis: '47%' }]}>
+                                        <RNView style={[styles.summaryItem, { borderLeftColor: '#94a3b8', flexBasis: '47%' }]}>
                                             <Typography variant="label" color={colors.mutedForeground}>{t('kundli.fav_metal', 'FAVORABLE METAL')}</Typography>
                                             <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }} numberOfLines={2}>{reportData.numeroTable.fav_metal}</Typography>
-                                        </View>
+                                        </RNView>
                                     )}
                                     {reportData.numeroTable.fav_god && (
-                                        <View style={[styles.summaryItem, { borderLeftColor: colors.saffron, flexBasis: '47%' }]}>
+                                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.saffron, flexBasis: '47%' }]}>
                                             <Typography variant="label" color={colors.mutedForeground}>{t('kundli.fav_god', 'LUCKY GOD')}</Typography>
                                             <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }} numberOfLines={2}>{reportData.numeroTable.fav_god}</Typography>
-                                        </View>
+                                        </RNView>
                                     )}
                                     {reportData.numeroTable.fav_mantra && (
-                                        <View style={[styles.summaryItem, { borderLeftColor: colors.gold, width: '100%', flexBasis: '100%', marginTop: 8 }]}>
+                                        <RNView style={[styles.summaryItem, { borderLeftColor: colors.gold, width: '100%', flexBasis: '100%', marginTop: 8 }]}>
                                             <Typography variant="label" color={colors.mutedForeground}>{t('kundli.fav_mantra', 'FAVORABLE MANTRA')}</Typography>
                                             <Typography variant="bodySmall" color={colors.foreground} style={{ marginTop: 4 }}>{reportData.numeroTable.fav_mantra}</Typography>
-                                        </View>
+                                        </RNView>
                                     )}
-                                </View>
-                            </View>
+                                </RNView>
+                            </RNView>
                         )}
 
                         {reportData.numeroReport && Array.isArray(reportData.numeroReport) 
@@ -1251,12 +1262,12 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                                 </Card>
                             ))
                         }
-                    </View>
+                    </RNView>
             )}
 
 
             <ResultDisclaimer style={{ marginTop: 32 }} />
-        </View>
+        </RNView>
     );
 }
 

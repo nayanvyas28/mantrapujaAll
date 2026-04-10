@@ -7,7 +7,9 @@ import {
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/ui/Card';
@@ -41,7 +43,11 @@ export default function KundliFormScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
             <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
             {/* Header */}
@@ -56,6 +62,7 @@ export default function KundliFormScreen() {
             <ScrollView
                 contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.infoBox}>
                     <Sparkles size={20} color={colors.saffron} />
@@ -156,10 +163,9 @@ export default function KundliFormScreen() {
                     </TouchableOpacity>
                 </Card>
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: { flex: 1 },

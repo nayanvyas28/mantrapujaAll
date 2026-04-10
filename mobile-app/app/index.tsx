@@ -5,6 +5,10 @@ import { useCallback, useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNAnimatedView = Animated.View as any;
+
 export default function LogoAnimationScreen() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
@@ -38,6 +42,7 @@ export default function LogoAnimationScreen() {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
       
       if (!hasSeenIntro) {
+        console.log("[Splash] Redirecting to /intro (First launch)");
         router.replace("/intro");
         return;
       }
@@ -45,20 +50,10 @@ export default function LogoAnimationScreen() {
       // If user is logged in, we check if they have finished onboarding
       // but we no longer BLOCK them from the home screen.
       if (user) {
-        const hasFinishedOnboarding = await AsyncStorage.getItem("hasFinishedOnboarding");
-        const hasBirthData = profile?.onboarding_data?.dob || profile?.dob;
-        
-        // If they already finished or have data, definitely Home
-        if (hasFinishedOnboarding === "true" || hasBirthData) {
-           router.replace("/(tabs)");
-           return;
-        }
-        
-        // Even if they are logged in but incomplete, let them land on Home first
-        // The Home screen (AstroSection) will prompt them to complete their profile.
+        console.log("[Splash] User is logged in. Redirecting to /(tabs)");
         router.replace("/(tabs)");
       } else {
-        // Logged out / Guest users go straight to Home
+        console.log("[Splash] Guest user. Redirecting to /(tabs)");
         router.replace("/(tabs)");
       }
     } catch (e) {
@@ -75,13 +70,13 @@ export default function LogoAnimationScreen() {
   }, [authLoading, checkState]);
 
   return (
-    <View style={styles.container}>
+    <RNView style={styles.container}>
       <Image
         source={require("../assets/images/logo_intro_bg.jpg")}
         style={styles.background}
         contentFit="cover"
       />
-      <Animated.View
+      <RNAnimatedView
         style={[
           styles.logoContainer,
           {
@@ -95,8 +90,8 @@ export default function LogoAnimationScreen() {
           style={styles.logo}
           contentFit="contain"
         />
-      </Animated.View>
-    </View>
+      </RNAnimatedView>
+    </RNView>
   );
 }
 

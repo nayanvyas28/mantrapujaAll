@@ -86,4 +86,4 @@ class AiService {
 }
 
 // Export a singleton instance
-export const aiService = new AiService(BASE_URL);
+export const aiService = new AiService();

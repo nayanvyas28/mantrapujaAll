@@ -2,6 +2,9 @@ import React from 'react';
 import { View, ViewProps, ViewStyle } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNView = View as any;
+
 export interface CardProps extends ViewProps {
     variant?: 'glass' | 'solid' | 'elevated';
 }
@@ -53,8 +56,8 @@ export function Card({
     }
 
     return (
-        <View style={[cardStyle, style]} {...props}>
+        <RNView style={[cardStyle, style]} {...props}>
             {children}
-        </View>
+        </RNView>
     );
 }

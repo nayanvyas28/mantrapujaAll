@@ -329,7 +329,11 @@ export default function EditProfileScreen() {
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
             <StatusBar style="auto" />
 
             <View style={[styles.header, { borderBottomColor: colors.borderMuted }]}>
@@ -342,7 +346,11 @@ export default function EditProfileScreen() {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                contentContainerStyle={styles.scrollContent} 
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={styles.avatarSection}>
                     {form.avatar ? (
                         <Image source={{ uri: form.avatar }} style={styles.avatar} />
@@ -462,7 +470,7 @@ export default function EditProfileScreen() {
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

@@ -19,6 +19,13 @@ import { Typography } from '../components/ui/Typography';
 import { useTheme } from '../context/ThemeContext';
 import { supabase } from '../utils/supabase';
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNScrollView = ScrollView as any;
+const RNTextInput = TextInput as any;
+const RNActivityIndicator = ActivityIndicator as any;
+const RNKeyboardAvoidingView = KeyboardAvoidingView as any;
+
 export default function OnboardingDetailsScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
@@ -127,26 +134,27 @@ export default function OnboardingDetailsScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
+        <RNKeyboardAvoidingView
             style={[styles.container, { backgroundColor: colors.background }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
-            <ScrollView
+            <RNScrollView
                 contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 20 }]}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
             >
-                <View style={styles.header}>
+                <RNView style={styles.header}>
                     <Typography variant="h1" color={colors.foreground} style={styles.title}>
                         Birth Details
                     </Typography>
                     <Typography variant="body" color={colors.mutedForeground} style={styles.subtitle}>
                         Details are required for accurate Rashi and Horoscope calculations.
                     </Typography>
-                </View>
+                </RNView>
 
-                <View style={styles.form}>
+                <RNView style={styles.form}>
                     {/* Date of Birth */}
                     <Typography variant="label" color={colors.foreground} style={styles.label}>
                         Date of Birth
@@ -179,33 +187,33 @@ export default function OnboardingDetailsScreen() {
                     <Typography variant="label" color={colors.foreground} style={styles.label}>
                         Place of Birth
                     </Typography>
-                    <View style={[styles.inputWrapper, { backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
+                    <RNView style={[styles.inputWrapper, { backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
                         <MapPin size={20} color={colors.saffron} style={styles.inputIcon} />
-                        <TextInput
+                        <RNTextInput
                             style={[styles.input, { color: colors.foreground }]}
                             placeholder="Enter City, State"
                             placeholderTextColor={colors.mutedForeground}
                             value={formData.place}
-                            onChangeText={(text) => setFormData(prev => ({ ...prev, place: text }))}
+                            onChangeText={(text: string) => setFormData(prev => ({ ...prev, place: text }))}
                         />
-                    </View>
+                    </RNView>
 
                     {/* Referral Code (Optional) */}
                     <Typography variant="label" color={colors.foreground} style={styles.label}>
                         Referral Code (Optional)
                     </Typography>
-                    <View style={[styles.inputWrapper, { backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
+                    <RNView style={[styles.inputWrapper, { backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff', borderColor: colors.borderMuted }]}>
                         <UserIcon size={20} color={colors.saffron} style={styles.inputIcon} />
-                        <TextInput
+                        <RNTextInput
                             style={[styles.input, { color: colors.foreground, textTransform: 'uppercase' }]}
                             placeholder="Enter Referral Code"
                             placeholderTextColor={colors.mutedForeground}
                             value={formData.referralCode}
                             autoCapitalize="characters"
-                            onChangeText={(text) => setFormData(prev => ({ ...prev, referralCode: text }))}
+                            onChangeText={(text: string) => setFormData(prev => ({ ...prev, referralCode: text }))}
                         />
-                    </View>
-                </View>
+                    </RNView>
+                </RNView>
 
                 {showDatePicker && (
                     <DateTimePicker
@@ -225,9 +233,9 @@ export default function OnboardingDetailsScreen() {
                         onChange={onTimeChange}
                     />
                 )}
-            </ScrollView>
+            </RNScrollView>
 
-            <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+            <RNView style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
                 <TouchableOpacity
                     style={[styles.primaryButton, { backgroundColor: colors.saffron }]}
                     onPress={() => {
@@ -239,7 +247,7 @@ export default function OnboardingDetailsScreen() {
                     }}
                 >
                     {loading ? (
-                        <ActivityIndicator color="#ffffff" />
+                        <RNActivityIndicator color="#ffffff" />
                     ) : (
                         <>
                             <Typography variant="body" style={styles.btnText}>Calculate Rashi</Typography>
@@ -247,8 +255,8 @@ export default function OnboardingDetailsScreen() {
                         </>
                     )}
                 </TouchableOpacity>
-            </View>
-        </KeyboardAvoidingView>
+            </RNView>
+        </RNKeyboardAvoidingView>
     );
 }
 

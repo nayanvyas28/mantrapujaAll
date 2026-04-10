@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image } from "expo-image";
+import { Image as RNImage } from "expo-image";
+const Image = RNImage as any;
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -15,15 +16,21 @@ import {
 } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+  ActivityIndicator as RNActivityIndicator,
   Alert,
   Dimensions,
   Platform,
-  ScrollView,
+  ScrollView as RNScrollView,
   StyleSheet,
-  TouchableOpacity,
-  View,
+  TouchableOpacity as RNTouchableOpacity,
+  View as RNView,
 } from "react-native";
+
+// Type-safe aliases for React 19/Expo 54 compatibility
+const View = RNView as any;
+const ScrollView = RNScrollView as any;
+const TouchableOpacity = RNTouchableOpacity as any;
+const ActivityIndicator = RNActivityIndicator as any;
 import { AnimatedWaveButton } from "../../components/ui/AnimatedWaveButton";
 import { Card } from "../../components/ui/Card";
 import { FallbackImage } from "../../components/ui/FallbackImage";
@@ -172,28 +179,36 @@ export default function HomeScreen() {
     try {
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const cacheKey = `daily_astro_${rashiName}_${today}`;
+
+      // Try local cache first
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        console.log(`[HomeScreen] Serving daily astro for ${rashiName} from cache.`);
+        setDailyAstro(cached);
+        return;
+      }
+
+      console.log(`[HomeScreen] Fetching fresh daily astro for ${rashiName}...`);
       const { data, error } = await supabase
         .from('daily_astro_notif')
         .select('content')
         .eq('rashi_name', rashiName)
-        // Adjust date logic depending on timezone, but strictly checking current date string is easiest
         .eq('target_date', today)
         .maybeSingle();
 
-      if (error) {
-        // Silently ignore if table doesn't exist yet (42P01) or row not found (PGRST116)
-        if (error.code !== 'PGRST116' && error.code !== '42P01') {
-          throw error;
-        }
+      if (error && error.code !== 'PGRST116' && error.code !== '42P01') {
+        throw error;
       }
 
+      let contentStr = "Your spiritual energy is high today. Check back later for a specific reading.";
       if (data && data.content) {
-        // Safe check for JSON reading field
-        const reading = typeof data.content === 'object' ? data.content.reading : data.content;
-        setDailyAstro(sanitizeText(reading) || "Your spiritual energy is high today. Check back later for a specific reading.");
-      } else {
-        setDailyAstro("Your spiritual energy is high today. Check back later for a specific reading.");
+        contentStr = sanitizeText(typeof data.content === 'object' ? data.content.reading : data.content) || contentStr;
       }
+
+      setDailyAstro(contentStr);
+      // Cache for the day
+      await AsyncStorage.setItem(cacheKey, contentStr);
     } catch (err) {
       console.error("Error fetching daily astro:", err);
     }
@@ -505,7 +520,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => router.push("/calendar")}
+            onPress={() => router.push("/calendar" as any)}
           >
             <Calendar size={22} color={colors.foreground} />
           </TouchableOpacity>
@@ -522,7 +537,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScroll={(e) => handleScroll(e.nativeEvent.contentOffset.y)}
+        onScroll={(e: any) => handleScroll(e.nativeEvent.contentOffset.y)}
       >
         {/* Scrollable Banner */}
         <View style={styles.bannerWrapper}>
@@ -531,7 +546,7 @@ export default function HomeScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onScroll={(e) => {
+            onScroll={(e: any) => {
               const x = e.nativeEvent.contentOffset.x;
               setActiveBanner(Math.round(x / bannerWidth));
             }}
@@ -595,7 +610,7 @@ export default function HomeScreen() {
             <TouchableOpacity 
                 style={{ marginHorizontal: 24, marginBottom: 24 }} 
                 activeOpacity={0.9} 
-                onPress={() => router.push('/horoscope')}
+                onPress={() => router.push('/horoscope' as any)}
             >
                 <Card 
                     variant="solid" 
@@ -1052,13 +1067,13 @@ export default function HomeScreen() {
         <View style={{ marginBottom: 24 }}>
           <AnimatedWaveButton
             title={t("home.read_all_insights", "READ ALL SPIRITUAL INSIGHTS")}
-            onPress={() => router.push("/blogs")}
+            onPress={() => router.push("/blogs" as any)}
           />
         </View>
 
         {/* Refer & Earn Promo - Premium Glow Card */}
         <TouchableOpacity 
-          onPress={() => router.push("/wallet/refer")}
+          onPress={() => router.push("/wallet/refer" as any)}
           activeOpacity={0.9}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={{ marginBottom: 40, marginHorizontal: 24 }}

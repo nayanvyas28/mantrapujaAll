@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, StyleSheet, Animated, Dimensions } from 'react-native';
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNAnimatedView = Animated.View as any;
+
 const { width, height } = Dimensions.get('window');
 const STAR_COUNT = 50;
 
@@ -44,7 +48,7 @@ const Star = ({ size, startX }: any) => {
     }, []);
 
     return (
-        <Animated.View
+        <RNAnimatedView
             style={{
                 position: 'absolute',
                 left: startX,
@@ -69,10 +73,10 @@ export function AnimatedStarfield() {
     }, []);
 
     return (
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+        <RNView style={StyleSheet.absoluteFillObject} pointerEvents="none">
             {stars.map((star) => (
                 <Star key={star.id} {...star} />
             ))}
-        </View>
+        </RNView>
     );
 }

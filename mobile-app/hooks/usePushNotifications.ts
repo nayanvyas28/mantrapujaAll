@@ -133,6 +133,13 @@ async function registerForPushNotificationsAsync() {
             }
 
             const projectId = "6cb5cb96-7d37-4911-b040-3ee0cbee926f"; // Corrected Project ID from app.json
+            
+            // Expo Go SDK 53+ Limitation: Android remote notifications are no longer supported
+            if (isExpoGo && Platform.OS === 'android') {
+                console.warn("⚠️ [SafeMode] Detected Expo Go on Android. Skipping remote push registration (SDK 53 limitation).");
+                return `ExpoPushToken[mock-safe-mode-${Date.now()}]`;
+            }
+
             token = (await Notifications.getExpoPushTokenAsync({
                 projectId,
             })).data;
