@@ -182,6 +182,17 @@ const config: Config = {
         "nebula-pulse": {
           "0%, 100%": { opacity: "0.5" },
           "50%": { opacity: "1" },
+        },
+        "gradient-slow": {
+          "0%, 100%": { "background-position": "0% 50%" },
+          "50%": { "background-position": "100% 50%" },
+        },
+        "wave-slow": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-15%)" },
+        },
+        shine: {
+          "100%": { transform: "translateX(200%)" },
         }
       },
       animation: {
@@ -222,6 +233,9 @@ const config: Config = {
         "wander-7": "wander-7 180s ease-in-out infinite",
         "wander-8": "wander-8 190s ease-in-out infinite",
         "shooting-star": "shooting-star 3s linear infinite",
+        "gradient-slow": "gradient-slow 15s ease infinite",
+        "wave-slow": "wave-slow 10s linear infinite",
+        shine: "shine 1.5s linear infinite",
       },
     },
   },
