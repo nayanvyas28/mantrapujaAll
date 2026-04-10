@@ -29,38 +29,20 @@ export default function LogoAnimationScreen() {
   }, []);
 
   const checkState = useCallback(async () => {
-    // Only wait a minimum of 1s total for visual pleasing effect (usually parallel with auth load)
-    const minimumDelay = new Promise((resolve) => setTimeout(resolve, 1000));
-    await minimumDelay;
-
     try {
       // Check if user has seen intro
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
       
       if (!hasSeenIntro) {
+        // 1. FIRST TIME USER - Show animation then go to Intro
+        await new Promise((resolve) => setTimeout(resolve, 1500));
         router.replace("/intro");
         return;
       }
 
-      // If user is logged in, we check if they have finished onboarding
-      // but we no longer BLOCK them from the home screen.
-      if (user) {
-        const hasFinishedOnboarding = await AsyncStorage.getItem("hasFinishedOnboarding");
-        const hasBirthData = profile?.onboarding_data?.dob || profile?.dob;
-        
-        // If they already finished or have data, definitely Home
-        if (hasFinishedOnboarding === "true" || hasBirthData) {
-           router.replace("/(tabs)");
-           return;
-        }
-        
-        // Even if they are logged in but incomplete, let them land on Home first
-        // The Home screen (AstroSection) will prompt them to complete their profile.
-        router.replace("/(tabs)");
-      } else {
-        // Logged out / Guest users go straight to Home
-        router.replace("/(tabs)");
-      }
+      // 2. REPEAT USER - Skip animation, go straight to Dashboard
+      // Check if user is logged in for specific data, but always land on Home
+      router.replace("/(tabs)");
     } catch (e) {
       console.error("Failed to read status", e);
       router.replace("/(tabs)");
