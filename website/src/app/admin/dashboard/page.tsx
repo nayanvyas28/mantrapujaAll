@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import {
     Users, LayoutDashboard, Settings, LogOut,
     Menu, Bell, Edit3, Package, Globe, FileText,
-    Image as ImageIcon, Server, Database
+    Image as ImageIcon, Server, Database, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
