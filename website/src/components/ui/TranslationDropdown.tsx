@@ -5,19 +5,19 @@ import { Globe, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LANGUAGES = [
-    { code: "hi", label: "Hindi", native: "हिन्दी", flag: "🇮🇳" },
-    { code: "en", label: "English", native: "English", flag: "🇺🇸" },
-    { code: "mr", label: "Marathi", native: "मराठी", flag: "🇮🇳" },
-    { code: "fr", label: "French", native: "Français", flag: "🇫🇷" },
-    { code: "de", label: "German", native: "Deutsch", flag: "🇩🇪" },
-    { code: "ru", label: "Russian", native: "Русский", flag: "🇷🇺" },
-    { code: "gu", label: "Gujarati", native: "ગુજરાતી", flag: "🇮🇳" },
-    { code: "ta", label: "Tamil", native: "தமிழ்", flag: "🇮🇳" },
-    { code: "te", label: "Telugu", native: "తెలుగు", flag: "🇮🇳" },
-    { code: "kn", label: "Kannada", native: "ಕನ್ನಡ", flag: "🇮🇳" },
-    { code: "bn", label: "Bengali", native: "বাংলা", flag: "🇮🇳" },
-    { code: "ml", label: "Malayalam", native: "മലയാളം", flag: "🇮🇳" },
-    { code: "pa", label: "Punjabi", native: "ਪੰਜਾਬੀ", flag: "🇮🇳" },
+    { code: "hi", label: "Hindi", native: "हिन्दी", countryCode: "in" },
+    { code: "en", label: "English", native: "English", countryCode: "us" },
+    { code: "mr", label: "Marathi", native: "मराठी", countryCode: "in" },
+    { code: "fr", label: "French", native: "Français", countryCode: "fr" },
+    { code: "de", label: "German", native: "Deutsch", countryCode: "de" },
+    { code: "ru", label: "Russian", native: "Русский", countryCode: "ru" },
+    { code: "gu", label: "Gujarati", native: "ગુજરાતી", countryCode: "in" },
+    { code: "ta", label: "Tamil", native: "தமிழ்", countryCode: "in" },
+    { code: "te", label: "Telugu", native: "తెలుగు", countryCode: "in" },
+    { code: "kn", label: "Kannada", native: "ಕನ್ನಡ", countryCode: "in" },
+    { code: "bn", label: "Bengali", native: "বাংলা", countryCode: "in" },
+    { code: "ml", label: "Malayalam", native: "മലയാളം", countryCode: "in" },
+    { code: "pa", label: "Punjabi", native: "ਪੰਜਾਬੀ", countryCode: "in" },
 ];
 
 declare global {
@@ -97,10 +97,16 @@ export function TranslationDropdown() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(!isOpen)}
                 onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-                className="relative w-10 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="relative w-10 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors overflow-hidden"
                 aria-label="Change Language"
             >
-                <span>{LANGUAGES.find(l => l.code === currentLang)?.flag || "🌐"}</span>
+                {mounted && (
+                    <img 
+                        src={`https://flagcdn.com/w40/${LANGUAGES.find(l => l.code === currentLang)?.countryCode || 'us'}.png`}
+                        alt="flag"
+                        className="w-6 h-auto rounded-sm"
+                    />
+                )}
             </motion.button>
 
             {/* Dropdown Menu */}
@@ -118,14 +124,16 @@ export function TranslationDropdown() {
                                 <button
                                     key={lang.code}
                                     onClick={() => changeLanguage(lang.code)}
-                                    className={`w-full text-left px-4 py-2.5 flex items-center justify-between text-sm transition-colors ${currentLang === lang.code
-                                        ? "bg-saffron/10 text-saffron font-medium"
-                                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-                                        }`}
-                                >
-                                    <span className="flex flex-col">
-                                        <span className="leading-none">{lang.native}</span>
-                                        <span className="text-[10px] text-muted-foreground opacity-70 mt-0.5">{lang.label}</span>
+                                    <span className="flex items-center gap-3">
+                                        <img 
+                                            src={`https://flagcdn.com/w40/${lang.countryCode}.png`}
+                                            alt={lang.label}
+                                            className="w-5 h-auto rounded-sm border border-slate-100"
+                                        />
+                                        <span className="flex flex-col">
+                                            <span className="leading-none">{lang.native}</span>
+                                            <span className="text-[10px] text-muted-foreground opacity-70 mt-0.5">{lang.label}</span>
+                                        </span>
                                     </span>
                                     {currentLang === lang.code && <Check className="w-3.5 h-3.5" />}
                                 </button>
