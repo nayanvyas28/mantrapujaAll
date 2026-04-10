@@ -9,6 +9,11 @@ import { ChevronRight, Sparkles, Moon, Star, Sun, Compass } from 'lucide-react-n
 import { useRouter } from 'expo-router';
 import { fetchAstroData, prepareAstroRequestData } from '../services/astrologyService';
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNActivityIndicator = ActivityIndicator as any;
+const RNAnimatedView = Animated.View as any;
+
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 48; // Exact banner width compatibility
 
@@ -23,7 +28,7 @@ export const AstroSection = () => {
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
-    const hasBirthData = profile?.onboarding_data?.dob;
+    const hasBirthData = profile?.onboarding_data?.dob || profile?.dob;
     const isDark = theme === 'dark';
 
     useEffect(() => {
@@ -35,7 +40,7 @@ export const AstroSection = () => {
         fadeAnim.setValue(0);
         Animated.timing(fadeAnim, {
             toValue: 1,
-            duration: 1000,
+            duration: 400, // Faster appear
             useNativeDriver: true,
         }).start();
 
@@ -63,9 +68,10 @@ export const AstroSection = () => {
     }, [hasBirthData, i18n.language]);
 
     const loadAstroDetails = async () => {
-        setLoading(true);
+        // Skip loading spinner if we already have some data to show (e.g. from previous render within session)
+        if (!astroDetails) setLoading(true);
         try {
-            const requestData = prepareAstroRequestData(profile.onboarding_data);
+            const requestData = prepareAstroRequestData(profile);
             if (requestData) {
                 const data = await fetchAstroData('astro_details', requestData);
                 if (data) setAstroDetails(data);
@@ -79,7 +85,7 @@ export const AstroSection = () => {
 
     if (!hasBirthData) {
         return (
-            <Animated.View style={[styles.outerContainer, { opacity: fadeAnim }]}>
+            <RNAnimatedView style={[styles.outerContainer, { opacity: fadeAnim }]}>
                 <TouchableOpacity 
                     activeOpacity={0.9}
                     onPress={() => {
@@ -98,30 +104,30 @@ export const AstroSection = () => {
                     }}
                     style={[styles.premiumCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', width: CARD_WIDTH, borderColor: colors.saffron + '30' }]}
                 >
-                    <View style={styles.glowEffect} />
-                    <Animated.View style={{ transform: [{ scale: pulseAnim }], marginRight: 16 }}>
-                        <View style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
+                    <RNView style={styles.glowEffect} />
+                    <RNAnimatedView style={{ transform: [{ scale: pulseAnim }], marginRight: 16 }}>
+                        <RNView style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
                             <Compass size={36} color={colors.saffron} />
-                        </View>
-                    </Animated.View>
-                    <View style={styles.textContainer}>
-                        <View style={styles.badgeRow}>
+                        </RNView>
+                    </RNAnimatedView>
+                    <RNView style={styles.textContainer}>
+                        <RNView style={styles.badgeRow}>
                             <Sparkles size={12} color={colors.saffron} />
                             <Typography variant="label" color={colors.saffron} style={styles.badgeText}>{t('kundli.unlock_destiny', 'UNLOCK DESTINY')}</Typography>
-                        </View>
+                        </RNView>
                         <Typography variant="h3" color={colors.foreground}>{t('kundli.know_yourself', 'Know Your Self')}</Typography>
                         <Typography variant="bodySmall" color={colors.mutedForeground}>{t('kundli.discover_blueprint', 'Discover your cosmic blueprint.')}</Typography>
-                    </View>
-                    <View style={[styles.arrowCircle, { backgroundColor: colors.saffron }]}>
+                    </RNView>
+                    <RNView style={[styles.arrowCircle, { backgroundColor: colors.saffron }]}>
                         <ChevronRight size={18} color="#fff" />
-                    </View>
+                    </RNView>
                 </TouchableOpacity>
-            </Animated.View>
+            </RNAnimatedView>
         );
     }
 
     return (
-        <Animated.View style={[styles.outerContainer, { opacity: fadeAnim }]}>
+        <RNAnimatedView style={[styles.outerContainer, { opacity: fadeAnim }]}>
             <TouchableOpacity 
                 activeOpacity={0.95}
                 onPress={() => {
@@ -140,15 +146,15 @@ export const AstroSection = () => {
                 }}
                 style={[styles.premiumCardExpanded, { backgroundColor: isDark ? '#1e293b' : '#ffffff', width: CARD_WIDTH, borderColor: colors.gold + '20' }]}
             >
-                <View style={styles.cardHeader}>
-                    <View style={styles.profileBox}>
-                        <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                            <View style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
+                <RNView style={styles.cardHeader}>
+                    <RNView style={styles.profileBox}>
+                        <RNAnimatedView style={{ transform: [{ scale: pulseAnim }] }}>
+                            <RNView style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
                                 <Compass size={32} color={colors.saffron} />
-                            </View>
-                        </Animated.View>
-                    </View>
-                    <View style={styles.profileText}>
+                            </RNView>
+                        </RNAnimatedView>
+                    </RNView>
+                    <RNView style={styles.profileText}>
                         <Typography variant="label" color={colors.saffron} style={styles.profileLabel}>{t('kundli.vaidik_identity', 'VAIDIK IDENTITY')}</Typography>
                         <Typography variant="h2" color={colors.foreground} style={styles.rashiName}>
                             {astroDetails?.sign || '--'}
@@ -156,43 +162,43 @@ export const AstroSection = () => {
                         <Typography variant="bodySmall" color={colors.mutedForeground} style={{ marginTop: -2 }}>
                             {astroDetails?.ascendant || '--'} {t('kundli.ascendant', 'Ascendant')}
                         </Typography>
-                    </View>
-                    <View style={styles.actionBtnBox}>
-                         <View style={[styles.pillBtn, { backgroundColor: colors.saffron + '15' }]}>
+                    </RNView>
+                    <RNView style={styles.actionBtnBox}>
+                         <RNView style={[styles.pillBtn, { backgroundColor: colors.saffron + '15' }]}>
                             <Typography variant="label" color={colors.saffron} style={{ fontSize: 10 }}>{t('common.view_all', 'VIEW CHART')}</Typography>
-                         </View>
-                    </View>
-                </View>
+                         </RNView>
+                    </RNView>
+                </RNView>
 
                 {loading ? (
-                    <View style={styles.loaderBox}>
-                        <ActivityIndicator size="small" color={colors.saffron} />
-                    </View>
+                    <RNView style={styles.loaderBox}>
+                        <RNActivityIndicator size="small" color={colors.saffron} />
+                    </RNView>
                 ) : (
-                    <View style={styles.gridRow}>
-                        <View style={styles.gridItem}>
-                            <View style={[styles.iconBox, { backgroundColor: colors.gold + '10' }]}>
+                    <RNView style={styles.gridRow}>
+                        <RNView style={styles.gridItem}>
+                            <RNView style={[styles.iconBox, { backgroundColor: colors.gold + '10' }]}>
                                 <Star size={14} color={colors.gold} />
-                            </View>
-                            <View style={{ marginLeft: 8 }}>
+                            </RNView>
+                            <RNView style={{ marginLeft: 8 }}>
                                 <Typography variant="label" style={styles.gridLabel}>Nakshatra</Typography>
                                 <Typography variant="bodySmall" color={colors.foreground} style={styles.gridValue}>{astroDetails?.Naksahtra || astroDetails?.nakshatra || '--'}</Typography>
-                            </View>
-                        </View>
-                        <View style={styles.separator} />
-                        <View style={styles.gridItem}>
-                            <View style={[styles.iconBox, { backgroundColor: colors.saffron + '10' }]}>
+                            </RNView>
+                        </RNView>
+                        <RNView style={styles.separator} />
+                        <RNView style={styles.gridItem}>
+                            <RNView style={[styles.iconBox, { backgroundColor: colors.saffron + '10' }]}>
                                 <Sun size={14} color={colors.saffron} />
-                            </View>
-                            <View style={{ marginLeft: 8 }}>
+                            </RNView>
+                            <RNView style={{ marginLeft: 8 }}>
                                 <Typography variant="label" style={styles.gridLabel}>Nadi</Typography>
                                 <Typography variant="bodySmall" color={colors.foreground} style={styles.gridValue}>{astroDetails?.Nadi || astroDetails?.nadi || '--'}</Typography>
-                            </View>
-                        </View>
-                    </View>
+                            </RNView>
+                        </RNView>
+                    </RNView>
                 )}
             </TouchableOpacity>
-        </Animated.View>
+        </RNAnimatedView>
     );
 };
 

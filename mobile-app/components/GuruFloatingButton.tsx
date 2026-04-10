@@ -16,6 +16,11 @@ import { useGuruAssistant } from '../context/GuruAssistantContext';
 import { useTheme } from '../context/ThemeContext';
 import { Typography } from './ui/Typography';
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNImage = Image as any;
+const RNAnimatedView = Animated.View as any;
+
 const BUTTON_SIZE = 64;
 const LABEL_WIDTH = 130;
 
@@ -153,16 +158,16 @@ export function GuruFloatingButton() {
     if (!isReady || !isVisible) return null;
 
     return (
-        <View style={styles.absoluteLayer} pointerEvents="box-none">
-            <Animated.View style={[styles.container, containerStyle]}>
+        <RNView style={styles.absoluteLayer} pointerEvents="box-none">
+            <RNAnimatedView style={[styles.container, containerStyle]}>
 
                 {/* Sacred Label (Layered behind the icon) */}
-                <Animated.View style={[
+                <RNAnimatedView style={[
                     styles.labelContainer,
                     { backgroundColor: '#ffffff', borderColor: colors.borderMuted },
                     labelStyle
                 ]}>
-                    <Animated.View style={[styles.textWrapper, textStyle]}>
+                    <RNAnimatedView style={[styles.textWrapper, textStyle]}>
                         <Typography
                             variant="label"
                             color={colors.saffron}
@@ -171,13 +176,13 @@ export function GuruFloatingButton() {
                         >
                             {hintText || 'Ask GuruJi'}
                         </Typography>
-                    </Animated.View>
-                </Animated.View>
+                    </RNAnimatedView>
+                </RNAnimatedView>
 
                 {/* Guru Icon (Top Layer) */}
-                <View style={styles.iconWrapper}>
+                <RNView style={styles.iconWrapper}>
                     {/* Glow Effect */}
-                    <Animated.View
+                    <RNAnimatedView
                         style={[
                             styles.glow,
                             glowStyle,
@@ -196,16 +201,16 @@ export function GuruFloatingButton() {
                             }
                         ]}
                     >
-                        <Image
+                        <RNImage
                             source={require('../assets/images/guru_avatar.png')}
                             style={styles.avatar}
                             resizeMode="cover"
                         />
                     </TouchableOpacity>
-                </View>
+                </RNView>
 
-            </Animated.View>
-        </View>
+            </RNAnimatedView>
+        </RNView>
     );
 }
 

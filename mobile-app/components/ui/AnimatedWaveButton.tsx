@@ -2,6 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, ViewStyle } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNText = Text as any;
+const RNAnimatedView = Animated.View as any;
+
 interface AnimatedWaveButtonProps {
     title: string;
     onPress: () => void;
@@ -41,24 +46,24 @@ export function AnimatedWaveButton({ title, onPress, style }: AnimatedWaveButton
     return (
         <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={[styles.container, style, { borderColor }]}>
             {/* Theme responsive background base */}
-            <View style={[styles.background, { backgroundColor: bgColor }]} />
+            <RNView style={[styles.background, { backgroundColor: bgColor }]} />
 
             {/* The animated wave (a rounded square rotating) */}
-            <Animated.View style={[
+            <RNAnimatedView style={[
                 styles.waveShape,
                 { transform: [{ rotate: spin }] }
             ]} />
 
             {/* A second wave slightly offset for a cool liquid effect */}
-            <Animated.View style={[
+            <RNAnimatedView style={[
                 styles.waveShape2,
                 { transform: [{ rotate: spin }] }
             ]} />
 
             {/* Button Text placed above the wave */}
-            <View style={styles.textContainer}>
-                <Text style={styles.text}>{title}</Text>
-            </View>
+            <RNView style={styles.textContainer}>
+                <RNText style={styles.text}>{title}</RNText>
+            </RNView>
         </TouchableOpacity>
     );
 }

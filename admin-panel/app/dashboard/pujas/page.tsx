@@ -14,6 +14,7 @@ interface Category {
 interface Puja {
     id: string;
     name: string;
+    name_hi?: string;
     price: number;
     category_id: string;
     is_active: boolean;
@@ -22,6 +23,9 @@ interface Puja {
     image_url?: string;
     images?: string[];
     description?: string;
+    description_hi?: string;
+    tagline?: string;
+    tagline_hi?: string;
 }
 
 export default function PujaManagementPage() {
@@ -38,9 +42,13 @@ export default function PujaManagementPage() {
     // Form states
     const [pujasForm, setPujasForm] = useState({
         name: '',
+        name_hi: '',
         price: 0,
         category_id: '',
         description: '',
+        description_hi: '',
+        tagline: '',
+        tagline_hi: '',
         is_active: true,
         is_offer_999: false,
         offer_order: 0,
@@ -149,9 +157,13 @@ export default function PujaManagementPage() {
 
             const pujaData = {
                 name: pujasForm.name,
+                name_hi: pujasForm.name_hi,
                 price: pujasForm.price,
                 category_id: pujasForm.category_id || null,
                 description: pujasForm.description,
+                description_hi: pujasForm.description_hi,
+                tagline: pujasForm.tagline,
+                tagline_hi: pujasForm.tagline_hi,
                 is_active: pujasForm.is_active,
                 is_offer_999: pujasForm.is_offer_999,
                 offer_order: pujasForm.offer_order,
@@ -197,9 +209,13 @@ export default function PujaManagementPage() {
     const resetForm = () => {
         setPujasForm({
             name: '',
+            name_hi: '',
             price: 0,
             category_id: '',
             description: '',
+            description_hi: '',
+            tagline: '',
+            tagline_hi: '',
             is_active: true,
             is_offer_999: false,
             offer_order: 0,
@@ -219,9 +235,13 @@ export default function PujaManagementPage() {
 
         setPujasForm({
             name: puja.name,
+            name_hi: puja.name_hi || '',
             price: puja.price,
             category_id: puja.category_id || '',
             description: puja.description || '',
+            description_hi: puja.description_hi || '',
+            tagline: puja.tagline || '',
+            tagline_hi: puja.tagline_hi || '',
             is_active: puja.is_active,
             is_offer_999: puja.is_offer_999,
             offer_order: puja.offer_order,
@@ -230,6 +250,47 @@ export default function PujaManagementPage() {
             imageFile: null
         });
         setIsPujaModalOpen(true);
+    };
+
+    const handleAutoTranslate = async () => {
+        if (!pujasForm.name && !pujasForm.description && !pujasForm.tagline) {
+            alert('Please enter English content first.');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const prompt = `Translate the following to Hindi (Short, Spiritual, and Professional):
+            Name: "${pujasForm.name}"
+            Tagline: "${pujasForm.tagline}"
+            Description: "${pujasForm.description}"
+            
+            Return ONLY a JSON object with keys "name_hi", "tagline_hi", "description_hi".`;
+
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: prompt })
+            });
+            
+            const data = await response.json();
+            // Parse AI response (it sometimes embeds JSON in backticks)
+            const jsonStr = data.text.match(/\{[\s\S]*\}/)?.[0];
+            if (jsonStr) {
+                const results = JSON.parse(jsonStr);
+                setPujasForm(prev => ({
+                    ...prev,
+                    name_hi: results.name_hi || prev.name_hi,
+                    tagline_hi: results.tagline_hi || prev.tagline_hi,
+                    description_hi: results.description_hi || prev.description_hi
+                }));
+            }
+        } catch (error) {
+            console.error('Translation failed:', error);
+            alert('AI Translation failed. Please try again or type manually.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleDelete = async (id: string) => {
@@ -276,6 +337,14 @@ export default function PujaManagementPage() {
                     >
                         <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
                         Add New Ritual
+                    </button>
+                    <button
+                        onClick={handleAutoTranslate}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-6 py-4 bg-white/5 border border-orange-500/30 hover:bg-orange-500/10 rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98] text-[10px] tracking-widest uppercase text-orange-400 group"
+                    >
+                        <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+                        ✨ Auto Translate Hindi
                     </button>
                 </header>
 
@@ -469,17 +538,51 @@ export default function PujaManagementPage() {
                                                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Primary Configuration</h4>
                                             </div>
 
-                                            <div className="grid grid-cols-1 gap-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div className="space-y-2">
-                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Ritual Full Name</label>
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Ritual Name (English)</label>
                                                     <input
                                                         type="text" required
                                                         value={pujasForm.name}
                                                         onChange={(e) => setPujasForm({ ...pujasForm, name: e.target.value })}
                                                         placeholder="e.g. Mahamrityunjaya Mantra Jaap"
-                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/5 transition-all font-medium text-sm"
+                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm"
                                                     />
                                                 </div>
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1">Ritual Name (Hindi)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={pujasForm.name_hi}
+                                                        onChange={(e) => setPujasForm({ ...pujasForm, name_hi: e.target.value })}
+                                                        placeholder="जैसे: महामृत्युंजय मंत्र जाप"
+                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-orange-500/20 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm text-orange-100"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Short Tagline (English)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={pujasForm.tagline}
+                                                        onChange={(e) => setPujasForm({ ...pujasForm, tagline: e.target.value })}
+                                                        placeholder="Brief catchy phrase"
+                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1">Short Tagline (Hindi)</label>
+                                                    <input
+                                                        type="text"
+                                                        value={pujasForm.tagline_hi}
+                                                        onChange={(e) => setPujasForm({ ...pujasForm, tagline_hi: e.target.value })}
+                                                        placeholder="संक्षिप्त विवरण"
+                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-orange-500/20 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm text-orange-100"
+                                                    />
+                                                </div>
+                                            </div>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-2">
@@ -513,15 +616,27 @@ export default function PujaManagementPage() {
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-2">
-                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Brief Insight / Description</label>
-                                                    <textarea
-                                                        rows={5}
-                                                        value={pujasForm.description}
-                                                        onChange={(e) => setPujasForm({ ...pujasForm, description: e.target.value })}
-                                                        placeholder="Share the spiritual significance and benefits of this ritual..."
-                                                        className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
-                                                    />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="space-y-2">
+                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Insight (English)</label>
+                                                        <textarea
+                                                            rows={4}
+                                                            value={pujasForm.description}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, description: e.target.value })}
+                                                            placeholder="Spiritual significance..."
+                                                            className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1">Insight (Hindi)</label>
+                                                        <textarea
+                                                            rows={4}
+                                                            value={pujasForm.description_hi}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, description_hi: e.target.value })}
+                                                            placeholder="आध्यात्मिक महत्व..."
+                                                            className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

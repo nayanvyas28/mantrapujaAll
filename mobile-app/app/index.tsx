@@ -5,6 +5,10 @@ import { useCallback, useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNAnimatedView = Animated.View as any;
+
 export default function LogoAnimationScreen() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
@@ -34,15 +38,20 @@ export default function LogoAnimationScreen() {
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");
       
       if (!hasSeenIntro) {
-        // 1. FIRST TIME USER - Show animation then go to Intro
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        console.log("[Splash] Redirecting to /intro (First launch)");
         router.replace("/intro");
         return;
       }
 
-      // 2. REPEAT USER - Skip animation, go straight to Dashboard
-      // Check if user is logged in for specific data, but always land on Home
-      router.replace("/(tabs)");
+      // If user is logged in, we check if they have finished onboarding
+      // but we no longer BLOCK them from the home screen.
+      if (user) {
+        console.log("[Splash] User is logged in. Redirecting to /(tabs)");
+        router.replace("/(tabs)");
+      } else {
+        console.log("[Splash] Guest user. Redirecting to /(tabs)");
+        router.replace("/(tabs)");
+      }
     } catch (e) {
       console.error("Failed to read status", e);
       router.replace("/(tabs)");
@@ -57,13 +66,13 @@ export default function LogoAnimationScreen() {
   }, [authLoading, checkState]);
 
   return (
-    <View style={styles.container}>
+    <RNView style={styles.container}>
       <Image
         source={require("../assets/images/logo_intro_bg.jpg")}
         style={styles.background}
         contentFit="cover"
       />
-      <Animated.View
+      <RNAnimatedView
         style={[
           styles.logoContainer,
           {
@@ -77,8 +86,8 @@ export default function LogoAnimationScreen() {
           style={styles.logo}
           contentFit="contain"
         />
-      </Animated.View>
-    </View>
+      </RNAnimatedView>
+    </RNView>
   );
 }
 

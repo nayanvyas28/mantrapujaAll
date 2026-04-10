@@ -7,36 +7,40 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Typography } from '../../components/ui/Typography';
 import { useTheme } from '../../context/ThemeContext';
 
+// Type-safe aliases for React 19/Expo 54 compatibility
+const RNView = View as any;
+const RNScrollView = ScrollView as any;
+
 export default function AboutScreen() {
     const router = useRouter();
     const { colors } = useTheme();
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <RNView style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar style="auto" />
 
-            <View style={[styles.header, { borderBottomColor: colors.borderMuted }]}>
+            <RNView style={[styles.header, { borderBottomColor: colors.borderMuted }]}>
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                     <ArrowLeft size={24} color={colors.foreground} />
                 </TouchableOpacity>
                 <Typography variant="h3">About Us</Typography>
-                <View style={{ width: 40 }} />
-            </View>
+                <RNView style={{ width: 40 }} />
+            </RNView>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <View style={styles.brandSection}>
-                    <View style={styles.logoContainer}>
+            <RNScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <RNView style={styles.brandSection}>
+                    <RNView style={styles.logoContainer}>
                         <Image
                             source={require('../../assets/images/MP_logo.png')}
                             style={styles.logo}
                             contentFit="contain"
                         />
-                    </View>
+                    </RNView>
                     <Typography variant="h2" style={styles.appName}>Mantra Puja</Typography>
                     <Typography variant="bodySmall" color={colors.mutedForeground}>Spiritual Guidance for Modern Life</Typography>
-                </View>
+                </RNView>
 
-                <View style={styles.content}>
+                <RNView style={styles.content}>
                     <Typography variant="body" style={styles.paragraph}>
                         {"Mantra Puja is dedicated to bringing the ancient wisdom of Sanatan Dharma to your fingertips. Our mission is to make spiritual practices accessible, authentic, and easy to follow in today's fast-paced world."}
                     </Typography>
@@ -49,19 +53,19 @@ export default function AboutScreen() {
                     <Typography variant="body" style={styles.paragraph}>
                         To become the leading digital companion for anyone seeking a deeper connection with Hindu spirituality and traditions.
                     </Typography>
-                </View>
+                </RNView>
 
-                <View style={styles.footerSection}>
+                <RNView style={styles.footerSection}>
                     <Typography variant="bodySmall" color={colors.mutedForeground}>Made with</Typography>
                     <Heart size={16} color="#ef4444" fill="#ef4444" style={{ marginHorizontal: 4 }} />
                     <Typography variant="bodySmall" color={colors.mutedForeground}>in India</Typography>
-                </View>
+                </RNView>
 
                 <Typography variant="label" color={colors.muted} style={styles.copy}>
                     © 2024 Mantra Puja Technologies Pvt. Ltd.
                 </Typography>
-            </ScrollView>
-        </View>
+            </RNScrollView>
+        </RNView>
     );
 }
 

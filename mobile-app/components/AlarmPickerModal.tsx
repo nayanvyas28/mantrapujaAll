@@ -2,6 +2,9 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Clock, Play, X } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNView = View as any;
 import { useTheme } from '../context/ThemeContext';
 import { Typography } from './ui/Typography';
 

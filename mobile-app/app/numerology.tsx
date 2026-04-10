@@ -9,7 +9,8 @@ import {
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    View
+    View,
+    KeyboardAvoidingView
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/ui/Card';
@@ -87,7 +88,11 @@ export default function NumerologyScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        >
             <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
 
             {/* Header */}
@@ -99,7 +104,11 @@ export default function NumerologyScreen() {
                 <View style={{ width: 44 }} />
             </View>
 
-            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}>
+            <ScrollView 
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
                 <Typography variant="body" color={colors.mutedForeground} style={{ marginBottom: 24, textAlign: 'center' }}>
                     Discover the mystical significance of your numbers and how they influence your life path.
                 </Typography>
@@ -179,7 +188,7 @@ export default function NumerologyScreen() {
                     </View>
                 )}
             </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
     );
 }
 

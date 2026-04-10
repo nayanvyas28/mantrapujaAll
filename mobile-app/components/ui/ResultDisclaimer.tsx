@@ -1,6 +1,10 @@
 import React from 'react';
 import { StyleSheet, View, ViewStyle, TextStyle } from 'react-native';
 import { Typography } from './Typography';
+
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNView = View as any;
+
 import { useTheme } from '../../context/ThemeContext';
 import Config from '../../constants/Config';
 
@@ -18,7 +22,7 @@ export const ResultDisclaimer: React.FC<ResultDisclaimerProps> = ({
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, centered && styles.centered, style]}>
+    <RNView style={[styles.container, centered && styles.centered, style]}>
       <Typography 
         variant="label" 
         color={colors.mutedForeground} 
@@ -26,7 +30,7 @@ export const ResultDisclaimer: React.FC<ResultDisclaimerProps> = ({
       >
         {Config.disclaimer}
       </Typography>
-    </View>
+    </RNView>
   );
 };
 

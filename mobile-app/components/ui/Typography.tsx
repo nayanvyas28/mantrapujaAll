@@ -2,6 +2,9 @@ import React from 'react';
 import { Text, TextProps } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNText = Text as any;
+
 // Font handling assumes you have 'Georgia' or 'sans-serif' system fonts available by default in React Native.
 // In a full Expo setup with custom fonts (Geist, etc.), we would use useFonts and map families here.
 
@@ -89,7 +92,7 @@ export function Typography({
     const col = color || themeColors.foreground;
 
     return (
-        <Text
+        <RNText
             style={[
                 variantStyle,
                 { color: col, fontWeight: fw, textAlign: align },

@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image } from "expo-image";
+import { Image as RNImage } from "expo-image";
+const Image = RNImage as any;
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -8,22 +9,35 @@ import {
   Calendar,
   Droplets,
   Gift,
+  Globe,
+  Header,
   Heart,
+  Languages,
   Sun,
   Users,
-  Wallet
+  Wallet,
+  Check,
+  X
 } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+  ActivityIndicator as RNActivityIndicator,
   Alert,
   Dimensions,
   Platform,
-  ScrollView,
+  ScrollView as RNScrollView,
   StyleSheet,
-  TouchableOpacity,
-  View,
+  TouchableOpacity as RNTouchableOpacity,
+  View as RNView,
+  Modal as RNModal
 } from "react-native";
+import { getLocalized } from "../../utils/translation";
+
+// Type-safe aliases for React 19/Expo 54 compatibility
+const View = RNView as any;
+const ScrollView = RNScrollView as any;
+const TouchableOpacity = RNTouchableOpacity as any;
+const ActivityIndicator = RNActivityIndicator as any;
 import { AnimatedWaveButton } from "../../components/ui/AnimatedWaveButton";
 import { Card } from "../../components/ui/Card";
 import { FallbackImage } from "../../components/ui/FallbackImage";
@@ -45,9 +59,25 @@ export default function HomeScreen() {
   const router = useRouter();
   const { theme, colors, toggleTheme } = useTheme();
   const { user, profile } = useAuth(); // dynamically get auth state
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { handleScroll } = useGuruAssistant();
   const { balance } = useWallet();
+
+  const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
+
+  const handleLanguageChange = () => {
+    setIsLanguageModalVisible(true);
+  };
+
+  const changeLanguage = async (lang: string) => {
+    try {
+      await i18n.changeLanguage(lang);
+      await AsyncStorage.setItem("appLanguage", lang);
+      setIsLanguageModalVisible(false);
+    } catch (error) {
+      console.error("Error changing language:", error);
+    }
+  };
 
   // Dynamic state
   const isGuest = !user;
@@ -83,29 +113,29 @@ export default function HomeScreen() {
   // Daily Astro Reading
   const [dailyAstro, setDailyAstro] = useState<string | null>(null);
 
-  const BANNERS = [
+  const BANNERS = useMemo(() => [
     {
       id: "1",
-      title: "Special Mahashivratri Puja",
-      subtitle: "Book sacred rituals at Kashi Vishwanath.",
+      title: t("home.banner1.title", "Special Mahashivratri Puja"),
+      subtitle: t("home.banner1.subtitle", "Book sacred rituals at Kashi Vishwanath."),
       image: require("../../assets/images/banner_shivratri.jpg"),
       route: "/pujas/1",
     },
     {
       id: "2",
-      title: "Sacred Spiritual Walk",
-      subtitle: "Experience local traditions.",
+      title: t("home.banner2.title", "Sacred Spiritual Walk"),
+      subtitle: t("home.banner2.subtitle", "Experience local traditions."),
       image: require("../../assets/images/vedic_blog.jpg"),
       route: "/explore",
     },
     {
       id: "3",
-      title: "Sacred Ganga Aarti",
-      subtitle: "Live streaming from Dashashwamedh Ghat.",
+      title: t("home.banner3.title", "Sacred Ganga Aarti"),
+      subtitle: t("home.banner3.subtitle", "Live streaming from Dashashwamedh Ghat."),
       image: require("../../assets/images/ujjain_location.jpg"),
       route: "/explore/1",
     },
-  ];
+  ], [t]);
 
   useEffect(() => {
     // fetchRecentBlogs(); // Hidden for Play Store Compliance
@@ -172,28 +202,36 @@ export default function HomeScreen() {
     try {
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const cacheKey = `daily_astro_${rashiName}_${today}`;
+
+      // Try local cache first
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        console.log(`[HomeScreen] Serving daily astro for ${rashiName} from cache.`);
+        setDailyAstro(cached);
+        return;
+      }
+
+      console.log(`[HomeScreen] Fetching fresh daily astro for ${rashiName}...`);
       const { data, error } = await supabase
         .from('daily_astro_notif')
         .select('content')
         .eq('rashi_name', rashiName)
-        // Adjust date logic depending on timezone, but strictly checking current date string is easiest
         .eq('target_date', today)
         .maybeSingle();
 
-      if (error) {
-        // Silently ignore if table doesn't exist yet (42P01) or row not found (PGRST116)
-        if (error.code !== 'PGRST116' && error.code !== '42P01') {
-          throw error;
-        }
+      if (error && error.code !== 'PGRST116' && error.code !== '42P01') {
+        throw error;
       }
 
+      let contentStr = "Your spiritual energy is high today. Check back later for a specific reading.";
       if (data && data.content) {
-        // Safe check for JSON reading field
-        const reading = typeof data.content === 'object' ? data.content.reading : data.content;
-        setDailyAstro(sanitizeText(reading) || "Your spiritual energy is high today. Check back later for a specific reading.");
-      } else {
-        setDailyAstro("Your spiritual energy is high today. Check back later for a specific reading.");
+        contentStr = sanitizeText(typeof data.content === 'object' ? data.content.reading : data.content) || contentStr;
       }
+
+      setDailyAstro(contentStr);
+      // Cache for the day
+      await AsyncStorage.setItem(cacheKey, contentStr);
     } catch (err) {
       console.error("Error fetching daily astro:", err);
     }
@@ -499,13 +537,19 @@ export default function HomeScreen() {
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={styles.iconButton}
+            onPress={handleLanguageChange}
+          >
+            <Globe size={20} color={colors.foreground} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
             onPress={() => handleProtectedNavigation("/notifications")}
           >
             <Bell size={22} color={colors.foreground} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={() => router.push("/calendar")}
+            onPress={() => router.push("/calendar" as any)}
           >
             <Calendar size={22} color={colors.foreground} />
           </TouchableOpacity>
@@ -522,7 +566,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScroll={(e) => handleScroll(e.nativeEvent.contentOffset.y)}
+        onScroll={(e: any) => handleScroll(e.nativeEvent.contentOffset.y)}
       >
         {/* Scrollable Banner */}
         <View style={styles.bannerWrapper}>
@@ -531,7 +575,7 @@ export default function HomeScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onScroll={(e) => {
+            onScroll={(e: any) => {
               const x = e.nativeEvent.contentOffset.x;
               setActiveBanner(Math.round(x / bannerWidth));
             }}
@@ -595,7 +639,7 @@ export default function HomeScreen() {
             <TouchableOpacity 
                 style={{ marginHorizontal: 24, marginBottom: 24 }} 
                 activeOpacity={0.9} 
-                onPress={() => router.push('/horoscope')}
+                onPress={() => router.push('/horoscope' as any)}
             >
                 <Card 
                     variant="solid" 
@@ -831,7 +875,7 @@ export default function HomeScreen() {
                       numberOfLines={isFullWidth ? undefined : 2}
                       color={colors.foreground}
                     >
-                      {puja.name}
+                      {getLocalized(puja, 'name')}
                     </Typography>
                     <Typography
                       variant="bodySmall"
@@ -839,7 +883,7 @@ export default function HomeScreen() {
                       numberOfLines={1}
                       style={{ marginTop: 4 }}
                     >
-                      {puja.tagline || puja.about_description}
+                      {getLocalized(puja, 'tagline') || getLocalized(puja, 'about_description')}
                     </Typography>
                   </Card>
                 </TouchableOpacity>
@@ -1052,13 +1096,13 @@ export default function HomeScreen() {
         <View style={{ marginBottom: 24 }}>
           <AnimatedWaveButton
             title={t("home.read_all_insights", "READ ALL SPIRITUAL INSIGHTS")}
-            onPress={() => router.push("/blogs")}
+            onPress={() => router.push("/blogs" as any)}
           />
         </View>
 
         {/* Refer & Earn Promo - Premium Glow Card */}
         <TouchableOpacity 
-          onPress={() => router.push("/wallet/refer")}
+          onPress={() => router.push("/wallet/refer" as any)}
           activeOpacity={0.9}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={{ marginBottom: 40, marginHorizontal: 24 }}
@@ -1083,6 +1127,62 @@ export default function HomeScreen() {
 
         {/* Footer */}
         <Footer />
+        {/* Custom Language Selection Modal */}
+        <RNModal
+          visible={isLanguageModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsLanguageModalVisible(false)}
+        >
+          <RNTouchableOpacity 
+            style={styles.modalOverlay} 
+            activeOpacity={1} 
+            onPress={() => setIsLanguageModalVisible(false)}
+          >
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              <View style={styles.modalHeader}>
+                <Typography variant="h3">{t("settings.select_language", "Select Language")}</Typography>
+                <RNTouchableOpacity onPress={() => setIsLanguageModalVisible(false)} style={styles.closeBtn}>
+                  <X size={24} color={colors.foreground} />
+                </RNTouchableOpacity>
+              </View>
+
+              <View style={styles.optionsList}>
+                <RNTouchableOpacity 
+                  style={[
+                    styles.languageOption, 
+                    i18n.language === 'en' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
+                  ]}
+                  onPress={() => changeLanguage('en')}
+                >
+                  <View style={styles.optionLeft}>
+                    <View style={[styles.langIcon, { backgroundColor: '#E0E7FF' }]}>
+                      <Typography style={{ fontWeight: 'bold', color: '#4F46E5' }}>EN</Typography>
+                    </View>
+                    <Typography style={{ marginLeft: 16, fontWeight: i18n.language === 'en' ? '700' : '400' }}>English</Typography>
+                  </View>
+                  {i18n.language === 'en' && <Check size={20} color={colors.saffron} />}
+                </RNTouchableOpacity>
+
+                <RNTouchableOpacity 
+                  style={[
+                    styles.languageOption, 
+                    i18n.language === 'hi' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
+                  ]}
+                  onPress={() => changeLanguage('hi')}
+                >
+                  <View style={styles.optionLeft}>
+                    <View style={[styles.langIcon, { backgroundColor: '#FEF3C7' }]}>
+                      <Typography style={{ fontWeight: 'bold', color: '#D97706' }}>हि</Typography>
+                    </View>
+                    <Typography style={{ marginLeft: 16, fontWeight: i18n.language === 'hi' ? '700' : '400' }}>हिन्दी (Hindi)</Typography>
+                  </View>
+                  {i18n.language === 'hi' && <Check size={20} color={colors.saffron} />}
+                </RNTouchableOpacity>
+              </View>
+            </View>
+          </RNTouchableOpacity>
+        </RNModal>
       </ScrollView>
     </View>
   );
@@ -1110,7 +1210,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16, // Space between icons
+    gap: 12, // Reduced gap for more icons
   },
   iconButton: {
     padding: 4,
@@ -1361,5 +1461,53 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  optionsList: {
+    gap: 16,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  optionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  langIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

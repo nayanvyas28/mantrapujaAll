@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNView = View as any;
 import { Typography } from './ui/Typography';
 import { Card } from './ui/Card';
 import { useTheme } from '../context/ThemeContext';
@@ -75,41 +78,41 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
     return (
         <Card variant="solid" style={[styles.container, { backgroundColor: theme === 'dark' ? '#1e293b' : '#fffefc' }]}>
             {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
+            <RNView style={styles.header}>
+                <RNView style={styles.headerLeft}>
                     <CalIcon size={24} color={colors.saffron} />
                     <Typography variant="h2" color={colors.foreground} style={styles.monthTitle}>
                         {MONTHS[currentDate.getMonth()]} <Typography variant="h2" color={colors.muted}>{currentDate.getFullYear()}</Typography>
                     </Typography>
-                </View>
-                <View style={styles.controls}>
+                </RNView>
+                <RNView style={styles.controls}>
                     <TouchableOpacity onPress={handlePrevMonth} style={[styles.controlBtn, { backgroundColor: theme === 'dark' ? '#334155' : '#f8fafc' }]}>
                         <ChevronLeft size={18} color={colors.foreground} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={handleNextMonth} style={[styles.controlBtn, { backgroundColor: theme === 'dark' ? '#334155' : '#f8fafc', marginLeft: 8 }]}>
                         <ChevronRight size={18} color={colors.foreground} />
                     </TouchableOpacity>
-                </View>
-            </View>
+                </RNView>
+            </RNView>
 
             {/* Hint */}
-            <View style={styles.hintContainer}>
+            <RNView style={styles.hintContainer}>
                 <Typography variant="label" color={colors.muted} style={styles.hintText}>
                     ← Swipe to explore calendar →
                 </Typography>
-            </View>
+            </RNView>
 
             {/* Weekdays */}
-            <View style={[styles.weekdaysRow, { borderBottomColor: 'rgba(255,255,255,0.15)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)' }]}>
+            <RNView style={[styles.weekdaysRow, { borderBottomColor: 'rgba(255,255,255,0.15)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.15)' }]}>
                 {WEEKDAYS.map((day, idx) => (
-                    <View key={day} style={[styles.dayCell, { height: 40, borderColor: 'rgba(255,255,255,0.15)' }, idx === 6 && { borderRightWidth: 0 }]}>
+                    <RNView key={day} style={[styles.dayCell, { height: 40, borderColor: 'rgba(255,255,255,0.15)' }, idx === 6 && { borderRightWidth: 0 }]}>
                         <Typography variant="label" color={colors.saffron} style={{ fontWeight: 'bold', fontSize: 10 }}>{day}</Typography>
-                    </View>
+                    </RNView>
                 ))}
-            </View>
+            </RNView>
 
             {/* Grid */}
-            <View style={styles.grid}>
+            <RNView style={styles.grid}>
                 {calendarData.map((item, index) => {
                     const dateKey = formatDateKey(item.date);
                     const isSelected = selectedDate === dateKey;
@@ -143,8 +146,8 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                                 onSelectDate?.(item.date, festival);
                             }}
                         >
-                            <View style={styles.dayInner}>
-                                <View style={[
+                            <RNView style={styles.dayInner}>
+                                <RNView style={[
                                     styles.dayNumWrapper,
                                     isSelected && { backgroundColor: colors.saffron }
                                 ]}>
@@ -156,22 +159,22 @@ export function CalendarGrid({ onSelectDate, festivalsMap = {} }: CalendarGridPr
                                         {item.day}
                                     </Typography>
                                     {!isSelected && isToday && (
-                                        <View style={[styles.todayIndicator, { backgroundColor: colors.muted }]} />
+                                        <RNView style={[styles.todayIndicator, { backgroundColor: colors.muted }]} />
                                     )}
-                                </View>
+                                </RNView>
 
                                 {festival && (
-                                    <View style={[styles.festTag, { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : (theme === 'dark' ? 'rgba(249, 115, 22, 0.15)' : '#fff7ed') }]}>
+                                    <RNView style={[styles.festTag, { backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : (theme === 'dark' ? 'rgba(249, 115, 22, 0.15)' : '#fff7ed') }]}>
                                         <Typography variant="label" color={isSelected ? '#fff' : colors.saffron} numberOfLines={1} style={styles.festTagText}>
                                             {festival.name.length > 10 ? festival.name.substring(0, 8) + '...' : festival.name}
                                         </Typography>
-                                    </View>
+                                    </RNView>
                                 )}
-                            </View>
+                            </RNView>
                         </TouchableOpacity>
                     );
                 })}
-            </View>
+            </RNView>
         </Card>
     );
 }

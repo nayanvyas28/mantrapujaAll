@@ -14,7 +14,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { alarmService } from '../../services/AlarmService';
 import { supabase } from '../../utils/supabase';
 
-const CATEGORIES = ['All', 'Aarti', 'Chalisa', 'Bhajan', 'Mantra', 'Other'];
+import { getLocalized } from '../../utils/translation';
 
 export default function MusicScreen() {
     const { theme, colors, toggleTheme } = useTheme();
@@ -23,7 +23,16 @@ export default function MusicScreen() {
     const { t } = useTranslation();
     const spiritualSubheading = t("home.subtitle", "Awaken Your Spirit");
 
-    const [activeCategory, setActiveCategory] = useState('All');
+    const CATEGORIES = [
+        t("music.categories.all", "All"),
+        t("music.categories.aarti", "Aarti"),
+        t("music.categories.chalisa", "Chalisa"),
+        t("music.categories.bhajan", "Bhajan"),
+        t("music.categories.mantra", "Mantra"),
+        t("music.categories.other", "Other")
+    ];
+
+    const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
     const [activeGod, setActiveGod] = useState<string | null>(null);
 
     const [dbGods, setDbGods] = useState<any[]>([]);
@@ -414,7 +423,7 @@ export default function MusicScreen() {
                                         <View style={[styles.godProfileImage, { backgroundColor: colors.card }]} />
                                     )}
                                     <Text style={[styles.godProfileName, { color: colors.foreground, fontWeight: isSelected ? '700' : '500' }]} numberOfLines={1}>
-                                        {god.name}
+                                        {getLocalized(god, 'name')}
                                     </Text>
                                 </TouchableOpacity>
                             );
@@ -476,8 +485,8 @@ export default function MusicScreen() {
                         <View style={[styles.miniPlayerImage, { backgroundColor: colors.card }]} />
                     )}
                     <View style={styles.miniPlayerInfo}>
-                        <Text style={[styles.miniPlayerTitle, { color: colors.foreground }]} numberOfLines={1}>{currentSong.title}</Text>
-                        <Text style={[styles.miniPlayerSubtitle, { color: colors.muted }]} numberOfLines={1}>{currentSong.artist}</Text>
+                        <Text style={[styles.miniPlayerTitle, { color: colors.foreground }]} numberOfLines={1}>{getLocalized(currentSong, 'title')}</Text>
+                        <Text style={[styles.miniPlayerSubtitle, { color: colors.muted }]} numberOfLines={1}>{getLocalized(currentSong, 'artist')}</Text>
                     </View>
                     <TouchableOpacity onPress={togglePlayPause} style={styles.miniPlayerPlayBtn}>
                         {isPlaying ? <Pause color={colors.foreground} size={24} /> : <Play color={colors.foreground} size={24} />}
@@ -581,8 +590,8 @@ export default function MusicScreen() {
 
                             <View style={styles.songMetadataRow}>
                                 <View style={styles.songMetadata}>
-                                    <Text style={[styles.playerTitle, { color: colors.foreground }]}>{currentSong.title}</Text>
-                                    <Text style={[styles.playerArtist, { color: colors.saffron }]}>{currentSong.artist}</Text>
+                                    <Text style={[styles.playerTitle, { color: colors.foreground }]}>{getLocalized(currentSong, 'title')}</Text>
+                                    <Text style={[styles.playerArtist, { color: colors.saffron }]}>{getLocalized(currentSong, 'artist')}</Text>
                                 </View>
                                 <TouchableOpacity onPress={() => toggleFavorite(currentSong.id)}>
                                     <Heart
@@ -652,8 +661,8 @@ export default function MusicScreen() {
                                         <View style={[styles.optionsHeaderImage, { backgroundColor: colors.card }]} />
                                     )}
                                     <View style={styles.optionsHeaderInfo}>
-                                        <Text style={[styles.optionsHeaderTitle, { color: colors.foreground }]} numberOfLines={1}>{selectedSongForOptions.title}</Text>
-                                        <Text style={[styles.optionsHeaderSubtitle, { color: colors.muted }]} numberOfLines={1}>{selectedSongForOptions.artist}</Text>
+                                        <Text style={[styles.optionsHeaderTitle, { color: colors.foreground }]} numberOfLines={1}>{getLocalized(selectedSongForOptions, 'title')}</Text>
+                                        <Text style={[styles.optionsHeaderSubtitle, { color: colors.muted }]} numberOfLines={1}>{getLocalized(selectedSongForOptions, 'artist')}</Text>
                                     </View>
                                     <TouchableOpacity onPress={() => setIsOptionsMenuVisible(false)} style={{ padding: 5 }}>
                                         <X color={colors.foreground} size={24} />

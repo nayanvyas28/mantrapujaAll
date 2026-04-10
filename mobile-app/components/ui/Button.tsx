@@ -2,6 +2,9 @@ import React from 'react';
 import { TouchableOpacity, TouchableOpacityProps, StyleSheet, Text, ViewStyle, TextStyle } from 'react-native';
 import { getThemeColors, ThemeType } from '../../theme/colors';
 
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNText = Text as any;
+
 export interface ButtonProps extends TouchableOpacityProps {
     title: string;
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
@@ -84,7 +87,7 @@ export function Button({
             activeOpacity={0.8}
             {...props}
         >
-            <Text style={[txtStyle, { fontWeight: 'bold' }]}>{title}</Text>
+            <RNText style={[txtStyle, { fontWeight: 'bold' }]}>{title}</RNText>
         </TouchableOpacity>
     );
 }

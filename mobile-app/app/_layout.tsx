@@ -2,6 +2,9 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
+
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNView = View as any;
 import { GuruFloatingButton } from '../components/GuruFloatingButton';
 import { AnimatedStarfield } from '../components/ui/AnimatedStarfield';
 import { AuthProvider } from '../context/AuthContext';
@@ -14,17 +17,14 @@ function RootLayoutContent() {
   usePushNotifications();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors?.background || '#000' }}>
+    <RNView style={{ flex: 1, backgroundColor: colors?.background || '#000' }}>
       {theme === 'dark' && (
-        <View style={StyleSheet.absoluteFill}>
+        <RNView style={StyleSheet.absoluteFill}>
           <AnimatedStarfield />
-        </View>
+        </RNView>
       )}
       
-      <Stack 
-        initialRouteName="index"
-        screenOptions={{ headerShown: false, animation: 'fade' }}
-      >
+      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="guru-ai" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="intro" />
@@ -36,7 +36,7 @@ function RootLayoutContent() {
 
       <GuruFloatingButton />
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-    </View>
+    </RNView>
   );
 }
 

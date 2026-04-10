@@ -1,5 +1,23 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, ComponentType } from 'react';
+import { 
+  View as RNView, 
+  StyleSheet, 
+  ScrollView as RNScrollView, 
+  TouchableOpacity as RNTouchableOpacity, 
+  TextInput as RNTextInput, 
+  KeyboardAvoidingView as RNKAV, 
+  Platform, 
+  Keyboard, 
+  Text as RNText 
+} from 'react-native';
+
+// Type-safe aliases for React 19/Expo 54 compatibility
+const View = RNView as any;
+const Text = RNText as any;
+const TextInput = RNTextInput as any;
+const TouchableOpacity = RNTouchableOpacity as any;
+const ScrollView = RNScrollView as any;
+const KeyboardAvoidingView = RNKAV as any;
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Typography } from '../../components/ui/Typography';
@@ -19,10 +37,11 @@ export default function ChatbotScreen() {
     const router = useRouter();
     const { theme, colors: themeColors } = useTheme();
     const [inputText, setInputText] = useState('');
+    const scrollViewRef = React.useRef<ScrollView>(null);
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: 'Namaste! I am Sanatan AI, your spiritual guide. How can I help you on your journey today?',
+            text: 'Pranam! I am GuruJi AI, your spiritual guide. How can I help you on your journey today?',
             isUser: false,
         }
     ]);
@@ -55,32 +74,36 @@ export default function ChatbotScreen() {
     return (
         <SafeAreaView style={[styles.safeArea, { backgroundColor: 'transparent' }]}>
             <StatusBar style="dark" />
-            <KeyboardAvoidingView
+            <RNKAV
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                keyboardVerticalOffset={Platform.OS === 'android' ? 90 : 0}
             >
 
                 {/* Header */}
-                <View style={[styles.header, { borderBottomColor: themeColors.borderMuted, backgroundColor: themeColors.background }]}>
+                <RNView style={[styles.header, { borderBottomColor: themeColors.borderMuted, backgroundColor: themeColors.background }]}>
                     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                         <ArrowLeft size={24} color={themeColors.foreground} />
                     </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
+                    <RNView style={styles.headerTitleContainer}>
                         <Sparkles size={20} color={themeColors.saffron} />
                         <Typography variant="h3" style={{ marginLeft: 8 }}>Sanatan AI</Typography>
-                    </View>
-                    <View style={{ width: 40 }} />
-                </View>
+                    </RNView>
+                    <RNView style={{ width: 40 }} />
+                </RNView>
 
                 {/* Disclaimer */}
                 <ResultDisclaimer centered={true} style={{ backgroundColor: themeColors.card, paddingVertical: 10 }} />
 
-                <ScrollView
+                <RNScrollView
+                    ref={scrollViewRef}
                     contentContainerStyle={styles.chatScroll}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
                 >
                     {messages.length === 1 && (
-                        <View style={styles.suggestionsContainer}>
+                        <RNView style={styles.suggestionsContainer}>
                             <Typography variant="label" color={themeColors.mutedForeground} style={{ marginBottom: 12 }}>
                                 Suggested Questions
                             </Typography>
@@ -94,18 +117,18 @@ export default function ChatbotScreen() {
                                     <Typography variant="bodySmall" color={themeColors.foreground}>{prompt}</Typography>
                                 </TouchableOpacity>
                             ))}
-                        </View>
+                        </RNView>
                     )}
 
                     {messages.map((msg) => (
-                        <View
+                        <RNView
                             key={msg.id}
                             style={[
                                 styles.messageWrapper,
                                 msg.isUser ? styles.messageUser : styles.messageAI
                             ]}
                         >
-                            <View style={[
+                            <RNView style={[
                                 styles.messageBubble,
                                 msg.isUser
                                     ? { backgroundColor: themeColors.saffron }
@@ -114,14 +137,14 @@ export default function ChatbotScreen() {
                                 <Typography variant="body" color={msg.isUser ? '#ffffff' : themeColors.foreground}>
                                     {msg.text}
                                 </Typography>
-                            </View>
-                        </View>
+                            </RNView>
+                        </RNView>
                     ))}
-                </ScrollView>
+                </RNScrollView>
 
                 {/* Input Area */}
-                <View style={[styles.inputContainer, { backgroundColor: themeColors.background, borderTopColor: themeColors.borderMuted }]}>
-                    <TextInput
+                <RNView style={[styles.inputContainer, { backgroundColor: themeColors.background, borderTopColor: themeColors.borderMuted }]}>
+                    <RNTextInput
                         style={[styles.input, { backgroundColor: themeColors.card, borderColor: themeColors.border, color: themeColors.foreground }]}
                         placeholder="Ask a spiritual question..."
                         placeholderTextColor={themeColors.muted}
@@ -136,9 +159,9 @@ export default function ChatbotScreen() {
                     >
                         <Send size={20} color="#ffffff" />
                     </TouchableOpacity>
-                </View>
+                </RNView>
 
-            </KeyboardAvoidingView>
+            </RNKAV>
         </SafeAreaView>
     );
 }

@@ -11,6 +11,7 @@ import { CalendarGrid } from '../../components/CalendarGrid';
 import { supabase } from '../../utils/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
+import { getLocalized } from '../../utils/translation';
 
 export default function CalendarScreen() {
     const router = useRouter();
@@ -96,8 +97,8 @@ export default function CalendarScreen() {
             const dayNum = festival.date ? festival.date.split('-')[2] : '';
             setSelectedFestival({
                 id: festival.id,
-                name: festival.name,
-                desc: festival.description || '',
+                name: getLocalized(festival, 'name'),
+                desc: getLocalized(festival, 'description') || '',
                 date: `${shortMonth} ${dayNum}`,
                 fullDate: festival.date // Store full ISO date for comparison
             });
@@ -127,12 +128,12 @@ export default function CalendarScreen() {
         <TouchableOpacity key={fest.id} activeOpacity={0.8} onPress={() => router.push(`/calendar/${fest.id}`)}>
             <Card variant="solid" style={styles.festivalListCard}>
                 <View style={[styles.festivalDateBox, { backgroundColor: theme === 'dark' ? '#334155' : '#ffffff' }]}>
-                    <Typography variant="label" color={colors.saffron}>{fest.month?.substring(0, 3).toUpperCase()}</Typography>
+                    <Typography variant="label" color={colors.saffron}>{getLocalized(fest, 'month')?.substring(0, 3).toUpperCase()}</Typography>
                     <Typography variant="h2" color={colors.foreground}>{fest.date?.split('-')[2]}</Typography>
                 </View>
                 <View style={styles.festivalListInfo}>
-                    <Typography variant="body" style={{ fontWeight: 'bold' }} color={colors.foreground}>{fest.name}</Typography>
-                    <Typography variant="bodySmall" color={colors.mutedForeground} style={{ marginTop: 4 }}>{fest.description}</Typography>
+                    <Typography variant="body" style={{ fontWeight: 'bold' }} color={colors.foreground}>{getLocalized(fest, 'name')}</Typography>
+                    <Typography variant="bodySmall" color={colors.mutedForeground} style={{ marginTop: 4 }}>{getLocalized(fest, 'description')}</Typography>
                 </View>
             </Card>
         </TouchableOpacity>

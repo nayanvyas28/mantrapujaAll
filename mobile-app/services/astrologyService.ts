@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from '../utils/i18n';
 import { getCityCoords } from '../utils/geo';
 
@@ -36,76 +37,132 @@ const getAstroBackendUrl = () => {
 const BACKEND_URL = getAstroBackendUrl();
 const DIRECT_API_URL = "https://json.astrologyapi.com/v1";
 
+const getCacheKey = (endpoint: string, data: any, lang: string) => {
+    const dataString = JSON.stringify(data);
+    // Simple sanitization for AsyncStorage key compatibility
+    return `astro_cache_${lang}_${endpoint.replace(/\//g, '_')}_${dataString.slice(0, 500)}`;
+};
+
+// Request Deduplication Map
+const pendingRequests = new Map<string, Promise<any>>();
+
 /**
- * Fetch Astrology Data with automatic failover support
+ * Fetch Astrology Data with automatic failover support and local caching
  */
 export const fetchAstroData = async (endpoint: string, data: any) => {
     const lang = i18n.language || 'en';
-    
-    // 1. ATTEMPT BACKEND PROXY (Port 4000 handles failover automatically)
+    const cacheKey = getCacheKey(endpoint, data, lang);
+
+    // 0. CHECK CACHE FIRST
     try {
-        console.log(`[AstroService] Trying Backend Proxy for ${endpoint}...`);
-        const response = await fetch(`${BACKEND_URL}/${endpoint.replace(/^\//, '')}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept-Language': lang
-            },
-            body: JSON.stringify(data),
-        });
-
-        if (response.ok) {
-            return await response.json();
+        const cachedData = await AsyncStorage.getItem(cacheKey);
+        if (cachedData) {
+            console.log(`[AstroService] Serving ${endpoint} from CACHE.`);
+            return JSON.parse(cachedData);
         }
-        
-        console.warn(`[AstroService] Backend Proxy returned ${response.status}. Falling back to Direct API...`);
-    } catch (proxyError) {
-        console.warn("[AstroService] Backend Proxy unreachable. Falling back to Direct API...");
+    } catch (cacheError) {
+        console.warn("[AstroService] Cache read error:", cacheError);
     }
 
-    // 2. DIRECT API FALLBACK (Manual rotation in case backend is down)
-    for (const key of API_KEYS) {
+    // 0.1 DEDUPLICATE ACTIVE REQUESTS
+    if (pendingRequests.has(cacheKey)) {
+        console.log(`[AstroService] Joining existing request for ${endpoint}...`);
+        return pendingRequests.get(cacheKey);
+    }
+
+    const requestPromise = (async () => {
         try {
-            console.log(`[AstroService] Attempting Direct API for ${endpoint} with key ${key.slice(0, 8)}...`);
-            const response = await fetch(`${DIRECT_API_URL}/${endpoint}`, {
-                method: 'POST',
-                headers: {
-                    'x-astrologyapi-key': key,
-                    'Content-Type': 'application/json',
-                    'Accept-Language': lang,
-                    'User-Agent': 'Mozilla/5.0 (MantraPuja/1.0.1)',
-                },
-                body: JSON.stringify(data),
-            });
+            // 1. ATTEMPT BACKEND PROXY (Strict 3s timeout)
+            try {
+                console.log(`[AstroService] Trying Network (Proxy) for ${endpoint}...`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout
 
-            if (response.ok) {
-                return await response.json();
+                const response = await fetch(`${BACKEND_URL}/${endpoint.replace(/^\//, '')}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept-Language': lang
+                    },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result) {
+                        await AsyncStorage.setItem(cacheKey, JSON.stringify(result));
+                    }
+                    return result;
+                }
+                
+                console.warn(`[AstroService] Proxy returned ${response.status}. Falling back...`);
+            } catch (proxyError: any) {
+                console.warn(`[AstroService] Proxy Failed/Timed out: ${proxyError.message}. Falling back...`);
             }
 
-            const errorBody = await response.text();
-            if (response.status === 429) {
-                console.warn(`[AstroService] Key ${key.slice(0, 8)} reached limit. Trying next...`);
-                continue;
+            // 2. DIRECT API FALLBACK (Manual rotation)
+            for (const key of API_KEYS) {
+                try {
+                    console.log(`[AstroService] Trying Direct API for ${endpoint} (Key: ${key.slice(0, 5)})...`);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s for direct API
+
+                    const response = await fetch(`${DIRECT_API_URL}/${endpoint}`, {
+                        method: 'POST',
+                        headers: {
+                            'x-astrologyapi-key': key,
+                            'Content-Type': 'application/json',
+                            'Accept-Language': lang,
+                            'User-Agent': 'MantraPuja/1.0.1',
+                        },
+                        body: JSON.stringify(data),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        if (result) {
+                            await AsyncStorage.setItem(cacheKey, JSON.stringify(result));
+                        }
+                        return result;
+                    }
+
+                    if (response.status === 429) continue;
+                    console.error(`[AstroService] Direct API Error (${response.status})`);
+                } catch (directError) {
+                    console.error("[AstroService] Direct API Exception:", directError);
+                }
             }
 
-            console.error(`[AstroService] Direct API Error (${response.status}):`, errorBody);
-        } catch (directError) {
-            console.error("[AstroService] Direct API Exception:", directError);
+            return null;
+        } finally {
+            pendingRequests.delete(cacheKey);
         }
-    }
+    })();
 
-    return null; // All attempts failed
+    pendingRequests.set(cacheKey, requestPromise);
+    return requestPromise;
 };
 
 /**
  * Normalizes user birth details for the API
  */
-export const prepareAstroRequestData = (onboardingData: any) => {
-    if (!onboardingData || !onboardingData.dob) return null;
+export const prepareAstroRequestData = (data: any) => {
+    if (!data) return null;
 
     try {
-        const dob = new Date(onboardingData.dob);
-        const timeStr = onboardingData.time || "12:00 PM";
+        // Handle both direct profile (data.dob) and onboarding_data wrapper (data.onboarding_data.dob)
+        const onboarding = data.onboarding_data || {};
+        const dobStr = onboarding.dob || data.dob;
+        const timeStr = onboarding.time || data.time || data.tob || "12:00 PM";
+        const placeStr = onboarding.place || data.place || data.birth_place || 'Varanasi';
+
+        if (!dobStr) return null;
+
+        const dob = new Date(dobStr);
         const parts = timeStr.split(':');
         
         if (parts.length < 2) return null;
@@ -120,7 +177,7 @@ export const prepareAstroRequestData = (onboardingData: any) => {
             if (ampm === 'am' && h === 12) h = 0;
         }
 
-        const coords = getCityCoords(onboardingData.place || 'Varanasi');
+        const coords = getCityCoords(placeStr);
 
         return {
             day: dob.getDate(),

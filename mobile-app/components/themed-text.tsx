@@ -1,5 +1,8 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
+// Type-safe alias for React 19/Expo 54 compatibility
+const RNText = Text as any;
+
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 export type ThemedTextProps = TextProps & {
@@ -18,7 +21,7 @@ export function ThemedText({
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
   return (
-    <Text
+    <RNText
       style={[
         { color },
         type === 'default' ? styles.default : undefined,
