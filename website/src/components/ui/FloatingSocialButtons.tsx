@@ -2,35 +2,39 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, Instagram, Facebook, MessageCircle, Plus, X, Send } from "lucide-react";
+import { Youtube, Instagram, Facebook, MessageCircle, Plus, X, Send } from "lucide-react";
 
 const socialLinks = [
     {
         name: "WhatsApp",
-        icon: <MessageCircle className="w-6 h-6" />,
+        icon: (
+            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-current" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-4.752 8.995h-.013c-2.104 0-4.17-.567-5.975-1.637l-.428-.254-4.443 1.165 1.186-4.333-.278-.443c-1.176-1.87-1.798-4.04-1.798-6.267 0-6.441 5.244-11.685 11.688-11.685 3.12 0 6.054 1.216 8.261 3.424 2.208 2.208 3.422 5.142 3.422 8.26 0 6.443-5.242 11.685-11.685 11.685m10.222-18.784c-2.731-2.73-6.362-4.234-10.222-4.234-7.962 0-14.442 6.481-14.442 14.444 0 2.544.664 5.027 1.921 7.238l-2.043 7.462 7.639-2.004c2.143 1.168 4.558 1.786 7.014 1.786h.016c7.965 0 14.444-6.481 14.444-14.444 0-3.854-1.503-7.478-4.233-10.208" />
+            </svg>
+        ),
         color: "bg-[#25D366]",
-        href: "https://wa.me/919876543210", // Placeholder number
+        href: "https://wa.me/918989271245",
         pulseColor: "rgba(37, 211, 102, 0.4)",
     },
     {
-        name: "Call Us",
-        icon: <Phone className="w-6 h-6" />,
-        color: "bg-saffron",
-        href: "tel:+919876543210",
-        pulseColor: "rgba(249, 115, 22, 0.4)",
+        name: "YouTube",
+        icon: <Youtube className="w-6 h-6" />,
+        color: "bg-[#FF0000]",
+        href: "https://www.youtube.com/@MantraPujaOfficials",
+        pulseColor: "rgba(255, 0, 0, 0.4)",
     },
     {
         name: "Instagram",
         icon: <Instagram className="w-6 h-6" />,
         color: "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]",
-        href: "https://instagram.com",
+        href: "https://www.instagram.com/mantrapujaa/",
         pulseColor: "rgba(238, 42, 123, 0.4)",
     },
     {
         name: "Facebook",
         icon: <Facebook className="w-6 h-6" />,
         color: "bg-[#1877F2]",
-        href: "https://facebook.com",
+        href: "https://www.facebook.com/mantrapujaa",
         pulseColor: "rgba(24, 119, 242, 0.4)",
     },
     {
