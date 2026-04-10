@@ -6,13 +6,42 @@ import { Zap, Clock, Users, ChevronRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 export default function PromotionalBanner() {
-    const [slotsLeft, setSlotsLeft] = useState(20);
+    const [slotsLeft, setSlotsLeft] = useState(270);
 
-    // Subtle countdown effect for slots
     useEffect(() => {
-        const timer = setInterval(() => {
-            setSlotsLeft(prev => (prev > 5 ? prev - 1 : prev));
-        }, 15000); // Reduce a slot every 15 seconds for urgency feel
+        const calculateSlots = () => {
+            const now = new Date();
+            const start = new Date("2026-04-10T00:00:00");
+            const end = new Date("2026-04-20T23:59:59");
+            
+            const totalSlots = 500;
+            const initialDone = 230;
+            const availableSlots = totalSlots - initialDone; // 270
+
+            if (now < start) {
+                setSlotsLeft(availableSlots);
+                return;
+            }
+            if (now > end) {
+                setSlotsLeft(0);
+                return;
+            }
+
+            // Calculate progress percentage
+            const totalDuration = end.getTime() - start.getTime();
+            const elapsed = now.getTime() - start.getTime();
+            const progress = elapsed / totalDuration;
+
+            // Add a bit of non-linear behavior (faster at start, slower at end or vice versa)
+            // Using a simple ease-out-ish feel or just linear with slight noise
+            const noise = (Math.sin(now.getTime() / 10000) * 0.5); // Very tiny oscillation
+            const remaining = Math.max(0, Math.floor(availableSlots * (1 - progress) + noise));
+            
+            setSlotsLeft(remaining);
+        };
+
+        calculateSlots();
+        const timer = setInterval(calculateSlots, 60000); // Update every minute
         return () => clearInterval(timer);
     }, []);
 
