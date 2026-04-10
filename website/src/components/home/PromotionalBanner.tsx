@@ -40,18 +40,18 @@ export default function PromotionalBanner() {
                 ></motion.div>
             </div>
 
-            <div className="container mx-auto px-4 py-4 md:py-6 relative z-10">
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-6 md:gap-8">
+            <div className="container mx-auto px-4 py-3 md:py-6 relative z-10">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-4 md:gap-8">
                     
                     {/* Left Side: Content */}
                     <div className="flex flex-col md:flex-row items-center gap-5 text-center md:text-left">
                         {/* Highlights: Special Price Circle */}
                         <motion.div 
                             whileHover={{ scale: 1.1, rotate: 5 }}
-                            className="flex-shrink-0 w-20 h-20 md:w-24 md:h-24 bg-yellow-400 rounded-full flex flex-col items-center justify-center shadow-2xl border-4 border-white transform -rotate-3"
+                            className="flex-shrink-0 w-16 h-16 md:w-24 md:h-24 bg-yellow-400 rounded-full flex flex-col items-center justify-center shadow-2xl border-2 md:border-4 border-white transform -rotate-3"
                         >
-                            <span className="text-[10px] md:text-xs font-bold text-orange-800 uppercase leading-none">Just</span>
-                            <span className="text-2xl md:text-3xl font-black text-red-700 leading-none">₹21</span>
+                            <span className="text-[8px] md:text-xs font-bold text-orange-800 uppercase leading-none">Just</span>
+                            <span className="text-lg md:text-3xl font-black text-red-700 leading-none">₹21</span>
                         </motion.div>
 
                         <div className="space-y-1">
@@ -62,7 +62,7 @@ export default function PromotionalBanner() {
                                     <span className="font-medium">Akshaya Tritiya</span>
                                 </div>
                             </div>
-                            <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-white leading-tight drop-shadow-md">
+                            <h2 className="text-xl md:text-3xl lg:text-4xl font-black text-white leading-tight drop-shadow-md">
                                 Akshaya Tritiya Special Puja
                             </h2>
                             <p className="text-sm md:text-base text-orange-50/90 font-medium max-w-xl">
@@ -72,7 +72,7 @@ export default function PromotionalBanner() {
                     </div>
 
                     {/* Right Side: Urgency & CTA */}
-                    <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-8">
+                    <div className="flex flex-row lg:flex-row items-center gap-4 md:gap-8">
                         {/* Slots Counter */}
                         <div className="flex flex-col items-center sm:items-end">
                             <div className="flex items-center gap-2 text-white mb-1">
@@ -97,7 +97,7 @@ export default function PromotionalBanner() {
                         {/* CTA Button */}
                         <Link 
                             href="/pooja-services/akshaya-tritiya-puja"
-                            className="group relative flex items-center justify-center bg-white text-orange-700 px-8 py-4 rounded-2xl font-black text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 overflow-hidden"
+                            className="group relative flex items-center justify-center bg-white text-orange-700 px-6 py-3 md:px-8 md:py-4 rounded-xl md:rounded-2xl font-black text-sm md:text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-200 overflow-hidden"
                         >
                             <span className="relative z-10 flex items-center gap-2">
                                 BOOK NOW
