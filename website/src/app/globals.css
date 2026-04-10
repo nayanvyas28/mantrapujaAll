@@ -478,19 +478,32 @@ body {
   scrollbar-width: none;
 }
 
-/* Google Translate Overrides */
-.goog-te-banner-frame {
-  display: none !important;
+/* Google Translate Overrides - Aggressive Hiding */
+.goog-te-banner-frame.skiptranslate, 
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover {
+    display: none !important;
+    visibility: hidden !important;
 }
 
 .goog-te-gadget-icon {
-  display: none !important;
+    display: none !important;
 }
 
-#google_translate_element {
-  display: none !important;
+.goog-text-highlight {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 body {
-  top: 0 !important;
+    top: 0 !important;
+    position: static !important;
+}
+
+#google_translate_element {
+    display: none !important;
 }
