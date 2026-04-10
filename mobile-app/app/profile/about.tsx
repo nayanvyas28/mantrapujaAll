@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Image } from 'expo-image';
 import { ArrowLeft, Heart } from 'lucide-react-native';
 import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -24,8 +25,12 @@ export default function AboutScreen() {
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.brandSection}>
-                    <View style={[styles.logoPlaceholder, { backgroundColor: colors.saffron }]}>
-                        <Typography variant="h1" color="#ffffff">MP</Typography>
+                    <View style={styles.logoContainer}>
+                        <Image
+                            source={require('../../assets/images/MP_logo.png')}
+                            style={styles.logo}
+                            contentFit="contain"
+                        />
                     </View>
                     <Typography variant="h2" style={styles.appName}>Mantra Puja</Typography>
                     <Typography variant="bodySmall" color={colors.mutedForeground}>Spiritual Guidance for Modern Life</Typography>
@@ -86,13 +91,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: 32,
     },
-    logoPlaceholder: {
-        width: 80,
-        height: 80,
+    logoContainer: {
+        width: 100,
+        height: 100,
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
+        backgroundColor: '#ffffff',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    logo: {
+        width: 80,
+        height: 80,
     },
     appName: {
         marginBottom: 4,
