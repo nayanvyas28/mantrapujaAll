@@ -21,9 +21,12 @@ function RootLayoutContent() {
         </View>
       )}
       
-      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-        <Stack.Screen name="guru-ai" options={{ animation: 'slide_from_bottom' }} />
+      <Stack 
+        initialRouteName="index"
+        screenOptions={{ headerShown: false, animation: 'fade' }}
+      >
         <Stack.Screen name="index" />
+        <Stack.Screen name="guru-ai" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="intro" />
         <Stack.Screen name="login" />
         <Stack.Screen name="zodiac" />
