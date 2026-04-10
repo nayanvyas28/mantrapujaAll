@@ -76,8 +76,8 @@ export default function ChatbotScreen() {
             <StatusBar style="dark" />
             <RNKAV
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+                keyboardVerticalOffset={Platform.OS === 'android' ? 90 : 0}
             >
 
                 {/* Header */}

@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2, User, Calendar, Clock, MapPin } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share, Dimensions } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share, Dimensions, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FallbackImage } from '../components/ui/FallbackImage';
 import { ResultDisclaimer } from '../components/ui/ResultDisclaimer';
@@ -180,6 +180,14 @@ export default function GuruAIScreen() {
             if (val) setMsgCountSinceTask(parseInt(val, 10));
         });
     }, [loadHistory, TASK_COUNT_KEY]);
+    
+    // Auto-scroll on keyboard show
+    useEffect(() => {
+        const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+            setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+        });
+        return () => showSubscription.remove();
+    }, []);
 
     const saveHistory = useCallback(async () => {
         try {
@@ -332,9 +340,9 @@ export default function GuruAIScreen() {
 
     return (
         <RNKeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
             style={[styles.container, { backgroundColor: colors.background }]}
-            keyboardVerticalOffset={0}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : insets.bottom}
         >
             <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
             <RNModal
