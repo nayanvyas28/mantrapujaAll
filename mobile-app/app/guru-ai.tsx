@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2, User, Calendar, Clock, MapPin } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share, Dimensions, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FallbackImage } from '../components/ui/FallbackImage';
@@ -40,10 +41,11 @@ export default function GuruAIScreen() {
     const { user, profile } = useAuth();
     const insets = useSafeAreaInsets();
     const scrollRef = useRef<any>(null);
+    const { t } = useTranslation();
 
     const CHAT_STORAGE_KEY = `guru_chat_history_${user?.id || 'anon'}`;
     const DEFAULT_GREETING: Message[] = [
-        { role: 'guru', text: 'Pranam! I am your spiritual guide. How can I assist you on your journey today?' }
+        { role: 'guru', text: t("guru.greeting", 'Pranam! I am your spiritual guide. How can I assist you on your journey today?') }
     ];
 
     const [message, setMessage] = useState('');
@@ -52,11 +54,33 @@ export default function GuruAIScreen() {
     const [isLimitReached, setIsLimitReached] = useState(false);
     const [chatHistory, setChatHistory] = useState<Message[]>(DEFAULT_GREETING);
     
+    // Session State
+    const [sessions, setSessions] = useState<any[]>([]);
+    const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+    const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
+    const [selectedChatLanguage, setSelectedChatLanguage] = useState<'hi' | 'en'>('hi');
+    const LANG_STORAGE_KEY = `guru_chat_lang_${user?.id || 'anon'}`;
+
     // Task-based Unlock Logic
     const [msgCountSinceTask, setMsgCountSinceTask] = useState(0);
     const [isTaskModalVisible, setIsTaskModalVisible] = useState(false);
     const TASK_COUNT_KEY = `guru_task_msg_count_${user?.id || 'anon'}`;
     const TASK_THRESHOLD = 5;
+
+    // Load language preference
+    useEffect(() => {
+        AsyncStorage.getItem(LANG_STORAGE_KEY).then(val => {
+            if (val === 'hi' || val === 'en') setSelectedChatLanguage(val);
+        });
+    }, [LANG_STORAGE_KEY]);
+
+    const toggleLanguage = async () => {
+        const newLang = selectedChatLanguage === 'hi' ? 'en' : 'hi';
+        setSelectedChatLanguage(newLang);
+        await AsyncStorage.setItem(LANG_STORAGE_KEY, newLang);
+    };
 
     // Inline Form State
     const [kundliForm, setKundliForm] = useState({
@@ -85,8 +109,21 @@ export default function GuruAIScreen() {
         setIsLoading(true);
 
         try {
-            // Get real AI response from our admin proxy, passing userId for limit tracking
-            const aiResponseText = await aiService.chat(textToSend, formatHistory(chatHistory), user?.id);
+            // Get real AI response from our admin proxy, passing userId, currentSessionId and language
+            const result = await aiService.chat(
+                textToSend, 
+                formatHistory(chatHistory), 
+                user?.id, 
+                currentSessionId || undefined,
+                selectedChatLanguage
+            );
+            const aiResponseText = result.text;
+            
+            // If it was a new session, update the state
+            if (!currentSessionId && result.sessionId) {
+                setCurrentSessionId(result.sessionId);
+                fetchSessions(); // Refresh history list
+            }
 
             // Detect if the server returned a limit-reached or upsell message
             const lowerText = aiResponseText?.toLowerCase() || '';
@@ -106,7 +143,7 @@ export default function GuruAIScreen() {
             console.error('Chat Error:', error);
             const errorMessage: Message = {
                 role: 'guru',
-                text: "I am having trouble connecting to the celestial spheres right now. Please try again in a moment."
+                text: t("guru.error", "I am having trouble connecting to the celestial spheres right now. Please try again in a moment.")
             };
             setChatHistory(prev => [...prev, errorMessage]);
         } finally {
@@ -129,20 +166,90 @@ export default function GuruAIScreen() {
         }
     }, [message, isLoading, chatHistory, user?.id]);
 
+    const fetchSessions = useCallback(async () => {
+        if (!user?.id) return;
+        try {
+            setIsHistoryLoading(true);
+            const { data, error } = await supabase
+                .from('guru_chat_sessions')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('last_message_at', { ascending: false });
+            
+            if (!error && data) {
+                setSessions(data);
+            }
+        } catch (err) {
+            console.error('Error fetching sessions:', err);
+        } finally {
+            setIsHistoryLoading(false);
+        }
+    }, [user?.id]);
+
+    const loadSessionMessages = useCallback(async (sessionId: string) => {
+        try {
+            setIsLoading(true);
+            setCurrentSessionId(sessionId);
+            setIsHistoryVisible(false);
+
+            const { data, error } = await supabase
+                .from('guru_chat_messages')
+                .select('*')
+                .eq('session_id', sessionId)
+                .order('created_at', { ascending: true });
+
+            if (!error && data) {
+                const mapped: Message[] = data.map(m => ({
+                    role: m.role === 'model' ? 'guru' : 'user',
+                    text: m.content
+                }));
+                setChatHistory(mapped);
+                setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 200);
+            }
+        } catch (err) {
+            console.error('Error loading session messages:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    const startNewChat = () => {
+        setCurrentSessionId(null);
+        setChatHistory(DEFAULT_GREETING);
+        setIsHistoryVisible(false);
+    };
+
     const loadHistory = useCallback(async () => {
         if (!user?.id) return; // Wait for auth to be ready
+        
+        // Always refresh the session list
+        fetchSessions(); 
 
         try {
-            // 1. Try Supabase cloud history first
-            const { data, error } = await supabase
+            // 1. Try to load the most recent session's messages
+            const { data: latestSession, error: sError } = await supabase
+                .from('guru_chat_sessions')
+                .select('id')
+                .eq('user_id', user.id)
+                .order('last_message_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (!sError && latestSession) {
+                loadSessionMessages(latestSession.id);
+                return;
+            }
+
+            // 2. Fallback: Legacy history check (one long JSON column)
+            const { data: legacyData, error: legacyError } = await supabase
                 .from('ai_usage')
                 .select('chat_history')
                 .eq('user_id', user.id)
                 .single();
 
-            if (!error && data?.chat_history && Array.isArray(data.chat_history) && data.chat_history.length > 0) {
+            if (!legacyError && legacyData?.chat_history && Array.isArray(legacyData.chat_history) && legacyData.chat_history.length > 0) {
                 // Map from DB format {role, content} => App format {role: 'guru'/'user', text}
-                const mapped: Message[] = (data.chat_history as any[])
+                const mapped: Message[] = (legacyData.chat_history as any[])
                     .map((m) => ({
                         role: (m.role === 'model' ? 'guru' : 'user') as Message['role'],
                         text: (m.content || m.text || '') as string,
@@ -152,11 +259,11 @@ export default function GuruAIScreen() {
                 if (mapped.length > 0) {
                     setChatHistory(mapped);
                     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 200);
-                    return; // Success — no need to check AsyncStorage
+                    return; // Success
                 }
             }
 
-            // 2. Fallback: try AsyncStorage (local device)
+            // 3. Fallback: try AsyncStorage (local device)
             const saved = await AsyncStorage.getItem(CHAT_STORAGE_KEY);
             if (saved) {
                 const parsed: Message[] = JSON.parse(saved);
@@ -169,15 +276,15 @@ export default function GuruAIScreen() {
             console.error('Failed to load chat history:', e);
             // Non-critical: just stay with greeting if all fails
         }
-    }, [user?.id, CHAT_STORAGE_KEY]);
+    }, [user?.id, CHAT_STORAGE_KEY, fetchSessions, loadSessionMessages]);
 
-    // Load chat history: from Supabase first (cloud), fallback to AsyncStorage (local)
+    // Load chat history on mount or user change
     useEffect(() => {
         loadHistory();
         
-        // Load task message count
+        // Load task count
         AsyncStorage.getItem(TASK_COUNT_KEY).then(val => {
-            if (val) setMsgCountSinceTask(parseInt(val, 10));
+            if (val) setMsgCountSinceTask(val ? parseInt(val, 10) : 0);
         });
     }, [loadHistory, TASK_COUNT_KEY]);
     
@@ -420,7 +527,7 @@ export default function GuruAIScreen() {
                         />
                     </RNView>
                     <RNView>
-                        <Typography variant="h3" color={colors.foreground}>GuruJi AI</Typography>
+                        <Typography variant="h2" color={colors.foreground}>{t("guru.title", "GuruJi AI")}</Typography>
                         <RNView style={styles.onlineBadge}>
                             <RNView style={styles.greenDot} />
                             <Typography variant="label" color={colors.mutedForeground} style={{ fontSize: 10 }}>Wisdom Real-time</Typography>
@@ -428,13 +535,121 @@ export default function GuruAIScreen() {
                     </RNView>
                 </RNView>
 
-                <TouchableOpacity
-                    onPress={() => { setChatHistory([{ role: 'guru', text: 'Pranam! How can I help?' }]); setChatMode('normal'); }}
-                    style={styles.resetBtn}
+                <RNView style={{ flexDirection: 'row', gap: 10 }}>
+                    <TouchableOpacity
+                        onPress={() => setIsHistoryVisible(true)}
+                        style={styles.resetBtn}
+                    >
+                        <Clock size={20} color={colors.saffron} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={startNewChat}
+                        style={styles.resetBtn}
+                    >
+                        <Sparkles size={18} color={colors.saffron} />
+                    </TouchableOpacity>
+                </RNView>
+            </RNView>
+
+            {/* Language Selector Bar */}
+            <RNView style={[styles.langSelectorBar, { backgroundColor: colors.card, borderBottomColor: colors.borderMuted }]}>
+                <TouchableOpacity 
+                    onPress={() => setSelectedChatLanguage('hi')}
+                    style={[
+                        styles.langOption, 
+                        selectedChatLanguage === 'hi' && { backgroundColor: colors.saffron + '15', borderColor: colors.saffron }
+                    ]}
                 >
-                    <Sparkles size={18} color={colors.saffron} />
+                    <Typography 
+                        variant="body" 
+                        style={{ color: selectedChatLanguage === 'hi' ? colors.saffron : colors.mutedForeground, fontWeight: '700' }}
+                    >
+                        हिन्दी
+                    </Typography>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                    onPress={() => setSelectedChatLanguage('en')}
+                    style={[
+                        styles.langOption, 
+                        selectedChatLanguage === 'en' && { backgroundColor: colors.saffron + '15', borderColor: colors.saffron }
+                    ]}
+                >
+                    <Typography 
+                        variant="body" 
+                        style={{ color: selectedChatLanguage === 'en' ? colors.saffron : colors.mutedForeground, fontWeight: '700' }}
+                    >
+                        English
+                    </Typography>
                 </TouchableOpacity>
             </RNView>
+
+            {/* History Modal */}
+            <RNModal
+                visible={isHistoryVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setIsHistoryVisible(false)}
+            >
+                <TouchableOpacity 
+                    style={styles.modalOverlay} 
+                    activeOpacity={1} 
+                    onPress={() => setIsHistoryVisible(false)}
+                >
+                    <RNView style={[styles.historyModalContent, { backgroundColor: colors.card }]}>
+                        <RNView style={styles.historyHeader}>
+                            <Typography variant="h2" color={colors.foreground}>Chat History</Typography>
+                            <TouchableOpacity onPress={() => setIsHistoryVisible(false)} style={styles.closeBtn}>
+                                <ChevronLeft size={24} color={colors.muted} style={{ transform: [{rotate: '90deg'}] }} />
+                            </TouchableOpacity>
+                        </RNView>
+
+                        {isHistoryLoading ? (
+                            <RNActivityIndicator color={colors.saffron} style={{ marginVertical: 40 }} />
+                        ) : sessions.length === 0 ? (
+                            <RNView style={styles.emptyHistory}>
+                                <Typography variant="body" color={colors.mutedForeground}>No previous chats found.</Typography>
+                            </RNView>
+                        ) : (
+                            <RNScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 400 }}>
+                                {sessions.map((session) => (
+                                    <TouchableOpacity 
+                                        key={session.id} 
+                                        style={[
+                                            styles.historyItem, 
+                                            { 
+                                                borderColor: colors.borderMuted,
+                                                backgroundColor: currentSessionId === session.id ? colors.saffron + '10' : 'transparent'
+                                            }
+                                        ]}
+                                        onPress={() => loadSessionMessages(session.id)}
+                                    >
+                                        <RNView style={styles.historyIcon}>
+                                            <Sparkles size={16} color={colors.saffron} />
+                                        </RNView>
+                                        <RNView style={{ flex: 1 }}>
+                                            <Typography variant="body" color={colors.foreground} numberOfLines={1} style={{ fontWeight: '600' }}>
+                                                {session.title || 'Spiritual Session'}
+                                            </Typography>
+                                            <Typography variant="label" color={colors.mutedForeground}>
+                                                {new Date(session.last_message_at).toLocaleDateString()}
+                                            </Typography>
+                                        </RNView>
+                                    </TouchableOpacity>
+                                ))}
+                            </RNScrollView>
+                        )}
+
+                        <TouchableOpacity 
+                            style={[styles.startNewBtn, { backgroundColor: colors.saffron }]}
+                            onPress={startNewChat}
+                        >
+                            <Typography variant="body" color="#FFF" style={{ fontWeight: 'bold' }}>START NEW CHAT</Typography>
+                        </TouchableOpacity>
+                    </RNView>
+                </TouchableOpacity>
+            </RNModal>
 
             <RNScrollView
                 ref={scrollRef}
@@ -524,7 +739,7 @@ export default function GuruAIScreen() {
                                    <User size={18} color={colors.mutedForeground} style={{ marginTop: 2, marginRight: 10 }} />
                                    <RNTextInput
                                         style={{ flex: 1, color: colors.foreground, fontSize: 15, padding: 0 }}
-                                        placeholder="Full Name"
+                                        placeholder={t("guru.placeholder", "Ask GuruJi anything...")}
                                         placeholderTextColor={colors.mutedForeground}
                                         value={kundliForm.name}
                                         onChangeText={(t: string) => setKundliForm(prev => ({ ...prev, name: t }))}
@@ -673,6 +888,22 @@ const styles = StyleSheet.create({
     avatarImage: { width: '100%', height: '100%' },
     onlineBadge: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     greenDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#10b981' },
+    langSelectorBar: {
+        flexDirection: 'row',
+        padding: 8,
+        gap: 8,
+        borderBottomWidth: 1,
+        elevation: 2,
+    },
+    langOption: {
+        flex: 1,
+        paddingVertical: 8,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
     resetBtn: { padding: 10 },
     scrollContent: { padding: 16, gap: 16, paddingBottom: 110 },
     messageWrapper: { flexDirection: 'column', maxWidth: '85%' },
@@ -810,5 +1041,59 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         borderWidth: 1,
         borderStyle: 'dashed',
+    },
+    historyModalContent: {
+        width: '100%',
+        borderRadius: 24,
+        padding: 20,
+        maxHeight: '80%',
+    },
+    historyHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingBottom: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyHistory: {
+        alignItems: 'center',
+        paddingVertical: 40,
+    },
+    historyItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        marginBottom: 10,
+    },
+    historyIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,165,0,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    startNewBtn: {
+        width: '100%',
+        paddingVertical: 16,
+        borderRadius: 16,
+        alignItems: 'center',
+        marginTop: 15,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
     }
 });

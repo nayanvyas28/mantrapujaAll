@@ -9,12 +9,17 @@ import {
   Calendar,
   Droplets,
   Gift,
+  Globe,
+  Header,
   Heart,
+  Languages,
   Sun,
   Users,
-  Wallet
+  Wallet,
+  Check,
+  X
 } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator as RNActivityIndicator,
   Alert,
@@ -24,7 +29,9 @@ import {
   StyleSheet,
   TouchableOpacity as RNTouchableOpacity,
   View as RNView,
+  Modal as RNModal
 } from "react-native";
+import { getLocalized } from "../../utils/translation";
 
 // Type-safe aliases for React 19/Expo 54 compatibility
 const View = RNView as any;
@@ -52,9 +59,25 @@ export default function HomeScreen() {
   const router = useRouter();
   const { theme, colors, toggleTheme } = useTheme();
   const { user, profile } = useAuth(); // dynamically get auth state
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { handleScroll } = useGuruAssistant();
   const { balance } = useWallet();
+
+  const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
+
+  const handleLanguageChange = () => {
+    setIsLanguageModalVisible(true);
+  };
+
+  const changeLanguage = async (lang: string) => {
+    try {
+      await i18n.changeLanguage(lang);
+      await AsyncStorage.setItem("appLanguage", lang);
+      setIsLanguageModalVisible(false);
+    } catch (error) {
+      console.error("Error changing language:", error);
+    }
+  };
 
   // Dynamic state
   const isGuest = !user;
@@ -90,29 +113,29 @@ export default function HomeScreen() {
   // Daily Astro Reading
   const [dailyAstro, setDailyAstro] = useState<string | null>(null);
 
-  const BANNERS = [
+  const BANNERS = useMemo(() => [
     {
       id: "1",
-      title: "Special Mahashivratri Puja",
-      subtitle: "Book sacred rituals at Kashi Vishwanath.",
+      title: t("home.banner1.title", "Special Mahashivratri Puja"),
+      subtitle: t("home.banner1.subtitle", "Book sacred rituals at Kashi Vishwanath."),
       image: require("../../assets/images/banner_shivratri.jpg"),
       route: "/pujas/1",
     },
     {
       id: "2",
-      title: "Sacred Spiritual Walk",
-      subtitle: "Experience local traditions.",
+      title: t("home.banner2.title", "Sacred Spiritual Walk"),
+      subtitle: t("home.banner2.subtitle", "Experience local traditions."),
       image: require("../../assets/images/vedic_blog.jpg"),
       route: "/explore",
     },
     {
       id: "3",
-      title: "Sacred Ganga Aarti",
-      subtitle: "Live streaming from Dashashwamedh Ghat.",
+      title: t("home.banner3.title", "Sacred Ganga Aarti"),
+      subtitle: t("home.banner3.subtitle", "Live streaming from Dashashwamedh Ghat."),
       image: require("../../assets/images/ujjain_location.jpg"),
       route: "/explore/1",
     },
-  ];
+  ], [t]);
 
   useEffect(() => {
     // fetchRecentBlogs(); // Hidden for Play Store Compliance
@@ -514,6 +537,12 @@ export default function HomeScreen() {
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={styles.iconButton}
+            onPress={handleLanguageChange}
+          >
+            <Globe size={20} color={colors.foreground} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
             onPress={() => handleProtectedNavigation("/notifications")}
           >
             <Bell size={22} color={colors.foreground} />
@@ -846,7 +875,7 @@ export default function HomeScreen() {
                       numberOfLines={isFullWidth ? undefined : 2}
                       color={colors.foreground}
                     >
-                      {puja.name}
+                      {getLocalized(puja, 'name')}
                     </Typography>
                     <Typography
                       variant="bodySmall"
@@ -854,7 +883,7 @@ export default function HomeScreen() {
                       numberOfLines={1}
                       style={{ marginTop: 4 }}
                     >
-                      {puja.tagline || puja.about_description}
+                      {getLocalized(puja, 'tagline') || getLocalized(puja, 'about_description')}
                     </Typography>
                   </Card>
                 </TouchableOpacity>
@@ -1098,6 +1127,62 @@ export default function HomeScreen() {
 
         {/* Footer */}
         <Footer />
+        {/* Custom Language Selection Modal */}
+        <RNModal
+          visible={isLanguageModalVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setIsLanguageModalVisible(false)}
+        >
+          <RNTouchableOpacity 
+            style={styles.modalOverlay} 
+            activeOpacity={1} 
+            onPress={() => setIsLanguageModalVisible(false)}
+          >
+            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+              <View style={styles.modalHeader}>
+                <Typography variant="h3">{t("settings.select_language", "Select Language")}</Typography>
+                <RNTouchableOpacity onPress={() => setIsLanguageModalVisible(false)} style={styles.closeBtn}>
+                  <X size={24} color={colors.foreground} />
+                </RNTouchableOpacity>
+              </View>
+
+              <View style={styles.optionsList}>
+                <RNTouchableOpacity 
+                  style={[
+                    styles.languageOption, 
+                    i18n.language === 'en' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
+                  ]}
+                  onPress={() => changeLanguage('en')}
+                >
+                  <View style={styles.optionLeft}>
+                    <View style={[styles.langIcon, { backgroundColor: '#E0E7FF' }]}>
+                      <Typography style={{ fontWeight: 'bold', color: '#4F46E5' }}>EN</Typography>
+                    </View>
+                    <Typography style={{ marginLeft: 16, fontWeight: i18n.language === 'en' ? '700' : '400' }}>English</Typography>
+                  </View>
+                  {i18n.language === 'en' && <Check size={20} color={colors.saffron} />}
+                </RNTouchableOpacity>
+
+                <RNTouchableOpacity 
+                  style={[
+                    styles.languageOption, 
+                    i18n.language === 'hi' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
+                  ]}
+                  onPress={() => changeLanguage('hi')}
+                >
+                  <View style={styles.optionLeft}>
+                    <View style={[styles.langIcon, { backgroundColor: '#FEF3C7' }]}>
+                      <Typography style={{ fontWeight: 'bold', color: '#D97706' }}>हि</Typography>
+                    </View>
+                    <Typography style={{ marginLeft: 16, fontWeight: i18n.language === 'hi' ? '700' : '400' }}>हिन्दी (Hindi)</Typography>
+                  </View>
+                  {i18n.language === 'hi' && <Check size={20} color={colors.saffron} />}
+                </RNTouchableOpacity>
+              </View>
+            </View>
+          </RNTouchableOpacity>
+        </RNModal>
       </ScrollView>
     </View>
   );
@@ -1125,7 +1210,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16, // Space between icons
+    gap: 12, // Reduced gap for more icons
   },
   iconButton: {
     padding: 4,
@@ -1376,5 +1461,53 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  closeBtn: {
+    padding: 4,
+  },
+  optionsList: {
+    gap: 16,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  optionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  langIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

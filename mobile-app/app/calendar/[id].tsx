@@ -12,6 +12,7 @@ import { Typography } from '../../components/ui/Typography';
 import { useTheme } from '../../context/ThemeContext';
 import { getImageSource } from '../../utils/imageResolver';
 import { supabase } from '../../utils/supabase';
+import { getLocalized } from '../../utils/translation';
 
 const { width } = Dimensions.get('window');
 
@@ -126,7 +127,7 @@ export default function FestivalDetailScreen() {
                             </Typography>
                         </View>
                         <Typography variant="h1" color="#fff" style={styles.heroTitle}>
-                            {festival.name}
+                            {getLocalized(festival, 'name')}
                         </Typography>
                     </View>
                 </View>
@@ -140,7 +141,7 @@ export default function FestivalDetailScreen() {
                         </View>
                         <Card variant="solid" style={styles.infoCard}>
                             <Typography variant="body" color={themeColors.mutedForeground} style={{ lineHeight: 24 }}>
-                                {festival.content?.significance || festival.description}
+                                {getLocalized(festival, 'description')}
                             </Typography>
                         </Card>
                     </View>
@@ -198,7 +199,7 @@ export default function FestivalDetailScreen() {
                                 <Typography variant="h3" style={{ marginLeft: 10 }}>Divine History</Typography>
                             </View>
                             <Typography variant="body" color={themeColors.mutedForeground} style={{ lineHeight: 24 }}>
-                                {festival.content.history}
+                                {getLocalized(festival.content, 'history')}
                             </Typography>
                         </View>
                     )}

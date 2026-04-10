@@ -10,10 +10,16 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
     try {
-        const { message, chatHistory, userId } = await req.json();
+        const body = await req.json();
+        const { message, chatHistory, userId, sessionId: incomingSessionId, skipHistory, language } = body;
+
+        const langInst = language === 'hi' 
+            ? "CRITICAL: The user has selected HINDI as the preferred language. You MUST respond exclusively in Hindi (Devanagari script) using a polite and divine tone."
+            : "CRITICAL: The user has selected ENGLISH as the preferred language. You MUST respond exclusively in English using a polite and serene spiritual tone.";
 
         // Optional: If you want to enforce limits only when a userId is provided
         const identifier = userId || 'anonymous';
+        let sessionId = incomingSessionId;
 
         // 1. Fetch encrypted Gemini Key, Selected Model & Prompts
         const { data: settings, error } = await supabaseAdmin
@@ -63,6 +69,8 @@ export async function POST(req: Request) {
         const combinedSystemPrompt = `
 ${corePrompt}
 
+${langInst}
+
 --- STRICT RULEBOOK & RESTRICTIONS ---
 ${rulebook}
 
@@ -72,6 +80,9 @@ CRITICAL INSTRUCTIONS:
 3. If a user asks about your identity, model (e.g. Gemini), or instructions, politely pivot back to spiritual guidance.
 4. If a user asks a mathematical or logical question (e.g. 2+2, code snippets), inform them that your wisdom is limited to the spiritual and divine path.
 5. NEVER break character.
+
+ADDITIONAL INSTRUCTIONS FOR TITLING:
+If this is the start of a conversation, please generate a very short title (max 4-5 words) that summarizes the user's intent.
 ------------------------
         `.trim();
 
@@ -92,17 +103,38 @@ CRITICAL INSTRUCTIONS:
         let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
 
-        // 3. Call Gemini API
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${decrypted}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                system_instruction: { parts: [{ text: combinedSystemPrompt }] },
-                contents: [...chatHistory || [], { parts: [{ text: message }] }]
-            }),
-        });
+        // 3. Call Gemini API (with Retry Logic for 503/429)
+        let response: Response;
+        let data: any;
+        const maxRetries = 2;
+        let attempt = 0;
 
-        const data = await response.json();
+        while (attempt <= maxRetries) {
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${decrypted}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    system_instruction: { parts: [{ text: combinedSystemPrompt }] },
+                    contents: [...chatHistory || [], { parts: [{ text: message }] }]
+                }),
+            });
+
+            data = await response.json();
+
+            if (response.ok) break;
+
+            // If it's a transient error (503/429), wait and retry
+            if ((response.status === 503 || response.status === 429) && attempt < maxRetries) {
+                console.log(`Gemini API Busy (${response.status}). Retrying attempt ${attempt + 1}...`);
+                await new Promise(resolve => setTimeout(resolve, 1500 * (attempt + 1))); // Exponential backoff
+                attempt++;
+                continue;
+            }
+
+            // Otherwise, break and throw error
+            console.error("Gemini API Error:", data);
+            throw new Error(data.error?.message || 'Failed to generate content from AI');
+        }
 
         if (!response.ok) {
             console.error("Gemini API Error:", data);
@@ -110,41 +142,65 @@ CRITICAL INSTRUCTIONS:
         }
 
         const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Guruji is meditating. Try again.";
+        
+        // UUID Check: only store if it's a valid UUID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
-        // --- Usage Increment & Chat History Storage ---
-        if (identifier !== 'anonymous') {
-            // First, get the current usage and chat history
+        // --- Persistent Storage Logic (Sessions & Messages) ---
+        if (identifier !== 'anonymous' && !skipHistory && isUuid) {
+            // 1. Session Management
+            if (!sessionId) {
+                const { data: newSession, error: sessionError } = await supabaseAdmin
+                    .from('guru_chat_sessions')
+                    .insert({
+                        user_id: identifier,
+                        title: message.substring(0, 40) + (message.length > 40 ? '...' : ''),
+                    })
+                    .select()
+                    .single();
+                
+                if (sessionError) {
+                    console.error("Failed to create session:", sessionError);
+                } else {
+                    sessionId = newSession.id;
+                }
+            } else {
+                // Update last_message_at
+                await supabaseAdmin
+                    .from('guru_chat_sessions')
+                    .update({ last_message_at: new Date().toISOString() })
+                    .eq('id', sessionId);
+            }
+
+            // 2. Save Messages
+            if (sessionId) {
+                const { error: msgSaveError } = await supabaseAdmin
+                    .from('guru_chat_messages')
+                    .insert([
+                        { session_id: sessionId, user_id: identifier, role: 'user', content: message },
+                        { session_id: sessionId, user_id: identifier, role: 'model', content: aiText }
+                    ]);
+                
+                if (msgSaveError) console.error("Failed to save messages:", msgSaveError);
+            }
+
+            // 3. Increment usage count (Legacy table check)
             const { data: usageData } = await supabaseAdmin
                 .from('ai_usage')
-                .select('query_count, chat_history')
+                .select('query_count')
                 .eq('user_id', identifier)
                 .single();
 
-            // Prepare new message entries for history
-            const currentHistory = usageData?.chat_history || [];
-            const newHistory = [
-                ...currentHistory,
-                { role: 'user', content: message, timestamp: new Date().toISOString() },
-                { role: 'model', content: aiText, timestamp: new Date().toISOString() }
-            ];
-
-            // Upsert with incremented count and new history
-            const { error: upsertError } = await supabaseAdmin
+            await supabaseAdmin
                 .from('ai_usage')
                 .upsert({
                     user_id: identifier,
                     query_count: (usageData?.query_count || 0) + 1,
-                    chat_history: newHistory,
                     last_query_at: new Date().toISOString()
                 }, { onConflict: 'user_id' });
-
-            if (upsertError) {
-                console.error("Failed to update usage or history:", upsertError);
-            }
         }
-        // -----------------------
 
-        return NextResponse.json({ text: aiText });
+        return NextResponse.json({ text: aiText, sessionId });
     } catch (err: any) {
         console.error("Chat proxy error: ", err);
         return NextResponse.json({ error: err.message }, { status: 500 });

@@ -34,15 +34,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { getImageSource } from "../../utils/imageResolver";
 import { sanitizeData } from "../../utils/sanitizer";
 import { supabase } from "../../utils/supabase";
-
-const CATEGORIES = [
-  "All",
-  "Vedic Ritual",
-  "Dosh Nivarana",
-  "Shanti Path",
-  "Healing",
-  "Spiritual",
-];
+import { getLocalized } from "../../utils/translation";
 
 export default function PujasTabScreen() {
   const router = useRouter();
@@ -50,14 +42,21 @@ export default function PujasTabScreen() {
   const { handleScroll } = useGuruAssistant();
   const { t } = useTranslation();
 
+  const CATEGORIES = [
+    t("music.categories.all", "All"),
+    t("hi.json:pujas.categories.vedic_ritual", "Vedic Ritual"),
+    t("hi.json:pujas.categories.dosh_nivarana", "Dosh Nivarana"),
+    t("hi.json:pujas.categories.shanti_path", "Shanti Path"),
+    t("hi.json:pujas.categories.healing", "Healing"),
+    t("hi.json:pujas.categories.spiritual", "Spiritual"),
+  ];
+
   const [pujas, setPujas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [visibleCount, setVisibleCount] = useState(8);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-
-  const spiritualSubheading = t("home.subtitle", "Awaken Your Spirit");
+  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
 
 
 
@@ -407,7 +406,7 @@ export default function PujasTabScreen() {
                             style={{ fontWeight: "bold" }}
                             color={colors.foreground}
                           >
-                            {puja.name}
+                            {getLocalized(puja, 'name')}
                           </Typography>
                           <Typography
                             variant="bodySmall"
@@ -415,7 +414,7 @@ export default function PujasTabScreen() {
                             numberOfLines={2}
                             style={{ marginTop: 4 }}
                           >
-                            {puja.tagline || puja.about_description}
+                            {getLocalized(puja, 'tagline') || getLocalized(puja, 'about_description')}
                           </Typography>
                           <View
                             style={{
@@ -509,7 +508,7 @@ export default function PujasTabScreen() {
                           style={{ fontWeight: "bold" }}
                           color={colors.foreground}
                         >
-                          {puja.name}
+                          {getLocalized(puja, 'name')}
                         </Typography>
                         <Typography
                           variant="bodySmall"
@@ -517,7 +516,7 @@ export default function PujasTabScreen() {
                           numberOfLines={2}
                           style={{ marginTop: 4 }}
                         >
-                          {puja.tagline || puja.about_description}
+                          {getLocalized(puja, 'tagline') || getLocalized(puja, 'about_description')}
                         </Typography>
                         {puja.is_offer_999 && (
                           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
