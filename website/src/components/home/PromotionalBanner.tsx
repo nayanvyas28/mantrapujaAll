@@ -100,7 +100,7 @@ export default function PromotionalBanner() {
                     </div>
 
                     {/* Right Side: Urgency & CTA */}
-                    <div className="flex flex-row items-center gap-2 md:gap-8">
+                    <div className="flex flex-row items-center gap-2 md:gap-8 md:mr-16">
                         {/* Slots Counter */}
                         <div className="flex flex-row md:flex-col items-center md:items-end gap-1 md:gap-0">
                             <div className="hidden md:flex items-center gap-2 text-white mb-1">
@@ -112,7 +112,8 @@ export default function PromotionalBanner() {
                                     <span className="text-sm md:text-2xl font-black text-yellow-400 tracking-tighter tabular-nums">
                                         {slotsLeft}
                                     </span>
-                                    <span className="text-[6px] md:text-[10px] font-bold text-white/80 uppercase">Left</span>
+                                    <span className="text-[6px] md:text-[10px] font-bold text-white/50 uppercase">/ 500</span>
+                                    <span className="text-[6px] md:text-[10px] font-bold text-white/80 uppercase ml-1">Left</span>
                                 </div>
                             </div>
                         </div>
