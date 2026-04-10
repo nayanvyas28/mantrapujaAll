@@ -97,10 +97,10 @@ export function TranslationDropdown() {
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(!isOpen)}
                 onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-                className="relative w-10 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                className="relative w-10 h-9 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 aria-label="Change Language"
             >
-                <Globe className="w-5 h-5" />
+                <span>{LANGUAGES.find(l => l.code === currentLang)?.flag || "🌐"}</span>
             </motion.button>
 
             {/* Dropdown Menu */}
