@@ -10,8 +10,17 @@ const API_KEYS = [
 const getAstroBackendUrl = () => {
     const rawUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
     
-    // If we are in dev mode and hitting a production-looking URL or localhost, 
-    // we should fallback to the known local IP of the machine running the backend.
+    // 1. Handle Hosted Production Server (sslip.io)
+    // Ensure the /api/astrology/proxy path is appended if it's missing
+    if (rawUrl && rawUrl.includes('sslip.io')) {
+        const base = rawUrl.replace(/\/$/, '');
+        if (!base.includes('/api/astrology/proxy')) {
+            return `${base}/api/astrology/proxy`;
+        }
+        return base;
+    }
+
+    // 2. Development Mode (Local Fallbacks)
     if (__DEV__) {
         if (!rawUrl || rawUrl.includes('mantrapuja.com') || rawUrl.includes('localhost')) {
             // Priority: the local IP address of your dev machine. 
@@ -20,6 +29,7 @@ const getAstroBackendUrl = () => {
         }
     }
     
+    // 3. Standard resolution (Ensuring replace logic for /auth or fallback)
     return (rawUrl || "http://10.228.144.64:4000/api/auth").replace('/auth', '/astrology/proxy');
 };
 
