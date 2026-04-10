@@ -31,7 +31,7 @@ export default function AssetManager({ onSelect }: { onSelect?: (url: string) =>
                 const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(file.name);
                 return {
                     name: file.name,
-                    id: file.id,
+                    id: file.id || file.name,
                     url: publicUrlData.publicUrl
                 };
             }) || [];

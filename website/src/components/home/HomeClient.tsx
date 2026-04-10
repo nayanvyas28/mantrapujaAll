@@ -13,6 +13,7 @@ import CollapsibleText from "@/components/ui/CollapsibleText";
 import { FloatingSocialButtons } from "@/components/ui/FloatingSocialButtons";
 import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import PromotionalBanner from "@/components/home/PromotionalBanner";
 
 interface Puja extends UiConfig {
     id: string;
@@ -339,6 +340,9 @@ export default function HomeClient() {
 
     return (
         <div className="min-h-screen bg-background text-foreground overflow-x-hidden relative transition-colors duration-300">
+            {/* Promotional Banner */}
+            <PromotionalBanner />
+
             {/* Global Dark Mode Background Animation */}
             <StarsGalaxyBackground />
 

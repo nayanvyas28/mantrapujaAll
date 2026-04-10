@@ -9,6 +9,8 @@ import { ActivityIndicator, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { ResultDisclaimer } from '../components/ui/ResultDisclaimer';
 import { sanitizeText } from '../utils/sanitizer';
+import { ArrowLeft } from 'lucide-react-native';
+import { Typography } from '../components/ui/Typography';
 
 // Rashi details
 const RASHIS = [
@@ -145,6 +147,14 @@ export default function RashiSelectionScreen() {
         }
     };
 
+    const handleBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/onboarding-details');
+        }
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar style="dark" />
@@ -152,12 +162,24 @@ export default function RashiSelectionScreen() {
                 <ScrollView contentContainerStyle={styles.scrollContent}>
 
                     <View style={styles.header}>
-                        <Text style={[styles.title, { color: colors.foreground }]}>Your Rashi</Text>
-                        <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+                        <View style={styles.topRow}>
+                            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                                <ArrowLeft size={24} color={colors.foreground} />
+                            </TouchableOpacity>
+                            <Typography variant="h2" color={colors.foreground} style={styles.titleText}>
+                                Your Rashi
+                            </Typography>
+                            <View style={{ width: 44 }} />
+                        </View>
+                        <Typography
+                            variant="body"
+                            color={colors.mutedForeground}
+                            style={styles.subtitle}
+                        >
                             {sanitizeText(hasValiddob
                                 ? "We've selected this based on your details. You can change it anytime."
                                 : "Select your Rashi to continue")}
-                        </Text>
+                        </Typography>
                     </View>
 
                     <View style={styles.zodiacGrid}>
@@ -204,11 +226,16 @@ export default function RashiSelectionScreen() {
                     <TouchableOpacity
                         style={[
                             styles.primaryButton,
-                            !selectedRashi && hasValiddob === false && styles.primaryButtonDisabled
+                            (!selectedRashi && !hasValiddob) && styles.primaryButtonDisabled
                         ]}
                         onPress={handleContinue}
+                        disabled={loading}
                     >
-                        <Text style={styles.primaryButtonText}>Continue</Text>
+                        {loading ? (
+                            <ActivityIndicator color="#ffffff" />
+                        ) : (
+                            <Text style={styles.primaryButtonText}>Continue</Text>
+                        )}
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
@@ -237,6 +264,24 @@ const styles = StyleSheet.create({
     header: {
         marginBottom: 30,
         alignItems: 'center',
+    },
+    topRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        marginBottom: 20,
+    },
+    backButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    titleText: {
+        fontSize: 24,
+        fontWeight: '800',
     },
     title: {
         fontSize: 32,
