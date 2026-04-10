@@ -6,7 +6,7 @@ import { Zap, Clock, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default function PromotionalBanner() {
-    const [slotsLeft, setSlotsLeft] = useState(270);
+    const [slotsLeft, setSlotsLeft] = useState(221);
 
     useEffect(() => {
         const calculateSlots = () => {
@@ -15,8 +15,8 @@ export default function PromotionalBanner() {
             const end = new Date("2026-04-20T23:59:59");
             
             const totalSlots = 500;
-            const initialDone = 230;
-            const availableSlots = totalSlots - initialDone; // 270
+            const initialDone = 279;
+            const availableSlots = totalSlots - initialDone; // 221
 
             if (now < start) {
                 setSlotsLeft(availableSlots);
