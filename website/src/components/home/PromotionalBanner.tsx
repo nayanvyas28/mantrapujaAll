@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Clock, Users, ChevronRight, Sparkles } from "lucide-react";
+import { Zap, Clock, Users, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default function PromotionalBanner() {
@@ -87,7 +87,6 @@ export default function PromotionalBanner() {
                              <div className="flex items-center md:justify-start gap-1 md:gap-2">
                                 <span className="bg-yellow-400 text-orange-900 text-[6px] md:text-[10px] font-black px-1 md:px-2 py-0.5 rounded-md uppercase tracking-widest shadow-lg">Special Offer</span>
                                 <div className="hidden md:flex items-center text-yellow-200 text-sm">
-                                    <Sparkles size={14} className="animate-pulse mr-1" />
                                     <span className="font-medium text-[8px] md:text-sm">Akshaya Tritiya</span>
                                 </div>
                             </div>
