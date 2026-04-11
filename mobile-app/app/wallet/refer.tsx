@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Copy, Share2, Users, Gift, TrendingUp, CheckCircle } from 'lucide-react-native';
@@ -9,6 +9,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
 import * as Clipboard from 'expo-clipboard';
+import { supabase } from '../../utils/supabase';
 
 export default function ReferralScreen() {
     const router = useRouter();
@@ -22,6 +23,27 @@ export default function ReferralScreen() {
     const referralCredits = transactions.filter(t => t.category === 'referral');
     const totalEarned = referralCredits.reduce((sum, t) => sum + t.amount, 0);
     const friendsCount = referralCredits.length;
+    const [referralMessageTemplate, setReferralMessageTemplate] = useState('Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app');
+
+    useEffect(() => {
+        const fetchReferralMessage = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'referral_message')
+                    .single();
+                
+                if (!error && data?.value) {
+                    setReferralMessageTemplate(data.value);
+                }
+            } catch (err) {
+                console.error('Error fetching referral message:', err);
+            }
+        };
+
+        fetchReferralMessage();
+    }, []);
 
     const handleCopy = async () => {
         await Clipboard.setStringAsync(referralCode);
@@ -30,7 +52,7 @@ export default function ReferralScreen() {
 
     const handleShare = async () => {
         try {
-            const message = `Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app`;
+            const message = referralMessageTemplate.replace(/\${referralCode}/g, referralCode);
             await Share.share({
                 message,
                 title: 'Refer & Earn ₹51',
