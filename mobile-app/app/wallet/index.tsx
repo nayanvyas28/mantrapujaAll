@@ -56,7 +56,10 @@ export default function WalletDashboard() {
                         <Typography variant="body" color="rgba(255,255,255,0.8)">Available Balance</Typography>
                     </View>
                     <Typography variant="h1" color="#fff" style={styles.balanceAmount}>
-                        ₹{balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {balance.toLocaleString('en-IN', { minimumFractionDigits: 0 })}
+                    </Typography>
+                    <Typography variant="body" color="rgba(255,255,255,0.9)" style={{ marginTop: -15, marginBottom: 15, fontWeight: '700' }}>
+                        Puja Coins
                     </Typography>
                     
                     <View style={styles.balanceFooter}>
@@ -103,7 +106,7 @@ export default function WalletDashboard() {
                                 <Users size={24} color={colors.saffron} />
                             </View>
                             <View style={{ flex: 1, marginLeft: 16 }}>
-                                <Typography variant="h3" color="#fff" style={{ fontWeight: '800' }}>REFER & EARN ₹51</Typography>
+                                <Typography variant="h3" color="#fff" style={{ fontWeight: '800' }}>REFER & EARN 51 COINS</Typography>
                                 <Typography variant="bodySmall" color="rgba(255,255,255,0.9)">
                                     Invite friends & get rewards instantly!
                                 </Typography>
@@ -153,7 +156,7 @@ export default function WalletDashboard() {
                                     </Typography>
                                 </View>
                                 <Typography variant="body" style={{ fontWeight: 'bold' }} color={tx.type === 'credit' ? '#22c55e' : colors.foreground}>
-                                    {tx.type === 'credit' ? '+' : '-'} ₹{tx.amount}
+                                    {tx.type === 'credit' ? '+' : '-'} {tx.amount} Coins
                                 </Typography>
                             </View>
                         ))

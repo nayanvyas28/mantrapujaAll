@@ -40,7 +40,7 @@ export default function WalletTopup() {
     const handleTopup = async () => {
         const numAmount = parseFloat(amount);
         if (isNaN(numAmount) || numAmount < 10) {
-            Alert.alert("Invalid Amount", "Please enter an amount of at least ₹10.");
+            Alert.alert("Invalid Amount", "Minimum top-up is 10 Puja Coins.");
             return;
         }
 
@@ -106,9 +106,9 @@ export default function WalletTopup() {
                 
                 {/* Input Card */}
                 <Card variant="solid" style={[styles.inputCard, { borderColor: colors.borderMuted }]}>
-                    <Typography variant="label" color={colors.mutedForeground} style={{ marginBottom: 12 }}>Enter Amount</Typography>
-                    <View style={styles.inputWrapper}>
-                        <Typography variant="h1" color={colors.foreground}>₹</Typography>
+                        <Typography variant="label" color={colors.mutedForeground} style={{ marginBottom: 12 }}>Enter Amount (1 Coin = 1 Rupee)</Typography>
+                        <View style={styles.inputWrapper}>
+                            <Typography variant="body" color={colors.foreground} style={{ fontWeight: 'bold' }}>COINS</Typography>
                         <TextInput
                             style={[styles.input, { color: colors.foreground }]}
                             keyboardType="numeric"
@@ -131,7 +131,7 @@ export default function WalletTopup() {
                                 ]}
                                 onPress={() => setAmount(amt.toString())}
                             >
-                                <Typography variant="label" color={amount === amt.toString() ? colors.saffron : colors.foreground}>+₹{amt}</Typography>
+                                <Typography variant="label" color={amount === amt.toString() ? colors.saffron : colors.foreground}>+{amt} Coins</Typography>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -176,7 +176,7 @@ export default function WalletTopup() {
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Typography variant="h3" color="#fff">Add ₹{amount} to Wallet</Typography>
+                        <Typography variant="h3" color="#fff">Get {amount} Puja Coins</Typography>
                     )}
                 </TouchableOpacity>
             </View>
