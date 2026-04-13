@@ -10,6 +10,7 @@ import { AnimatedStarfield } from '../components/ui/AnimatedStarfield';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { MarketingPopup } from '../components/MarketingPopup';
 import '../utils/i18n'; // Initialize i18next
 
 function RootLayoutContent() {
@@ -35,6 +36,7 @@ function RootLayoutContent() {
       </Stack>
 
       <GuruFloatingButton />
+      <MarketingPopup />
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
     </RNView>
   );

@@ -684,7 +684,7 @@ export default function HomeScreen() {
         {/* Daily Rashi Phal Section */}
         {!isGuest && userRashi && dailyAstro && (
           <TouchableOpacity
-            style={{ marginHorizontal: 24, marginBottom: 24 }}
+            style={{ marginHorizontal: 0, marginBottom: 24 }}
             activeOpacity={0.9}
             onPress={() => router.push('/horoscope' as any)}
           >
@@ -730,9 +730,15 @@ export default function HomeScreen() {
               onPress={() => router.push(action.route as any)}
             >
               <View
-                style={[styles.actionIconBg, { backgroundColor: action.color + '15' }]}
+                style={[
+                  styles.actionIconBg, 
+                  { 
+                    backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+                    borderColor: action.color + '40', // Semi-transparent border
+                  }
+                ]}
               >
-                <action.icon size={24} color={action.color} />
+                <action.icon size={28} color={action.color} />
               </View>
               <Typography
                 variant="label"
@@ -1318,21 +1324,24 @@ const styles = StyleSheet.create({
     width: "23%",
   },
   actionIconBg: {
-    width: 64,
-    height: 64,
-    borderRadius: 16, // Softer square
+    width: 68,
+    height: 68,
+    borderRadius: 20, // More boutique rounded look
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
-    shadowColor: "#f59e0b",
+    borderWidth: 1.5,
+    elevation: 4,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 10,
   },
   actionTitle: {
     textAlign: "center",
-    fontWeight: "600",
+    fontWeight: "700",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
   sectionHeader: {
     marginTop: 24, // Reduced from 40

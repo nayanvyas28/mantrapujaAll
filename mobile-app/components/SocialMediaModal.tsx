@@ -18,34 +18,34 @@ export const SocialMediaModal: React.FC<SocialMediaModalProps> = ({ isVisible, o
         {
             id: 'instagram',
             name: 'Instagram',
-            handle: '@mantrapuja',
+            handle: '@mantrapujaa',
             icon: Instagram,
             color: '#E4405F',
-            url: 'https://instagram.com/mantrapuja'
+            url: 'https://www.instagram.com/mantrapujaa'
         },
         {
             id: 'youtube',
             name: 'YouTube',
-            handle: 'Mantra Puja Official',
+            handle: '@mantrapujaofficials',
             icon: Youtube,
             color: '#FF0000',
-            url: 'https://youtube.com/@mantrapuja'
+            url: 'https://youtube.com/@mantrapujaofficials'
         },
         {
             id: 'facebook',
             name: 'Facebook',
-            handle: 'Mantra Puja Community',
+            handle: 'mantrapujaa',
             icon: Facebook,
             color: '#1877F2',
-            url: 'https://facebook.com/mantrapuja'
+            url: 'https://www.facebook.com/mantrapujaa'
         },
         {
             id: 'whatsapp',
             name: 'WhatsApp',
-            handle: 'Join Community',
+            handle: '8989271245',
             icon: MessageCircle,
             color: '#25D366',
-            url: 'https://wa.me/91XXXXXXXXXX'
+            url: 'https://wa.me/918989271245'
         }
     ];
 

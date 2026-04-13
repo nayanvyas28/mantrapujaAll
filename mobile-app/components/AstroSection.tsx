@@ -116,26 +116,68 @@ export const AstroSection = () => {
     return (
         <RNAnimatedView style={[styles.outerContainer, { opacity: fadeAnim }]}>
             <TouchableOpacity 
-                activeOpacity={0.95}
+                activeOpacity={0.9}
                 onPress={() => router.push('/kundli')}
-                style={[styles.premiumCardExpanded, { backgroundColor: isDark ? '#1e293b' : '#ffffff', width: CARD_WIDTH, borderColor: colors.gold + '20' }]}
+                style={[
+                    styles.premiumCardExpanded, 
+                    { 
+                        backgroundColor: isDark ? '#1e293b' : '#ffffff', 
+                        width: CARD_WIDTH,
+                        borderColor: colors.saffron + '30',
+                    }
+                ]}
             >
+                {/* Decorative Background Icon */}
+                <RNView style={styles.bgOrnament}>
+                    <Sparkles size={140} color={colors.saffron} style={{ opacity: 0.03 }} />
+                </RNView>
+
                 <RNView style={styles.cardHeader}>
                     <RNView style={styles.profileBox}>
                         <RNAnimatedView style={{ transform: [{ scale: pulseAnim }] }}>
                             <RNView style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
-                                <Compass size={32} color={colors.saffron} />
+                                <Compass size={28} color={colors.saffron} />
                             </RNView>
                         </RNAnimatedView>
                     </RNView>
-                    <View style={styles.detailItem}>
-                        <Typography variant="label" color={colors.mutedForeground} style={styles.detailLabel}>RASHI</Typography>
-                        <Typography variant="h4" color={colors.foreground} style={styles.detailValue}>{astroDetails?.sign || '--'}</Typography>
-                    </View>
-                    <View style={styles.detailItem}>
-                        <Typography variant="label" color={colors.mutedForeground} style={styles.detailLabel}>ASCENDANT</Typography>
-                        <Typography variant="h4" color={colors.foreground} style={styles.detailValue}>{astroDetails?.ascendant || '--'}</Typography>
-                    </View>
+                    
+                    <RNView style={styles.detailItem}>
+                        <Typography variant="label" color={colors.saffron} style={styles.detailLabel}>RASHI</Typography>
+                        <RNView style={{ flex: 1 }}>
+                            <Typography 
+                                variant="h4" 
+                                color={colors.foreground} 
+                                style={styles.detailValue} 
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.7}
+                            >
+                                {astroDetails?.sign || '--'}
+                            </Typography>
+                        </RNView>
+                    </RNView>
+
+                    <RNView style={styles.verticalDivider} />
+
+                    <RNView style={styles.detailItem}>
+                        <Typography variant="label" color={colors.saffron} style={styles.detailLabel}>ASCENDANT</Typography>
+                        <RNView style={{ flex: 1 }}>
+                            <Typography 
+                                variant="h4" 
+                                color={colors.foreground} 
+                                style={styles.detailValue} 
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.7}
+                            >
+                                {astroDetails?.ascendant || '--'}
+                            </Typography>
+                        </RNView>
+                    </RNView>
+
+                    <RNView style={styles.chevronBox}>
+                        <ChevronRight size={20} color={colors.saffron} />
+                    </RNView>
                 </RNView>
 
                 {loading && (
@@ -223,6 +265,7 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
     },
     profileBox: {
         width: 44,
@@ -249,6 +292,37 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: 'bold',
         opacity: 0.8,
+    },
+    detailItem: {
+        flex: 1,
+    },
+    detailLabel: {
+        fontSize: 9,
+        fontWeight: '900',
+        letterSpacing: 1,
+        marginBottom: 2,
+        textTransform: 'uppercase',
+    },
+    detailValue: {
+        fontSize: 15,
+        fontWeight: '900',
+        letterSpacing: 0.2,
+    },
+    verticalDivider: {
+        width: 1,
+        height: 32,
+        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+        marginHorizontal: 4,
+    },
+    bgOrnament: {
+        position: 'absolute',
+        right: -30,
+        bottom: -30,
+        zIndex: 0,
+    },
+    chevronBox: {
+        marginLeft: 4,
+        opacity: 0.6,
     },
     rashiName: {
         fontSize: 22,
