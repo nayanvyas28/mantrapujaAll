@@ -129,20 +129,20 @@ const Header = () => {
     return (
         <header
             className={`sticky top-0 z-50 w-full transition-all duration-300 ${isMenuOpen
-                ? "bg-white/90 shadow-md pb-4 pt-0"
+                ? "bg-white/90 shadow-md pb-2 pt-0"
                 : scrolled
-                    ? "bg-background/80 lg:backdrop-blur-xl shadow-md border-b border-saffron/20 pb-2 sm:pb-4 pt-0"
-                    : "bg-white/90 lg:bg-transparent pb-3 sm:pb-5 lg:pb-6 pt-0"
-                } max-lg:bg-white/90 max-lg:pb-3 max-lg:pt-0`}
+                    ? "bg-background/80 lg:backdrop-blur-xl shadow-md border-b border-saffron/20 pb-1 pt-0"
+                    : "bg-white/90 lg:bg-transparent pb-1.5 sm:pb-2.5 lg:pb-3 pt-0"
+                } max-lg:bg-white/90 max-lg:pb-1.5 max-lg:pt-0`}
         >
             <TopBar />
-            <div className="container mx-auto px-4 flex items-center justify-between pt-2">
+            <div className="container mx-auto px-4 flex items-center justify-between pt-1">
                 {/* Logo */}
                 <Link href="/" className="flex items-center space-x-2 group relative z-50">
                     <img
                         src="/logo.png"
                         alt="MantraPuja - Vedic Services Logo"
-                        className="h-10 xs:h-12 sm:h-14 md:h-16 lg:h-20 xl:h-24 w-auto group-hover:scale-105 transition-all duration-300"
+                        className="h-8 xs:h-9 sm:h-10 md:h-11 lg:h-12 xl:h-14 w-auto group-hover:scale-105 transition-all duration-300"
                     />
                 </Link>
 

@@ -179,7 +179,7 @@ export const AstroSection = () => {
 const styles = StyleSheet.create({
     outerContainer: {
         alignItems: 'center',
-        marginVertical: 14,
+        marginVertical: 4,
     },
     premiumCard: {
         flexDirection: 'row',
@@ -195,10 +195,10 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     premiumCardExpanded: {
-        padding: 24,
-        borderRadius: 32,
+        padding: 16,
+        borderRadius: 24,
         borderWidth: 1.5,
-        elevation: 14,
+        elevation: 10,
         shadowColor: '#f97316',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.15,
@@ -251,12 +251,12 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 12,
     },
     profileBox: {
-        width: 64,
-        height: 64,
-        borderRadius: 22,
+        width: 52,
+        height: 52,
+        borderRadius: 16,
         backgroundColor: 'rgba(249, 115, 22, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
@@ -264,9 +264,9 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(249, 115, 22, 0.2)',
     },
     miniIconBox: {
-        width: 54,
-        height: 54,
-        borderRadius: 18,
+        width: 44,
+        height: 44,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
         opacity: 0.8,
     },
     rashiName: {
-        fontSize: 28,
+        fontSize: 22,
         marginTop: 0,
     },
     actionBtnBox: {
@@ -301,8 +301,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(249, 115, 22, 0.03)',
-        padding: 14,
-        borderRadius: 20,
+        padding: 10,
+        borderRadius: 16,
         borderWidth: 1,
         borderColor: 'rgba(249, 115, 22, 0.05)',
     },

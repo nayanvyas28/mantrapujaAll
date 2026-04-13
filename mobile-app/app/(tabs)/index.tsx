@@ -706,29 +706,29 @@ export default function HomeScreen() {
                 <Card 
                     variant="solid" 
                     style={{ 
-                        padding: 20, 
+                        padding: 16, 
                         borderRadius: 20, 
                         borderWidth: 1, 
                         borderColor: colors.saffron + '30', 
                         backgroundColor: theme === 'dark' ? colors.card : '#fffaf0' 
                     }}
                 >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                                <Sun size={24} color={colors.saffron} />
+                            <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 8 }}>
+                                <Sun size={20} color={colors.saffron} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Typography variant="h3" color={colors.foreground} style={{ fontSize: 18 }}>Daily Rashifal</Typography>
-                                <Typography variant="label" color={colors.saffron} style={{ marginTop: 2, fontWeight: '600' }}>
+                                <Typography variant="h3" color={colors.foreground} style={{ fontSize: 16 }}>Daily Rashifal</Typography>
+                                <Typography variant="label" color={colors.saffron} style={{ marginTop: 1, fontWeight: '600', fontSize: 10 }}>
                                     {userRashi.charAt(0).toUpperCase() + userRashi.slice(1)} • {new Date().getDate().toString().padStart(2, '0')} {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]} {new Date().getFullYear()}
                                 </Typography>
                             </View>
                         </View>
-                        <ArrowRight size={20} color={colors.mutedForeground} style={{ marginTop: 12 }} />
+                        <ArrowRight size={18} color={colors.mutedForeground} style={{ marginTop: 4 }} />
                     </View>
                     
-                    <Typography variant="body" color={theme === 'dark' ? colors.mutedForeground : '#334155'} style={{ lineHeight: 24 }} numberOfLines={3}>
+                    <Typography variant="body" color={theme === 'dark' ? colors.mutedForeground : '#334155'} style={{ lineHeight: 20, fontSize: 13 }} numberOfLines={2}>
                         {dailyAstro.replace('[Mock Data] ', '')}
                     </Typography>
                 </Card>
@@ -1253,7 +1253,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
+    padding: 20,
     paddingBottom: 100,
   },
   header: {
@@ -1280,7 +1280,8 @@ const styles = StyleSheet.create({
   },
 
   bannerWrapper: {
-    marginBottom: 24,
+    marginBottom: 12,
+    position: 'relative',
   },
   bannerScroll: {
     overflow: "visible",
@@ -1296,9 +1297,13 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   paginationContainer: {
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 12,
+    zIndex: 50,
     gap: 8,
   },
   paginationDot: {
