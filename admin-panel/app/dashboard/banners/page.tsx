@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { 
     Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, 
     Tag, Info, ArrowLeft, Image as ImageIcon, ExternalLink, 
-    Eye, EyeOff, Layout, Smartphone, Globe, ChevronDown
+    Eye, EyeOff, Layout, Smartphone, Globe, ChevronDown, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';

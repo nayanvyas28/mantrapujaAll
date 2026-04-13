@@ -29,7 +29,8 @@ import {
   StyleSheet,
   TouchableOpacity as RNTouchableOpacity,
   View as RNView,
-  Modal as RNModal
+  Modal as RNModal,
+  Text as RNText
 } from "react-native";
 import { getLocalized } from "../../utils/translation";
 
@@ -38,6 +39,7 @@ const View = RNView as any;
 const ScrollView = RNScrollView as any;
 const TouchableOpacity = RNTouchableOpacity as any;
 const ActivityIndicator = RNActivityIndicator as any;
+const Text = RNText as any;
 import { AnimatedWaveButton } from "../../components/ui/AnimatedWaveButton";
 import { Card } from "../../components/ui/Card";
 import { FallbackImage } from "../../components/ui/FallbackImage";
@@ -649,7 +651,7 @@ export default function HomeScreen() {
                 {banner.show_offer && (
                   <View style={styles.offerBadgeContainer}>
                     <View style={styles.offerBadgeGradient}>
-                      <Ionicons name="gift" size={12} color="white" />
+                      <Gift size={12} color="white" />
                       <Text style={styles.offerBadgeText} numberOfLines={1}>
                         {i18n.language === 'hi' ? banner.offer_tag_hi : banner.offer_tag}
                       </Text>
