@@ -154,7 +154,7 @@ export default function ProfileTabScreen() {
                             icon={Wallet}
                             label={t('profile.my_wallet', 'My Wallet')}
                             onPress={() => handleProtectedNavigation('/wallet')}
-                            rightElement={<Typography variant="body" color={colors.saffron} style={{ fontWeight: 'bold' }}>₹{balance}</Typography>}
+                            rightElement={<Typography variant="body" color={colors.saffron} style={{ fontWeight: 'bold' }}>{balance} Coins</Typography>}
                         />
                         <SettingItem
                             icon={Ticket}

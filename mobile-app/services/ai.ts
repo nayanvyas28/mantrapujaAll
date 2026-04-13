@@ -1,33 +1,5 @@
-import Constants from 'expo-constants';
 import i18next from 'i18next';
-import { Platform } from 'react-native';
-
-const debuggerHost = Constants.expoConfig?.hostUri;
-const localIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-
-const getAdminUrl = () => {
-    const envUrl = process.env.EXPO_PUBLIC_ADMIN_URL;
-    
-    // 1. If we have a local dev setup (debuggerHost), use it. 
-    // It's the most reliable way to find the computer's IP from the mobile device.
-    if (debuggerHost) {
-        const ip = debuggerHost.split(':')[0];
-        const resolved = `http://${ip}:3001`;
-        console.log(`[AiService] Dynamic resolution (from Metro): ${resolved}`);
-        return resolved;
-    }
-
-    // 2. If no debugger (production/preview), use the manually configured URL
-    if (envUrl) {
-        console.log(`[AiService] Using .env configured URL: ${envUrl}`);
-        return envUrl;
-    }
-
-    // 3. Last resort defaults
-    const fallback = Platform.OS === 'android' ? 'http://10.0.2.2:3001' : 'http://localhost:3001';
-    console.log(`[AiService] Using fallback: ${fallback}`);
-    return fallback;
-};
+import { getAdminUrl } from '../utils/apiUrl';
 
 export interface ChatMessage {
     role: 'user' | 'model';

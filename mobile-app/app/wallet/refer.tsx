@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Share, Image, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Copy, Share2, Users, Gift, TrendingUp, CheckCircle } from 'lucide-react-native';
@@ -9,6 +9,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWallet } from '../../context/WalletContext';
 import * as Clipboard from 'expo-clipboard';
+import { supabase } from '../../utils/supabase';
 
 export default function ReferralScreen() {
     const router = useRouter();
@@ -22,6 +23,27 @@ export default function ReferralScreen() {
     const referralCredits = transactions.filter(t => t.category === 'referral');
     const totalEarned = referralCredits.reduce((sum, t) => sum + t.amount, 0);
     const friendsCount = referralCredits.length;
+    const [referralMessageTemplate, setReferralMessageTemplate] = useState('Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app');
+
+    useEffect(() => {
+        const fetchReferralMessage = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'referral_message')
+                    .single();
+                
+                if (!error && data?.value) {
+                    setReferralMessageTemplate(data.value);
+                }
+            } catch (err) {
+                console.error('Error fetching referral message:', err);
+            }
+        };
+
+        fetchReferralMessage();
+    }, []);
 
     const handleCopy = async () => {
         await Clipboard.setStringAsync(referralCode);
@@ -30,10 +52,10 @@ export default function ReferralScreen() {
 
     const handleShare = async () => {
         try {
-            const message = `Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app`;
+            const message = referralMessageTemplate.replace(/\${referralCode}/g, referralCode);
             await Share.share({
                 message,
-                title: 'Refer & Earn ₹51',
+                title: 'Refer & Earn 51 Coins',
             });
         } catch (error) {
             console.error('Sharing Error:', error);
@@ -55,10 +77,10 @@ export default function ReferralScreen() {
                 {/* Banner - Elevated with Gradient Feel */}
                 <View style={[styles.heroCard, { backgroundColor: colors.saffron }]}>
                     <View style={styles.heroTextContent}>
-                        <Typography variant="h1" color="#fff" style={{ fontSize: 40, fontWeight: '900' }}>₹51</Typography>
+                        <Typography variant="h1" color="#fff" style={{ fontSize: 32, fontWeight: '900' }}>51 COINS</Typography>
                         <Typography variant="h3" color="#fff" style={{ marginTop: -4, fontWeight: '700' }}>FOR EVERY FRIEND!</Typography>
                         <Typography variant="bodySmall" color="#fff" style={{ opacity: 0.95, marginTop: 12, lineHeight: 18 }}>
-                            Invite your circle to Mantra Puja and get ₹51 in your wallet as soon as they join the journey.
+                            Invite your circle to Mantra Puja and get 51 Puja Coins in your wallet as soon as they join.
                         </Typography>
                     </View>
                     <Image 
@@ -101,8 +123,8 @@ export default function ReferralScreen() {
                     </Card>
                     <Card variant="solid" style={styles.statCard}>
                         <TrendingUp size={24} color={colors.gold} />
-                        <Typography variant="h2" style={{ marginTop: 8 }}>₹{totalEarned}</Typography>
-                        <Typography variant="label" color={colors.mutedForeground}>Total Earned</Typography>
+                        <Typography variant="h2" style={{ marginTop: 8 }}>{totalEarned}</Typography>
+                        <Typography variant="label" color={colors.mutedForeground}>Coins Earned</Typography>
                     </Card>
                 </View>
 
@@ -131,8 +153,8 @@ export default function ReferralScreen() {
                         <CheckCircle size={20} color="#10b981" />
                     </View>
                     <View style={styles.stepText}>
-                        <Typography variant="body" style={{ fontWeight: 'bold' }}>3. Earn ₹51</Typography>
-                        <Typography variant="bodySmall" color={colors.mutedForeground}>₹51 is added to your wallet instantly!</Typography>
+                        <Typography variant="body" style={{ fontWeight: 'bold' }}>3. Earn 51 Coins</Typography>
+                        <Typography variant="bodySmall" color={colors.mutedForeground}>51 Puja Coins are added to your wallet instantly!</Typography>
                     </View>
                 </View>
 
@@ -149,7 +171,7 @@ export default function ReferralScreen() {
                                     <Typography variant="body" style={{ fontWeight: 'bold' }}>Friend Joined</Typography>
                                     <Typography variant="label" color={colors.mutedForeground}>{new Date(t.created_at).toLocaleDateString()}</Typography>
                                 </View>
-                                <Typography variant="h3" color="#10b981">+₹{t.amount}</Typography>
+                                <Typography variant="h3" color="#10b981">+{t.amount} Coins</Typography>
                             </Card>
                         ))}
                     </>

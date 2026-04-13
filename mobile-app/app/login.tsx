@@ -42,6 +42,7 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { supabase } from "../utils/supabase";
 import { Config } from "../constants/Config";
+import { getAuthUrl, PRODUCTION_BASE_URL, setWorkingBaseUrl } from "../utils/apiUrl";
 
 const InputField = ({
   label,
@@ -142,18 +143,8 @@ export default function LoginScreen() {
   const [popupMessage, setPopupMessage] = useState("");
   const [popupType, setPopupType] = useState<"error" | "success">("error");
 
-  // Dynamically resolve the local IP address if running via Expo Go
-  const debuggerHost = Constants.expoConfig?.hostUri;
-  const localIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
-  
-  // Logic Fix: Ensure we don't accidentally hit the Supabase domain for backend logic
-  const isSupabaseUrl = Config.backendUrl?.includes('mantrapuja.com') && !Config.backendUrl?.includes(':4000');
-  
-  const BACKEND_URL = (Config.backendUrl && !isSupabaseUrl)
-    ? (Config.backendUrl.endsWith('/api/auth') ? Config.backendUrl : `${Config.backendUrl}/api/auth`)
-    : (Platform.OS === 'android' && !debuggerHost ? "http://10.0.2.2:4000/api/auth" : `http://${localIp}:4000/api/auth`);
-
-  console.log(`[AuthDebug] ENV_BACKEND_URL: ${Config.backendUrl}`);
+  // Resolved via centralized utility
+  const BACKEND_URL = getAuthUrl();
   console.log(`[AuthDebug] Resolved BACKEND_URL: ${BACKEND_URL}`);
 
   const showPopup = (msg: string, type: "error" | "success" = "error") => {
@@ -192,22 +183,50 @@ export default function LoginScreen() {
       return;
     }
 
-    console.log(`[AuthDebug] Checking phone: ${normalizedPhone} at URL: ${BACKEND_URL}/check-user`);
-    try {
-      // Query the backend to check if the user exists
-      const targetUrl = `${BACKEND_URL}/check-user?phone=${encodeURIComponent(normalizedPhone)}`;
-      const response = await fetch(targetUrl);
-      console.log(`[AuthDebug] Check-user response status: ${response.status} from URL: ${targetUrl}`);
-      
-      const checkData = await response.json();
-      console.log(`[AuthDebug] Check-user response data:`, checkData);
+    setLoading(true);
 
-      if (!response.ok) {
-        console.warn(`[AuthDebug] Check-user returned non-OK status: ${response.status}`);
-        // If it's a 401, we want to know why
-        if (response.status === 401) {
-          showPopup("Unauthorized access to backend. Please check your network or backend configuration.", "error");
-          return;
+    const initiateCheck = async (baseUrl: string, timeoutMs: number, isRetry = false) => {
+      console.log(`[AuthDebug] ${isRetry ? 'Failover' : 'Attempting'} Check: ${normalizedPhone} at URL: ${baseUrl}/check-user`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const targetUrl = `${baseUrl}/check-user?phone=${encodeURIComponent(normalizedPhone)}`;
+        const response = await fetch(targetUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        
+        const data = await response.json();
+        if (response.ok) {
+          // Success! Lock this base URL for the rest of the session.
+          // We strip the /api/auth if it exists to get the BASE
+          const baseOnly = baseUrl.replace('/api/auth', '');
+          setWorkingBaseUrl(baseOnly);
+          return data;
+        }
+        throw new Error(data.error || `Server returned ${response.status}`);
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    };
+
+    try {
+      let checkData;
+      try {
+        // Attempt 1: Try current resolved URL (usually Local) with 5s timeout
+        checkData = await initiateCheck(BACKEND_URL, 5000);
+      } catch (firstError: any) {
+        const isTimeout = firstError.name === 'AbortError' || firstError.message.includes('timeout') || firstError.message.includes('Aborted');
+        
+        // If Attempt 1 failed/timed out, and it wasn't already production, try Production instantly
+        const isAlreadyProd = BACKEND_URL.includes('sslip.io');
+        if (!isAlreadyProd) {
+          console.warn(`[AuthDebug] Local connection failed (${firstError.message}). Falling back to Production...`);
+          const PROD_AUTH_URL = `${PRODUCTION_BASE_URL}/api/auth`;
+          checkData = await initiateCheck(PROD_AUTH_URL, 15000, true);
+        } else {
+          throw firstError;
         }
       }
 
@@ -221,18 +240,18 @@ export default function LoginScreen() {
         setIsExistingUser(false);
         setAuthPurpose("REGISTER");
 
-        const registerUrl = `${BACKEND_URL}/register`;
+        // Use the discovered working URL for the subsequent request
+        const currentActiveBase = getAuthUrl();
+        const registerUrl = `${currentActiveBase}/register`;
         console.log(`[AuthDebug] Attempting registration at: ${registerUrl}`);
+        
         const regResponse = await fetch(registerUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: normalizedPhone }),
         });
         
-        console.log(`[AuthDebug] Register response status: ${regResponse.status}`);
         const regData = await regResponse.json();
-        console.log(`[AuthDebug] Register response data:`, regData);
-
         if (!regResponse.ok) {
           throw new Error(regData.error || "Failed to send registration OTP");
         }

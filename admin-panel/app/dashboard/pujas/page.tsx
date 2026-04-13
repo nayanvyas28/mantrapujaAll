@@ -20,12 +20,18 @@ interface Puja {
     is_active: boolean;
     is_offer_999: boolean;
     offer_order: number;
+    slug: string;
+    show_on_home: boolean;
+    home_order: number;
+    sort_order: number;
     image_url?: string;
     images?: string[];
     description?: string;
     description_hi?: string;
     tagline?: string;
     tagline_hi?: string;
+    about_description?: string;
+    about_description_hi?: string;
 }
 
 export default function PujaManagementPage() {
@@ -52,13 +58,23 @@ export default function PujaManagementPage() {
         is_active: true,
         is_offer_999: false,
         offer_order: 0,
+        slug: '',
+        show_on_home: false,
+        home_order: 0,
+        sort_order: 0,
+        about_description: '',
+        about_description_hi: '',
         offer_999_tax: 0,
         offer_999_dakshina: 0,
         imageFile: null as File | null
     });
 
+    const [isAutoSlug, setIsAutoSlug] = useState(true);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
+    const [aiGenerated, setAiGenerated] = useState({ name_hi: '', tagline_hi: '', description_hi: '', about_description_hi: '' });
+    const [isTranslating, setIsTranslating] = useState(false);
 
     // Pagination
     const [hasMore, setHasMore] = useState(false);
@@ -73,6 +89,77 @@ export default function PujaManagementPage() {
     useEffect(() => {
         fetchData(true);
     }, [searchQuery, filterCategory]);
+
+    // Real-time Auto-translation
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            performRealtimeTranslation();
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, [pujasForm.name, pujasForm.tagline, pujasForm.description]);
+
+    // Auto-Slug Logic
+    useEffect(() => {
+        if (isAutoSlug && pujasForm.name && !editingPuja) {
+            setPujasForm(prev => ({
+                ...prev,
+                slug: prev.name.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-')
+            }));
+        }
+    }, [pujasForm.name, isAutoSlug]);
+
+    const performRealtimeTranslation = async () => {
+        // Only translate if there's English but the Hindi is either empty or was AI-generated
+        const needsName = pujasForm.name && (!pujasForm.name_hi || pujasForm.name_hi === aiGenerated.name_hi);
+        const needsTagline = pujasForm.tagline && (!pujasForm.tagline_hi || pujasForm.tagline_hi === aiGenerated.tagline_hi);
+        const needsDescription = pujasForm.description && (!pujasForm.description_hi || pujasForm.description_hi === aiGenerated.description_hi);
+        const needsAbout = pujasForm.about_description && (!pujasForm.about_description_hi || pujasForm.about_description_hi === aiGenerated.about_description_hi);
+
+        if (!needsName && !needsTagline && !needsDescription && !needsAbout) return;
+
+        setIsTranslating(true);
+        try {
+            const translationPayload: Record<string, string> = {};
+            if (needsName) translationPayload.name_hi = pujasForm.name;
+            if (needsTagline) translationPayload.tagline_hi = pujasForm.tagline;
+            if (needsDescription) translationPayload.description_hi = pujasForm.description;
+            if (needsAbout) translationPayload.about_description_hi = pujasForm.about_description;
+
+            const response = await fetch('/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: translationPayload })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server returned ${response.status}: ${errorText.substring(0, 50)}...`);
+            }
+
+            const results = await response.json();
+            if (results) {
+                setPujasForm(prev => ({
+                    ...prev,
+                    name_hi: needsName ? (results.name_hi || prev.name_hi) : prev.name_hi,
+                    tagline_hi: needsTagline ? (results.tagline_hi || prev.tagline_hi) : prev.tagline_hi,
+                    description_hi: needsDescription ? (results.description_hi || prev.description_hi) : prev.description_hi,
+                    about_description_hi: needsAbout ? (results.about_description_hi || prev.about_description_hi) : prev.about_description_hi
+                }));
+                // Track these as AI generated so we know we can overwrite them next time
+                setAiGenerated(prev => ({
+                    ...prev,
+                    name_hi: needsName ? results.name_hi : prev.name_hi,
+                    tagline_hi: needsTagline ? results.tagline_hi : prev.tagline_hi,
+                    description_hi: needsDescription ? results.description_hi : prev.description_hi,
+                    about_description_hi: needsAbout ? results.about_description_hi : prev.about_description_hi
+                }));
+            }
+        } catch (error) {
+            console.error('Real-time translation failed:', error);
+        } finally {
+            setIsTranslating(false);
+        }
+    };
 
     async function fetchInitialData() {
         setIsLoading(true);
@@ -167,6 +254,12 @@ export default function PujaManagementPage() {
                 is_active: pujasForm.is_active,
                 is_offer_999: pujasForm.is_offer_999,
                 offer_order: pujasForm.offer_order,
+                slug: pujasForm.slug || pujasForm.name.toLowerCase().replace(/[^\w ]+/g, '').replace(/ +/g, '-'),
+                show_on_home: pujasForm.show_on_home,
+                home_order: pujasForm.home_order,
+                sort_order: pujasForm.sort_order,
+                about_description: pujasForm.about_description,
+                about_description_hi: pujasForm.about_description_hi,
                 image_url: imageUrl,
                 images: imageUrl ? [imageUrl] : []
             };
@@ -207,6 +300,7 @@ export default function PujaManagementPage() {
     };
 
     const resetForm = () => {
+        setAiGenerated({ name_hi: '', tagline_hi: '', description_hi: '', about_description_hi: '' });
         setPujasForm({
             name: '',
             name_hi: '',
@@ -219,10 +313,17 @@ export default function PujaManagementPage() {
             is_active: true,
             is_offer_999: false,
             offer_order: 0,
+            slug: '',
+            show_on_home: false,
+            home_order: 0,
+            sort_order: 0,
+            about_description: '',
+            about_description_hi: '',
             offer_999_tax: 0,
             offer_999_dakshina: 0,
             imageFile: null
         });
+        setIsAutoSlug(true);
     };
 
     const handleEdit = async (puja: Puja) => {
@@ -245,9 +346,22 @@ export default function PujaManagementPage() {
             is_active: puja.is_active,
             is_offer_999: puja.is_offer_999,
             offer_order: puja.offer_order,
+            slug: puja.slug || '',
+            show_on_home: puja.show_on_home || false,
+            home_order: puja.home_order || 0,
+            sort_order: puja.sort_order || 0,
+            about_description: puja.about_description || '',
+            about_description_hi: puja.about_description_hi || '',
             offer_999_tax: summary?.offer_999_tax || 0,
             offer_999_dakshina: summary?.offer_999_dakshina || 0,
             imageFile: null
+        });
+        setIsAutoSlug(!puja.slug);
+        setAiGenerated({
+            name_hi: puja.name_hi || '',
+            tagline_hi: puja.tagline_hi || '',
+            description_hi: puja.description_hi || '',
+            about_description_hi: puja.about_description_hi || ''
         });
         setIsPujaModalOpen(true);
     };
@@ -260,29 +374,32 @@ export default function PujaManagementPage() {
 
         setIsSaving(true);
         try {
-            const prompt = `Translate the following to Hindi (Short, Spiritual, and Professional):
-            Name: "${pujasForm.name}"
-            Tagline: "${pujasForm.tagline}"
-            Description: "${pujasForm.description}"
-            
-            Return ONLY a JSON object with keys "name_hi", "tagline_hi", "description_hi".`;
-
-            const response = await fetch('/api/chat', {
+            const response = await fetch('/api/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: prompt })
+                body: JSON.stringify({ 
+                    text: {
+                        name_hi: pujasForm.name,
+                        tagline_hi: pujasForm.tagline,
+                        description_hi: pujasForm.description,
+                        about_description_hi: pujasForm.about_description
+                    }
+                })
             });
             
-            const data = await response.json();
-            // Parse AI response (it sometimes embeds JSON in backticks)
-            const jsonStr = data.text.match(/\{[\s\S]*\}/)?.[0];
-            if (jsonStr) {
-                const results = JSON.parse(jsonStr);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error (${response.status})`);
+            }
+
+            const results = await response.json();
+            if (results) {
                 setPujasForm(prev => ({
                     ...prev,
                     name_hi: results.name_hi || prev.name_hi,
                     tagline_hi: results.tagline_hi || prev.tagline_hi,
-                    description_hi: results.description_hi || prev.description_hi
+                    description_hi: results.description_hi || prev.description_hi,
+                    about_description_hi: results.about_description_hi || prev.about_description_hi
                 }));
             }
         } catch (error) {
@@ -546,17 +663,76 @@ export default function PujaManagementPage() {
                                                         value={pujasForm.name}
                                                         onChange={(e) => setPujasForm({ ...pujasForm, name: e.target.value })}
                                                         placeholder="e.g. Mahamrityunjaya Mantra Jaap"
-                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm"
+                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm text-white"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1">Ritual Name (Hindi)</label>
+                                                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                        Ritual Name (Hindi)
+                                                        {isTranslating && (pujasForm.name && (!pujasForm.name_hi || pujasForm.name_hi === aiGenerated.name_hi)) && (
+                                                            <span className="flex items-center gap-1 text-[8px] animate-pulse">
+                                                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                                AI Translating...
+                                                            </span>
+                                                        )}
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         value={pujasForm.name_hi}
                                                         onChange={(e) => setPujasForm({ ...pujasForm, name_hi: e.target.value })}
-                                                        placeholder="जैसे: महामृत्युंजय मंत्र जाप"
+                                                        placeholder="अनुष्ठान का नाम"
                                                         className="w-full px-6 py-4 bg-white/[0.03] border border-orange-500/20 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm text-orange-100"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Ritual Category</label>
+                                                    <div className="relative">
+                                                        <select
+                                                            required
+                                                            value={pujasForm.category_id}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, category_id: e.target.value })}
+                                                            className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all appearance-none cursor-pointer font-medium text-sm text-gray-300"
+                                                        >
+                                                            <option value="" className="bg-[#111]">Select Category</option>
+                                                            {categories.map(cat => <option key={cat.id} value={cat.id} className="bg-[#111] text-white">{cat.name}</option>)}
+                                                        </select>
+                                                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Global Catalog Rank</label>
+                                                    <input
+                                                        type="number"
+                                                        value={pujasForm.sort_order}
+                                                        onChange={(e) => setPujasForm({ ...pujasForm, sort_order: parseInt(e.target.value) || 0 })}
+                                                        placeholder="Priority in lists (higher = first)"
+                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm text-white"
+                                                    />
+                                                </div>
+                                            </div>
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-brand-blue uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                        URL Slug
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setIsAutoSlug(!isAutoSlug)}
+                                                            className={`text-[8px] px-2 py-0.5 rounded-md border transition-all ${isAutoSlug ? 'bg-orange-500/10 border-orange-500/30 text-orange-400' : 'bg-white/5 border-white/10 text-gray-500'}`}
+                                                        >
+                                                            {isAutoSlug ? 'Auto-Sync ON' : 'Manual Edit'}
+                                                        </button>
+                                                    </label>
+                                                    <input
+                                                        type="text" required
+                                                        value={pujasForm.slug}
+                                                        onChange={(e) => {
+                                                            setIsAutoSlug(false);
+                                                            setPujasForm({ ...pujasForm, slug: e.target.value });
+                                                        }}
+                                                        placeholder="ritual-url-slug"
+                                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-mono text-xs text-orange-200/60"
                                                     />
                                                 </div>
                                             </div>
@@ -573,7 +749,15 @@ export default function PujaManagementPage() {
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1">Short Tagline (Hindi)</label>
+                                                    <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                        Short Tagline (Hindi)
+                                                        {isTranslating && (pujasForm.tagline && (!pujasForm.tagline_hi || pujasForm.tagline_hi === aiGenerated.tagline_hi)) && (
+                                                            <span className="flex items-center gap-1 text-[8px] animate-pulse">
+                                                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                                AI Translating...
+                                                            </span>
+                                                        )}
+                                                    </label>
                                                     <input
                                                         type="text"
                                                         value={pujasForm.tagline_hi}
@@ -584,63 +768,97 @@ export default function PujaManagementPage() {
                                                 </div>
                                             </div>
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Base Price (₹)</label>
-                                                        <div className="relative group">
-                                                            <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg border border-white/10 group-focus-within:border-orange-500/30 transition-all">
-                                                                <IndianRupee className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-orange-400" />
-                                                            </div>
-                                                            <input
-                                                                type="number" required
-                                                                value={pujasForm.price}
-                                                                onChange={(e) => setPujasForm({ ...pujasForm, price: parseInt(e.target.value) || 0 })}
-                                                                className="w-full pl-16 pr-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-bold text-sm"
-                                                            />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Base Price (₹)</label>
+                                                    <div className="relative group">
+                                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg border border-white/10 group-focus-within:border-orange-500/30 transition-all">
+                                                            <IndianRupee className="w-3.5 h-3.5 text-gray-400 group-focus-within:text-orange-400" />
                                                         </div>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Classification</label>
-                                                        <div className="relative">
-                                                            <select
-                                                                required
-                                                                value={pujasForm.category_id}
-                                                                onChange={(e) => setPujasForm({ ...pujasForm, category_id: e.target.value })}
-                                                                className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all appearance-none cursor-pointer font-medium text-sm text-white"
-                                                            >
-                                                                <option value="" className="bg-[#111]">Select Category</option>
-                                                                {categories.map(cat => <option key={cat.id} value={cat.id} className="bg-[#111] text-white">{cat.name}</option>)}
-                                                            </select>
-                                                            <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Insight (English)</label>
-                                                        <textarea
-                                                            rows={4}
-                                                            value={pujasForm.description}
-                                                            onChange={(e) => setPujasForm({ ...pujasForm, description: e.target.value })}
-                                                            placeholder="Spiritual significance..."
-                                                            className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1">Insight (Hindi)</label>
-                                                        <textarea
-                                                            rows={4}
-                                                            value={pujasForm.description_hi}
-                                                            onChange={(e) => setPujasForm({ ...pujasForm, description_hi: e.target.value })}
-                                                            placeholder="आध्यात्मिक महत्व..."
-                                                            className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
+                                                        <input
+                                                            type="number" required
+                                                            value={pujasForm.price}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, price: parseInt(e.target.value) || 0 })}
+                                                            className="w-full pl-16 pr-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-bold text-sm text-white"
                                                         />
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
+                                            <div className="pt-4 space-y-6">
+                                                <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                                                    <Tag className="w-4 h-4 text-orange-500" />
+                                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Ritual Knowledge &amp; Content</h4>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-4">Quick Summary (Catalog Lists)</p>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">English Summary</label>
+                                                            <textarea
+                                                                rows={3}
+                                                                value={pujasForm.description}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, description: e.target.value })}
+                                                                placeholder="Spiritual significance..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                                Hindi Summary
+                                                                {isTranslating && (pujasForm.description && (!pujasForm.description_hi || pujasForm.description_hi === aiGenerated.description_hi)) && (
+                                                                    <span className="flex items-center gap-1 text-[8px] animate-pulse">
+                                                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                                        AI Translating...
+                                                                    </span>
+                                                                )}
+                                                            </label>
+                                                            <textarea
+                                                                rows={3}
+                                                                value={pujasForm.description_hi}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, description_hi: e.target.value })}
+                                                                placeholder="आध्यात्मिक महत्व..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2 pt-2">
+                                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-4">Detailed Background (About Section)</p>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">English Insight</label>
+                                                            <textarea
+                                                                rows={4}
+                                                                value={pujasForm.about_description}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, about_description: e.target.value })}
+                                                                placeholder="In-depth details about the ritual..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                                Hindi Insight
+                                                                {isTranslating && (pujasForm.about_description && (!pujasForm.about_description_hi || pujasForm.about_description_hi === aiGenerated.about_description_hi)) && (
+                                                                    <span className="flex items-center gap-1 text-[8px] animate-pulse">
+                                                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                                        AI Translating...
+                                                                    </span>
+                                                                )}
+                                                            </label>
+                                                            <textarea
+                                                                rows={4}
+                                                                value={pujasForm.about_description_hi}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, about_description_hi: e.target.value })}
+                                                                placeholder="विस्तृत विवरण..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         <div className="flex items-center gap-5 p-6 rounded-3xl bg-white/[0.02] border border-white/10 group hover:border-orange-500/20 transition-all">
                                             <div className="relative inline-flex items-center cursor-pointer">
                                                 <input
@@ -726,6 +944,37 @@ export default function PujaManagementPage() {
                                                         </motion.div>
                                                     )}
                                                 </AnimatePresence>
+                                            </div>
+
+                                            <div className="p-6 rounded-[24px] bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-blue-400">Main Home Showcase</p>
+                                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mt-0.5">Top featured section</p>
+                                                    </div>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={pujasForm.show_on_home}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, show_on_home: e.target.checked })}
+                                                            className="sr-only peer"
+                                                        />
+                                                        <div className="w-12 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500 shadow-inner"></div>
+                                                    </label>
+                                                </div>
+
+                                                {pujasForm.show_on_home && (
+                                                    <div className="pt-5 border-t border-white/5">
+                                                        <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-wider">Showcase Order</label>
+                                                        <input
+                                                            type="number"
+                                                            value={pujasForm.home_order}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, home_order: parseInt(e.target.value) || 0 })}
+                                                            placeholder="0"
+                                                            className="w-full px-4 py-2.5 bg-black/60 border border-white/10 rounded-xl focus:outline-none focus:border-blue-500 font-bold text-center"
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 

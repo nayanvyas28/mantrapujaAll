@@ -17,7 +17,8 @@ export async function POST(request: Request) {
             core_prompt,
             rulebook,
             free_query_limit,
-            premium_upsell_message
+            premium_upsell_message,
+            referral_message
         } = await request.json();
 
         // Allow updating any of the configuration flags
@@ -26,7 +27,8 @@ export async function POST(request: Request) {
             core_prompt === undefined &&
             rulebook === undefined &&
             free_query_limit === undefined &&
-            premium_upsell_message === undefined) {
+            premium_upsell_message === undefined &&
+            referral_message === undefined) {
             return NextResponse.json({ error: 'No configuration provided' }, { status: 400 });
         }
 
@@ -81,6 +83,14 @@ export async function POST(request: Request) {
             });
         }
 
+        if (referral_message !== undefined) {
+            updates.push({
+                key: 'referral_message',
+                value: referral_message,
+                updated_at: timestamp
+            });
+        }
+
         // Store in Supabase
         const { error } = await supabase
             .from('settings')
@@ -92,9 +102,9 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json({ success: true, message: 'AI configuration updated successfully' });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Config API Error:', error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Server Error' }, { status: 500 });
     }
 }
 
@@ -116,7 +126,8 @@ export async function GET() {
                 'core_prompt',
                 'rulebook',
                 'free_query_limit',
-                'premium_upsell_message'
+                'premium_upsell_message',
+                'referral_message'
             ]);
 
         if (error && error.code !== 'PGRST116') {
@@ -129,6 +140,7 @@ export async function GET() {
         const rulebookSetting = data?.find(s => s.key === 'rulebook');
         const limitSetting = data?.find(s => s.key === 'free_query_limit');
         const upsellSetting = data?.find(s => s.key === 'premium_upsell_message');
+        const referralSetting = data?.find(s => s.key === 'referral_message');
 
         return NextResponse.json({
             isConfigured: !!apiKeySetting,
@@ -137,9 +149,10 @@ export async function GET() {
             rulebook: rulebookSetting?.value || '',
             freeQueryLimit: limitSetting ? parseInt(limitSetting.value, 10) : 5, // Default to 5
             premiumUpsellMessage: upsellSetting?.value || 'Guruji says you have reached your free query limit. Please upgrade to Pro to unlock unlimited spiritual guidance.',
+            referralMessage: referralSetting?.value || 'Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app',
             updatedAt: apiKeySetting?.updated_at || null
         });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Internal Server Error' }, { status: 500 });
     }
 }

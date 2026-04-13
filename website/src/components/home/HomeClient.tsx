@@ -2,7 +2,12 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { BadgeCheck, Zap, Video, Headphones, MapPin, Gift, Sparkles, Landmark, Heart, ChevronRight } from "lucide-react";
+import { 
+    BadgeCheck, Zap, Video, Headphones, MapPin, 
+    Gift, Sparkles, Landmark, Heart, ChevronRight,
+    ArrowRight, Loader2
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from '@supabase/supabase-js';
 import FireParticles from "@/components/FireParticles";
 import EmberParticles from "@/components/EmberParticles";
@@ -187,8 +192,26 @@ export default function HomeClient() {
     const [popularPujas, setPopularPujas] = useState<Puja[]>([]);
     const [heroPujas, setHeroPujas] = useState<Puja[]>([]);
     const [loadingPujas, setLoadingPujas] = useState(true);
-    const [pageData, setPageData] = useState<unknown>(null);
+    const [pageData, setPageData] = useState<any>(null);
+    const [banners, setBanners] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeBanner, setActiveBanner] = useState(0);
+    const [currentLang, setCurrentLang] = useState("en");
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Language Detection from Google Translate Cookie
+    useEffect(() => {
+        const checkLang = () => {
+            const match = document.cookie.match("(^|;) ?googtrans=([^;]*)(;|$)");
+            if (match) {
+                const lang = match[2].split("/")[2];
+                if (lang) setCurrentLang(lang);
+            }
+        };
+        checkLang();
+        const interval = setInterval(checkLang, 2000); // Poll for changes
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -286,45 +309,67 @@ export default function HomeClient() {
                         // Combine and take first 6
                         const displayPujas = [...featured, ...nonFeaturedOthers].slice(0, 6);
 
-                        setPopularPujas(displayPujas);
+                    setPopularPujas(displayPujas);
                     }
                 } catch (e) {
                     console.error("Error loading pujas", e);
                 } finally {
                     setLoadingPujas(false);
                 }
+
+                // 4. Fetch Dynamic Banners
+                const { data: homeBannersData } = await supabase
+                    .from('home_banners')
+                    .select('*')
+                    .eq('is_active', true)
+                    .or('target.eq.web,target.eq.both')
+                    .order('display_order', { ascending: true });
+                if (homeBannersData) setBanners(homeBannersData);
+
             } catch (error) {
                 console.error("Failed to fetch data:", error);
-                // Fallback on error
-                setBlogs([
-                    {
-                        id: "1",
-                        title: "The Science Behind Vedic Mantras",
-                        excerpt: "Discover how ancient sound vibrations impact your mental and spiritual well-being.",
-                        slug: "science-behind-vedic-mantras",
-                        image_url: "https://images.unsplash.com/photo-1605218453416-59e3c9c94494?q=80&w=600&auto=format&fit=crop"
-                    },
-                    {
-                        id: "2",
-                        title: "Why Rudrabhishek is Powerful?",
-                        excerpt: "Understanding the significance of Lord Shiva's most potent ritual for peace and prosperity.",
-                        slug: "power-of-rudrabhishek",
-                        image_url: "https://images.unsplash.com/photo-1542353436-312f0e1f67ff?q=80&w=600&auto=format&fit=crop"
-                    },
-                    {
-                        id: "3",
-                        title: "Navratri 2024: Complete Guide",
-                        excerpt: "Everything you need to know about the 9 days of Goddess Durga worship.",
-                        slug: "navratri-guide-2024",
-                        image_url: "https://images.unsplash.com/photo-1634914040989-13824ee1c9f4?q=80&w=600&auto=format&fit=crop"
-                    }
-                ]);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchData();
+
+        // 5. Setup Realtime Listener
+        const fetchBannersOnly = async () => {
+            const { data } = await supabase
+                .from('home_banners')
+                .select('*')
+                .eq('is_active', true)
+                .or('target.eq.web,target.eq.both')
+                .order('display_order', { ascending: true });
+            if (data) setBanners(data);
+        };
+
+        const channel = supabase
+            .channel('banners-updates')
+            .on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'home_banners' }, 
+                () => fetchBannersOnly()
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
+
+    // Banner Auto-cycle
+    useEffect(() => {
+        if (banners.length > 1) {
+            timerRef.current = setInterval(() => {
+                setActiveBanner(prev => (prev + 1) % banners.length);
+            }, 6000);
+        }
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [banners]);
 
     const gradients = [
         "from-orange-500 to-red-600",
@@ -347,129 +392,115 @@ export default function HomeClient() {
             <StarsGalaxyBackground />
 
             {/* Hero Section */}
-            <section className="relative h-[75vh] flex items-center justify-center overflow-hidden">
-                {/* Hero Background Image - Visible in Both Modes */}
-                <div className="absolute inset-0 z-0">
-                    <img
-                        src="https://cdn.shopaccino.com/divine-rudraksha/products/navdurga-chaitra-navratri-puja-261228243841428_m.jpg?v=523"
-                        alt="Temple Background with Navdurga"
-                        className="w-full h-full object-cover opacity-80 animate-zoom-in"
-                    />
-                    {/* Dark Mode Overlay - Applied to Both Modes */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-cosmic-navy/90 via-cosmic-navy/60 to-cosmic-navy/90"></div>
-                </div>
-
-                {/* Animated Background - Nebula (Visible in Both Modes) */}
-                <div className="absolute inset-0 bg-nebula animate-nebula-move bg-[length:200%_200%] z-0 opacity-50 mix-blend-overlay"></div>
-
-                <div className="relative z-10 text-center px-4 max-w-6xl mx-auto">
-                    <h1 className="text-5xl md:text-6xl lg:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-600 bg-[length:200%_auto] animate-gradient mb-6 drop-shadow-2xl tracking-tighter leading-[1.1] pb-2" style={{ fontFamily: 'Georgia, serif' }}>
-                        Divine Blessings for a <br /> Prosperous Life
-                    </h1>
-                    <p className="text-lg md:text-xl lg:text-2xl text-starlight/95 mb-10 max-w-3xl mx-auto font-light leading-relaxed animate-fade-in-up [animation-delay:200ms]" style={{ fontFamily: 'ui-sans-serif, sans-serif' }}>
-                        Experience authentic Vedic rituals performed by verified Pandits at your home or sacred temples. Connect with the divine energy of the cosmos.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-6 justify-center items-center animate-fade-in-up [animation-delay:400ms]">
-                        {/* 3D Primary Button with Fire Particles */}
-                        <Link
-                            href="/pooja-services"
-                            className="group relative inline-flex items-center justify-center h-16 px-12 font-bold text-lg text-white rounded-full shadow-[0_6px_0_0_#9a3412] hover:shadow-[0_3px_0_0_#9a3412] hover:translate-y-[3px] active:translate-y-[6px] active:shadow-none transition-all duration-150 overflow-visible"
+            <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
+                <AnimatePresence mode="wait">
+                    {banners.length > 0 ? (
+                        <motion.div
+                            key={banners[activeBanner].id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 1 }}
+                            className="absolute inset-0"
                         >
-                            {/* Animated Running Border Segments */}
-                            <svg className="absolute -inset-[2px] w-[calc(100%+4px)] h-[calc(100%+4px)] pointer-events-none" style={{ filter: 'drop-shadow(0 0 4px rgba(251,191,36,0.6))', zIndex: 20 }}>
-                                <rect
-                                    x="1"
-                                    y="1"
-                                    width="calc(100% - 2px)"
-                                    height="calc(100% - 2px)"
-                                    rx="32"
-                                    fill="none"
-                                    stroke="#fbbf24"
-                                    strokeWidth="3"
-                                    strokeDasharray="20 80"
-                                    className="animate-snake-border"
-                                    strokeLinecap="round"
-                                />
-                                <rect
-                                    x="1"
-                                    y="1"
-                                    width="calc(100% - 2px)"
-                                    height="calc(100% - 2px)"
-                                    rx="32"
-                                    fill="none"
-                                    stroke="#f97316"
-                                    strokeWidth="3"
-                                    strokeDasharray="20 10"
-                                    className="animate-snake-border"
-                                    style={{ strokeDashoffset: 500, animationDelay: '-4s' }}
-                                    strokeLinecap="round"
-                                />
-                            </svg>
+                            {/* Background Image */}
+                            <img
+                                src={banners[activeBanner].image_url}
+                                alt={banners[activeBanner].title}
+                                className="w-full h-full object-cover opacity-80"
+                            />
+                            {/* Cosmic Overlays */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-cosmic-navy/90 via-cosmic-navy/40 to-cosmic-navy/95"></div>
+                            <div className="absolute inset-0 bg-nebula animate-nebula-move bg-[length:200%_200%] opacity-30 mix-blend-overlay"></div>
 
-                            {/* Inner Clipped Container for Background & Effects */}
-                            <div className="absolute inset-0 rounded-full overflow-hidden bg-gradient-to-r from-orange-500 to-red-500">
-                                {/* Fire Particles Effect */}
-                                <div className="absolute inset-0 opacity-40 group-hover:opacity-100 transition-opacity duration-300">
-                                    <FireParticles />
-                                </div>
+                            {/* Content */}
+                            <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4 max-w-6xl mx-auto pt-10">
+                                <AnimatePresence>
+                                    {banners[activeBanner].show_offer && (
+                                        <motion.div
+                                            initial={{ scale: 0.8, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            className="mb-8 relative group"
+                                        >
+                                            {/* Pulsing Aura */}
+                                            <div className="absolute -inset-4 bg-orange-500/20 rounded-full blur-2xl animate-pulse"></div>
+                                            
+                                            <div className="relative flex items-center gap-3 px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 rounded-full border border-white/20 shadow-xl">
+                                                <Sparkles className="w-5 h-5 text-white animate-spin-slow" />
+                                                <span className="text-sm font-black text-white uppercase tracking-widest">
+                                                    {currentLang === 'hi' ? (banners[activeBanner].offer_tag_hi || banners[activeBanner].offer_tag) : banners[activeBanner].offer_tag}
+                                                </span>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
 
-                                {/* Shine Effect - Now Clipped */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-shine"></div>
+                                <motion.h1 
+                                    initial={{ y: 30, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="text-6xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-600 bg-[length:200%_auto] animate-gradient mb-6 drop-shadow-2xl tracking-tighter leading-none"
+                                    style={{ fontFamily: 'Georgia, serif' }}
+                                >
+                                    {currentLang === 'hi' ? (banners[activeBanner].title_hi || banners[activeBanner].title) : banners[activeBanner].title}
+                                </motion.h1>
+
+                                <motion.p 
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="text-xl md:text-3xl text-starlight/90 mb-12 max-w-4xl font-light leading-relaxed"
+                                >
+                                    {currentLang === 'hi' ? (banners[activeBanner].subtitle_hi || banners[activeBanner].subtitle) : banners[activeBanner].subtitle}
+                                </motion.p>
+
+                                <motion.div 
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.6 }}
+                                    className="flex flex-col sm:flex-row gap-8 justify-center items-center"
+                                >
+                                    <Link
+                                        href={banners[activeBanner].route?.startsWith('puja:') 
+                                            ? `/pooja-services/${banners[activeBanner].route.split(':')[1]}` 
+                                            : (banners[activeBanner].route || '/pooja-services')}
+                                        className="group relative inline-flex items-center justify-center h-16 px-16 font-bold text-lg text-white rounded-full bg-gradient-to-r from-orange-500 to-red-600 shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                                    >
+                                        <div className="absolute inset-0 rounded-full overflow-hidden">
+                                           <FireParticles />
+                                        </div>
+                                        <span className="relative z-10 flex items-center gap-3">
+                                            {currentLang === 'hi' ? "अभी बुक करें" : "BOOK NOW"}
+                                            <ArrowRight className="w-6 h-6 transform group-hover:translate-x-2 transition-transform" />
+                                        </span>
+                                    </Link>
+                                    
+                                    <Link
+                                        href="tel:+919876543210"
+                                        className="px-12 h-16 flex items-center justify-center rounded-full border-2 border-white/20 text-white font-bold hover:bg-white/10 transition-colors"
+                                    >
+                                        {currentLang === 'hi' ? "हमें कॉल करें" : "CALL US"}
+                                    </Link>
+                                </motion.div>
                             </div>
+                        </motion.div>
+                    ) : (
+                        /* Static Fallback while loading */
+                        <div className="absolute inset-0 bg-cosmic-navy flex items-center justify-center">
+                            <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+                        </div>
+                    )}
+                </AnimatePresence>
 
-                            <span className="relative z-10 flex items-center gap-3 text-sm uppercase tracking-[0.2em]">
-                                Book Puja Now
-                                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                                </svg>
-                            </span>
-                        </Link>
-
-                        {/* Call Us Button - White Theme with Call Animation */}
-                        <Link
-                            href="tel:+919876543210"
-                            className="group relative inline-flex items-center justify-center gap-3 h-16 px-12 font-bold text-lg text-green-600 bg-white border-2 border-white rounded-full shadow-[0_6px_0_0_#d1d5db] hover:shadow-[0_3px_0_0_#d1d5db] hover:translate-y-[3px] active:translate-y-[6px] active:shadow-none transition-all duration-150 overflow-visible animate-shake-call animate-pulse-ring"
-                        >
-                            {/* Animated Running Border Segments */}
-                            <svg className="absolute -inset-[2px] w-[calc(100%+4px)] h-[calc(100%+4px)] pointer-events-none" style={{ filter: 'drop-shadow(0 0 4px rgba(34,197,94,0.6))' }}>
-                                <rect
-                                    x="1"
-                                    y="1"
-                                    width="calc(100% - 2px)"
-                                    height="calc(100% - 2px)"
-                                    rx="32"
-                                    fill="none"
-                                    stroke="#22c55e"
-                                    strokeWidth="3"
-                                    strokeDasharray="50 450"
-                                    className="animate-snake-border"
-                                    style={{ strokeDashoffset: 1000 }}
-                                    strokeLinecap="round"
-                                />
-                                <rect
-                                    x="1"
-                                    y="1"
-                                    width="calc(100% - 2px)"
-                                    height="calc(100% - 2px)"
-                                    rx="32"
-                                    fill="none"
-                                    stroke="#10b981"
-                                    strokeWidth="3"
-                                    strokeDasharray="50 450"
-                                    className="animate-snake-border"
-                                    style={{ strokeDashoffset: 500, animationDelay: '-2s' }}
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                            {/* Modern Phone Icon */}
-                            <svg className="w-6 h-6 relative z-10 animate-shake-call" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-                            </svg>
-                            <span className="relative z-10 text-gray-800">Call Us</span>
-                            <div className="absolute inset-0 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full"></div>
-                        </Link>
-                    </div>
-
+                {/* Navigation Dots */}
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+                    {banners.map((_, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setActiveBanner(i)}
+                            className={`w-3 h-3 rounded-full transition-all duration-300 ${activeBanner === i ? 'bg-orange-500 w-10' : 'bg-white/30'}`}
+                        />
+                    ))}
                 </div>
             </section>
 

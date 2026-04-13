@@ -27,6 +27,26 @@
         "ACCESS_FINE_LOCATION",
         "CAMERA",
         "RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "mantrapuja.com"
+            },
+            {
+              "scheme": "https",
+              "host": "www.mantrapuja.com"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {

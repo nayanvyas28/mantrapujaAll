@@ -37,7 +37,10 @@ export async function updateSession(request: NextRequest) {
 
     // Protect all routes except /login, /api/chat, /_next, etc.
     // Add additional public routes inside the array as needed.
-    const isPublicRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/api/chat')
+    const isPublicRoute = 
+        request.nextUrl.pathname.startsWith('/login') || 
+        request.nextUrl.pathname.startsWith('/api/chat') ||
+        request.nextUrl.pathname.startsWith('/api/translate')
 
     if (!user && !isPublicRoute) {
         // no user, potentially respond by redirecting the user to the login page
@@ -46,7 +49,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
-    if (user && isPublicRoute) {
+    if (user && request.nextUrl.pathname.startsWith('/login')) {
         // if user is logged in and tries to access /login, redirect to dashboard
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard'

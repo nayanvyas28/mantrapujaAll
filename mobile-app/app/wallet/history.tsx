@@ -61,7 +61,7 @@ export default function WalletHistory() {
             </View>
             <View style={styles.txAmount}>
                 <Typography variant="h3" color={item.type === 'credit' ? '#22c55e' : colors.foreground}>
-                    {item.type === 'credit' ? '+' : '-'} ₹{item.amount}
+                    {item.type === 'credit' ? '+' : '-'} {item.amount} Coins
                 </Typography>
                 <Typography variant="label" color={item.status === 'success' ? colors.success : colors.gold} style={{ textAlign: 'right', textTransform: 'capitalize' }}>
                     {item.status}
