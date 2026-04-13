@@ -41,10 +41,6 @@ export default function LogoAnimationScreen() {
   }, []);
 
   const checkState = useCallback(async () => {
-    // Only wait a minimum of 1s total for visual pleasing effect (usually parallel with auth load)
-    const minimumDelay = new Promise((resolve) => setTimeout(resolve, 1000));
-    await minimumDelay;
-
     try {
       // Check if user has seen intro
       const hasSeenIntro = await AsyncStorage.getItem("hasSeenIntro");

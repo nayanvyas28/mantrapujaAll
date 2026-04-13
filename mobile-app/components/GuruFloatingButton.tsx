@@ -1,6 +1,6 @@
 import { usePathname, useRouter, useSegments } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity, View, Alert } from 'react-native';
 import Animated, {
     Easing,
     interpolate,
@@ -49,7 +49,14 @@ export function GuruFloatingButton() {
         setTimeout(() => {
             if (!user) {
                 // User is a guest - prompt for contact number (login)
-                router.push('/login');
+                Alert.alert(
+                    'Login Required',
+                    'Please log in to chat with GuruJi and get spiritual guidance.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Log In', onPress: () => router.push('/login') }
+                    ]
+                );
             } else {
                 router.push('/guru-ai');
             }
