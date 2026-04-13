@@ -10,8 +10,10 @@ import {
   Search,
   CircleX,
   Stars,
-  Sun
+  Sun,
+  Instagram
 } from "lucide-react-native";
+import { SocialMediaModal } from "../../components/SocialMediaModal";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -42,6 +44,8 @@ export default function PujasTabScreen() {
   const { handleScroll } = useGuruAssistant();
   const { t } = useTranslation();
 
+  const spiritualSubheading = t("home.subtitle", "Awaken Your Spirit");
+
   const CATEGORIES = [
     t("music.categories.all", "All"),
     t("hi.json:pujas.categories.vedic_ritual", "Vedic Ritual"),
@@ -57,6 +61,7 @@ export default function PujasTabScreen() {
   const [visibleCount, setVisibleCount] = useState(8);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+  const [isSocialModalVisible, setIsSocialModalVisible] = useState(false);
 
 
 
@@ -129,9 +134,9 @@ export default function PujasTabScreen() {
     const tagline = puja.tagline?.toLowerCase() || "";
     const query = searchQuery.trim().toLowerCase();
 
-    const matchesSearch = 
-      name.includes(query) || 
-      desc.includes(query) || 
+    const matchesSearch =
+      name.includes(query) ||
+      desc.includes(query) ||
       tagline.includes(query) ||
       (puja.tags && Array.isArray(puja.tags) && puja.tags.some((t: string) => t.toLowerCase().includes(query)));
 
@@ -237,15 +242,16 @@ export default function PujasTabScreen() {
           >
             <Calendar size={22} color={colors.foreground} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
-            {theme === "dark" ? (
-              <Sun size={22} color={colors.gold} />
-            ) : (
-              <Moon size={22} color={colors.foreground} />
-            )}
+          <TouchableOpacity style={styles.iconButton} onPress={() => setIsSocialModalVisible(true)}>
+            <Instagram size={22} color={colors.foreground} />
           </TouchableOpacity>
         </View>
       </View>
+
+      <SocialMediaModal 
+        isVisible={isSocialModalVisible} 
+        onClose={() => setIsSocialModalVisible(false)} 
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

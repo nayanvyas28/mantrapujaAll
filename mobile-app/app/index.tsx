@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useRef } from "react";
+import { useRouter, useRootNavigationState } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 
@@ -11,7 +11,15 @@ const RNAnimatedView = Animated.View as any;
 
 export default function LogoAnimationScreen() {
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
   const { user, profile, loading: authLoading } = useAuth();
+  const [isNavReady, setIsNavReady] = useState(false);
+
+  useEffect(() => {
+    if (rootNavigationState?.key) {
+      setIsNavReady(true);
+    }
+  }, [rootNavigationState?.key]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
@@ -60,10 +68,11 @@ export default function LogoAnimationScreen() {
 
   useEffect(() => {
     // Wait until AuthContext finishes its initial supabase session check
-    if (authLoading) return;
+    // AND the root navigation state is ready to handle redirects
+    if (authLoading || !isNavReady) return;
 
     checkState();
-  }, [authLoading, checkState]);
+  }, [authLoading, isNavReady, checkState]);
 
   return (
     <RNView style={styles.container}>

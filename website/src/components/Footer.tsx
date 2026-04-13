@@ -56,8 +56,8 @@ const Footer = () => {
                         <div className="flex space-x-4">
                             {[
                                 { Icon: Facebook, href: "https://www.facebook.com/mantrapujaa" },
-                                { Icon: Instagram, href: "https://www.instagram.com/mantrapujaa/" },
-                                { Icon: Youtube, href: "https://www.youtube.com/@MantraPujaOfficials" }
+                                { Icon: Instagram, href: "https://www.instagram.com/mantrapujaa" },
+                                { Icon: Youtube, href: "https://www.youtube.com/@mantrapujaofficials" }
                             ].map((social, idx) => (
                                 <Link key={idx} href={social.href} className="w-12 h-12 rounded-full border border-saffron/20 flex items-center justify-center text-saffron hover:bg-saffron hover:text-white transition-all duration-300 hover:shadow-[0_0_15px_-3px_rgba(249,115,22,0.5)]">
                                     <social.Icon size={24} strokeWidth={2.5} />

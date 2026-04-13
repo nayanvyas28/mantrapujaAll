@@ -38,7 +38,7 @@ const TopBar = () => {
     ];
 
     return (
-        <div className="bg-[#FFB100] w-full py-2 px-3 sm:px-4 border-b border-orange-600/10">
+        <div className="bg-[#FFB100] w-full py-1 px-3 sm:px-4 border-b border-orange-600/10">
             <div className="container mx-auto flex items-center justify-between gap-4">
                 {/* Left: Logo & Links */}
                 <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0">

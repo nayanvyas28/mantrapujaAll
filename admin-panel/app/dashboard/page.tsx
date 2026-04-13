@@ -81,6 +81,20 @@ export default async function DashboardPage() {
                         </a>
                     </div>
 
+                    {/* NEW: Marketing Popups */}
+                    <div className="p-6 rounded-2xl bg-gradient-to-r from-orange-900/40 to-amber-900/30 border border-orange-500/20 flex flex-col justify-between gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent mb-1">Marketing Popups</h2>
+                            <p className="text-sm text-gray-300 mb-4">Launch cross-platform popup campaigns with smart scheduling and targeting.</p>
+                        </div>
+                        <a
+                            href="/dashboard/popups"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
+                        >
+                            Manage Popups
+                        </a>
+                    </div>
+
                     <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 to-cyan-900/30 border border-blue-500/20 flex flex-col justify-between gap-4">
                         <div>
                             <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-1">Music Manager</h2>

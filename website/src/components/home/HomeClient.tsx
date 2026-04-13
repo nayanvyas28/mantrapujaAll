@@ -1,9 +1,9 @@
 "use client";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
-import { 
-    BadgeCheck, Zap, Video, Headphones, MapPin, 
+import {
+    BadgeCheck, Zap, Video, Headphones, MapPin,
     Gift, Sparkles, Landmark, Heart, ChevronRight,
     ArrowRight, Loader2
 } from "lucide-react";
@@ -18,7 +18,7 @@ import CollapsibleText from "@/components/ui/CollapsibleText";
 import { FloatingSocialButtons } from "@/components/ui/FloatingSocialButtons";
 import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-import PromotionalBanner from "@/components/home/PromotionalBanner";
+
 
 interface Puja extends UiConfig {
     id: string;
@@ -216,11 +216,6 @@ export default function HomeClient() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const supabase = createClient(
-                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-                );
-
                 // 1. Fetch Dynamic Page Override
                 const { data: page } = await supabase
                     .from('pages')
@@ -309,7 +304,7 @@ export default function HomeClient() {
                         // Combine and take first 6
                         const displayPujas = [...featured, ...nonFeaturedOthers].slice(0, 6);
 
-                    setPopularPujas(displayPujas);
+                        setPopularPujas(displayPujas);
                     }
                 } catch (e) {
                     console.error("Error loading pujas", e);
@@ -348,8 +343,8 @@ export default function HomeClient() {
 
         const channel = supabase
             .channel('banners-updates')
-            .on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'home_banners' }, 
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'home_banners' },
                 () => fetchBannersOnly()
             )
             .subscribe();
@@ -361,6 +356,11 @@ export default function HomeClient() {
 
     // Banner Auto-cycle
     useEffect(() => {
+        // Reset index if banners change and current index is invalid
+        if (activeBanner >= banners.length && banners.length > 0) {
+            setActiveBanner(0);
+        }
+
         if (banners.length > 1) {
             timerRef.current = setInterval(() => {
                 setActiveBanner(prev => (prev + 1) % banners.length);
@@ -369,7 +369,7 @@ export default function HomeClient() {
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
-    }, [banners]);
+    }, [banners, activeBanner]);
 
     const gradients = [
         "from-orange-500 to-red-600",
@@ -385,122 +385,143 @@ export default function HomeClient() {
 
     return (
         <div className="min-h-screen bg-background text-foreground overflow-x-hidden relative transition-colors duration-300">
-            {/* Promotional Banner */}
-            <PromotionalBanner />
+
 
             {/* Global Dark Mode Background Animation */}
             <StarsGalaxyBackground />
 
             {/* Hero Section */}
-            <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
-                <AnimatePresence mode="wait">
-                    {banners.length > 0 ? (
-                        <motion.div
-                            key={banners[activeBanner].id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 1 }}
-                            className="absolute inset-0"
-                        >
-                            {/* Background Image */}
-                            <img
-                                src={banners[activeBanner].image_url}
-                                alt={banners[activeBanner].title}
-                                className="w-full h-full object-cover opacity-80"
-                            />
-                            {/* Cosmic Overlays */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-cosmic-navy/90 via-cosmic-navy/40 to-cosmic-navy/95"></div>
-                            <div className="absolute inset-0 bg-nebula animate-nebula-move bg-[length:200%_200%] opacity-30 mix-blend-overlay"></div>
-
-                            {/* Content */}
-                            <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4 max-w-6xl mx-auto pt-10">
-                                <AnimatePresence>
-                                    {banners[activeBanner].show_offer && (
-                                        <motion.div
-                                            initial={{ scale: 0.8, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            className="mb-8 relative group"
-                                        >
-                                            {/* Pulsing Aura */}
-                                            <div className="absolute -inset-4 bg-orange-500/20 rounded-full blur-2xl animate-pulse"></div>
-                                            
-                                            <div className="relative flex items-center gap-3 px-6 py-2 bg-gradient-to-r from-orange-500 to-red-600 rounded-full border border-white/20 shadow-xl">
-                                                <Sparkles className="w-5 h-5 text-white animate-spin-slow" />
-                                                <span className="text-sm font-black text-white uppercase tracking-widest">
-                                                    {currentLang === 'hi' ? (banners[activeBanner].offer_tag_hi || banners[activeBanner].offer_tag) : banners[activeBanner].offer_tag}
-                                                </span>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                <motion.h1 
-                                    initial={{ y: 30, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.2 }}
-                                    className="text-6xl md:text-8xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-600 bg-[length:200%_auto] animate-gradient mb-6 drop-shadow-2xl tracking-tighter leading-none"
-                                    style={{ fontFamily: 'Georgia, serif' }}
-                                >
-                                    {currentLang === 'hi' ? (banners[activeBanner].title_hi || banners[activeBanner].title) : banners[activeBanner].title}
-                                </motion.h1>
-
-                                <motion.p 
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.4 }}
-                                    className="text-xl md:text-3xl text-starlight/90 mb-12 max-w-4xl font-light leading-relaxed"
-                                >
-                                    {currentLang === 'hi' ? (banners[activeBanner].subtitle_hi || banners[activeBanner].subtitle) : banners[activeBanner].subtitle}
-                                </motion.p>
-
-                                <motion.div 
-                                    initial={{ y: 20, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.6 }}
-                                    className="flex flex-col sm:flex-row gap-8 justify-center items-center"
-                                >
-                                    <Link
-                                        href={banners[activeBanner].route?.startsWith('puja:') 
-                                            ? `/pooja-services/${banners[activeBanner].route.split(':')[1]}` 
-                                            : (banners[activeBanner].route || '/pooja-services')}
-                                        className="group relative inline-flex items-center justify-center h-16 px-16 font-bold text-lg text-white rounded-full bg-gradient-to-r from-orange-500 to-red-600 shadow-2xl hover:scale-105 active:scale-95 transition-all"
-                                    >
-                                        <div className="absolute inset-0 rounded-full overflow-hidden">
-                                           <FireParticles />
-                                        </div>
-                                        <span className="relative z-10 flex items-center gap-3">
-                                            {currentLang === 'hi' ? "अभी बुक करें" : "BOOK NOW"}
-                                            <ArrowRight className="w-6 h-6 transform group-hover:translate-x-2 transition-transform" />
-                                        </span>
-                                    </Link>
-                                    
-                                    <Link
-                                        href="tel:+919876543210"
-                                        className="px-12 h-16 flex items-center justify-center rounded-full border-2 border-white/20 text-white font-bold hover:bg-white/10 transition-colors"
-                                    >
-                                        {currentLang === 'hi' ? "हमें कॉल करें" : "CALL US"}
-                                    </Link>
-                                </motion.div>
-                            </div>
-                        </motion.div>
-                    ) : (
-                        /* Static Fallback while loading */
-                        <div className="absolute inset-0 bg-cosmic-navy flex items-center justify-center">
-                            <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* Navigation Dots */}
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-3 z-20">
-                    {banners.map((_, i) => (
-                        <button
-                            key={i}
-                            onClick={() => setActiveBanner(i)}
-                            className={`w-3 h-3 rounded-full transition-all duration-300 ${activeBanner === i ? 'bg-orange-500 w-10' : 'bg-white/30'}`}
+            <section className="relative py-4 md:py-8">
+                <div className="max-w-[1440px] mx-auto px-2 md:px-4">
+                    <div className="relative h-[55vh] rounded-[3rem] overflow-hidden border border-white/10 shadow-2xl backdrop-blur-sm group">
+                        {/* Premium Shimmer Sweep Effect */}
+                        <motion.div 
+                            initial={{ x: '-100%' }}
+                            animate={{ x: '200%' }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 3 }}
+                            className="absolute inset-0 z-10 w-1/2 h-full bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-[-20deg]"
                         />
-                    ))}
+
+                        <AnimatePresence mode="wait" initial={false}>
+                            {(banners.length > 0 && banners[activeBanner]) ? (
+                                <motion.div
+                                    key={banners[activeBanner].id}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 1 }}
+                                    className="absolute inset-0"
+                                >
+                                    {/* Background Image with Ken Burns Effect */}
+                                    <motion.img
+                                        key={`img-${banners[activeBanner].id}`}
+                                        src={banners[activeBanner].image_url}
+                                        alt={banners[activeBanner].title}
+                                        initial={{ scale: 1.15, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 0.6 }}
+                                        transition={{ duration: 1.5, ease: "easeOut" }}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                    {/* Cosmic Overlays */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-cosmic-navy/90 via-cosmic-navy/40 to-cosmic-navy/95"></div>
+                                    <div className="absolute inset-0 bg-nebula animate-nebula-move bg-[length:200%_200%] opacity-30 mix-blend-overlay"></div>
+
+                                    {/* Content Container (Center Aligned) */}
+                                    <div className="relative z-30 h-full flex flex-col items-center justify-center text-center px-4 max-w-5xl mx-auto backdrop-blur-[1px] bg-black/5">
+                                        <AnimatePresence>
+                                            {(banners[activeBanner].show_offer && (banners[activeBanner].offer_tag || banners[activeBanner].offer_tag_hi)) && (
+                                                <motion.div
+                                                    initial={{ scale: 0.8, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    className="mb-8 relative group/badge"
+                                                >
+                                                    {/* Pulsing Neon Highlight */}
+                                                    <motion.div 
+                                                        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                                        className="absolute -inset-4 bg-yellow-400 rounded-full blur-2xl"
+                                                    />
+                                                    
+                                                    <div className="relative flex items-center gap-3 px-8 py-2.5 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 rounded-full border border-white/50 shadow-[0_0_20px_rgba(253,224,71,0.5)]">
+                                                        <Gift className="w-5 h-5 text-black" />
+                                                        <span className="text-base font-black text-black uppercase tracking-wider">
+                                                            {currentLang === 'hi' ? (banners[activeBanner].offer_tag_hi || banners[activeBanner].offer_tag) : banners[activeBanner].offer_tag}
+                                                        </span>
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
+                                        <motion.h1 
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.2 }}
+                                            className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-4 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] tracking-widest leading-tight uppercase"
+                                            style={{ fontFamily: 'Georgia, serif' }}
+                                        >
+                                            {currentLang === 'hi' ? (banners[activeBanner].title_hi || banners[activeBanner].title) : banners[activeBanner].title}
+                                        </motion.h1>
+
+                                        <motion.p 
+                                            initial={{ y: 15, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.4 }}
+                                            className="text-lg md:text-2xl text-white/90 drop-shadow-md mb-10 max-w-2xl font-light leading-relaxed"
+                                        >
+                                            {currentLang === 'hi' ? (banners[activeBanner].subtitle_hi || banners[activeBanner].subtitle) : banners[activeBanner].subtitle}
+                                        </motion.p>
+
+                                        <motion.div
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.6 }}
+                                            className="flex flex-col sm:flex-row gap-8 justify-center items-center"
+                                        >
+                                            <motion.a
+                                                href={banners[activeBanner].route?.startsWith('puja:')
+                                                    ? `/pooja-services/${banners[activeBanner].route.split(':')[1]}`
+                                                    : (banners[activeBanner].route || '/pooja-services')}
+                                                animate={{ scale: [1, 1.05, 1] }}
+                                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                                className="group/btn relative inline-flex items-center justify-center h-14 px-12 font-bold text-lg text-white rounded-full bg-gradient-to-r from-orange-500 to-red-600 shadow-2xl hover:scale-110 active:scale-95 transition-all"
+                                            >
+                                                <div className="absolute inset-0 rounded-full overflow-hidden">
+                                                    <FireParticles />
+                                                </div>
+                                                <span className="relative z-10 flex items-center gap-3">
+                                                    {currentLang === 'hi' ? "अभी बुक करें" : "BOOK NOW"}
+                                                    <ArrowRight className="w-6 h-6 transform group-hover/btn:translate-x-2 transition-transform" />
+                                                </span>
+                                            </motion.a>
+
+                                            <Link
+                                                href="tel:+919876543210"
+                                                className="px-12 h-14 flex items-center justify-center rounded-full border-2 border-white/20 text-white font-bold hover:bg-white/10 transition-colors"
+                                            >
+                                                {currentLang === 'hi' ? "हमें कॉल करें" : "CALL US"}
+                                            </Link>
+                                        </motion.div>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                /* Static Fallback while loading */
+                                <div className="absolute inset-0 bg-cosmic-navy flex items-center justify-center">
+                                    <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+                                </div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Navigation Dots - Now Inside Card */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-40">
+                            {banners.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setActiveBanner(i)}
+                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${activeBanner === i ? 'bg-orange-500 w-8' : 'bg-white/20 hover:bg-white/40'}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </section>
 

@@ -17,8 +17,11 @@ import {
   Users,
   Wallet,
   Check,
-  X
+  X,
+  Disc,
+  Instagram
 } from "lucide-react-native";
+import { SocialMediaModal } from "../../components/SocialMediaModal";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator as RNActivityIndicator,
@@ -117,6 +120,10 @@ export default function HomeScreen() {
 
   // Daily Astro Reading
   const [dailyAstro, setDailyAstro] = useState<string | null>(null);
+
+  const [isSocialModalVisible, setIsSocialModalVisible] = useState(false);
+
+
 
   const BANNERS = useMemo(() => [
     {
@@ -290,7 +297,7 @@ export default function HomeScreen() {
         const upcoming = allFestivals
           .filter((f: any) => f.date >= today)
           .slice(0, 5);
-        
+
         if (upcoming.length > 0) {
           setFestivals(sanitizeData(upcoming));
           setFestivalsLoading(false);
@@ -356,7 +363,7 @@ export default function HomeScreen() {
         .eq("show_on_home", true)
         .order("home_order", { ascending: true })
         .limit(3);
-  
+
       if (error || !data || data.length === 0) {
         // Fallback to is_featured or latest if admin columns don't exist yet or empty
         const { data: fallbackData, error: fallbackError } = await supabase
@@ -364,7 +371,7 @@ export default function HomeScreen() {
           .select("id, name, tagline, about_description, images, is_featured")
           .order("created_at", { ascending: false })
           .limit(10);
-  
+
         if (fallbackError) throw fallbackError;
         if (fallbackData) setPopularPujas(sanitizeData(sortPujas(fallbackData)));
       } else {
@@ -502,10 +509,14 @@ export default function HomeScreen() {
     }
   };
 
-  // Auto-scroll logic (every 5 seconds)
+  const activeBannersSource = dynamicBanners.length > 0 ? dynamicBanners : BANNERS;
+
+  // Auto-scroll logic (only if more than 1 banner)
   useEffect(() => {
+    if (activeBannersSource.length <= 1) return;
+    
     const interval = setInterval(() => {
-      const nextIndex = (activeBanner + 1) % BANNERS.length;
+      const nextIndex = (activeBanner + 1) % activeBannersSource.length;
       bannerScrollRef.current?.scrollTo({
         x: nextIndex * (bannerWidth + 16),
         animated: true,
@@ -514,32 +525,13 @@ export default function HomeScreen() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [activeBanner, bannerWidth, BANNERS.length, dynamicBanners.length]);
-
-  const activeBannersSource = dynamicBanners.length > 0 ? dynamicBanners : BANNERS;
+  }, [activeBanner, bannerWidth, activeBannersSource.length]);
 
   const QUICK_ACTIONS = [
-    {
-      id: "1",
-      title: "Jal Abhishek",
-      icon: <Droplets size={24} color={colors.saffron} />,
-      color: theme === "dark" ? "#334155" : "#ffffff",
-      route: "/pujas/jal-abhishek",
-    },
-    {
-      id: "3",
-      title: "Prasad",
-      icon: <Gift size={24} color={colors.saffron} />,
-      color: theme === "dark" ? "#334155" : "#ffffff",
-      route: "/prasad",
-    },
-    {
-      id: "4",
-      title: "Gau Seva",
-      icon: <Heart size={24} color={colors.saffron} />,
-      color: theme === "dark" ? "#334155" : "#ffffff",
-      route: "/seva", // Placeholder route
-    },
+    { id: "jal", name: t("home.jal_abhishek", "Jal Abhishek"), icon: Droplets, color: "#3b82f6", route: "/pujas/jal-abhishek" },
+    { id: "prasad", name: t("home.prasad", "Prasad"), icon: Gift, color: "#f59e0b", route: "/pujas/prasad-seva" },
+    { id: "gau", name: t("home.gau_seva", "Gau Seva"), icon: Heart, color: "#ef4444", route: "/pujas/gau-seva" },
+    { id: "rudraksh", name: t("home.rudraksh", "Rudraksh"), icon: Disc, color: "#8b5e3c", route: "/pujas/rudraksh" },
   ];
 
   const renderBlogImage = (imageUrl: string) => {
@@ -576,32 +568,25 @@ export default function HomeScreen() {
           </Typography>
         </View>
         <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={handleLanguageChange}
-          >
+          <TouchableOpacity style={styles.iconButton} onPress={handleLanguageChange}>
             <Globe size={20} color={colors.foreground} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => handleProtectedNavigation("/notifications")}
-          >
+          <TouchableOpacity style={styles.iconButton} onPress={() => handleProtectedNavigation("/notifications")}>
             <Bell size={22} color={colors.foreground} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => router.push("/calendar" as any)}
-          >
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push("/calendar")}>
             <Calendar size={22} color={colors.foreground} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => handleProtectedNavigation("/wallet")}
-          >
-            <Wallet size={22} color={colors.foreground} />
+          <TouchableOpacity style={styles.iconButton} onPress={() => setIsSocialModalVisible(true)}>
+            <Instagram size={22} color={colors.foreground} />
           </TouchableOpacity>
         </View>
       </View>
+
+      <SocialMediaModal 
+        isVisible={isSocialModalVisible} 
+        onClose={() => setIsSocialModalVisible(false)} 
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -698,41 +683,41 @@ export default function HomeScreen() {
 
         {/* Daily Rashi Phal Section */}
         {!isGuest && userRashi && dailyAstro && (
-            <TouchableOpacity 
-                style={{ marginHorizontal: 24, marginBottom: 24 }} 
-                activeOpacity={0.9} 
-                onPress={() => router.push('/horoscope' as any)}
+          <TouchableOpacity
+            style={{ marginHorizontal: 0, marginBottom: 24 }}
+            activeOpacity={0.9}
+            onPress={() => router.push('/horoscope' as any)}
+          >
+            <Card
+              variant="solid"
+              style={{
+                padding: 20,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: colors.saffron + '30',
+                backgroundColor: theme === 'dark' ? colors.card : '#fffaf0'
+              }}
             >
-                <Card 
-                    variant="solid" 
-                    style={{ 
-                        padding: 20, 
-                        borderRadius: 20, 
-                        borderWidth: 1, 
-                        borderColor: colors.saffron + '30', 
-                        backgroundColor: theme === 'dark' ? colors.card : '#fffaf0' 
-                    }}
-                >
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                                <Sun size={24} color={colors.saffron} />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Typography variant="h3" color={colors.foreground} style={{ fontSize: 18 }}>Daily Rashifal</Typography>
-                                <Typography variant="label" color={colors.saffron} style={{ marginTop: 2, fontWeight: '600' }}>
-                                    {userRashi.charAt(0).toUpperCase() + userRashi.slice(1)} • {new Date().getDate().toString().padStart(2, '0')} {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]} {new Date().getFullYear()}
-                                </Typography>
-                            </View>
-                        </View>
-                        <ArrowRight size={20} color={colors.mutedForeground} style={{ marginTop: 12 }} />
-                    </View>
-                    
-                    <Typography variant="body" color={theme === 'dark' ? colors.mutedForeground : '#334155'} style={{ lineHeight: 24 }} numberOfLines={3}>
-                        {dailyAstro.replace('[Mock Data] ', '')}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
+                    <Sun size={24} color={colors.saffron} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Typography variant="h3" color={colors.foreground} style={{ fontSize: 18 }}>Daily Rashifal</Typography>
+                    <Typography variant="label" color={colors.saffron} style={{ marginTop: 2, fontWeight: '600' }}>
+                      {userRashi.charAt(0).toUpperCase() + userRashi.slice(1)} • {new Date().getDate().toString().padStart(2, '0')} {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]} {new Date().getFullYear()}
                     </Typography>
-                </Card>
-            </TouchableOpacity>
+                  </View>
+                </View>
+                <ArrowRight size={20} color={colors.mutedForeground} style={{ marginTop: 12 }} />
+              </View>
+
+              <Typography variant="body" color={theme === 'dark' ? colors.mutedForeground : '#334155'} style={{ lineHeight: 24 }} numberOfLines={3}>
+                {dailyAstro.replace('[Mock Data] ', '')}
+              </Typography>
+            </Card>
+          </TouchableOpacity>
         )}
 
         {/* Quick Action Cards (3 cards) */}
@@ -745,17 +730,23 @@ export default function HomeScreen() {
               onPress={() => router.push(action.route as any)}
             >
               <View
-                style={[styles.actionIconBg, { backgroundColor: action.color }]}
+                style={[
+                  styles.actionIconBg, 
+                  { 
+                    backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+                    borderColor: action.color + '40', // Semi-transparent border
+                  }
+                ]}
               >
-                {action.icon}
+                <action.icon size={28} color={action.color} />
               </View>
               <Typography
-                variant="bodySmall"
+                variant="label"
                 style={styles.actionTitle}
                 color={colors.foreground}
                 numberOfLines={1}
               >
-                {action.title}
+                {action.name}
               </Typography>
             </TouchableOpacity>
           ))}
@@ -1163,27 +1154,27 @@ export default function HomeScreen() {
         </View>
 
         {/* Refer & Earn Promo - Premium Glow Card */}
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => router.push("/wallet/refer" as any)}
           activeOpacity={0.9}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={{ marginBottom: 40, marginHorizontal: 24 }}
         >
           <View style={[styles.referralGlowCard, { backgroundColor: colors.saffron }]}>
-             <View style={styles.referralGlowContent}>
-                <View style={styles.referralIconCircle}>
-                  <Users size={24} color={colors.saffron} />
-                </View>
-                <View style={{ flex: 1, marginLeft: 16 }}>
-                  <Typography variant="h3" color="#fff" style={{ fontWeight: '800' }}>REFER & EARN ₹51</Typography>
-                  <Typography variant="bodySmall" color="rgba(255,255,255,0.9)">
-                    Invite friends & get rewards instantly!
-                  </Typography>
-                </View>
-                <View style={styles.referralGoBtn}>
-                  <ArrowRight size={20} color={colors.saffron} />
-                </View>
-             </View>
+            <View style={styles.referralGlowContent}>
+              <View style={styles.referralIconCircle}>
+                <Users size={24} color={colors.saffron} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 16 }}>
+                <Typography variant="h3" color="#fff" style={{ fontWeight: '800' }}>REFER & EARN ₹51</Typography>
+                <Typography variant="bodySmall" color="rgba(255,255,255,0.9)">
+                  Invite friends & get rewards instantly!
+                </Typography>
+              </View>
+              <View style={styles.referralGoBtn}>
+                <ArrowRight size={20} color={colors.saffron} />
+              </View>
+            </View>
           </View>
         </TouchableOpacity>
 
@@ -1196,9 +1187,9 @@ export default function HomeScreen() {
           animationType="fade"
           onRequestClose={() => setIsLanguageModalVisible(false)}
         >
-          <RNTouchableOpacity 
-            style={styles.modalOverlay} 
-            activeOpacity={1} 
+          <RNTouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
             onPress={() => setIsLanguageModalVisible(false)}
           >
             <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
@@ -1210,9 +1201,9 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.optionsList}>
-                <RNTouchableOpacity 
+                <RNTouchableOpacity
                   style={[
-                    styles.languageOption, 
+                    styles.languageOption,
                     i18n.language === 'en' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
                   ]}
                   onPress={() => changeLanguage('en')}
@@ -1226,9 +1217,9 @@ export default function HomeScreen() {
                   {i18n.language === 'en' && <Check size={20} color={colors.saffron} />}
                 </RNTouchableOpacity>
 
-                <RNTouchableOpacity 
+                <RNTouchableOpacity
                   style={[
-                    styles.languageOption, 
+                    styles.languageOption,
                     i18n.language === 'hi' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
                   ]}
                   onPress={() => changeLanguage('hi')}
@@ -1298,8 +1289,12 @@ const styles = StyleSheet.create({
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 12,
+    position: 'absolute',
+    bottom: 12,
+    left: 0,
+    right: 0,
     gap: 8,
+    zIndex: 10,
   },
   paginationDot: {
     width: 8,
@@ -1326,24 +1321,27 @@ const styles = StyleSheet.create({
   },
   actionItem: {
     alignItems: "center",
-    width: "30%",
+    width: "23%",
   },
   actionIconBg: {
-    width: 64,
-    height: 64,
-    borderRadius: 16, // Softer square
+    width: 68,
+    height: 68,
+    borderRadius: 20, // More boutique rounded look
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
-    shadowColor: "#f59e0b",
+    borderWidth: 1.5,
+    elevation: 4,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 10,
   },
   actionTitle: {
     textAlign: "center",
-    fontWeight: "600",
+    fontWeight: "700",
+    fontSize: 10,
+    letterSpacing: 0.5,
   },
   sectionHeader: {
     marginTop: 24, // Reduced from 40

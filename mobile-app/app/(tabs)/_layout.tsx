@@ -54,7 +54,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: t('tabs.explore', 'Explore'),
+          title: t('tabs.tirth', 'Tirth'),
           tabBarIcon: ({ color }) => <Compass size={24} color={color} />,
         }}
       />

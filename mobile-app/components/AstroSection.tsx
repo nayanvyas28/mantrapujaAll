@@ -129,72 +129,73 @@ export const AstroSection = () => {
     return (
         <RNAnimatedView style={[styles.outerContainer, { opacity: fadeAnim }]}>
             <TouchableOpacity 
-                activeOpacity={0.95}
-                onPress={() => {
-                    if (!user) {
-                        Alert.alert(
-                            t('common.login_required', 'Login Required'),
-                            t('common.login_msg', 'Please log in to view your detailed Kundli.'),
-                            [
-                                { text: t('common.cancel', 'Cancel'), style: 'cancel' },
-                                { text: t('common.login', 'Log In'), onPress: () => router.push('/login') }
-                            ]
-                        );
-                    } else {
-                        router.push('/kundli');
+                activeOpacity={0.9}
+                onPress={() => router.push('/kundli')}
+                style={[
+                    styles.premiumCardExpanded, 
+                    { 
+                        backgroundColor: isDark ? '#1e293b' : '#ffffff', 
+                        width: CARD_WIDTH,
+                        borderColor: colors.saffron + '30',
                     }
-                }}
-                style={[styles.premiumCardExpanded, { backgroundColor: isDark ? '#1e293b' : '#ffffff', width: CARD_WIDTH, borderColor: colors.gold + '20' }]}
+                ]}
             >
+                {/* Decorative Background Icon */}
+                <RNView style={styles.bgOrnament}>
+                    <Sparkles size={140} color={colors.saffron} style={{ opacity: 0.03 }} />
+                </RNView>
+
                 <RNView style={styles.cardHeader}>
                     <RNView style={styles.profileBox}>
                         <RNAnimatedView style={{ transform: [{ scale: pulseAnim }] }}>
                             <RNView style={[styles.miniIconBox, { backgroundColor: colors.saffron + '15' }]}>
-                                <Compass size={32} color={colors.saffron} />
+                                <Compass size={28} color={colors.saffron} />
                             </RNView>
                         </RNAnimatedView>
                     </RNView>
-                    <RNView style={styles.profileText}>
-                        <Typography variant="label" color={colors.saffron} style={styles.profileLabel}>{t('kundli.vaidik_identity', 'VAIDIK IDENTITY')}</Typography>
-                        <Typography variant="h2" color={colors.foreground} style={styles.rashiName}>
-                            {astroDetails?.sign || '--'}
-                        </Typography>
-                        <Typography variant="bodySmall" color={colors.mutedForeground} style={{ marginTop: -2 }}>
-                            {astroDetails?.ascendant || '--'} {t('kundli.ascendant', 'Ascendant')}
-                        </Typography>
+                    
+                    <RNView style={styles.detailItem}>
+                        <Typography variant="label" color={colors.saffron} style={styles.detailLabel}>RASHI</Typography>
+                        <RNView style={{ flex: 1 }}>
+                            <Typography 
+                                variant="h4" 
+                                color={colors.foreground} 
+                                style={styles.detailValue} 
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.7}
+                            >
+                                {astroDetails?.sign || '--'}
+                            </Typography>
+                        </RNView>
                     </RNView>
-                    <RNView style={styles.actionBtnBox}>
-                         <RNView style={[styles.pillBtn, { backgroundColor: colors.saffron + '15' }]}>
-                            <Typography variant="label" color={colors.saffron} style={{ fontSize: 10 }}>{t('common.view_all', 'VIEW CHART')}</Typography>
-                         </RNView>
+
+                    <RNView style={styles.verticalDivider} />
+
+                    <RNView style={styles.detailItem}>
+                        <Typography variant="label" color={colors.saffron} style={styles.detailLabel}>ASCENDANT</Typography>
+                        <RNView style={{ flex: 1 }}>
+                            <Typography 
+                                variant="h4" 
+                                color={colors.foreground} 
+                                style={styles.detailValue} 
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.7}
+                            >
+                                {astroDetails?.ascendant || '--'}
+                            </Typography>
+                        </RNView>
+                    </RNView>
+
+                    <RNView style={styles.chevronBox}>
+                        <ChevronRight size={20} color={colors.saffron} />
                     </RNView>
                 </RNView>
 
-                {loading ? (
+                {loading && (
                     <RNView style={styles.loaderBox}>
                         <RNActivityIndicator size="small" color={colors.saffron} />
-                    </RNView>
-                ) : (
-                    <RNView style={styles.gridRow}>
-                        <RNView style={styles.gridItem}>
-                            <RNView style={[styles.iconBox, { backgroundColor: colors.gold + '10' }]}>
-                                <Star size={14} color={colors.gold} />
-                            </RNView>
-                            <RNView style={{ marginLeft: 8 }}>
-                                <Typography variant="label" style={styles.gridLabel}>Nakshatra</Typography>
-                                <Typography variant="bodySmall" color={colors.foreground} style={styles.gridValue}>{astroDetails?.Naksahtra || astroDetails?.nakshatra || '--'}</Typography>
-                            </RNView>
-                        </RNView>
-                        <RNView style={styles.separator} />
-                        <RNView style={styles.gridItem}>
-                            <RNView style={[styles.iconBox, { backgroundColor: colors.saffron + '10' }]}>
-                                <Sun size={14} color={colors.saffron} />
-                            </RNView>
-                            <RNView style={{ marginLeft: 8 }}>
-                                <Typography variant="label" style={styles.gridLabel}>Nadi</Typography>
-                                <Typography variant="bodySmall" color={colors.foreground} style={styles.gridValue}>{astroDetails?.Nadi || astroDetails?.nadi || '--'}</Typography>
-                            </RNView>
-                        </RNView>
                     </RNView>
                 )}
             </TouchableOpacity>
@@ -205,13 +206,13 @@ export const AstroSection = () => {
 const styles = StyleSheet.create({
     outerContainer: {
         alignItems: 'center',
-        marginVertical: 14,
+        marginVertical: 4,
     },
     premiumCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderRadius: 24,
+        padding: 10,
+        borderRadius: 20,
         borderWidth: 1,
         elevation: 12,
         shadowColor: '#f97316',
@@ -221,10 +222,10 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     premiumCardExpanded: {
-        padding: 24,
-        borderRadius: 32,
+        padding: 12,
+        borderRadius: 20,
         borderWidth: 1.5,
-        elevation: 14,
+        elevation: 10,
         shadowColor: '#f97316',
         shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.15,
@@ -242,9 +243,9 @@ const styles = StyleSheet.create({
         zIndex: 0,
     },
     iconHero: {
-        width: 56,
-        height: 56,
-        marginRight: 16,
+        width: 48,
+        height: 48,
+        marginRight: 12,
         zIndex: 1,
     },
     textContainer: {
@@ -277,12 +278,12 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
+        gap: 8,
     },
     profileBox: {
-        width: 64,
-        height: 64,
-        borderRadius: 22,
+        width: 44,
+        height: 44,
+        borderRadius: 14,
         backgroundColor: 'rgba(249, 115, 22, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
@@ -290,9 +291,9 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(249, 115, 22, 0.2)',
     },
     miniIconBox: {
-        width: 54,
-        height: 54,
-        borderRadius: 18,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -305,8 +306,39 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         opacity: 0.8,
     },
+    detailItem: {
+        flex: 1,
+    },
+    detailLabel: {
+        fontSize: 9,
+        fontWeight: '900',
+        letterSpacing: 1,
+        marginBottom: 2,
+        textTransform: 'uppercase',
+    },
+    detailValue: {
+        fontSize: 15,
+        fontWeight: '900',
+        letterSpacing: 0.2,
+    },
+    verticalDivider: {
+        width: 1,
+        height: 32,
+        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+        marginHorizontal: 4,
+    },
+    bgOrnament: {
+        position: 'absolute',
+        right: -30,
+        bottom: -30,
+        zIndex: 0,
+    },
+    chevronBox: {
+        marginLeft: 4,
+        opacity: 0.6,
+    },
     rashiName: {
-        fontSize: 28,
+        fontSize: 22,
         marginTop: 0,
     },
     actionBtnBox: {
@@ -327,8 +359,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: 'rgba(249, 115, 22, 0.03)',
-        padding: 14,
-        borderRadius: 20,
+        padding: 10,
+        borderRadius: 16,
         borderWidth: 1,
         borderColor: 'rgba(249, 115, 22, 0.05)',
     },
