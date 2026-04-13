@@ -110,6 +110,9 @@ export default function HomeScreen() {
   const [offerPujas, setOfferPujas] = useState<any[]>([]);
   const [offerPujasLoading, setOfferPujasLoading] = useState(true);
 
+  const [dynamicBanners, setDynamicBanners] = useState<any[]>([]);
+  const [bannersLoading, setBannersLoading] = useState(true);
+
   // Daily Astro Reading
   const [dailyAstro, setDailyAstro] = useState<string | null>(null);
 
@@ -144,6 +147,7 @@ export default function HomeScreen() {
     fetchUpcomingFestivals();
     fetchDestinations();
     fetchProducts();
+    fetchDynamicBanners();
     if (!isGuest && userRashi) {
       fetchDailyAstro(userRashi);
     } else if (!isGuest && !userRashi) {
@@ -173,6 +177,10 @@ export default function HomeScreen() {
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'products_99' },
         () => fetchProducts()
+      )
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'home_banners' },
+        () => fetchDynamicBanners()
       )
       .subscribe();
 
@@ -426,6 +434,35 @@ export default function HomeScreen() {
     }
   };
 
+  const fetchDynamicBanners = async () => {
+    try {
+      setBannersLoading(true);
+      const { data, error } = await supabase
+        .from('home_banners')
+        .select('*')
+        .eq('is_active', true)
+        .or('target.eq.app,target.eq.both')
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        if (error.code === '42P01') {
+          console.log('[HomeScreen] Banners table not created yet, using defaults.');
+        } else {
+          console.error('Error fetching dynamic banners:', error);
+        }
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setDynamicBanners(sanitizeData(data));
+      }
+    } catch (err) {
+      console.error('Error in fetchDynamicBanners:', err);
+    } finally {
+      setBannersLoading(false);
+    }
+  };
+
   const fetchRecentBlogs = async () => {
     try {
       setBlogsLoading(true);
@@ -475,7 +512,9 @@ export default function HomeScreen() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [activeBanner, bannerWidth, BANNERS.length]);
+  }, [activeBanner, bannerWidth, BANNERS.length, dynamicBanners.length]);
+
+  const activeBannersSource = dynamicBanners.length > 0 ? dynamicBanners : BANNERS;
 
   const QUICK_ACTIONS = [
     {
@@ -584,29 +623,50 @@ export default function HomeScreen() {
             snapToInterval={bannerWidth + 16} // width + margin
             style={styles.bannerScroll}
           >
-            {BANNERS.map((banner, index) => (
+            {activeBannersSource.map((banner, index) => (
               <TouchableOpacity
                 key={banner.id}
                 style={[styles.bannerContainer, { width: bannerWidth }]}
                 activeOpacity={0.9}
-                onPress={() => router.push(banner.route as any)}
+                onPress={() => {
+                  if (banner.route) {
+                    if (banner.route.startsWith('puja:')) {
+                      const slug = banner.route.split(':')[1];
+                      router.push(`/pujas/${slug}` as any);
+                    } else {
+                      router.push(banner.route as any);
+                    }
+                  }
+                }}
               >
                 <Image
-                  source={banner.image}
+                  source={banner.image_url ? { uri: banner.image_url } : banner.image}
                   style={styles.bannerBg}
                   contentFit="cover"
                 />
+
+                {/* NEW: Special Offer Badge on the RIGHT */}
+                {banner.show_offer && (
+                  <View style={styles.offerBadgeContainer}>
+                    <View style={styles.offerBadgeGradient}>
+                      <Ionicons name="gift" size={12} color="white" />
+                      <Text style={styles.offerBadgeText} numberOfLines={1}>
+                        {i18n.language === 'hi' ? banner.offer_tag_hi : banner.offer_tag}
+                      </Text>
+                    </View>
+                  </View>
+                )}
                 <View style={styles.bannerOverlay}>
                   <View style={styles.bannerContent}>
                     <Typography variant="h3" color="#ffffff">
-                      {banner.title}
+                      {getLocalized(banner, 'title', i18n.language) || banner.title}
                     </Typography>
                     <Typography
                       variant="bodySmall"
                       color="#fed7aa"
                       style={{ marginTop: 4 }}
                     >
-                      {banner.subtitle}
+                      {getLocalized(banner, 'subtitle', i18n.language) || banner.subtitle}
                     </Typography>
                   </View>
                 </View>
@@ -616,7 +676,7 @@ export default function HomeScreen() {
 
           {/* Pagination Dots */}
           <View style={styles.paginationContainer}>
-            {BANNERS.map((_, index) => (
+            {activeBannersSource.map((_, index) => (
               <View
                 key={index}
                 style={[
@@ -1509,5 +1569,34 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  offerBadgeContainer: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 30,
+    shadowColor: "#f97316",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  offerBadgeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ea580c',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  offerBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
 });

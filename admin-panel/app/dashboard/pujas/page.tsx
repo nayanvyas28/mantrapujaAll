@@ -381,7 +381,8 @@ export default function PujaManagementPage() {
                     text: {
                         name_hi: pujasForm.name,
                         tagline_hi: pujasForm.tagline,
-                        description_hi: pujasForm.description
+                        description_hi: pujasForm.description,
+                        about_description_hi: pujasForm.about_description
                     }
                 })
             });
@@ -397,7 +398,8 @@ export default function PujaManagementPage() {
                     ...prev,
                     name_hi: results.name_hi || prev.name_hi,
                     tagline_hi: results.tagline_hi || prev.tagline_hi,
-                    description_hi: results.description_hi || prev.description_hi
+                    description_hi: results.description_hi || prev.description_hi,
+                    about_description_hi: results.about_description_hi || prev.about_description_hi
                 }));
             }
         } catch (error) {
@@ -786,7 +788,7 @@ export default function PujaManagementPage() {
                                             <div className="pt-4 space-y-6">
                                                 <div className="flex items-center gap-3 pb-2 border-b border-white/5">
                                                     <Tag className="w-4 h-4 text-orange-500" />
-                                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Ritual Knowledge & Content</h4>
+                                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Ritual Knowledge &amp; Content</h4>
                                                 </div>
 
                                                 <div className="space-y-2">
