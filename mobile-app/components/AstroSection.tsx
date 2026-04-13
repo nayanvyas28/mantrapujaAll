@@ -144,31 +144,9 @@ export const AstroSection = () => {
                     </RNView>
                 </RNView>
 
-                {loading ? (
+                {loading && (
                     <RNView style={styles.loaderBox}>
                         <RNActivityIndicator size="small" color={colors.saffron} />
-                    </RNView>
-                ) : (
-                    <RNView style={styles.gridRow}>
-                        <RNView style={styles.gridItem}>
-                            <RNView style={[styles.iconBox, { backgroundColor: colors.gold + '10' }]}>
-                                <Star size={14} color={colors.gold} />
-                            </RNView>
-                            <RNView style={{ marginLeft: 8 }}>
-                                <Typography variant="label" style={styles.gridLabel}>Nakshatra</Typography>
-                                <Typography variant="bodySmall" color={colors.foreground} style={styles.gridValue}>{astroDetails?.Naksahtra || astroDetails?.nakshatra || '--'}</Typography>
-                            </RNView>
-                        </RNView>
-                        <RNView style={styles.separator} />
-                        <RNView style={styles.gridItem}>
-                            <RNView style={[styles.iconBox, { backgroundColor: colors.saffron + '10' }]}>
-                                <Sun size={14} color={colors.saffron} />
-                            </RNView>
-                            <RNView style={{ marginLeft: 8 }}>
-                                <Typography variant="label" style={styles.gridLabel}>Nadi</Typography>
-                                <Typography variant="bodySmall" color={colors.foreground} style={styles.gridValue}>{astroDetails?.Nadi || astroDetails?.nadi || '--'}</Typography>
-                            </RNView>
-                        </RNView>
                     </RNView>
                 )}
             </TouchableOpacity>
@@ -251,7 +229,6 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
     },
     profileBox: {
         width: 52,

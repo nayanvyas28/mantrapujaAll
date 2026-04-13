@@ -42,6 +42,8 @@ export default function PujasTabScreen() {
   const { handleScroll } = useGuruAssistant();
   const { t } = useTranslation();
 
+  const spiritualSubheading = t("home.subtitle", "Awaken Your Spirit");
+
   const CATEGORIES = [
     t("music.categories.all", "All"),
     t("hi.json:pujas.categories.vedic_ritual", "Vedic Ritual"),

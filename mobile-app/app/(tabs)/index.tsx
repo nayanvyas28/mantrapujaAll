@@ -17,7 +17,8 @@ import {
   Users,
   Wallet,
   Check,
-  X
+  X,
+  Disc
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -502,10 +503,15 @@ export default function HomeScreen() {
     }
   };
 
+  const activeBannersSource = dynamicBanners.length > 0 ? dynamicBanners : BANNERS;
+  const bannersCount = activeBannersSource.length;
+
   // Auto-scroll logic (every 5 seconds)
   useEffect(() => {
+    if (bannersCount <= 1) return;
+
     const interval = setInterval(() => {
-      const nextIndex = (activeBanner + 1) % BANNERS.length;
+      const nextIndex = (activeBanner + 1) % bannersCount;
       bannerScrollRef.current?.scrollTo({
         x: nextIndex * (bannerWidth + 16),
         animated: true,
@@ -514,9 +520,7 @@ export default function HomeScreen() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [activeBanner, bannerWidth, BANNERS.length, dynamicBanners.length]);
-
-  const activeBannersSource = dynamicBanners.length > 0 ? dynamicBanners : BANNERS;
+  }, [activeBanner, bannerWidth, bannersCount]);
 
   const QUICK_ACTIONS = [
     {
@@ -538,7 +542,14 @@ export default function HomeScreen() {
       title: "Gau Seva",
       icon: <Heart size={24} color={colors.saffron} />,
       color: theme === "dark" ? "#334155" : "#ffffff",
-      route: "/seva", // Placeholder route
+      route: "/seva", 
+    },
+    {
+      id: "5",
+      title: "Rudraksh",
+      icon: <Disc size={24} color={colors.saffron} />,
+      color: theme === "dark" ? "#334155" : "#ffffff",
+      route: "/products", 
     },
   ];
 
@@ -699,7 +710,7 @@ export default function HomeScreen() {
         {/* Daily Rashi Phal Section */}
         {!isGuest && userRashi && dailyAstro && (
             <TouchableOpacity 
-                style={{ marginHorizontal: 24, marginBottom: 24 }} 
+                style={{ marginHorizontal: 4, marginBottom: 20 }} 
                 activeOpacity={0.9} 
                 onPress={() => router.push('/horoscope' as any)}
             >
@@ -1331,7 +1342,7 @@ const styles = StyleSheet.create({
   },
   actionItem: {
     alignItems: "center",
-    width: "30%",
+    width: "23%",
   },
   actionIconBg: {
     width: 64,
