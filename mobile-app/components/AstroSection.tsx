@@ -128,20 +128,14 @@ export const AstroSection = () => {
                             </RNView>
                         </RNAnimatedView>
                     </RNView>
-                    <RNView style={styles.profileText}>
-                        <Typography variant="label" color={colors.saffron} style={styles.profileLabel}>{t('kundli.vaidik_identity', 'VAIDIK IDENTITY')}</Typography>
-                        <Typography variant="h2" color={colors.foreground} style={styles.rashiName}>
-                            {astroDetails?.sign || '--'}
-                        </Typography>
-                        <Typography variant="bodySmall" color={colors.mutedForeground} style={{ marginTop: -2 }}>
-                            {astroDetails?.ascendant || '--'} {t('kundli.ascendant', 'Ascendant')}
-                        </Typography>
-                    </RNView>
-                    <RNView style={styles.actionBtnBox}>
-                         <RNView style={[styles.pillBtn, { backgroundColor: colors.saffron + '15' }]}>
-                            <Typography variant="label" color={colors.saffron} style={{ fontSize: 10 }}>{t('common.view_all', 'VIEW CHART')}</Typography>
-                         </RNView>
-                    </RNView>
+                    <View style={styles.detailItem}>
+                        <Typography variant="label" color={colors.mutedForeground} style={styles.detailLabel}>RASHI</Typography>
+                        <Typography variant="h4" color={colors.foreground} style={styles.detailValue}>{astroDetails?.sign || '--'}</Typography>
+                    </View>
+                    <View style={styles.detailItem}>
+                        <Typography variant="label" color={colors.mutedForeground} style={styles.detailLabel}>ASCENDANT</Typography>
+                        <Typography variant="h4" color={colors.foreground} style={styles.detailValue}>{astroDetails?.ascendant || '--'}</Typography>
+                    </View>
                 </RNView>
 
                 {loading && (
@@ -162,8 +156,8 @@ const styles = StyleSheet.create({
     premiumCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        borderRadius: 24,
+        padding: 10,
+        borderRadius: 20,
         borderWidth: 1,
         elevation: 12,
         shadowColor: '#f97316',
@@ -173,8 +167,8 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     premiumCardExpanded: {
-        padding: 16,
-        borderRadius: 24,
+        padding: 12,
+        borderRadius: 20,
         borderWidth: 1.5,
         elevation: 10,
         shadowColor: '#f97316',
@@ -194,9 +188,9 @@ const styles = StyleSheet.create({
         zIndex: 0,
     },
     iconHero: {
-        width: 56,
-        height: 56,
-        marginRight: 16,
+        width: 48,
+        height: 48,
+        marginRight: 12,
         zIndex: 1,
     },
     textContainer: {
@@ -231,9 +225,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     profileBox: {
-        width: 52,
-        height: 52,
-        borderRadius: 16,
+        width: 44,
+        height: 44,
+        borderRadius: 14,
         backgroundColor: 'rgba(249, 115, 22, 0.08)',
         alignItems: 'center',
         justifyContent: 'center',
@@ -241,9 +235,9 @@ const styles = StyleSheet.create({
         borderColor: 'rgba(249, 115, 22, 0.2)',
     },
     miniIconBox: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
     },

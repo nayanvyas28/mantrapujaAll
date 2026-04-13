@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Bell, Calendar, CircleX, Moon, Search, Sun } from "lucide-react-native";
+import { Bell, Calendar, CircleX, Moon, Search, Sun, Instagram } from "lucide-react-native";
+import { SocialMediaModal } from "../../components/SocialMediaModal";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -42,6 +43,7 @@ export default function ExploreTabScreen() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(8);
+  const [isSocialModalVisible, setIsSocialModalVisible] = useState(false);
 
   useEffect(() => {
     fetchDestinations();
@@ -94,10 +96,10 @@ export default function ExploreTabScreen() {
     // Combined desc for existing category logic
     const desc = (tagline || description || "");
 
-    const matchesSearch = 
-      name.includes(query) || 
-      tagline.includes(query) || 
-      description.includes(query) || 
+    const matchesSearch =
+      name.includes(query) ||
+      tagline.includes(query) ||
+      description.includes(query) ||
       keywords.includes(query);
 
     if (selectedCategory === "All") return matchesSearch;
@@ -197,15 +199,16 @@ export default function ExploreTabScreen() {
           >
             <Calendar size={22} color={colors.foreground} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
-            {theme === "dark" ? (
-              <Sun size={22} color={colors.gold} />
-            ) : (
-              <Moon size={22} color={colors.foreground} />
-            )}
+          <TouchableOpacity style={styles.iconButton} onPress={() => setIsSocialModalVisible(true)}>
+            <Instagram size={22} color={colors.foreground} />
           </TouchableOpacity>
         </View>
       </View>
+
+      <SocialMediaModal 
+        isVisible={isSocialModalVisible} 
+        onClose={() => setIsSocialModalVisible(false)} 
+      />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}

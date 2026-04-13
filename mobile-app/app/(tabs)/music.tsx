@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { AlarmClock, Bell, Calendar, ChevronDown, FileText, Heart, MessageCircle, Moon, MoreVertical, Pause, Play, Repeat, Share2, Shuffle, SkipBack, SkipForward, Sun, X } from 'lucide-react-native';
+import { AlarmClock, Bell, Calendar, ChevronDown, FileText, Heart, MessageCircle, Moon, MoreVertical, Pause, Play, Repeat, Share2, Shuffle, SkipBack, SkipForward, Sun, X, Instagram } from 'lucide-react-native';
+import { SocialMediaModal } from '../../components/SocialMediaModal';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, FlatList, Image, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -22,6 +23,7 @@ export default function MusicScreen() {
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
     const spiritualSubheading = t("home.subtitle", "Awaken Your Spirit");
+    const [isSocialModalVisible, setIsSocialModalVisible] = useState(false);
 
     const CATEGORIES = [
         t("music.categories.all", "All"),
@@ -374,15 +376,16 @@ export default function MusicScreen() {
                     >
                         <Calendar size={22} color={colors.foreground} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={toggleTheme}>
-                        {theme === "dark" ? (
-                            <Sun size={22} color={colors.gold} />
-                        ) : (
-                            <Moon size={22} color={colors.foreground} />
-                        )}
+                    <TouchableOpacity style={styles.iconButton} onPress={() => setIsSocialModalVisible(true)}>
+                        <Instagram size={22} color={colors.foreground} />
                     </TouchableOpacity>
                 </View>
             </View>
+
+            <SocialMediaModal 
+                isVisible={isSocialModalVisible} 
+                onClose={() => setIsSocialModalVisible(false)} 
+            />
 
             {/* Gods Horizontal List (Images + Name) */}
             <View style={{ marginTop: 15, marginBottom: 15 }}>
