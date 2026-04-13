@@ -21,11 +21,7 @@ const TopBar = () => {
     }, [isCalculatorOpen]);
 
     const topLinks = [
-        { name: "Rashital", href: "/rashital" },
-        { name: "Kundli", href: "/kundli" },
-        { name: "Rashital 2026", href: "/rashital-2026" },
-        { name: "Horoscope 2026", href: "/horoscope-2026" },
-        { name: "Today Horoscope", href: "/today-horoscope" },
+        { name: "Today Horoscope/Rashifal", href: "/today-horoscope" },
         { name: "Calendar 2026", href: "/calendar-2026" },
     ];
 

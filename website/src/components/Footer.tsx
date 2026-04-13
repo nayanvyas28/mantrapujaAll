@@ -55,10 +55,9 @@ const Footer = () => {
                         </p>
                         <div className="flex space-x-4">
                             {[
-                                { Icon: Facebook, href: "https://facebook.com" },
-                                { Icon: Instagram, href: "https://instagram.com" },
-                                { Icon: Twitter, href: "https://twitter.com" },
-                                { Icon: Youtube, href: "https://youtube.com" }
+                                { Icon: Facebook, href: "https://www.facebook.com/mantrapujaa" },
+                                { Icon: Instagram, href: "https://www.instagram.com/mantrapujaa/" },
+                                { Icon: Youtube, href: "https://www.youtube.com/@MantraPujaOfficials" }
                             ].map((social, idx) => (
                                 <Link key={idx} href={social.href} className="w-12 h-12 rounded-full border border-saffron/20 flex items-center justify-center text-saffron hover:bg-saffron hover:text-white transition-all duration-300 hover:shadow-[0_0_15px_-3px_rgba(249,115,22,0.5)]">
                                     <social.Icon size={24} strokeWidth={2.5} />
@@ -107,11 +106,11 @@ const Footer = () => {
                         <ul className="space-y-4 text-sm">
                             <li className="flex items-center gap-3 group">
                                 <span className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center text-saffron group-hover:bg-saffron group-hover:text-white transition-colors duration-300">📞</span>
-                                <a href="tel:+919876543210" className="hover:text-saffron transition-colors cursor-pointer">+91 98765 43210</a>
+                                <a href="tel:+918989271245" className="hover:text-saffron transition-colors cursor-pointer">+91 89892 71245</a>
                             </li>
                             <li className="flex items-center gap-3 group">
                                 <span className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center text-saffron group-hover:bg-saffron group-hover:text-white transition-colors duration-300">✉️</span>
-                                <a href="mailto:contact@mantrapuja.com" className="hover:text-saffron transition-colors cursor-pointer">contact@mantrapuja.com</a>
+                                <a href="mailto:info@mantrapuja.com" className="hover:text-saffron transition-colors cursor-pointer">info@mantrapuja.com</a>
                             </li>
                             <li className="flex items-start gap-3 group">
                                 <span className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center text-saffron group-hover:bg-saffron group-hover:text-white transition-colors duration-300 mt-1">📍</span>
