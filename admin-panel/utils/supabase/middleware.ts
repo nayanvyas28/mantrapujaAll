@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
-    if (user && isPublicRoute) {
+    if (user && request.nextUrl.pathname.startsWith('/login')) {
         // if user is logged in and tries to access /login, redirect to dashboard
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard'
