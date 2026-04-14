@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.mantrapuja.official",
-      "versionCode": 6,
+      "versionCode": 7,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
         "foregroundImage": "./assets/app_icon/1024.png"
