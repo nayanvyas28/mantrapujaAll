@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
+import YoutubePlayer from 'react-native-youtube-iframe';
 import { Heart, Share2, Music, Volume2, VolumeX, Flame } from 'lucide-react-native';
 import { Typography } from './ui/Typography';
 import { useTheme } from '../context/ThemeContext';
-import { BlurView } from 'expo-blur';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +19,32 @@ interface ReelPlayerProps {
     thumbnail_url?: string;
 }
 
+// Utility to extract YouTube Video ID
+const getYouTubeID = (url: string) => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(shorts\/))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[8].length === 11) ? match[8] : null;
+};
+
+// Convert common sharing links (Drive, Dropbox) to direct video links
+const getDirectVideoUrl = (url: string) => {
+    if (!url) return url;
+    
+    // Google Drive
+    if (url.includes('drive.google.com')) {
+        const id = url.match(/\/d\/(.+?)\/|id=(.+?)(&|$)/);
+        const driveId = id ? (id[1] || id[2]) : null;
+        if (driveId) return `https://drive.google.com/uc?export=download&id=${driveId}`;
+    }
+    
+    // Dropbox
+    if (url.includes('dropbox.com')) {
+        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+    }
+    
+    return url;
+};
+
 export function ReelPlayer({
     video_url,
     title,
@@ -28,39 +54,55 @@ export function ReelPlayer({
     shouldLoad,
     thumbnail_url
 }: ReelPlayerProps) {
-    const { colors, theme } = useTheme();
+    const { colors } = useTheme();
     const videoRef = useRef<Video>(null);
     const [status, setStatus] = useState<any>({});
     const [isMuted, setIsMuted] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
+    const [ytReady, setYtReady] = useState(false);
+
+    const youtubeId = getYouTubeID(video_url);
+    const isYoutube = !!youtubeId;
 
     useEffect(() => {
-        if (!isActive && videoRef.current) {
-            videoRef.current.pauseAsync();
-        } else if (isActive && videoRef.current) {
-            videoRef.current.playAsync();
+        if (!isYoutube) {
+            if (!isActive && videoRef.current) {
+                videoRef.current.pauseAsync();
+            } else if (isActive && videoRef.current) {
+                videoRef.current.playAsync();
+            }
         }
-    }, [isActive]);
+    }, [isActive, isYoutube]);
 
     // Explicitly unload video when shouldLoad is false or component unmounts
     useEffect(() => {
-        if (!shouldLoad && videoRef.current) {
-            videoRef.current.unloadAsync();
+        if (!isYoutube) {
+            if (!shouldLoad && videoRef.current) {
+                videoRef.current.unloadAsync();
+            }
         }
         return () => {
-            if (videoRef.current) {
+            if (!isYoutube && videoRef.current) {
                 videoRef.current.unloadAsync();
             }
         };
-    }, [shouldLoad]);
+    }, [shouldLoad, isYoutube]);
 
     const togglePlayback = () => {
+        if (isYoutube) return; // YouTube player handles its own touch usually, but we could overlay if needed
         if (status.isPlaying) {
             videoRef.current?.pauseAsync();
         } else {
             videoRef.current?.playAsync();
         }
     };
+
+    const handleYtStateChange = useCallback((state: string) => {
+        if (state === 'ready') setYtReady(true);
+        if (state === 'playing') setYtReady(true);
+    }, []);
+
+    const finalThumbnail = thumbnail_url || (isYoutube ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : null);
 
     return (
         <View style={styles.container}>
@@ -70,30 +112,59 @@ export function ReelPlayer({
                 style={styles.videoContainer}
             >
                 {shouldLoad ? (
-                    <Video
-                        ref={videoRef}
-                        style={styles.video}
-                        source={{ uri: video_url }}
-                        resizeMode={ResizeMode.COVER}
-                        isLooping
-                        isMuted={isMuted}
-                        shouldPlay={isActive}
-                        onPlaybackStatusUpdate={status => setStatus(() => status)}
-                        progressUpdateIntervalMillis={500}
-                    />
+                    isYoutube ? (
+                        <View style={styles.video}>
+                           <YoutubePlayer
+                                height={height}
+                                width={width}
+                                play={isActive}
+                                videoId={youtubeId!}
+                                onChange={handleYtStateChange}
+                                mute={isMuted}
+                                webViewProps={{
+                                    allowsInlineMediaPlayback: true,
+                                    mediaPlaybackRequiresUserAction: false,
+                                }}
+                                initialPlayerParams={{
+                                    loop: true,
+                                    controls: false,
+                                    modestbranding: true,
+                                    rel: false
+                                }}
+                            />
+                        </View>
+                    ) : (
+                        <Video
+                            ref={videoRef}
+                            style={styles.video}
+                            source={{ uri: getDirectVideoUrl(video_url) }}
+                            resizeMode={ResizeMode.COVER}
+                            isLooping
+                            isMuted={isMuted}
+                            shouldPlay={isActive}
+                            onPlaybackStatusUpdate={status => setStatus(() => status)}
+                            progressUpdateIntervalMillis={500}
+                        />
+                    )
                 ) : (
                     <View style={styles.video} />
                 )}
                 
-                {(!status.isLoaded || status.isBuffering) && (
+                {/* Loading / Placeholder Overlay */}
+                {shouldLoad && (isYoutube ? !ytReady : (!status.isLoaded || status.isBuffering)) && (
                     <View style={styles.loadingOverlay}>
-                        {thumbnail_url ? (
-                           <Image source={{ uri: thumbnail_url }} style={StyleSheet.absoluteFill} blurRadius={10} />
+                        {finalThumbnail ? (
+                           <Image source={{ uri: finalThumbnail }} style={StyleSheet.absoluteFill} blurRadius={shouldLoad ? 5 : 10} />
                         ) : (
                            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]} />
                         )}
                         <ActivityIndicator size="large" color={colors.saffron} />
                     </View>
+                )}
+
+                {/* Always show thumbnail if not loading to save resources */}
+                {!shouldLoad && finalThumbnail && (
+                    <Image source={{ uri: finalThumbnail }} style={StyleSheet.absoluteFill} />
                 )}
             </TouchableOpacity>
 
@@ -164,7 +235,7 @@ export function ReelPlayer({
 const styles = StyleSheet.create({
     container: {
         width: width,
-        height: height - 70, // Adjust for bottom tab bar roughly
+        height: height,
         backgroundColor: '#000',
     },
     videoContainer: {
@@ -172,12 +243,14 @@ const styles = StyleSheet.create({
     },
     video: {
         ...StyleSheet.absoluteFillObject,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: '#000',
     },
     overlayContainer: {
         ...StyleSheet.absoluteFillObject,
@@ -187,7 +260,7 @@ const styles = StyleSheet.create({
     rightButtons: {
         position: 'absolute',
         right: 15,
-        bottom: 120,
+        bottom: 150,
         gap: 20,
         alignItems: 'center',
     },
@@ -200,7 +273,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     bottomInfo: {
-        paddingBottom: 40,
+        paddingBottom: 80,
         maxWidth: '80%',
     },
     categoryBadge: {

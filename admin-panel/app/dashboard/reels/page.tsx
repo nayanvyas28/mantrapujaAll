@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Plus, Search, Trash2, Edit2, X, Check, Loader2, Sparkles, Video, Globe, ArrowLeft, Play, ExternalLink } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, X, Check, Loader2, Sparkles, Video, Globe, ArrowLeft, Play, ExternalLink, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -17,6 +17,32 @@ interface Reel {
     is_active: boolean;
     created_at: string;
 }
+
+// Utility to extract YouTube Video ID
+const getYouTubeID = (url: string) => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(shorts\/))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[8].length === 11) ? match[8] : null;
+};
+
+// Convert common sharing links (Drive, Dropbox) to direct video links
+const getDirectVideoUrl = (url: string) => {
+    if (!url) return url;
+    
+    // Google Drive
+    if (url.includes('drive.google.com')) {
+        const id = url.match(/\/d\/(.+?)\/|id=(.+?)(&|$)/);
+        const driveId = id ? (id[1] || id[2]) : null;
+        if (driveId) return `https://drive.google.com/uc?export=download&id=${driveId}`;
+    }
+    
+    // Dropbox
+    if (url.includes('dropbox.com')) {
+        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+    }
+    
+    return url;
+};
 
 export default function ReelsManagementPage() {
     const supabase = createClient();
@@ -39,11 +65,73 @@ export default function ReelsManagementPage() {
         is_active: true
     });
 
+    // Verification State
+    const [verificationStatus, setVerificationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [verificationError, setVerificationError] = useState('');
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [aiGenerated, setAiGenerated] = useState({ title_hi: '' });
+
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchReels();
     }, []);
+
+    // Real-time Auto-translation
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            performRealtimeTranslation();
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, [form.title]);
+
+    const performRealtimeTranslation = async () => {
+        // Only translate if there's English but the Hindi is either empty or was AI-generated
+        const needsTitle = form.title && (!form.title_hi || form.title_hi === aiGenerated.title_hi);
+        if (!needsTitle) return;
+
+        setIsTranslating(true);
+        try {
+            const response = await fetch('/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: { title_hi: form.title } })
+            });
+            
+            if (!response.ok) throw new Error('Translation failed');
+
+            const results = await response.json();
+            if (results && results.title_hi) {
+                setForm(prev => ({ ...prev, title_hi: results.title_hi }));
+                setAiGenerated(prev => ({ ...prev, title_hi: results.title_hi }));
+            }
+        } catch (error) {
+            console.error('Real-time translation failed:', error);
+        } finally {
+            setIsTranslating(false);
+        }
+    };
+
+    const handleManualTranslate = async () => {
+        if (!form.title) return;
+        setIsTranslating(true);
+        try {
+            const response = await fetch('/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: { title_hi: form.title } })
+            });
+            const results = await response.json();
+            if (results && results.title_hi) {
+                setForm(prev => ({ ...prev, title_hi: results.title_hi }));
+                setAiGenerated(prev => ({ ...prev, title_hi: results.title_hi }));
+            }
+        } catch (error) {
+            alert('Translation failed');
+        } finally {
+            setIsTranslating(false);
+        }
+    };
 
     async function fetchReels() {
         setIsLoading(true);
@@ -99,6 +187,8 @@ export default function ReelsManagementPage() {
             order_index: 0,
             is_active: true
         });
+        setVerificationStatus('idle');
+        setVerificationError('');
     };
 
     const handleEdit = (reel: Reel) => {
@@ -122,16 +212,22 @@ export default function ReelsManagementPage() {
         else fetchReels();
     };
 
-    const toggleStatus = async (reel: Reel) => {
-        const { error } = await supabase.from('reels').update({ is_active: !reel.is_active }).eq('id', reel.id);
-        if (error) alert(error.message);
-        else fetchReels();
+    const fetchYoutubeThumbnail = () => {
+        const id = getYouTubeID(form.video_url);
+        if (id) {
+            setForm({ ...form, thumbnail_url: `https://img.youtube.com/vi/${id}/maxresdefault.jpg` });
+        } else {
+            alert('Not a valid YouTube URL');
+        }
     };
 
     const filteredReels = reels.filter(r => 
         r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.category?.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const youtubeId = getYouTubeID(form.video_url);
+    const isYoutube = !!youtubeId;
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white p-6 md:p-10 font-sans relative overflow-x-hidden">
@@ -158,7 +254,7 @@ export default function ReelsManagementPage() {
                             </h1>
                         </div>
                         <p className="text-gray-400 text-sm max-w-xl leading-relaxed">
-                            Manage your vertical video reels. These will appear in the center "Feed" tab of the mobile app. Support for direct MP4 links, YouTube Shorts, and Instagram Reels.
+                            Manage your vertical video reels. Support for direct MP4 links, YouTube Shorts, and Instagram Reels. Use the preview to verify links before saving.
                         </p>
                     </div>
 
@@ -252,7 +348,7 @@ export default function ReelsManagementPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-[#111] border border-white/10 w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col"
+                            className="bg-[#111] border border-white/10 w-full max-w-5xl rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col"
                         >
                             <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between">
                                 <div>
@@ -266,96 +362,197 @@ export default function ReelsManagementPage() {
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto">
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Title (English)</label>
-                                    <input
-                                        type="text" required
-                                        value={form.title}
-                                        onChange={(e) => setForm({ ...form, title: e.target.value })}
-                                        placeholder="Enter reel title"
-                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-medium"
-                                    />
-                                </div>
+                            <div className="flex flex-col lg:flex-row overflow-hidden flex-1">
+                                {/* Form Section */}
+                                <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto flex-1">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Title (English)</label>
+                                            <input
+                                                type="text" required
+                                                value={form.title}
+                                                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                                placeholder="Enter reel title"
+                                                className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-medium"
+                                            />
+                                        </div>
 
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-bold text-blue-400 uppercase tracking-widest pl-1">Title (Hindi)</label>
-                                    <input
-                                        type="text"
-                                        value={form.title_hi}
-                                        onChange={(e) => setForm({ ...form, title_hi: e.target.value })}
-                                        placeholder="शीर्षक दर्ज करें"
-                                        className="w-full px-6 py-4 bg-white/[0.03] border border-blue-500/20 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-medium"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Video URL (MP4 / YT Shorts / Insta)</label>
-                                    <input
-                                        type="text" required
-                                        value={form.video_url}
-                                        onChange={(e) => setForm({ ...form, video_url: e.target.value })}
-                                        placeholder="https://..."
-                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono text-xs"
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Thumbnail URL (Optional)</label>
-                                    <input
-                                        type="text"
-                                        value={form.thumbnail_url}
-                                        onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
-                                        placeholder="https://..."
-                                        className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono text-xs"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Category</label>
-                                        <select
-                                            value={form.category}
-                                            onChange={(e) => setForm({ ...form, category: e.target.value })}
-                                            className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer"
-                                        >
-                                            <option value="Spiritual" className="bg-[#111]">Spiritual</option>
-                                            <option value="Aarti" className="bg-[#111]">Aarti</option>
-                                            <option value="Mantra" className="bg-[#111]">Mantra</option>
-                                            <option value="Temple" className="bg-[#111]">Temple</option>
-                                            <option value="Other" className="bg-[#111]">Other</option>
-                                        </select>
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] font-bold text-blue-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                Title (Hindi)
+                                                <div className="flex items-center gap-2">
+                                                    {isTranslating && (
+                                                        <span className="flex items-center gap-1 text-[8px] animate-pulse text-blue-400">
+                                                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                            Translating...
+                                                        </span>
+                                                    )}
+                                                    <button 
+                                                        type="button"
+                                                        onClick={handleManualTranslate}
+                                                        className="p-1 hover:bg-white/5 rounded transition-colors text-blue-400"
+                                                        title="Translate Now"
+                                                    >
+                                                        <Sparkles className="w-3 h-3" />
+                                                    </button>
+                                                </div>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={form.title_hi}
+                                                onChange={(e) => setForm({ ...form, title_hi: e.target.value })}
+                                                placeholder="शीर्षक दर्ज करें"
+                                                className="w-full px-6 py-4 bg-white/[0.03] border border-blue-500/20 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-medium text-sm text-blue-100"
+                                            />
+                                        </div>
                                     </div>
+
                                     <div className="space-y-2">
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Order Index</label>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1 flex justify-between">
+                                            Video URL (MP4 / YT)
+                                            {isYoutube && (
+                                                <button 
+                                                    type="button" 
+                                                    onClick={fetchYoutubeThumbnail}
+                                                    className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1"
+                                                >
+                                                    <RefreshCcw className="w-3 h-3" /> Auto-Thumbnail
+                                                </button>
+                                            )}
+                                        </label>
                                         <input
-                                            type="number"
-                                            value={form.order_index}
-                                            onChange={(e) => setForm({ ...form, order_index: parseInt(e.target.value) || 0 })}
-                                            className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-medium"
+                                            type="text" required
+                                            value={form.video_url}
+                                            onChange={(e) => {
+                                                setForm({ ...form, video_url: e.target.value });
+                                                setVerificationStatus('idle');
+                                            }}
+                                            placeholder="https://..."
+                                            className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono text-xs"
                                         />
                                     </div>
-                                </div>
 
-                                <div className="flex items-center gap-4 py-4 px-6 bg-white/5 rounded-2xl border border-white/10">
-                                    <input
-                                        type="checkbox"
-                                        id="is_active"
-                                        checked={form.is_active}
-                                        onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                                        className="w-5 h-5 rounded border-white/20 bg-transparent text-blue-500 focus:ring-blue-500/50"
-                                    />
-                                    <label htmlFor="is_active" className="text-sm font-bold text-gray-300">Active and visible in mobile app</label>
-                                </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Thumbnail URL</label>
+                                        <input
+                                            type="text"
+                                            value={form.thumbnail_url}
+                                            onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
+                                            placeholder="https://..."
+                                            className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-mono text-xs"
+                                        />
+                                    </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={isSaving}
-                                    className="w-full py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98]"
-                                >
-                                    {isSaving ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'Confirm & Save Reel'}
-                                </button>
-                            </form>
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Category</label>
+                                            <select
+                                                value={form.category}
+                                                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                                                className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all appearance-none cursor-pointer"
+                                            >
+                                                <option value="Spiritual" className="bg-[#111]">Spiritual</option>
+                                                <option value="Aarti" className="bg-[#111]">Aarti</option>
+                                                <option value="Mantra" className="bg-[#111]">Mantra</option>
+                                                <option value="Temple" className="bg-[#111]">Temple</option>
+                                                <option value="Other" className="bg-[#111]">Other</option>
+                                            </select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Order Index</label>
+                                            <input
+                                                type="number"
+                                                value={form.order_index}
+                                                onChange={(e) => setForm({ ...form, order_index: parseInt(e.target.value) || 0 })}
+                                                className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500/50 transition-all font-medium"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 py-4 px-6 bg-white/5 rounded-2xl border border-white/10">
+                                        <input
+                                            type="checkbox"
+                                            id="is_active"
+                                            checked={form.is_active}
+                                            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+                                            className="w-5 h-5 rounded border-white/20 bg-transparent text-blue-500 focus:ring-blue-500/50"
+                                        />
+                                        <label htmlFor="is_active" className="text-sm font-bold text-gray-300">Active and visible in mobile app</label>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isSaving}
+                                        className="w-full py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 text-white font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-xl shadow-blue-500/20 active:scale-[0.98]"
+                                    >
+                                        {isSaving ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : 'Confirm & Save Reel'}
+                                    </button>
+                                </form>
+
+                                {/* Preview Section */}
+                                <div className="lg:w-[400px] border-l border-white/10 bg-black/40 p-8 flex flex-col gap-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Video Verification</h4>
+                                        <div className="flex items-center gap-2">
+                                            {verificationStatus === 'loading' && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+                                            {verificationStatus === 'success' && <Check className="w-3 h-3 text-green-400" />}
+                                            {verificationStatus === 'error' && <AlertTriangle className="w-3 h-3 text-red-400" />}
+                                            <span className={`text-[10px] font-bold uppercase ${verificationStatus === 'success' ? 'text-green-400' : verificationStatus === 'error' ? 'text-red-400' : 'text-gray-500'}`}>
+                                                {verificationStatus === 'idle' ? 'Pending' : verificationStatus}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="aspect-[9/16] bg-gray-900 rounded-[24px] border border-white/10 overflow-hidden relative group">
+                                        {form.video_url ? (
+                                            isYoutube ? (
+                                                <iframe
+                                                    src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&controls=1&modestbranding=1`}
+                                                    className="w-full h-full"
+                                                    allowFullScreen
+                                                    onLoad={() => setVerificationStatus('success')}
+                                                />
+                                            ) : (
+                                                <video
+                                                    key={form.video_url}
+                                                    src={getDirectVideoUrl(form.video_url)}
+                                                    controls
+                                                    className="w-full h-full object-cover"
+                                                    onLoadedData={() => setVerificationStatus('success')}
+                                                    onError={(e) => {
+                                                        const videoElement = e.target as HTMLVideoElement;
+                                                        let message = 'Could not load direct video link';
+                                                        
+                                                        if (videoElement.error?.code === 4) {
+                                                            message = 'Format not supported or Access Denied (CORS)';
+                                                        }
+                                                        
+                                                        setVerificationStatus('error');
+                                                        setVerificationError(message);
+                                                    }}
+                                                />
+                                            )
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-center p-8">
+                                                <Play className="w-12 h-12 text-gray-800 mb-4" />
+                                                <p className="text-gray-600 text-[10px] uppercase font-bold leading-relaxed">
+                                                    Enter a valid URL to<br />preview the video
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {verificationStatus === 'error' && (
+                                            <div className="absolute inset-0 bg-red-900/20 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                                                <AlertTriangle className="w-8 h-8 text-red-400 mb-2" />
+                                                <p className="text-xs text-red-300 font-medium">{verificationError}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 leading-relaxed italic">
+                                        Note: Vertical videos (9:16) work best. Ensure direct links reach the .mp4 file or use YouTube Shorts URLs.
+                                    </p>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
                 )}
