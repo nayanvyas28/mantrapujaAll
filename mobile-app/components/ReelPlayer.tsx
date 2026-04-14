@@ -98,8 +98,9 @@ export function ReelPlayer({
     };
 
     const handleYtStateChange = useCallback((state: string) => {
-        if (state === 'ready') setYtReady(true);
-        if (state === 'playing') setYtReady(true);
+        if (state === 'ready' || state === 'playing' || state === 'buffering') {
+            setYtReady(true);
+        }
     }, []);
 
     const finalThumbnail = thumbnail_url || (isYoutube ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : null);
@@ -119,17 +120,21 @@ export function ReelPlayer({
                                 width={width}
                                 play={isActive}
                                 videoId={youtubeId!}
+                                onReady={() => setYtReady(true)}
                                 onChange={handleYtStateChange}
                                 mute={isMuted}
                                 webViewProps={{
                                     allowsInlineMediaPlayback: true,
                                     mediaPlaybackRequiresUserAction: false,
+                                    origin: 'https://www.youtube.com'
                                 }}
                                 initialPlayerParams={{
                                     loop: true,
                                     controls: false,
                                     modestbranding: true,
-                                    rel: false
+                                    rel: false,
+                                    cc_load_policy: 0,
+                                    iv_load_policy: 3
                                 }}
                             />
                         </View>

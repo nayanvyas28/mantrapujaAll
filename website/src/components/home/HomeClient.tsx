@@ -17,6 +17,7 @@ import { getUiConfig, UiConfig, getBlogCategoryStyle } from '@/lib/uiMapping';
 import CollapsibleText from "@/components/ui/CollapsibleText";
 import { FloatingSocialButtons } from "@/components/ui/FloatingSocialButtons";
 import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
+import FeedSection from "@/components/home/FeedSection";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 
@@ -1383,6 +1384,9 @@ export default function HomeClient() {
                     </div>
                 </div>
             </section >
+            {/* Divine Feed Section */}
+            <FeedSection />
+
             {/* Spiritual Family Section */}
             <SpiritualFamilySection />
 

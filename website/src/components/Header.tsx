@@ -102,6 +102,7 @@ const Header = () => {
     // --- Standard Public Header ---
     const navLinks = [
         { name: "Home", href: "/" },
+        { name: "Feed", href: "/feed" },
         { name: "Puja", href: "/pooja-services" },
         { name: "Festivals", href: "/festivals" },
         { name: "Locations", href: "/locations" },

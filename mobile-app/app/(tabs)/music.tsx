@@ -18,6 +18,25 @@ import { supabase } from '../../utils/supabase';
 
 import { getLocalized } from '../../utils/translation';
 
+// Convert common sharing links (Drive, Dropbox) to direct media links
+const getDirectMediaUrl = (url: string) => {
+    if (!url) return url;
+    
+    // Google Drive
+    if (url.includes('drive.google.com')) {
+        const id = url.match(/\/d\/(.+?)\/|id=(.+?)(&|$)/);
+        const driveId = id ? (id[1] || id[2]) : null;
+        if (driveId) return `https://drive.google.com/uc?export=download&id=${driveId}`;
+    }
+    
+    // Dropbox
+    if (url.includes('dropbox.com')) {
+        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+    }
+    
+    return url;
+};
+
 export default function MusicScreen() {
     const { theme, colors, toggleTheme } = useTheme();
     const { openSidebar } = useSidebar();
@@ -207,9 +226,10 @@ export default function MusicScreen() {
             setIsVideoPlaying(false); // Reset video playback state
 
             if (song.audio_url) {
-                console.log("Creating new sound object for URL:", song.audio_url);
+                const directAudioUrl = getDirectMediaUrl(song.audio_url);
+                console.log("Creating new sound object for URL:", directAudioUrl);
                 const { sound: newSound } = await Audio.Sound.createAsync(
-                    { uri: song.audio_url },
+                    { uri: directAudioUrl },
                     { shouldPlay: true },
                     onPlaybackStatusUpdate
                 );
@@ -246,9 +266,9 @@ export default function MusicScreen() {
     const currentVideoId = useMemo(() => {
         if (!currentSong?.video_url) return null;
         const url = currentSong.video_url;
-        const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
-        const match = url.match(regex);
-        const id = match ? match[1] : null;
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(shorts\/))\??v?=?([^#&?]*).*/;
+        const match = url.match(regExp);
+        const id = (match && match[8].length === 11) ? match[8] : null;
         return id;
     }, [currentSong?.video_url]);
 
