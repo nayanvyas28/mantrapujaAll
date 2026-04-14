@@ -29,6 +29,12 @@
                 "EXPO_PUBLIC_ADMIN_URL": "http://10.228.144.64:3001",
                 "EXPO_PUBLIC_SESSION_SALT": "sg6XisTlL2QcXSuE"
             }
+        },
+        "apk-production": {
+            "extends": "production",
+            "android": {
+                "buildType": "apk"
+            }
         }
     },
     "submit": {

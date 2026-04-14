@@ -80,8 +80,8 @@ export default function FeedScreen() {
     }).current;
 
     const renderItem = useCallback(({ item, index }: { item: Reel, index: number }) => {
-        // "Sliding window" logic: only load current, previous, and next 2 items
-        const shouldLoad = Math.abs(index - activeIndex) <= 2;
+        // "Sliding window" logic: only load current and immediate neighbor
+        const shouldLoad = Math.abs(index - activeIndex) <= 1;
         const isActive = index === activeIndex;
 
         return (
@@ -142,9 +142,9 @@ export default function FeedScreen() {
                 decelerationRate="fast"
                 onViewableItemsChanged={onViewableItemsChanged}
                 viewabilityConfig={viewabilityConfig}
-                windowSize={5}
-                maxToRenderPerBatch={3}
-                initialNumToRender={2}
+                windowSize={3}
+                maxToRenderPerBatch={2}
+                initialNumToRender={1}
                 removeClippedSubviews={true}
                 refreshControl={
                     <RefreshControl

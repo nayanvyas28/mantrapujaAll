@@ -64,12 +64,14 @@ export function ReelPlayer({
     const [status, setStatus] = useState<any>({});
     const [isLiked, setIsLiked] = useState(false);
     const [ytReady, setYtReady] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
 
     const youtubeId = getYouTubeID(video_url);
     const isYoutube = !!youtubeId;
 
     useEffect(() => {
         if (isActive) {
+            setIsPaused(false); // Reset pause state when active
             if (isYoutube && ytRef.current) {
                 ytRef.current.seekTo(0, true);
             } else if (!isYoutube && videoRef.current) {
@@ -77,6 +79,7 @@ export function ReelPlayer({
                 videoRef.current.playAsync();
             }
         } else {
+            setYtReady(false); // Reset YouTube ready state when deactivated
             if (!isYoutube && videoRef.current) {
                 videoRef.current.pauseAsync();
             }
@@ -98,11 +101,13 @@ export function ReelPlayer({
     }, [shouldLoad, isYoutube]);
 
     const togglePlayback = () => {
-        if (isYoutube) return; // YouTube player handles its own touch usually, but we could overlay if needed
-        if (status.isPlaying) {
-            videoRef.current?.pauseAsync();
-        } else {
-            videoRef.current?.playAsync();
+        setIsPaused(!isPaused);
+        if (!isYoutube && videoRef.current) {
+            if (!isPaused) {
+                videoRef.current.pauseAsync();
+            } else {
+                videoRef.current.playAsync();
+            }
         }
     };
 
@@ -116,19 +121,17 @@ export function ReelPlayer({
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity 
-                activeOpacity={1} 
-                onPress={togglePlayback}
-                style={styles.videoContainer}
-            >
-                {shouldLoad ? (
-                    isYoutube ? (
+            {/* Video Player Layer */}
+            <View style={styles.videoContainer}>
+                {/* Conditional Rendering: Singleton for YouTube (Heavy), shouldLoad for Native Video (Smooth) */}
+                {isYoutube ? (
+                    isActive ? (
                         <View style={styles.youtubeContainer}>
                            <YoutubePlayer
                                 ref={ytRef}
                                 height={height}
-                                width={height * (16/9)} // Force width to match 16:9 aspect of screen height
-                                play={isActive}
+                                width={height * (16/9)}
+                                play={!isPaused}
                                 videoId={youtubeId!}
                                 onReady={() => setYtReady(true)}
                                 onChange={handleYtStateChange}
@@ -148,11 +151,15 @@ export function ReelPlayer({
                                     iv_load_policy: 3
                                 }}
                                 style={{
-                                    marginLeft: -(height * (16/9) - width) / 2, // Center the oversized player
+                                    marginLeft: -(height * (16/9) - width) / 2,
                                 }}
                             />
                         </View>
                     ) : (
+                        <View style={styles.video} />
+                    )
+                ) : (
+                    shouldLoad ? (
                         <Video
                             ref={videoRef}
                             style={styles.video}
@@ -160,20 +167,20 @@ export function ReelPlayer({
                             resizeMode={ResizeMode.COVER}
                             isLooping
                             isMuted={isMuted}
-                            shouldPlay={isActive}
+                            shouldPlay={isActive && !isPaused}
                             onPlaybackStatusUpdate={status => setStatus(() => status)}
                             progressUpdateIntervalMillis={500}
                         />
+                    ) : (
+                        <View style={styles.video} />
                     )
-                ) : (
-                    <View style={styles.video} />
                 )}
                 
-                {/* Loading / Placeholder Overlay */}
-                {shouldLoad && (isYoutube ? !ytReady : (!status.isLoaded || status.isBuffering)) && (
+                {/* Loading / Placeholder Overlay: Only show when active and not ready */}
+                {isActive && (isYoutube ? !ytReady : (!status.isLoaded || status.isBuffering)) && (
                     <View style={styles.loadingOverlay}>
                         {finalThumbnail ? (
-                           <Image source={{ uri: finalThumbnail }} style={StyleSheet.absoluteFill} blurRadius={shouldLoad ? 5 : 10} />
+                           <Image source={{ uri: finalThumbnail }} style={StyleSheet.absoluteFill} blurRadius={10} />
                         ) : (
                            <View style={[StyleSheet.absoluteFill, { backgroundColor: '#000' }]} />
                         )}
@@ -181,19 +188,30 @@ export function ReelPlayer({
                     </View>
                 )}
 
-                {/* Always show thumbnail if not loading to save resources */}
-                {!shouldLoad && finalThumbnail && (
-                    <Image source={{ uri: finalThumbnail }} style={StyleSheet.absoluteFill} />
+                {/* Always show thumbnail as background for smooth transitions */}
+                {finalThumbnail && (
+                    <Image 
+                        source={{ uri: finalThumbnail }} 
+                        style={[StyleSheet.absoluteFill, { zIndex: -1 }]} 
+                    />
                 )}
-            </TouchableOpacity>
+            </View>
 
             {/* Content Overlays */}
             <View style={styles.overlayContainer} pointerEvents="box-none">
+                {/* Tap to Pause Layer (Inside overlay container, before buttons) */}
+                <TouchableOpacity 
+                    activeOpacity={1} 
+                    onPress={togglePlayback}
+                    style={StyleSheet.absoluteFill}
+                />
+
                 {/* Right Side Buttons */}
                 <View style={styles.rightButtons}>
                     <TouchableOpacity 
                         style={styles.iconButton} 
                         onPress={() => setIsLiked(!isLiked)}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Heart 
                              size={28} 
@@ -201,12 +219,16 @@ export function ReelPlayer({
                              fill={isLiked ? "#ef4444" : "transparent"} 
                         />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton}>
+                    <TouchableOpacity 
+                        style={styles.iconButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
                         <Share2 size={26} color="#ffffff" />
                     </TouchableOpacity>
                     <TouchableOpacity 
                         style={styles.iconButton} 
                         onPress={onToggleMute}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         {isMuted ? <VolumeX size={26} color="#ffffff" /> : <Volume2 size={26} color="#ffffff" />}
                     </TouchableOpacity>
@@ -282,7 +304,8 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         padding: 20,
         justifyContent: 'flex-end',
-        zIndex: 10,
+        zIndex: 100,
+        elevation: 100,
     },
     rightButtons: {
         position: 'absolute',
