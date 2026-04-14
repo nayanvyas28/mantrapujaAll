@@ -25,6 +25,7 @@ interface MarketingPopup {
     frequency: 'once' | 'session' | 'always';
     show_on_app: boolean;
     show_on_web: boolean;
+    show_text_overlay: boolean;
     created_at: string;
 }
 
@@ -53,6 +54,7 @@ export default function PopupManagementPage() {
         frequency: 'once' as 'once' | 'session' | 'always',
         show_on_app: true,
         show_on_web: true,
+        show_text_overlay: true,
         mobileImageFile: null as File | null,
         webImageFile: null as File | null,
     });
@@ -128,6 +130,7 @@ export default function PopupManagementPage() {
                 frequency: form.frequency,
                 show_on_app: form.show_on_app,
                 show_on_web: form.show_on_web,
+                show_text_overlay: form.show_text_overlay,
             };
 
             let error;
@@ -176,6 +179,7 @@ export default function PopupManagementPage() {
             frequency: 'once',
             show_on_app: true,
             show_on_web: true,
+            show_text_overlay: true,
             mobileImageFile: null,
             webImageFile: null,
         });
@@ -198,6 +202,7 @@ export default function PopupManagementPage() {
             frequency: popup.frequency,
             show_on_app: popup.show_on_app,
             show_on_web: popup.show_on_web,
+            show_text_overlay: popup.show_text_overlay !== false, 
             mobileImageFile: null,
             webImageFile: null,
         });
@@ -368,62 +373,71 @@ export default function PopupManagementPage() {
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-white font-medium"
                                                 placeholder="e.g. Navratri 2024 Celebration"
                                             />
+                                        </section>                                        <section>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Visual Configuration</label>
+                                                <div 
+                                                    onClick={() => setForm({ ...form, show_text_overlay: !form.show_text_overlay })}
+                                                    className={`px-4 py-1.5 rounded-full border cursor-pointer transition-all flex items-center gap-2 ${form.show_text_overlay ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-white/5 border-white/10 text-gray-500'}`}
+                                                >
+                                                    <Layout size={12} />
+                                                    <span className="text-[9px] font-black uppercase tracking-widest">{form.show_text_overlay ? 'Overlay Active' : 'Overlay Hidden'}</span>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Platforms</label>
+                                                    <div className="flex gap-3 p-1.5 bg-white/[0.03] rounded-2xl border border-white/10">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setForm({ ...form, show_on_app: !form.show_on_app })}
+                                                            className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all ${form.show_on_app ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+                                                        >
+                                                            <Smartphone size={20} className="mb-1" />
+                                                            <span className="text-[10px] font-black">APP</span>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setForm({ ...form, show_on_web: !form.show_on_web })}
+                                                            className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all ${form.show_on_web ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}
+                                                        >
+                                                            <Globe size={20} className="mb-1" />
+                                                            <span className="text-[10px] font-black">WEB</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Display Delay (ms)</label>
+                                                    <div className="relative">
+                                                        <Clock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500" />
+                                                        <input
+                                                            type="number"
+                                                            step="500"
+                                                            min="0"
+                                                            value={form.display_delay_ms}
+                                                            onChange={(e) => setForm({ ...form, display_delay_ms: parseInt(e.target.value) || 0 })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-5 py-4 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-white font-bold"
+                                                            placeholder="2000"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Frequency</label>
+                                                    <div className="relative">
+                                                        <Layout size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" />
+                                                        <select
+                                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-5 py-4 focus:ring-2 focus:ring-orange-500 outline-none appearance-none font-bold text-sm text-white"
+                                                            value={form.frequency}
+                                                            onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}
+                                                        >
+                                                            <option className="bg-[#111]" value="once">Total Only Once</option>
+                                                            <option className="bg-[#111]" value="session">Once per Session</option>
+                                                            <option className="bg-[#111]" value="always">Show Every Time</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </section>
-
-                                        <section className="grid grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Platforms</label>
-                                                <div className="flex gap-3 p-1.5 bg-white/[0.03] rounded-2xl border border-white/10">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setForm({ ...form, show_on_app: !form.show_on_app })}
-                                                        className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all ${form.show_on_app ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-gray-500 hover:text-gray-300'}`}
-                                                    >
-                                                        <Smartphone size={20} className="mb-1" />
-                                                        <span className="text-[10px] font-black">APP</span>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setForm({ ...form, show_on_web: !form.show_on_web })}
-                                                        className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl transition-all ${form.show_on_web ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}
-                                                    >
-                                                        <Globe size={20} className="mb-1" />
-                                                        <span className="text-[10px] font-black">WEB</span>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Display Delay (ms)</label>
-                                                <div className="relative">
-                                                    <Clock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500" />
-                                                    <input
-                                                        type="number"
-                                                        step="500"
-                                                        min="0"
-                                                        value={form.display_delay_ms}
-                                                        onChange={(e) => setForm({ ...form, display_delay_ms: parseInt(e.target.value) || 0 })}
-                                                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-5 py-4 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-white font-bold"
-                                                        placeholder="2000"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Frequency</label>
-                                                <div className="relative">
-                                                    <Layout size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" />
-                                                    <select
-                                                        className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-5 py-4 focus:ring-2 focus:ring-orange-500 outline-none appearance-none font-bold text-sm text-white"
-                                                        value={form.frequency}
-                                                        onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}
-                                                    >
-                                                        <option className="bg-[#111]" value="once">Total Only Once</option>
-                                                        <option className="bg-[#111]" value="session">Once per Session</option>
-                                                        <option className="bg-[#111]" value="always">Show Every Time</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </section>
-
                                         <section>
                                             <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Redirection</label>
                                             <div className="grid grid-cols-3 gap-3 mb-4">

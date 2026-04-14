@@ -446,12 +446,24 @@ export default function HomeScreen() {
   const fetchDynamicBanners = async () => {
     try {
       setBannersLoading(true);
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('home_banners')
-        .select('*')
+        .select('*, show_text_overlay')
         .eq('is_active', true)
         .or('target.eq.app,target.eq.both')
         .order('display_order', { ascending: true });
+
+      if (error && error.code === '42703') {
+        console.warn('[HomeScreen] show_text_overlay column missing, falling back...');
+        const result = await supabase
+          .from('home_banners')
+          .select('*')
+          .eq('is_active', true)
+          .or('target.eq.app,target.eq.both')
+          .order('display_order', { ascending: true });
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) {
         if (error.code === '42P01') {
@@ -632,31 +644,36 @@ export default function HomeScreen() {
                   contentFit="cover"
                 />
 
-                {/* NEW: Special Offer Badge on the RIGHT */}
-                {banner.show_offer && (
-                  <View style={styles.offerBadgeContainer}>
-                    <View style={styles.offerBadgeGradient}>
-                      <Gift size={12} color="white" />
-                      <Text style={styles.offerBadgeText} numberOfLines={1}>
-                        {i18n.language === 'hi' ? banner.offer_tag_hi : banner.offer_tag}
-                      </Text>
+                {/* Conditionally render all text-based overlays */}
+                {banner.show_text_overlay !== false && (
+                  <>
+                    {/* Special Offer Badge on the RIGHT */}
+                    {banner.show_offer && (
+                      <View style={styles.offerBadgeContainer}>
+                        <View style={styles.offerBadgeGradient}>
+                          <Gift size={12} color="white" />
+                          <Text style={styles.offerBadgeText} numberOfLines={1}>
+                            {i18n.language === 'hi' ? banner.offer_tag_hi : banner.offer_tag}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                    <View style={styles.bannerOverlay}>
+                      <View style={styles.bannerContent}>
+                        <Typography variant="h3" color="#ffffff">
+                          {getLocalized(banner, 'title', i18n.language) || banner.title}
+                        </Typography>
+                        <Typography
+                          variant="bodySmall"
+                          color="#fed7aa"
+                          style={{ marginTop: 4 }}
+                        >
+                          {getLocalized(banner, 'subtitle', i18n.language) || banner.subtitle}
+                        </Typography>
+                      </View>
                     </View>
-                  </View>
+                  </>
                 )}
-                <View style={styles.bannerOverlay}>
-                  <View style={styles.bannerContent}>
-                    <Typography variant="h3" color="#ffffff">
-                      {getLocalized(banner, 'title', i18n.language) || banner.title}
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      color="#fed7aa"
-                      style={{ marginTop: 4 }}
-                    >
-                      {getLocalized(banner, 'subtitle', i18n.language) || banner.subtitle}
-                    </Typography>
-                  </View>
-                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>

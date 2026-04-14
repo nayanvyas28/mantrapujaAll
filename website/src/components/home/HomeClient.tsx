@@ -313,12 +313,23 @@ export default function HomeClient() {
                 }
 
                 // 4. Fetch Dynamic Banners
-                const { data: homeBannersData } = await supabase
+                let { data: homeBannersData, error: bannerError } = await supabase
                     .from('home_banners')
-                    .select('*')
+                    .select('*, show_text_overlay')
                     .eq('is_active', true)
                     .or('target.eq.web,target.eq.both')
                     .order('display_order', { ascending: true });
+
+                if (bannerError && bannerError.code === '42703') {
+                    console.warn('[HomeClient] show_text_overlay column missing, falling back...');
+                    const result = await supabase
+                        .from('home_banners')
+                        .select('*')
+                        .eq('is_active', true)
+                        .or('target.eq.web,target.eq.both')
+                        .order('display_order', { ascending: true });
+                    homeBannersData = result.data;
+                }
                 if (homeBannersData) setBanners(homeBannersData);
 
             } catch (error) {
@@ -332,12 +343,22 @@ export default function HomeClient() {
 
         // 5. Setup Realtime Listener
         const fetchBannersOnly = async () => {
-            const { data } = await supabase
+            let { data, error } = await supabase
                 .from('home_banners')
-                .select('*')
+                .select('*, show_text_overlay')
                 .eq('is_active', true)
                 .or('target.eq.web,target.eq.both')
                 .order('display_order', { ascending: true });
+
+            if (error && error.code === '42703') {
+                const result = await supabase
+                    .from('home_banners')
+                    .select('*')
+                    .eq('is_active', true)
+                    .or('target.eq.web,target.eq.both')
+                    .order('display_order', { ascending: true });
+                data = result.data;
+            }
             if (data) setBanners(data);
         };
 
@@ -452,55 +473,60 @@ export default function HomeClient() {
                                             )}
                                         </AnimatePresence>
 
-                                        <motion.h1 
-                                            initial={{ y: 20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            transition={{ delay: 0.2 }}
-                                            className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-4 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] tracking-widest leading-tight uppercase"
-                                            style={{ fontFamily: 'Georgia, serif' }}
-                                        >
-                                            {currentLang === 'hi' ? (banners[activeBanner].title_hi || banners[activeBanner].title) : banners[activeBanner].title}
-                                        </motion.h1>
+                                        {/* Conditionally reveal text overlay */}
+                                        {banners[activeBanner].show_text_overlay !== false && (
+                                            <>
+                                                <motion.h1 
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.2 }}
+                                                    className="text-4xl md:text-6xl lg:text-7xl font-black text-white mb-4 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] tracking-widest leading-tight uppercase"
+                                                    style={{ fontFamily: 'Georgia, serif' }}
+                                                >
+                                                    {currentLang === 'hi' ? (banners[activeBanner].title_hi || banners[activeBanner].title) : banners[activeBanner].title}
+                                                </motion.h1>
 
-                                        <motion.p 
-                                            initial={{ y: 15, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            transition={{ delay: 0.4 }}
-                                            className="text-lg md:text-2xl text-white/90 drop-shadow-md mb-10 max-w-2xl font-light leading-relaxed"
-                                        >
-                                            {currentLang === 'hi' ? (banners[activeBanner].subtitle_hi || banners[activeBanner].subtitle) : banners[activeBanner].subtitle}
-                                        </motion.p>
+                                                <motion.p 
+                                                    initial={{ y: 15, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.4 }}
+                                                    className="text-lg md:text-2xl text-white/90 drop-shadow-md mb-10 max-w-2xl font-light leading-relaxed"
+                                                >
+                                                    {currentLang === 'hi' ? (banners[activeBanner].subtitle_hi || banners[activeBanner].subtitle) : banners[activeBanner].subtitle}
+                                                </motion.p>
 
-                                        <motion.div
-                                            initial={{ y: 20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            transition={{ delay: 0.6 }}
-                                            className="flex flex-col sm:flex-row gap-8 justify-center items-center"
-                                        >
-                                            <motion.a
-                                                href={banners[activeBanner].route?.startsWith('puja:')
-                                                    ? `/pooja-services/${banners[activeBanner].route.split(':')[1]}`
-                                                    : (banners[activeBanner].route || '/pooja-services')}
-                                                animate={{ scale: [1, 1.05, 1] }}
-                                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                                className="group/btn relative inline-flex items-center justify-center h-14 px-12 font-bold text-lg text-white rounded-full bg-gradient-to-r from-orange-500 to-red-600 shadow-2xl hover:scale-110 active:scale-95 transition-all"
-                                            >
-                                                <div className="absolute inset-0 rounded-full overflow-hidden">
-                                                    <FireParticles />
-                                                </div>
-                                                <span className="relative z-10 flex items-center gap-3">
-                                                    {currentLang === 'hi' ? "अभी बुक करें" : "BOOK NOW"}
-                                                    <ArrowRight className="w-6 h-6 transform group-hover/btn:translate-x-2 transition-transform" />
-                                                </span>
-                                            </motion.a>
+                                                <motion.div
+                                                    initial={{ y: 20, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.6 }}
+                                                    className="flex flex-col sm:flex-row gap-8 justify-center items-center"
+                                                >
+                                                    <motion.a
+                                                        href={banners[activeBanner].route?.startsWith('puja:')
+                                                            ? `/pooja-services/${banners[activeBanner].route.split(':')[1]}`
+                                                            : (banners[activeBanner].route || '/pooja-services')}
+                                                        animate={{ scale: [1, 1.05, 1] }}
+                                                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                                        className="group/btn relative inline-flex items-center justify-center h-14 px-12 font-bold text-lg text-white rounded-full bg-gradient-to-r from-orange-500 to-red-600 shadow-2xl hover:scale-110 active:scale-95 transition-all"
+                                                    >
+                                                        <div className="absolute inset-0 rounded-full overflow-hidden">
+                                                            <FireParticles />
+                                                        </div>
+                                                        <span className="relative z-10 flex items-center gap-3">
+                                                            {currentLang === 'hi' ? "अभी बुक करें" : "BOOK NOW"}
+                                                            <ArrowRight className="w-6 h-6 transform group-hover/btn:translate-x-2 transition-transform" />
+                                                        </span>
+                                                    </motion.a>
 
-                                            <Link
-                                                href="tel:+919876543210"
-                                                className="px-12 h-14 flex items-center justify-center rounded-full border-2 border-white/20 text-white font-bold hover:bg-white/10 transition-colors"
-                                            >
-                                                {currentLang === 'hi' ? "हमें कॉल करें" : "CALL US"}
-                                            </Link>
-                                        </motion.div>
+                                                    <Link
+                                                        href="tel:+919876543210"
+                                                        className="px-12 h-14 flex items-center justify-center rounded-full border-2 border-white/20 text-white font-bold hover:bg-white/10 transition-colors"
+                                                    >
+                                                        {currentLang === 'hi' ? "हमें कॉल करें" : "CALL US"}
+                                                    </Link>
+                                                </motion.div>
+                                            </>
+                                        )}
                                     </div>
                                 </motion.div>
                             ) : (
