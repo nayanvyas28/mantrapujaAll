@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Animated, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { Typography } from './ui/Typography';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +19,7 @@ const CARD_WIDTH = width - 48; // Exact banner width compatibility
 
 export const AstroSection = () => {
     const { colors, theme } = useTheme();
-    const { profile } = useAuth();
+    const { profile, user } = useAuth();
     const { t, i18n } = useTranslation();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
@@ -88,7 +88,20 @@ export const AstroSection = () => {
             <RNAnimatedView style={[styles.outerContainer, { opacity: fadeAnim }]}>
                 <TouchableOpacity 
                     activeOpacity={0.9}
-                    onPress={() => router.push('/onboarding-details')}
+                    onPress={() => {
+                        if (!user) {
+                            Alert.alert(
+                                t('common.login_required', 'Login Required'),
+                                t('common.login_msg', 'Please log in to discover your cosmic blueprint.'),
+                                [
+                                    { text: t('common.cancel', 'Cancel'), style: 'cancel' },
+                                    { text: t('common.login', 'Log In'), onPress: () => router.push('/login') }
+                                ]
+                            );
+                        } else {
+                            router.push('/onboarding-details');
+                        }
+                    }}
                     style={[styles.premiumCard, { backgroundColor: isDark ? '#1e293b' : '#ffffff', width: CARD_WIDTH, borderColor: colors.saffron + '30' }]}
                 >
                     <RNView style={styles.glowEffect} />
