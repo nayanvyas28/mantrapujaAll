@@ -19,8 +19,11 @@ import {
   Check,
   X,
   Disc,
-  Instagram
+  Instagram,
+  Menu,
+  Sparkles
 } from "lucide-react-native";
+import { Sidebar } from "../../components/Sidebar";
 import { SocialMediaModal } from "../../components/SocialMediaModal";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -122,6 +125,7 @@ export default function HomeScreen() {
   const [dailyAstro, setDailyAstro] = useState<string | null>(null);
 
   const [isSocialModalVisible, setIsSocialModalVisible] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
 
 
@@ -568,16 +572,24 @@ export default function HomeScreen() {
         ]}
       >
         <View style={styles.headerLeft}>
-          <Typography variant="h2" color={colors.foreground}>
-            {userName}
-          </Typography>
-          <Typography
-            variant="bodySmall"
-            color={colors.saffron}
-            style={{ marginTop: 4, fontWeight: "600" }}
+          <TouchableOpacity 
+            style={{ marginRight: 16, padding: 4 }} 
+            onPress={() => setIsSidebarVisible(true)}
           >
-            {spiritualSubheading}
-          </Typography>
+            <Menu size={28} color={colors.foreground} />
+          </TouchableOpacity>
+          <View>
+            <Typography variant="h2" color={colors.foreground}>
+              {userName}
+            </Typography>
+            <Typography
+              variant="bodySmall"
+              color={colors.saffron}
+              style={{ marginTop: 4, fontWeight: "600" }}
+            >
+              {spiritualSubheading}
+            </Typography>
+          </View>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconButton} onPress={handleLanguageChange}>
@@ -696,6 +708,15 @@ export default function HomeScreen() {
         </View>
 
         {/* Astro Section: Kundli & Know Yourself */}
+        {isGuest && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: -4, marginTop: 8 }}>
+            <Sparkles size={14} color={colors.saffron} />
+            <Typography variant="label" color={colors.saffron} style={{ marginLeft: 6, fontWeight: '900', letterSpacing: 1 }}>
+              FREE KUNDLI AVAILABLE
+            </Typography>
+            <Sparkles size={14} color={colors.saffron} style={{ marginLeft: 6 }} />
+          </View>
+        )}
         <AstroSection />
 
         {/* Daily Rashi Phal Section */}
@@ -1254,6 +1275,11 @@ export default function HomeScreen() {
           </RNTouchableOpacity>
         </RNModal>
       </ScrollView>
+
+      <Sidebar 
+        isVisible={isSidebarVisible} 
+        onClose={() => setIsSidebarVisible(false)} 
+      />
     </View>
   );
 }

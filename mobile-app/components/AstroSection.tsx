@@ -113,7 +113,7 @@ export const AstroSection = () => {
                     <RNView style={styles.textContainer}>
                         <RNView style={styles.badgeRow}>
                             <Sparkles size={12} color={colors.saffron} />
-                            <Typography variant="label" color={colors.saffron} style={styles.badgeText}>{t('kundli.unlock_destiny', 'UNLOCK DESTINY')}</Typography>
+                            <Typography variant="label" color={colors.saffron} style={styles.badgeText}>FREE KUNDLI</Typography>
                         </RNView>
                         <Typography variant="h3" color={colors.foreground}>{t('kundli.know_yourself', 'Know Your Self')}</Typography>
                         <Typography variant="bodySmall" color={colors.mutedForeground}>{t('kundli.discover_blueprint', 'Discover your cosmic blueprint.')}</Typography>

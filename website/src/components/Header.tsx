@@ -5,13 +5,9 @@ import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TranslationDropdown } from "./ui/TranslationDropdown";
-import { supabase } from "@/lib/supabaseClient";
 import { LogOut, User as UserIcon, LogIn } from "lucide-react";
 import TopBar from "./TopBar";
-
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, User as UserIcon, LogIn } from "lucide-react";
-import TopBar from "./TopBar";
 
 const Header = () => {
     const { user, signOut } = useAuth();

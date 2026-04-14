@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, Dimensions, Platform } from 'react-native';
-import { motion } from 'framer-motion'; // Actually using Animated for React Native
+import { View, StyleSheet, TouchableOpacity, Modal, Dimensions, Platform, AppState } from 'react-native';
 import { Animated, Easing } from 'react-native';
 import { Typography } from './ui/Typography';
 import { useTheme } from '../context/ThemeContext';
@@ -26,19 +25,32 @@ export const AuthUpsellPopup = () => {
       return;
     }
 
-    const checkPopupStatus = async () => {
-      try {
-        // Show after 3 seconds every time the app is launched if user is guest
+    const checkPopupStatus = () => {
+      // Show every session/launch for consistency in guest acquisition
+      setTimeout(() => {
+        if (!user) {
+          setIsVisible(true);
+          showPopup();
+        }
+      }, 3000);
+    };
+
+    // Listen for app coming to foreground
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active' && !user) {
+        // Re-trigger after delay on every foreground event
         setTimeout(() => {
           setIsVisible(true);
           showPopup();
-        }, 3000); // Reduced to 3s for better visibility
-      } catch (e) {
-        console.error('Error checking auth popup status', e);
+        }, 1500);
       }
-    };
+    });
 
     checkPopupStatus();
+
+    return () => {
+      subscription.remove();
+    };
   }, [user]);
 
   const showPopup = () => {

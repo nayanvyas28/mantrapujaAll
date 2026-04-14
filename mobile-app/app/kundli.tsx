@@ -37,9 +37,25 @@ export default function KundliScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
     const { t } = useTranslation();
-    const { profile } = useAuth();
+    const { profile, user } = useAuth();
     const insets = useSafeAreaInsets();
     const isDark = theme === 'dark';
+
+    // Protect Screen
+    useEffect(() => {
+        if (!user) {
+            Alert.alert(
+                t('common.login_required', 'Login Required'),
+                t('common.login_msg', 'Please log in to continue with your personalized Kundli.'),
+                [
+                    { text: t('common.cancel', 'Cancel'), onPress: () => router.back(), style: 'cancel' },
+                    { text: t('common.login', 'Log In'), onPress: () => router.replace('/login') }
+                ]
+            );
+        }
+    }, [user]);
+
+    if (!user) return null; // Prevent flicker before alert
 
     // Step state: 1 (Details), 2 (Ready to Generate), 3 (Report)
     const [step, setStep] = useState(1);

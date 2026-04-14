@@ -61,6 +61,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
+          href: null,
           title: t('tabs.profile', 'Profile'),
           tabBarIcon: ({ color }) => <UserRound size={24} color={color} />,
         }}

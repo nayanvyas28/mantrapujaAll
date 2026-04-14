@@ -20,18 +20,17 @@ export default function StickyAuthDrawer() {
             return;
         }
 
-        const checkStatus = () => {
-            const timer = setTimeout(() => {
+        // Trigger on every mount/page change for maximum guest capture
+        const timer = setTimeout(() => {
+            if (!user) {
                 setIsVisible(true);
-            }, 3000); // Reduced to 3s
-            return () => clearTimeout(timer);
-        };
+            }
+        }, 3000);
 
-        checkStatus();
+        return () => clearTimeout(timer);
     }, [user, loading, pathname]);
 
     const handleClose = () => {
-        localStorage.setItem(DRAWER_STORAGE_KEY, Date.now().toString());
         setIsVisible(false);
     };
 
