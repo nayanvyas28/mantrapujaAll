@@ -17,6 +17,8 @@ interface ReelPlayerProps {
     isActive: boolean;
     shouldLoad: boolean;
     thumbnail_url?: string;
+    isMuted: boolean;
+    onToggleMute: () => void;
 }
 
 // Utility to extract YouTube Video ID
@@ -52,12 +54,14 @@ export function ReelPlayer({
     category,
     isActive,
     shouldLoad,
-    thumbnail_url
+    thumbnail_url,
+    isMuted,
+    onToggleMute
 }: ReelPlayerProps) {
     const { colors } = useTheme();
     const videoRef = useRef<Video>(null);
+    const ytRef = useRef<any>(null);
     const [status, setStatus] = useState<any>({});
-    const [isMuted, setIsMuted] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [ytReady, setYtReady] = useState(false);
 
@@ -65,11 +69,16 @@ export function ReelPlayer({
     const isYoutube = !!youtubeId;
 
     useEffect(() => {
-        if (!isYoutube) {
-            if (!isActive && videoRef.current) {
-                videoRef.current.pauseAsync();
-            } else if (isActive && videoRef.current) {
+        if (isActive) {
+            if (isYoutube && ytRef.current) {
+                ytRef.current.seekTo(0, true);
+            } else if (!isYoutube && videoRef.current) {
+                videoRef.current.setPositionAsync(0);
                 videoRef.current.playAsync();
+            }
+        } else {
+            if (!isYoutube && videoRef.current) {
+                videoRef.current.pauseAsync();
             }
         }
     }, [isActive, isYoutube]);
@@ -114,10 +123,11 @@ export function ReelPlayer({
             >
                 {shouldLoad ? (
                     isYoutube ? (
-                        <View style={styles.video}>
+                        <View style={styles.youtubeContainer}>
                            <YoutubePlayer
+                                ref={ytRef}
                                 height={height}
-                                width={width}
+                                width={height * (16/9)} // Force width to match 16:9 aspect of screen height
                                 play={isActive}
                                 videoId={youtubeId!}
                                 onReady={() => setYtReady(true)}
@@ -126,7 +136,8 @@ export function ReelPlayer({
                                 webViewProps={{
                                     allowsInlineMediaPlayback: true,
                                     mediaPlaybackRequiresUserAction: false,
-                                    origin: 'https://www.youtube.com'
+                                    origin: 'https://www.youtube.com',
+                                    scrollEnabled: false,
                                 }}
                                 initialPlayerParams={{
                                     loop: true,
@@ -135,6 +146,9 @@ export function ReelPlayer({
                                     rel: false,
                                     cc_load_policy: 0,
                                     iv_load_policy: 3
+                                }}
+                                style={{
+                                    marginLeft: -(height * (16/9) - width) / 2, // Center the oversized player
                                 }}
                             />
                         </View>
@@ -192,7 +206,7 @@ export function ReelPlayer({
                     </TouchableOpacity>
                     <TouchableOpacity 
                         style={styles.iconButton} 
-                        onPress={() => setIsMuted(!isMuted)}
+                        onPress={onToggleMute}
                     >
                         {isMuted ? <VolumeX size={26} color="#ffffff" /> : <Volume2 size={26} color="#ffffff" />}
                     </TouchableOpacity>
@@ -251,6 +265,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    youtubeContainer: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#000',
+        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     loadingOverlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: 'center',
@@ -261,6 +282,7 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         padding: 20,
         justifyContent: 'flex-end',
+        zIndex: 10,
     },
     rightButtons: {
         position: 'absolute',

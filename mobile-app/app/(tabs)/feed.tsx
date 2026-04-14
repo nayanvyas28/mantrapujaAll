@@ -41,6 +41,7 @@ export default function FeedScreen() {
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
+    const [isMuted, setIsMuted] = useState(false);
 
     const fetchReels = async (isRefresh = false) => {
         if (isRefresh) setIsRefreshing(true);
@@ -93,9 +94,11 @@ export default function FeedScreen() {
                 isActive={isActive}
                 shouldLoad={shouldLoad}
                 thumbnail_url={item.thumbnail_url}
+                isMuted={isMuted}
+                onToggleMute={() => setIsMuted(prev => !prev)}
             />
         );
-    }, [activeIndex, t]);
+    }, [activeIndex, isMuted, t]);
 
     if (isLoading && !isRefreshing) {
         return (
