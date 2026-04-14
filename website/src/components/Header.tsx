@@ -9,31 +9,20 @@ import { supabase } from "@/lib/supabaseClient";
 import { LogOut, User as UserIcon, LogIn } from "lucide-react";
 import TopBar from "./TopBar";
 
+import { useAuth } from "@/context/AuthContext";
+import { LogOut, User as UserIcon, LogIn } from "lucide-react";
+import TopBar from "./TopBar";
+
 const Header = () => {
+    const { user, signOut } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const [user, setUser] = useState<any>(null);
-
-    // Track Auth Session
-    useEffect(() => {
-        const getInitialSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
-        };
-        getInitialSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await signOut();
         setIsMenuOpen(false);
         router.push('/');
     };

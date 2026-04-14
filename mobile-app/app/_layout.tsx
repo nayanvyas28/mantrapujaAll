@@ -11,6 +11,7 @@ import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { MarketingPopup } from '../components/MarketingPopup';
+import { AuthUpsellPopup } from '../components/AuthUpsellPopup';
 import '../utils/i18n'; // Initialize i18next
 
 function RootLayoutContent() {
@@ -37,6 +38,7 @@ function RootLayoutContent() {
 
       <GuruFloatingButton />
       <MarketingPopup />
+      <AuthUpsellPopup />
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
     </RNView>
   );

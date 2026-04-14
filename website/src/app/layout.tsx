@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Find and book the right Pooja for every purpose. Authentic Vedic rituals at your home.",
 };
 
+import { AuthProvider } from "@/context/AuthContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,9 +38,11 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <ClientLayout>
-            {children}
-          </ClientLayout>
+          <AuthProvider>
+            <ClientLayout>
+              {children}
+            </ClientLayout>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

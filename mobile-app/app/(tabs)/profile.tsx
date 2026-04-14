@@ -7,6 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { Footer } from '../../components/ui/Footer';
 import {
+    LogIn,
     LogOut,
     Ticket,
     BellRing,
@@ -119,24 +120,47 @@ export default function ProfileTabScreen() {
             <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-                {/* Profile Header */}
-                <View style={styles.header}>
-                    {profile?.onboarding_data?.avatar_url ? (
-                        <Image source={{ uri: profile.onboarding_data.avatar_url }} style={[styles.profileAvatar, { borderColor: colors.saffron, borderWidth: 2 }]} />
-                    ) : (
-                        <View style={[styles.profileAvatar, { borderColor: colors.saffron, borderWidth: 2 }]}>
-                            <Typography variant="h1" color="#ffffff">{name.charAt(0)}</Typography>
+                {/* Guest Login Banner (New) */}
+                {isGuest && (
+                    <TouchableOpacity 
+                        style={[styles.guestCard, { backgroundColor: colors.saffron + '15' }]}
+                        onPress={() => router.replace('/login')}
+                    >
+                        <View style={styles.guestCardContent}>
+                            <View style={[styles.loginIconCircle, { backgroundColor: colors.saffron }]}>
+                                <LogIn size={24} color="#fff" />
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 16 }}>
+                                <Typography variant="h2" color={colors.foreground}>Sign In for Sacred Access</Typography>
+                                <Typography variant="body" color={colors.mutedForeground} style={{ fontSize: 13, marginTop: 2 }}>
+                                    Save your rituals, sync birth data, and access your sacred wallet across devices.
+                                </Typography>
+                            </View>
+                            <ChevronRight size={20} color={colors.saffron} />
                         </View>
-                    )}
-                    <View style={styles.profileInfo}>
-                        <TouchableOpacity onPress={() => handleProtectedNavigation('/profile/edit')} style={styles.nameRow}>
-                            <Typography variant="h2" color={colors.foreground}>
-                                {name}
-                            </Typography>
-                            {!isGuest && <User size={16} color={colors.saffron} style={{ marginLeft: 8 }} />}
-                        </TouchableOpacity>
+                    </TouchableOpacity>
+                )}
+
+                {/* Profile Header */}
+                {!isGuest && (
+                    <View style={styles.header}>
+                        {profile?.onboarding_data?.avatar_url ? (
+                            <Image source={{ uri: profile.onboarding_data.avatar_url }} style={[styles.profileAvatar, { borderColor: colors.saffron, borderWidth: 2 }]} />
+                        ) : (
+                            <View style={[styles.profileAvatar, { borderColor: colors.saffron, borderWidth: 2 }]}>
+                                <Typography variant="h1" color="#ffffff">{name.charAt(0)}</Typography>
+                            </View>
+                        )}
+                        <View style={styles.profileInfo}>
+                            <TouchableOpacity onPress={() => handleProtectedNavigation('/profile/edit')} style={styles.nameRow}>
+                                <Typography variant="h2" color={colors.foreground}>
+                                    {name}
+                                </Typography>
+                                {!isGuest && <User size={16} color={colors.saffron} style={{ marginLeft: 8 }} />}
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
+                )}
 
 
                 {/* Account Settings */}
@@ -389,5 +413,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 12,
+    },
+    guestCard: {
+        padding: 24,
+        borderRadius: 32,
+        marginBottom: 30,
+        borderWidth: 1,
+        borderColor: 'rgba(249, 115, 22, 0.2)',
+    },
+    guestCardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    loginIconCircle: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        alignItems: 'center',
+        justifyContent: 'center',
     }
 });

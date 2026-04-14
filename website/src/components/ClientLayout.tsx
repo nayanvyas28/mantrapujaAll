@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import VisualEditorOverlay from "@/components/admin/VisualEditorOverlay";
 import PromoPopup from "@/components/PromoPopup";
+import StickyAuthDrawer from "@/components/StickyAuthDrawer";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
     return (
