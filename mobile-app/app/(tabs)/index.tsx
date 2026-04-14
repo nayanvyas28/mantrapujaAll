@@ -929,7 +929,7 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                   style={{
                     width: isFullWidth ? "100%" : "48%",
-                    marginTop: index > 1 ? 16 : 0,
+                    marginTop: index > 1 ? 12 : 0,
                   }}
                   onPress={() => router.push(`/pujas/${puja.id}`)}
                 >
@@ -1375,8 +1375,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionHeader: {
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 12,
+    marginBottom: 4,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
@@ -1386,7 +1386,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   seeAllButton: {
     flexDirection: "row",
@@ -1395,7 +1395,7 @@ const styles = StyleSheet.create({
   productsHorizontalScroll: {
     marginLeft: -24,
     paddingLeft: 24,
-    marginBottom: 20,
+    marginBottom: 12,
   },
   productCardWrapper: {
     width: 160,

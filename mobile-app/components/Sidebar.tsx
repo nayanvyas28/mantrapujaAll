@@ -23,7 +23,8 @@ import {
   Shield,
   CircleHelp,
   Sparkles,
-  Clock
+  Clock,
+  Flame
 } from 'lucide-react-native';
 import { Typography } from './ui/Typography';
 import { useTheme } from '../context/ThemeContext';
@@ -41,7 +42,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
   const { theme, colors, toggleTheme } = useTheme();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, loading } = useAuth();
   const { balance } = useWallet();
   const router = useRouter();
   
@@ -146,33 +147,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
                   <User size={32} color={colors.saffron} />
                 )}
               </View>
-              <View style={styles.userInfo}>
+            <View style={styles.userInfo}>
                 <Typography variant="h3" color={colors.foreground} numberOfLines={1}>
                   {profile?.full_name || user?.email?.split('@')[0] || 'Guest User'}
                 </Typography>
                 <Typography variant="label" color={colors.mutedForeground} numberOfLines={1}>
-                  {user?.email || 'Sign in to sync data'}
+                  {user ? (user.email || 'Verified Account') : (loading ? 'Loading...' : 'Sign in to sync data')}
                 </Typography>
+            </View>
+          </View>
+          <TouchableOpacity onPress={onClose} style={[styles.closeBtn, { marginTop: 8 }]}>
+            <X size={24} color={colors.foreground} />
+          </TouchableOpacity>
+        </View>
+
+          {/* Stats Section: Coins & Streak */}
+          <View style={styles.statsRow}>
+            {/* Puja Coins */}
+            <TouchableOpacity 
+              style={[styles.statItem, { backgroundColor: colors.saffron }]}
+              onPress={() => handleNavigate('/wallet')}
+            >
+              <View style={styles.statIconBox}>
+                  <Wallet size={18} color={colors.saffron} />
+              </View>
+              <View>
+                <Typography variant="h4" color="#fff" style={{ fontWeight: 'bold' }}>{balance}</Typography>
+                <Typography variant="label" color="#fff" style={{ opacity: 0.8, fontSize: 10 }}>Puja Coins</Typography>
+              </View>
+            </TouchableOpacity>
+
+            {/* Daily Streak */}
+            <View style={[styles.statItem, { backgroundColor: colors.saffron + '15', borderWidth: 1, borderColor: colors.saffron + '20' }]}>
+              <View style={[styles.statIconBox, { backgroundColor: colors.saffron }]}>
+                  <Flame size={18} color="#fff" />
+              </View>
+              <View>
+                <Typography variant="h4" color={colors.foreground} style={{ fontWeight: 'bold' }}>{profile?.onboarding_data?.login_streak || 1}</Typography>
+                <Typography variant="label" color={colors.mutedForeground} style={{ fontSize: 10 }}>Days Streak</Typography>
               </View>
             </View>
-            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-              <X size={24} color={colors.foreground} />
-            </TouchableOpacity>
           </View>
-
-          {/* Wallet Balance Card */}
-          <TouchableOpacity 
-            style={[styles.walletCard, { backgroundColor: colors.saffron }]}
-            onPress={() => handleNavigate('/wallet')}
-          >
-            <View>
-              <Typography variant="label" color="#fff" style={{ opacity: 0.8 }}>Available Balance</Typography>
-              <Typography variant="h2" color="#fff" style={{ marginTop: 2 }}>{balance} Coins</Typography>
-            </View>
-            <View style={styles.walletIconBox}>
-                <Wallet size={24} color={colors.saffron} />
-            </View>
-          </TouchableOpacity>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.section}>
@@ -249,8 +264,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 24,
+    paddingTop: 50,
+    paddingBottom: 20,
   },
   profileSection: {
     flexDirection: 'row',
@@ -277,29 +292,34 @@ const styles = StyleSheet.create({
   closeBtn: {
     padding: 8,
   },
-  walletCard: {
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
     marginHorizontal: 20,
     marginBottom: 24,
-    borderRadius: 24,
-    padding: 20,
+  },
+  statItem: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  walletIconBox: {
-    width: 44,
-    height: 44,
+  statIconBox: {
+    width: 32,
+    height: 32,
     backgroundColor: '#fff',
-    borderRadius: 14,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 10,
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontWeight: '900',
@@ -311,8 +331,8 @@ const styles = StyleSheet.create({
   navItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    marginBottom: 4,
+    paddingVertical: 10,
+    marginBottom: 2,
   },
   iconBox: {
     width: 40,
