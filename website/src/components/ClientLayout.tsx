@@ -86,6 +86,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
             </Suspense>
 
             <PromoPopup />
+            <StickyAuthDrawer />
 
             {!pathname?.startsWith('/kundli') && <Header />}
             <main className={`flex-1 ${pathname?.startsWith('/kundli') ? 'bg-black' : ''}`} id="website-content-root">

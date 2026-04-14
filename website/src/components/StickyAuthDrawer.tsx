@@ -21,16 +21,10 @@ export default function StickyAuthDrawer() {
         }
 
         const checkStatus = () => {
-            const lastSeen = localStorage.getItem(DRAWER_STORAGE_KEY);
-            const now = Date.now();
-
-            // Show after 5 seconds if not seen in last 6 hours
-            if (!lastSeen || now - parseInt(lastSeen) > 6 * 60 * 60 * 1000) {
-                const timer = setTimeout(() => {
-                    setIsVisible(true);
-                }, 5000);
-                return () => clearTimeout(timer);
-            }
+            const timer = setTimeout(() => {
+                setIsVisible(true);
+            }, 3000); // Reduced to 3s
+            return () => clearTimeout(timer);
         };
 
         checkStatus();

@@ -28,16 +28,11 @@ export const AuthUpsellPopup = () => {
 
     const checkPopupStatus = async () => {
       try {
-        const lastSeen = await AsyncStorage.getItem(POPUP_STORAGE_KEY);
-        const now = Date.now();
-        
-        // Show after 10 seconds if not seen in the last 12 hours
-        if (!lastSeen || now - parseInt(lastSeen) > 12 * 60 * 60 * 1000) {
-          setTimeout(() => {
-            setIsVisible(true);
-            showPopup();
-          }, 10000); // 10s delay
-        }
+        // Show after 3 seconds every time the app is launched if user is guest
+        setTimeout(() => {
+          setIsVisible(true);
+          showPopup();
+        }, 3000); // Reduced to 3s for better visibility
       } catch (e) {
         console.error('Error checking auth popup status', e);
       }
