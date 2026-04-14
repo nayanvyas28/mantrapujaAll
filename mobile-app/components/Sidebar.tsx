@@ -177,9 +177,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.section}>
               <Typography variant="label" color={colors.mutedForeground} style={styles.sectionTitle}>PERSONAL</Typography>
-              <NavItem icon={User} label="My Profile" route="/(tabs)/profile" />
-              <NavItem icon={Clock} label="My Bookings" route="/history" />
-              <NavItem icon={Shield} label="Account Security" route="/security" />
+              <NavItem icon={User} label="My Profile" route="/profile" />
+              <NavItem icon={Clock} label="My Bookings" route="/profile/bookings" />
+              <NavItem icon={Shield} label="Account Security" route="/profile/legal" />
             </View>
 
             <View style={styles.section}>
@@ -199,7 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isVisible, onClose }) => {
                    <View style={[styles.toggleThumb, { left: theme === 'dark' ? 22 : 2 }]} />
                 </View>
               </TouchableOpacity>
-              <NavItem icon={CircleHelp} label="Help & Support" route="/support" />
+              <NavItem icon={CircleHelp} label="Help & Support" route="/profile/support" />
               <NavItem icon={Sparkles} label="Rate Application" showArrow={false} />
             </View>
 

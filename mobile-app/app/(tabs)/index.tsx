@@ -58,6 +58,7 @@ import { supabase } from "../../utils/supabase";
 
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
+import { useSidebar } from "../../context/SidebarContext";
 import { useGuruAssistant } from "../../context/GuruAssistantContext";
 import { useWallet } from "../../context/WalletContext";
 import { AstroSection } from "../../components/AstroSection";
@@ -66,6 +67,7 @@ import { AstroSection } from "../../components/AstroSection";
 export default function HomeScreen() {
   const router = useRouter();
   const { theme, colors, toggleTheme } = useTheme();
+  const { openSidebar } = useSidebar();
   const { user, profile } = useAuth(); // dynamically get auth state
   const { t, i18n } = useTranslation();
   const { handleScroll } = useGuruAssistant();
@@ -94,7 +96,7 @@ export default function HomeScreen() {
   const userRashi = profile?.onboarding_data?.rashi?.name || null;
 
   const { width } = Dimensions.get("window");
-  const bannerWidth = width - 48; // screen width minus horizontal padding
+  const bannerWidth = width ; // Fill entire screen width
   const [activeBanner, setActiveBanner] = useState(0);
   const bannerScrollRef = useRef<ScrollView>(null);
 
@@ -125,7 +127,6 @@ export default function HomeScreen() {
   const [dailyAstro, setDailyAstro] = useState<string | null>(null);
 
   const [isSocialModalVisible, setIsSocialModalVisible] = useState(false);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
 
 
 
@@ -571,23 +572,22 @@ export default function HomeScreen() {
           },
         ]}
       >
-        <View style={styles.headerLeft}>
+        <View style={[styles.headerLeft, { flexDirection: 'row', alignItems: 'center' }]}>
           <TouchableOpacity 
-            style={{ marginRight: 16, padding: 4 }} 
-            onPress={() => setIsSidebarVisible(true)}
+            style={[styles.iconButton, { marginLeft: -10, marginRight: 10 }]} 
+            onPress={openSidebar}
           >
-            <Menu size={28} color={colors.foreground} />
+            <Menu size={24} color={colors.foreground} />
           </TouchableOpacity>
-          <View>
-            <Typography variant="h2" color={colors.foreground}>
-              {userName}
-            </Typography>
-            <Typography
-              variant="bodySmall"
-              color={colors.saffron}
-              style={{ marginTop: 4, fontWeight: "600" }}
+          <View style={{ flex: 1 }}>
+            <Typography 
+              variant="h2" 
+              color={colors.foreground} 
+              style={{ fontSize: 20 }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
             >
-              {spiritualSubheading}
+              {userName}
             </Typography>
           </View>
         </View>
@@ -631,7 +631,7 @@ export default function HomeScreen() {
             }}
             scrollEventThrottle={16}
             decelerationRate="fast"
-            snapToInterval={bannerWidth + 16} // width + margin
+            snapToInterval={bannerWidth} // width of one banner
             style={styles.bannerScroll}
           >
             {activeBannersSource.map((banner, index) => (
@@ -708,34 +708,25 @@ export default function HomeScreen() {
         </View>
 
         {/* Astro Section: Kundli & Know Yourself */}
-        {isGuest && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: -4, marginTop: 8 }}>
-            <Sparkles size={14} color={colors.saffron} />
-            <Typography variant="label" color={colors.saffron} style={{ marginLeft: 6, fontWeight: '900', letterSpacing: 1 }}>
-              FREE KUNDLI AVAILABLE
-            </Typography>
-            <Sparkles size={14} color={colors.saffron} style={{ marginLeft: 6 }} />
-          </View>
-        )}
         <AstroSection />
 
         {/* Daily Rashi Phal Section */}
         {!isGuest && userRashi && dailyAstro && (
-          <TouchableOpacity
-            style={{ marginHorizontal: 0, marginBottom: 24 }}
-            activeOpacity={0.9}
-            onPress={() => router.push('/horoscope' as any)}
-          >
-            <Card
-              variant="solid"
-              style={{
-                padding: 20,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: colors.saffron + '30',
-                backgroundColor: theme === 'dark' ? colors.card : '#fffaf0'
-              }}
+            <TouchableOpacity
+              style={{ marginHorizontal: 0, marginBottom: 16 }}
+              activeOpacity={0.9}
+              onPress={() => router.push('/horoscope' as any)}
             >
+              <Card
+                variant="solid"
+                style={{
+                  padding: 20,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: colors.saffron + '30',
+                  backgroundColor: theme === 'dark' ? colors.card : '#fffaf0'
+                }}
+              >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
@@ -751,9 +742,7 @@ export default function HomeScreen() {
                 <ArrowRight size={20} color={colors.mutedForeground} style={{ marginTop: 12 }} />
               </View>
 
-              <Typography variant="body" color={theme === 'dark' ? colors.mutedForeground : '#334155'} style={{ lineHeight: 24 }} numberOfLines={3}>
-                {dailyAstro.replace('[Mock Data] ', '')}
-              </Typography>
+
             </Card>
           </TouchableOpacity>
         )}
@@ -1275,20 +1264,18 @@ export default function HomeScreen() {
           </RNTouchableOpacity>
         </RNModal>
       </ScrollView>
-
-      <Sidebar 
-        isVisible={isSidebarVisible} 
-        onClose={() => setIsSidebarVisible(false)} 
-      />
     </View>
   );
 }
+
+const { width } = Dimensions.get("window");
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
-    paddingBottom: 100,
+    padding: 20,
+    paddingBottom: 80,
   },
   header: {
     flexDirection: "row",
@@ -1306,7 +1293,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12, // Reduced gap for more icons
+    gap: 8,
   },
   iconButton: {
     padding: 4,
@@ -1314,14 +1301,15 @@ const styles = StyleSheet.create({
   },
 
   bannerWrapper: {
-    marginBottom: 24,
+    marginTop: -20,
+    marginHorizontal: -20,
+    marginBottom: 16,
   },
   bannerScroll: {
     overflow: "visible",
   },
   bannerContainer: {
-    marginRight: 16,
-    borderRadius: 12,
+    width: width,
     overflow: "hidden",
     shadowColor: "#f97316",
     shadowOffset: { width: 0, height: 8 },
@@ -1346,7 +1334,7 @@ const styles = StyleSheet.create({
   },
   bannerBg: {
     width: "100%",
-    height: 140,
+    height: 125,
   },
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1360,7 +1348,7 @@ const styles = StyleSheet.create({
   quickActionsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   actionItem: {
     alignItems: "center",
@@ -1387,8 +1375,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionHeader: {
-    marginTop: 24, // Reduced from 40
-    marginBottom: 12,
+    marginTop: 16,
+    marginBottom: 8,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
@@ -1398,7 +1386,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   seeAllButton: {
     flexDirection: "row",
@@ -1407,7 +1395,7 @@ const styles = StyleSheet.create({
   productsHorizontalScroll: {
     marginLeft: -24,
     paddingLeft: 24,
-    marginBottom: 32,
+    marginBottom: 20,
   },
   productCardWrapper: {
     width: 160,
@@ -1506,7 +1494,7 @@ const styles = StyleSheet.create({
   },
   blogGrid: {
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   blogRowCard: {
     flexDirection: "row",

@@ -4,6 +4,19 @@ import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../context/ThemeContext';
+import { SidebarProvider, useSidebar } from '../../context/SidebarContext';
+import { Sidebar } from '../../components/Sidebar';
+import { View } from 'react-native';
+
+function SidebarWrapper({ children }: { children: React.ReactNode }) {
+  const { isSidebarOpen, closeSidebar } = useSidebar();
+  return (
+    <View style={{ flex: 1 }}>
+      {children}
+      <Sidebar isVisible={isSidebarOpen} onClose={closeSidebar} />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { theme, colors: themeColors } = useTheme();
@@ -11,7 +24,9 @@ export default function TabLayout() {
   const { t } = useTranslation();
 
   return (
-    <Tabs
+    <SidebarProvider>
+      <SidebarWrapper>
+        <Tabs
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: 'transparent' },
@@ -67,5 +82,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+      </SidebarWrapper>
+    </SidebarProvider>
   );
 }

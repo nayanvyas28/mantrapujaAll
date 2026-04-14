@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { AlarmClock, Bell, Calendar, ChevronDown, FileText, Heart, MessageCircle, Moon, MoreVertical, Pause, Play, Repeat, Share2, Shuffle, SkipBack, SkipForward, Sun, X, Instagram } from 'lucide-react-native';
+import { AlarmClock, Bell, Calendar, ChevronDown, FileText, Heart, MessageCircle, Moon, MoreVertical, Pause, Play, Repeat, Share2, Shuffle, SkipBack, SkipForward, Sun, X, Instagram, Menu } from 'lucide-react-native';
 import { SocialMediaModal } from '../../components/SocialMediaModal';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,7 @@ import YoutubePlayer from "react-native-youtube-iframe";
 import { AlarmPickerModal } from '../../components/AlarmPickerModal';
 import { Typography } from "../../components/ui/Typography";
 import { useTheme } from '../../context/ThemeContext';
+import { useSidebar } from '../../context/SidebarContext';
 import { alarmService } from '../../services/AlarmService';
 import { supabase } from '../../utils/supabase';
 
@@ -19,6 +20,7 @@ import { getLocalized } from '../../utils/translation';
 
 export default function MusicScreen() {
     const { theme, colors, toggleTheme } = useTheme();
+    const { openSidebar } = useSidebar();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
@@ -351,17 +353,24 @@ export default function MusicScreen() {
                     },
                 ]}
             >
-                <View style={styles.headerLeft}>
-                    <Typography variant="h2" color={colors.foreground}>
-                        {t("music.title", "Divine Music")}
-                    </Typography>
-                    <Typography
-                        variant="bodySmall"
-                        color={colors.saffron}
-                        style={{ marginTop: 4, fontWeight: "600" }}
+                <View style={[styles.headerLeft, { flexDirection: 'row', alignItems: 'center' }]}>
+                    <TouchableOpacity 
+                        style={[styles.iconButton, { marginLeft: -10, marginRight: 10 }]} 
+                        onPress={openSidebar}
                     >
-                        {spiritualSubheading}
-                    </Typography>
+                        <Menu size={24} color={colors.foreground} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Typography 
+                            variant="h2" 
+                            color={colors.foreground} 
+                            style={{ fontSize: 20 }}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                        >
+                            {t("music.title", "Divine Music")}
+                        </Typography>
+                    </View>
                 </View>
                 <View style={styles.headerRight}>
                     <TouchableOpacity
@@ -748,7 +757,7 @@ const styles = StyleSheet.create({
     headerRight: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 16,
+        gap: 8,
     },
     iconButton: {
         padding: 4,
