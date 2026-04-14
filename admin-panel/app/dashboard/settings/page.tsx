@@ -164,10 +164,8 @@ export default function AISettingsPage() {
                             <Bot className="w-8 h-8 text-blue-400" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                                AI Configuration
-                            </h1>
-                            <p className="text-gray-400">Securely manage your Gemini API credentials and models for Guru AI.</p>
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Guru AI Configuration</h2>
+                            <p className="text-gray-400">Securely manage your AI Engine credentials and models for Guru AI.</p>
                         </div>
                     </div>
                 </header>
@@ -183,8 +181,8 @@ export default function AISettingsPage() {
                                 {/* API Key Section */}
                                 <div>
                                     <div className="flex justify-between items-end mb-2">
-                                        <label className="block text-sm font-bold text-gray-400 uppercase tracking-wider">
-                                            Google Gemini API Key
+                                        <label className="block text-sm font-medium text-gray-400 mb-2">
+                                            Guru AI Engine API Key
                                         </label>
                                         <button
                                             type="button"

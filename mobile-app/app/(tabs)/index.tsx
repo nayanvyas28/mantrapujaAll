@@ -617,6 +617,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={(e: any) => handleScroll(e.nativeEvent.contentOffset.y)}
+        style={{ backgroundColor: 'transparent' }}
       >
         {/* Scrollable Banner */}
         <View style={styles.bannerWrapper}>

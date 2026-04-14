@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Compass, Flame, Home, Music, UserRound } from 'lucide-react-native';
+import { Compass, Flame, Home, Music, PlayCircle, UserRound } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,6 +57,13 @@ export default function TabLayout() {
         options={{
           title: t('tabs.pujas', 'Pooja'),
           tabBarIcon: ({ color }) => <Flame size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="feed"
+        options={{
+          title: t('tabs.feed', 'Feed'),
+          tabBarIcon: ({ color }) => <PlayCircle size={28} color={color} />,
         }}
       />
       <Tabs.Screen

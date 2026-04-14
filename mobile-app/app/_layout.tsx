@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import 'react-native-reanimated';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Type-safe alias for React 19/Expo 54 compatibility
 const RNView = View as any;
@@ -26,7 +27,11 @@ function RootLayoutContent() {
         </RNView>
       )}
       
-      <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+      <Stack screenOptions={{ 
+        headerShown: false, 
+        animation: 'fade',
+        contentStyle: { backgroundColor: 'transparent' } 
+      }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="guru-ai" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="intro" />
@@ -49,14 +54,16 @@ import { WalletProvider } from '../context/WalletContext';
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <WalletProvider>
-          <GuruAssistantProvider>
-            <RootLayoutContent />
-          </GuruAssistantProvider>
-        </WalletProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AuthProvider>
+          <WalletProvider>
+            <GuruAssistantProvider>
+              <RootLayoutContent />
+            </GuruAssistantProvider>
+          </WalletProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

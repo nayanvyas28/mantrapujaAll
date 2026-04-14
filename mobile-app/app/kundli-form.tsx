@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Calendar, ChevronLeft, Clock, MapPin, Sparkles, User, MessageCircle } from 'lucide-react-native';
+import { Calendar, ChevronLeft, Clock, MapPin, Flame, User, MessageCircle } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
     ScrollView,
@@ -86,7 +86,7 @@ export default function KundliFormScreen() {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.infoBox}>
-                    <Sparkles size={20} color={colors.saffron} />
+                    <Flame size={20} color={colors.saffron} />
                     <Typography variant="bodySmall" color={colors.mutedForeground} style={styles.infoText}>
                         Please provide accurate details for a precise celestial analysis by GuruJi AI.
                     </Typography>
