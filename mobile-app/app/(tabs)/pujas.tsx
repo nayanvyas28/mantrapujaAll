@@ -11,7 +11,8 @@ import {
   CircleX,
   Stars,
   Sun,
-  Instagram
+  Instagram,
+  Menu
 } from "lucide-react-native";
 import { SocialMediaModal } from "../../components/SocialMediaModal";
 import React, { useCallback, useEffect, useState } from "react";
@@ -33,6 +34,7 @@ import { Footer } from "../../components/ui/Footer";
 import { Typography } from "../../components/ui/Typography";
 import { useGuruAssistant } from "../../context/GuruAssistantContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useSidebar } from "../../context/SidebarContext";
 import { getImageSource } from "../../utils/imageResolver";
 import { sanitizeData } from "../../utils/sanitizer";
 import { supabase } from "../../utils/supabase";
@@ -41,6 +43,7 @@ import { getLocalized } from "../../utils/translation";
 export default function PujasTabScreen() {
   const router = useRouter();
   const { theme, colors, toggleTheme } = useTheme();
+  const { openSidebar } = useSidebar();
   const { handleScroll } = useGuruAssistant();
   const { t } = useTranslation();
 
@@ -217,17 +220,24 @@ export default function PujasTabScreen() {
           },
         ]}
       >
-        <View style={styles.headerLeft}>
-          <Typography variant="h2" color={colors.foreground}>
-            {t("pujas.title", "Divine Pujas")}
-          </Typography>
-          <Typography
-            variant="bodySmall"
-            color={colors.saffron}
-            style={{ marginTop: 4, fontWeight: "600" }}
+        <View style={[styles.headerLeft, { flexDirection: 'row', alignItems: 'center' }]}>
+          <TouchableOpacity 
+            style={[styles.iconButton, { marginLeft: -10, marginRight: 10 }]} 
+            onPress={openSidebar}
           >
-            {spiritualSubheading}
-          </Typography>
+            <Menu size={24} color={colors.foreground} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Typography 
+              variant="h2" 
+              color={colors.foreground} 
+              style={{ fontSize: 20 }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {t("pujas.title", "Divine Pujas")}
+            </Typography>
+          </View>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity
@@ -414,14 +424,6 @@ export default function PujasTabScreen() {
                           >
                             {getLocalized(puja, 'name')}
                           </Typography>
-                          <Typography
-                            variant="bodySmall"
-                            color={colors.mutedForeground}
-                            numberOfLines={2}
-                            style={{ marginTop: 4 }}
-                          >
-                            {getLocalized(puja, 'tagline') || getLocalized(puja, 'about_description')}
-                          </Typography>
                           <View
                             style={{
                               flexDirection: "row",
@@ -429,8 +431,8 @@ export default function PujasTabScreen() {
                               marginTop: 12,
                             }}
                           >
-                            <Typography variant="label" color={colors.saffron}>
-                              View Details
+                            <Typography variant="bodySmall" color={colors.saffron}>
+                              {t("common.view_details", "View Details")}
                             </Typography>
                             <ArrowRight
                               size={14}
@@ -577,7 +579,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 8,
   },
   iconButton: {
     padding: 4,

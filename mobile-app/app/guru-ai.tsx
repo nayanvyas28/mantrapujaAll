@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ChevronLeft, ClipboardList, Crown, Mic, Send, Sparkles, Star, Users, Instagram, Youtube, Share2, User, Calendar, Clock, MapPin } from 'lucide-react-native';
+import { ChevronLeft, ClipboardList, Crown, Mic, Send, Flame, Star, Users, Instagram, Youtube, Share2, User, Calendar, Clock, MapPin } from 'lucide-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Modal, Linking, Share, Dimensions, Keyboard } from 'react-native';
@@ -547,7 +547,7 @@ export default function GuruAIScreen() {
                         onPress={startNewChat}
                         style={styles.resetBtn}
                     >
-                        <Sparkles size={18} color={colors.saffron} />
+                        <Flame size={18} color={colors.saffron} />
                     </TouchableOpacity>
                 </RNView>
             </RNView>
@@ -626,7 +626,7 @@ export default function GuruAIScreen() {
                                         onPress={() => loadSessionMessages(session.id)}
                                     >
                                         <RNView style={styles.historyIcon}>
-                                            <Sparkles size={16} color={colors.saffron} />
+                                            <Flame size={16} color={colors.saffron} />
                                         </RNView>
                                         <RNView style={{ flex: 1 }}>
                                             <Typography variant="body" color={colors.foreground} numberOfLines={1} style={{ fontWeight: '600' }}>
@@ -730,7 +730,7 @@ export default function GuruAIScreen() {
                             <RNView style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderMuted, borderRadius: 20, padding: 16, marginTop: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, width: '100%' }}>
                                 <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                                     <RNView style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
-                                        <Sparkles size={16} color={colors.saffron} />
+                                        <Flame size={16} color={colors.saffron} />
                                     </RNView>
                                     <Typography variant="h3" color={colors.foreground} style={{ fontSize: 16 }}>Confirm Details</Typography>
                                 </RNView>

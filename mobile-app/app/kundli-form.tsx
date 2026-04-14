@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Calendar, ChevronLeft, Clock, MapPin, Sparkles, User, MessageCircle } from 'lucide-react-native';
+import { Calendar, ChevronLeft, Clock, MapPin, Flame, User, MessageCircle } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
     ScrollView,
@@ -9,17 +9,36 @@ import {
     TouchableOpacity,
     View,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    Alert
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card } from '../components/ui/Card';
 import { Typography } from '../components/ui/Typography';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 
 export default function KundliFormScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
+    const { profile, user } = useAuth();
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
+
+    // Protect Screen
+    React.useEffect(() => {
+        if (!user) {
+            Alert.alert(
+                t('common.login_required', 'Login Required'),
+                t('common.login_msg', 'Please log in to share your details for a celestial analysis.'),
+                [
+                    { text: t('common.cancel', 'Cancel'), onPress: () => router.back(), style: 'cancel' },
+                    { text: t('common.login', 'Log In'), onPress: () => router.replace('/login') }
+                ]
+            );
+        }
+    }, [user]);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -28,6 +47,8 @@ export default function KundliFormScreen() {
         time: '',
         place: ''
     });
+
+    if (!user) return null;
 
     const handleSubmit = () => {
         if (!formData.name || !formData.dob || !formData.place) return;
@@ -65,7 +86,7 @@ export default function KundliFormScreen() {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.infoBox}>
-                    <Sparkles size={20} color={colors.saffron} />
+                    <Flame size={20} color={colors.saffron} />
                     <Typography variant="bodySmall" color={colors.mutedForeground} style={styles.infoText}>
                         Please provide accurate details for a precise celestial analysis by GuruJi AI.
                     </Typography>

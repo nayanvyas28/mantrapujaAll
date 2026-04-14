@@ -124,7 +124,7 @@ export default async function DashboardPage() {
                     <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 to-indigo-900/30 border border-blue-500/20 flex flex-col justify-between gap-4">
                         <div>
                             <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-1">AI Guru Chat</h2>
-                            <p className="text-sm text-gray-300 mb-4">Configure Gemini API to power the smart spiritual assistant.</p>
+                            <p className="text-sm text-gray-300 mb-4">Configure the AI engine to power the smart spiritual assistant.</p>
                         </div>
                         <a
                             href="/dashboard/settings"
@@ -170,6 +170,20 @@ export default async function DashboardPage() {
                             className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
                         >
                             Manage Kundli
+                        </a>
+                    </div>
+
+                    {/* NEW: Reels/Feed Manager */}
+                    <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 to-purple-900/30 border border-blue-500/20 flex flex-col justify-between gap-4">
+                        <div>
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">Divine Reels Feed</h2>
+                            <p className="text-sm text-gray-300 mb-4">Curate vertical video "reels" for the center Feed tab on the mobile app.</p>
+                        </div>
+                        <a
+                            href="/dashboard/reels"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
+                        >
+                            Manage Reels
                         </a>
                     </div>
                 </div>

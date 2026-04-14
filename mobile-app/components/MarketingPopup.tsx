@@ -44,9 +44,9 @@ export const MarketingPopup = () => {
       const now = new Date().toISOString();
       console.log('[MarketingPopup] Fetching for time:', now);
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('marketing_popups')
-        .select('id, name, image_mobile, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date')
+        .select('id, name, image_mobile, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date, show_text_overlay')
         .eq('is_active', true)
         .eq('show_on_app', true)
         .lte('start_date', now)
@@ -54,6 +54,24 @@ export const MarketingPopup = () => {
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
+
+      // Fallback if column doesn't exist yet
+      if (error && error.code === '42703') {
+        console.warn('[MarketingPopup] show_text_overlay column missing, falling back...');
+        const result = await supabase
+          .from('marketing_popups')
+          .select('id, name, image_mobile, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date')
+          .eq('is_active', true)
+          .eq('show_on_app', true)
+          .lte('start_date', now)
+          .or(`end_date.is.null,end_date.gte.${now}`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        data = result.data;
+        error = result.error;
+        if (data) (data as any).show_text_overlay = true; // Default to true
+      }
 
       if (error) {
         if (error.code !== 'PGRST116') {
@@ -182,7 +200,7 @@ export const MarketingPopup = () => {
               resizeMode="cover"
             />
             
-            {popup.redirect_type !== 'none' && (
+            {popup.show_text_overlay !== false && popup.redirect_type !== 'none' && (
               <View style={[styles.actionBanner, { backgroundColor: colors.saffron }]}>
                 <Typography variant="label" style={styles.actionText}>
                   {popup.redirect_type === 'external' ? 'Learn More' : 'Book Now'}

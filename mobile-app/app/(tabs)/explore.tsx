@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Bell, Calendar, CircleX, Moon, Search, Sun, Instagram } from "lucide-react-native";
+import { Bell, Calendar, CircleX, Moon, Search, Sun, Instagram, Menu } from "lucide-react-native";
 import { SocialMediaModal } from "../../components/SocialMediaModal";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,7 @@ import { Footer } from "../../components/ui/Footer";
 import { Typography } from "../../components/ui/Typography";
 import { useGuruAssistant } from "../../context/GuruAssistantContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useSidebar } from "../../context/SidebarContext";
 import { getImageSource } from "../../utils/imageResolver";
 import { sanitizeData } from "../../utils/sanitizer";
 import { supabase } from "../../utils/supabase";
@@ -35,6 +36,7 @@ const CATEGORIES = [
 export default function ExploreTabScreen() {
   const router = useRouter();
   const { theme, colors, toggleTheme } = useTheme();
+  const { openSidebar } = useSidebar();
   const { handleScroll } = useGuruAssistant();
   const { t } = useTranslation();
 
@@ -174,17 +176,24 @@ export default function ExploreTabScreen() {
           },
         ]}
       >
-        <View style={styles.headerLeft}>
-          <Typography variant="h2" color={colors.foreground}>
-            {t("explore.title", "Sacred Places")}
-          </Typography>
-          <Typography
-            variant="bodySmall"
-            color={colors.saffron}
-            style={{ marginTop: 4, fontWeight: "600" }}
+        <View style={[styles.headerLeft, { flexDirection: 'row', alignItems: 'center' }]}>
+          <TouchableOpacity 
+            style={[styles.iconButton, { marginLeft: -10, marginRight: 10 }]} 
+            onPress={openSidebar}
           >
-            {t("explore.subtitle", "Discover the divine")}
-          </Typography>
+            <Menu size={24} color={colors.foreground} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Typography 
+              variant="h2" 
+              color={colors.foreground} 
+              style={{ fontSize: 20 }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {t("explore.title", "Sacred Places")}
+            </Typography>
+          </View>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity
@@ -444,7 +453,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 8,
   },
   iconButton: {
     padding: 4,

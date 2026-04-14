@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { AlarmClock, Bell, Calendar, ChevronDown, FileText, Heart, MessageCircle, Moon, MoreVertical, Pause, Play, Repeat, Share2, Shuffle, SkipBack, SkipForward, Sun, X, Instagram } from 'lucide-react-native';
+import { AlarmClock, Bell, Calendar, ChevronDown, FileText, Heart, MessageCircle, Moon, MoreVertical, Pause, Play, Repeat, Share2, Shuffle, SkipBack, SkipForward, Sun, X, Instagram, Menu } from 'lucide-react-native';
 import { SocialMediaModal } from '../../components/SocialMediaModal';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,13 +12,34 @@ import YoutubePlayer from "react-native-youtube-iframe";
 import { AlarmPickerModal } from '../../components/AlarmPickerModal';
 import { Typography } from "../../components/ui/Typography";
 import { useTheme } from '../../context/ThemeContext';
+import { useSidebar } from '../../context/SidebarContext';
 import { alarmService } from '../../services/AlarmService';
 import { supabase } from '../../utils/supabase';
 
 import { getLocalized } from '../../utils/translation';
 
+// Convert common sharing links (Drive, Dropbox) to direct media links
+const getDirectMediaUrl = (url: string) => {
+    if (!url) return url;
+    
+    // Google Drive
+    if (url.includes('drive.google.com')) {
+        const id = url.match(/\/d\/(.+?)\/|id=(.+?)(&|$)/);
+        const driveId = id ? (id[1] || id[2]) : null;
+        if (driveId) return `https://drive.google.com/uc?export=download&id=${driveId}`;
+    }
+    
+    // Dropbox
+    if (url.includes('dropbox.com')) {
+        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+    }
+    
+    return url;
+};
+
 export default function MusicScreen() {
     const { theme, colors, toggleTheme } = useTheme();
+    const { openSidebar } = useSidebar();
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
@@ -205,9 +226,10 @@ export default function MusicScreen() {
             setIsVideoPlaying(false); // Reset video playback state
 
             if (song.audio_url) {
-                console.log("Creating new sound object for URL:", song.audio_url);
+                const directAudioUrl = getDirectMediaUrl(song.audio_url);
+                console.log("Creating new sound object for URL:", directAudioUrl);
                 const { sound: newSound } = await Audio.Sound.createAsync(
-                    { uri: song.audio_url },
+                    { uri: directAudioUrl },
                     { shouldPlay: true },
                     onPlaybackStatusUpdate
                 );
@@ -244,9 +266,9 @@ export default function MusicScreen() {
     const currentVideoId = useMemo(() => {
         if (!currentSong?.video_url) return null;
         const url = currentSong.video_url;
-        const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
-        const match = url.match(regex);
-        const id = match ? match[1] : null;
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(shorts\/))\??v?=?([^#&?]*).*/;
+        const match = url.match(regExp);
+        const id = (match && match[8].length === 11) ? match[8] : null;
         return id;
     }, [currentSong?.video_url]);
 
@@ -351,17 +373,24 @@ export default function MusicScreen() {
                     },
                 ]}
             >
-                <View style={styles.headerLeft}>
-                    <Typography variant="h2" color={colors.foreground}>
-                        {t("music.title", "Divine Music")}
-                    </Typography>
-                    <Typography
-                        variant="bodySmall"
-                        color={colors.saffron}
-                        style={{ marginTop: 4, fontWeight: "600" }}
+                <View style={[styles.headerLeft, { flexDirection: 'row', alignItems: 'center' }]}>
+                    <TouchableOpacity 
+                        style={[styles.iconButton, { marginLeft: -10, marginRight: 10 }]} 
+                        onPress={openSidebar}
                     >
-                        {spiritualSubheading}
-                    </Typography>
+                        <Menu size={24} color={colors.foreground} />
+                    </TouchableOpacity>
+                    <View style={{ flex: 1 }}>
+                        <Typography 
+                            variant="h2" 
+                            color={colors.foreground} 
+                            style={{ fontSize: 20 }}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                        >
+                            {t("music.title", "Divine Music")}
+                        </Typography>
+                    </View>
                 </View>
                 <View style={styles.headerRight}>
                     <TouchableOpacity
@@ -748,7 +777,7 @@ const styles = StyleSheet.create({
     headerRight: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 16,
+        gap: 8,
     },
     iconButton: {
         padding: 4,

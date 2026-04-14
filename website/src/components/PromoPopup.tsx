@@ -33,9 +33,9 @@ export default function PromoPopup() {
             console.log("[PromoPopup] Fetching for time:", now);
 
             // Fetch active popups for web that are within the schedule
-            const { data, error } = await supabase
+            let { data, error } = await supabase
                 .from("marketing_popups")
-                .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date")
+                .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date, show_text_overlay")
                 .eq("is_active", true)
                 .eq("show_on_web", true)
                 .lte("start_date", now)
@@ -43,6 +43,24 @@ export default function PromoPopup() {
                 .order("created_at", { ascending: false })
                 .limit(1)
                 .single();
+
+            // Fallback if column doesn't exist yet
+            if (error && error.code === '42703') {
+                console.warn("[PromoPopup] show_text_overlay column missing, falling back...");
+                const result = await supabase
+                    .from("marketing_popups")
+                    .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date")
+                    .eq("is_active", true)
+                    .eq("show_on_web", true)
+                    .lte("start_date", now)
+                    .or(`end_date.is.null,end_date.gte.${now}`)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .single();
+                data = result.data;
+                error = result.error;
+                if (data) (data as any).show_text_overlay = true;
+            }
 
             if (error) {
                 if (error.code !== 'PGRST116') { // PGRST116 is "No rows found"
@@ -155,7 +173,8 @@ export default function PromoPopup() {
                                 />
                             )}
 
-                            {popup.redirect_type !== 'none' && (
+                            {/* Banner Text Overlay - Respecting show_text_overlay toggle */}
+                            {popup.show_text_overlay && popup.redirect_type !== 'none' && (
                                 <div className="absolute inset-x-0 bottom-0 p-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent pointer-events-none">
                                     <div className="flex items-center justify-between">
                                         <h3 className="text-white text-2xl font-bold">{popup.name}</h3>

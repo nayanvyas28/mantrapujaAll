@@ -111,11 +111,12 @@ export const AstroSection = () => {
                         </RNView>
                     </RNAnimatedView>
                     <RNView style={styles.textContainer}>
-                        <RNView style={styles.badgeRow}>
-                            <Sparkles size={12} color={colors.saffron} />
-                            <Typography variant="label" color={colors.saffron} style={styles.badgeText}>{t('kundli.unlock_destiny', 'UNLOCK DESTINY')}</Typography>
+                        <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <Typography variant="h3" color={colors.foreground}>{t('kundli.know_yourself', 'Know Your Self')}</Typography>
+                            <RNView style={[styles.freeBadge, { backgroundColor: colors.saffron + '10' }]}>
+                                <Typography variant="label" color={colors.saffron} style={{ fontSize: 9, fontWeight: '900' }}>FREE</Typography>
+                            </RNView>
                         </RNView>
-                        <Typography variant="h3" color={colors.foreground}>{t('kundli.know_yourself', 'Know Your Self')}</Typography>
                         <Typography variant="bodySmall" color={colors.mutedForeground}>{t('kundli.discover_blueprint', 'Discover your cosmic blueprint.')}</Typography>
                     </RNView>
                     <RNView style={[styles.arrowCircle, { backgroundColor: colors.saffron }]}>
@@ -153,6 +154,10 @@ export const AstroSection = () => {
                             </RNView>
                         </RNAnimatedView>
                     </RNView>
+
+                    <RNView style={[styles.freeBadgeGlobal, { backgroundColor: colors.saffron }]}>
+                        <Typography variant="label" color="#FFF" style={{ fontSize: 9, fontWeight: '900' }}>FREE</Typography>
+                    </RNView>
                     
                     <RNView style={styles.detailItem}>
                         <Typography variant="label" color={colors.saffron} style={styles.detailLabel}>RASHI</Typography>
@@ -188,7 +193,7 @@ export const AstroSection = () => {
                         </RNView>
                     </RNView>
 
-                    <RNView style={styles.chevronBox}>
+                    <RNView style={[styles.chevronBox, { marginTop: 12 }]}>
                         <ChevronRight size={20} color={colors.saffron} />
                     </RNView>
                 </RNView>
@@ -206,7 +211,7 @@ export const AstroSection = () => {
 const styles = StyleSheet.create({
     outerContainer: {
         alignItems: 'center',
-        marginVertical: 4,
+        marginVertical: 2,
     },
     premiumCard: {
         flexDirection: 'row',
@@ -391,5 +396,26 @@ const styles = StyleSheet.create({
         height: 24,
         backgroundColor: 'rgba(249, 115, 22, 0.1)',
         marginHorizontal: 12,
+    },
+    freeBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(249, 115, 22, 0.2)',
+    },
+    freeBadgeGlobal: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 6,
+        zIndex: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
     }
 });

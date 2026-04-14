@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { MessageCircle, Wallet, User, ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
+import { useAuth } from '@/context/AuthContext';
+
 const TopBar = () => {
+    const { user, signOut } = useAuth();
     const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
     const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
     const buttonRef = useRef<HTMLDivElement>(null);
@@ -113,21 +116,32 @@ const TopBar = () => {
                         <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0" />
                     </button>
 
-                    {/* Wallet */}
-                    {/* <div className="flex items-center gap-2 border border-orange-400/50 px-2 py-1 rounded-md bg-[#FFB100]/50 scale-90 xl:scale-100">
-                        <Wallet className="w-4 h-4 text-gray-800" />
-                        <span className="text-xs font-bold text-gray-900">₹ 0</span>
-                    </div> */}
-
                     {/* Auth */} 
-                    <Link 
-                        href="/login"
-                        className="text-[10px] sm:text-xs xl:text-sm font-black text-orange-950 hover:text-black transition-colors flex items-center gap-1 sm:gap-1.5 ml-1 sm:ml-4 whitespace-nowrap"
-                    >
-                        <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">SIGN IN / SIGN UP</span>
-                        <span className="sm:hidden">LOGIN</span>
-                    </Link>
+                    {user ? (
+                        <div className="flex items-center gap-4 ml-2 sm:ml-4">
+                            <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-orange-950" />
+                                <span className="text-[10px] sm:text-xs font-black text-orange-950 truncate max-w-[80px] sm:max-w-none">
+                                    {user.email?.split('@')[0].toUpperCase()}
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => signOut()}
+                                className="text-[10px] sm:text-xs font-black text-orange-950/60 hover:text-red-700 transition-colors"
+                            >
+                                LOGOUT
+                            </button>
+                        </div>
+                    ) : (
+                        <Link 
+                            href="/login"
+                            className="text-[10px] sm:text-xs xl:text-sm font-black text-orange-950 hover:text-black transition-colors flex items-center gap-1 sm:gap-1.5 ml-1 sm:ml-4 whitespace-nowrap"
+                        >
+                            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span className="hidden sm:inline">SIGN IN / SIGN UP</span>
+                            <span className="sm:hidden">LOGIN</span>
+                        </Link>
+                    )}
                 </div>
             </div>
         </div>

@@ -2,7 +2,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Calendar, ChevronLeft, Clock, MapPin, Wand2, Sparkles, Trash2, CheckCircle2, User, Share2, Download, AlertCircle, MessageCircle } from 'lucide-react-native';
+import { Calendar, ChevronLeft, Clock, MapPin, Wand2, Flame, Trash2, CheckCircle2, User, Share2, Download, AlertCircle, MessageCircle } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View, Share, Platform, Modal } from 'react-native';
 
@@ -37,9 +37,25 @@ export default function KundliScreen() {
     const router = useRouter();
     const { colors, theme } = useTheme();
     const { t } = useTranslation();
-    const { profile } = useAuth();
+    const { profile, user } = useAuth();
     const insets = useSafeAreaInsets();
     const isDark = theme === 'dark';
+
+    // Protect Screen
+    useEffect(() => {
+        if (!user) {
+            Alert.alert(
+                t('common.login_required', 'Login Required'),
+                t('common.login_msg', 'Please log in to continue with your personalized Kundli.'),
+                [
+                    { text: t('common.cancel', 'Cancel'), onPress: () => router.back(), style: 'cancel' },
+                    { text: t('common.login', 'Log In'), onPress: () => router.replace('/login') }
+                ]
+            );
+        }
+    }, [user]);
+
+    if (!user) return null; // Prevent flicker before alert
 
     // Step state: 1 (Details), 2 (Ready to Generate), 3 (Report)
     const [step, setStep] = useState(1);
@@ -724,7 +740,7 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
     const PremiumLock = ({ title, desc }: any) => (
         <RNView style={{ padding: 24, alignItems: 'center', justifyContent: 'center', minHeight: 300 }}>
             <RNView style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: colors.saffron + '10', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
-                <Sparkles size={40} color={colors.saffron} />
+                <Flame size={40} color={colors.saffron} />
             </RNView>
             <Typography variant="h2" align="center" style={{ marginBottom: 8 }}>{title}</Typography>
             <Typography variant="body" align="center" color={colors.mutedForeground} style={{ marginBottom: 32 }}>{desc}</Typography>
@@ -890,7 +906,7 @@ function KundliResultsView({ reportData, colors, isDark, isPremium, handleUnlock
                     {/* DESTINY SNAPSHOT */}
                     <RNView style={{ marginTop: 24, marginBottom: 20 }}>
                         <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                            <Sparkles size={18} color={colors.gold} style={{ marginRight: 8 }} />
+                            <Flame size={18} color={colors.gold} style={{ marginRight: 8 }} />
                             <Typography variant="h3">Quick Destiny Snapshot</Typography>
                         </RNView>
                         <RNView style={styles.summaryGrid}>

@@ -19,8 +19,11 @@ import {
   Check,
   X,
   Disc,
-  Instagram
+  Instagram,
+  Menu,
+  Sparkles
 } from "lucide-react-native";
+import { Sidebar } from "../../components/Sidebar";
 import { SocialMediaModal } from "../../components/SocialMediaModal";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -55,6 +58,7 @@ import { supabase } from "../../utils/supabase";
 
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
+import { useSidebar } from "../../context/SidebarContext";
 import { useGuruAssistant } from "../../context/GuruAssistantContext";
 import { useWallet } from "../../context/WalletContext";
 import { AstroSection } from "../../components/AstroSection";
@@ -63,6 +67,7 @@ import { AstroSection } from "../../components/AstroSection";
 export default function HomeScreen() {
   const router = useRouter();
   const { theme, colors, toggleTheme } = useTheme();
+  const { openSidebar } = useSidebar();
   const { user, profile } = useAuth(); // dynamically get auth state
   const { t, i18n } = useTranslation();
   const { handleScroll } = useGuruAssistant();
@@ -91,7 +96,7 @@ export default function HomeScreen() {
   const userRashi = profile?.onboarding_data?.rashi?.name || null;
 
   const { width } = Dimensions.get("window");
-  const bannerWidth = width - 48; // screen width minus horizontal padding
+  const bannerWidth = width ; // Fill entire screen width
   const [activeBanner, setActiveBanner] = useState(0);
   const bannerScrollRef = useRef<ScrollView>(null);
 
@@ -446,12 +451,24 @@ export default function HomeScreen() {
   const fetchDynamicBanners = async () => {
     try {
       setBannersLoading(true);
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('home_banners')
-        .select('*')
+        .select('*, show_text_overlay')
         .eq('is_active', true)
         .or('target.eq.app,target.eq.both')
         .order('display_order', { ascending: true });
+
+      if (error && error.code === '42703') {
+        console.warn('[HomeScreen] show_text_overlay column missing, falling back...');
+        const result = await supabase
+          .from('home_banners')
+          .select('*')
+          .eq('is_active', true)
+          .or('target.eq.app,target.eq.both')
+          .order('display_order', { ascending: true });
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) {
         if (error.code === '42P01') {
@@ -555,17 +572,24 @@ export default function HomeScreen() {
           },
         ]}
       >
-        <View style={styles.headerLeft}>
-          <Typography variant="h2" color={colors.foreground}>
-            {userName}
-          </Typography>
-          <Typography
-            variant="bodySmall"
-            color={colors.saffron}
-            style={{ marginTop: 4, fontWeight: "600" }}
+        <View style={[styles.headerLeft, { flexDirection: 'row', alignItems: 'center' }]}>
+          <TouchableOpacity 
+            style={[styles.iconButton, { marginLeft: -10, marginRight: 10 }]} 
+            onPress={openSidebar}
           >
-            {spiritualSubheading}
-          </Typography>
+            <Menu size={24} color={colors.foreground} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Typography 
+              variant="h2" 
+              color={colors.foreground} 
+              style={{ fontSize: 20 }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {userName}
+            </Typography>
+          </View>
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.iconButton} onPress={handleLanguageChange}>
@@ -593,6 +617,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={(e: any) => handleScroll(e.nativeEvent.contentOffset.y)}
+        style={{ backgroundColor: 'transparent' }}
       >
         {/* Scrollable Banner */}
         <View style={styles.bannerWrapper}>
@@ -607,7 +632,7 @@ export default function HomeScreen() {
             }}
             scrollEventThrottle={16}
             decelerationRate="fast"
-            snapToInterval={bannerWidth + 16} // width + margin
+            snapToInterval={bannerWidth} // width of one banner
             style={styles.bannerScroll}
           >
             {activeBannersSource.map((banner, index) => (
@@ -632,31 +657,36 @@ export default function HomeScreen() {
                   contentFit="cover"
                 />
 
-                {/* NEW: Special Offer Badge on the RIGHT */}
-                {banner.show_offer && (
-                  <View style={styles.offerBadgeContainer}>
-                    <View style={styles.offerBadgeGradient}>
-                      <Gift size={12} color="white" />
-                      <Text style={styles.offerBadgeText} numberOfLines={1}>
-                        {i18n.language === 'hi' ? banner.offer_tag_hi : banner.offer_tag}
-                      </Text>
+                {/* Conditionally render all text-based overlays */}
+                {banner.show_text_overlay !== false && (
+                  <>
+                    {/* Special Offer Badge on the RIGHT */}
+                    {banner.show_offer && (
+                      <View style={styles.offerBadgeContainer}>
+                        <View style={styles.offerBadgeGradient}>
+                          <Gift size={12} color="white" />
+                          <Text style={styles.offerBadgeText} numberOfLines={1}>
+                            {i18n.language === 'hi' ? banner.offer_tag_hi : banner.offer_tag}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                    <View style={styles.bannerOverlay}>
+                      <View style={styles.bannerContent}>
+                        <Typography variant="h3" color="#ffffff">
+                          {getLocalized(banner, 'title', i18n.language) || banner.title}
+                        </Typography>
+                        <Typography
+                          variant="bodySmall"
+                          color="#fed7aa"
+                          style={{ marginTop: 4 }}
+                        >
+                          {getLocalized(banner, 'subtitle', i18n.language) || banner.subtitle}
+                        </Typography>
+                      </View>
                     </View>
-                  </View>
+                  </>
                 )}
-                <View style={styles.bannerOverlay}>
-                  <View style={styles.bannerContent}>
-                    <Typography variant="h3" color="#ffffff">
-                      {getLocalized(banner, 'title', i18n.language) || banner.title}
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      color="#fed7aa"
-                      style={{ marginTop: 4 }}
-                    >
-                      {getLocalized(banner, 'subtitle', i18n.language) || banner.subtitle}
-                    </Typography>
-                  </View>
-                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -683,21 +713,21 @@ export default function HomeScreen() {
 
         {/* Daily Rashi Phal Section */}
         {!isGuest && userRashi && dailyAstro && (
-          <TouchableOpacity
-            style={{ marginHorizontal: 0, marginBottom: 24 }}
-            activeOpacity={0.9}
-            onPress={() => router.push('/horoscope' as any)}
-          >
-            <Card
-              variant="solid"
-              style={{
-                padding: 20,
-                borderRadius: 20,
-                borderWidth: 1,
-                borderColor: colors.saffron + '30',
-                backgroundColor: theme === 'dark' ? colors.card : '#fffaf0'
-              }}
+            <TouchableOpacity
+              style={{ marginHorizontal: 0, marginBottom: 16 }}
+              activeOpacity={0.9}
+              onPress={() => router.push('/horoscope' as any)}
             >
+              <Card
+                variant="solid"
+                style={{
+                  padding: 20,
+                  borderRadius: 20,
+                  borderWidth: 1,
+                  borderColor: colors.saffron + '30',
+                  backgroundColor: theme === 'dark' ? colors.card : '#fffaf0'
+                }}
+              >
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                   <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
@@ -713,9 +743,7 @@ export default function HomeScreen() {
                 <ArrowRight size={20} color={colors.mutedForeground} style={{ marginTop: 12 }} />
               </View>
 
-              <Typography variant="body" color={theme === 'dark' ? colors.mutedForeground : '#334155'} style={{ lineHeight: 24 }} numberOfLines={3}>
-                {dailyAstro.replace('[Mock Data] ', '')}
-              </Typography>
+
             </Card>
           </TouchableOpacity>
         )}
@@ -902,7 +930,7 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                   style={{
                     width: isFullWidth ? "100%" : "48%",
-                    marginTop: index > 1 ? 16 : 0,
+                    marginTop: index > 1 ? 12 : 0,
                   }}
                   onPress={() => router.push(`/pujas/${puja.id}`)}
                 >
@@ -1240,12 +1268,15 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+const { width } = Dimensions.get("window");
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
-    paddingBottom: 100,
+    padding: 20,
+    paddingBottom: 80,
   },
   header: {
     flexDirection: "row",
@@ -1263,7 +1294,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12, // Reduced gap for more icons
+    gap: 8,
   },
   iconButton: {
     padding: 4,
@@ -1271,14 +1302,15 @@ const styles = StyleSheet.create({
   },
 
   bannerWrapper: {
-    marginBottom: 24,
+    marginTop: -20,
+    marginHorizontal: -20,
+    marginBottom: 16,
   },
   bannerScroll: {
     overflow: "visible",
   },
   bannerContainer: {
-    marginRight: 16,
-    borderRadius: 12,
+    width: width,
     overflow: "hidden",
     shadowColor: "#f97316",
     shadowOffset: { width: 0, height: 8 },
@@ -1303,7 +1335,7 @@ const styles = StyleSheet.create({
   },
   bannerBg: {
     width: "100%",
-    height: 140,
+    height: 125,
   },
   bannerOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1317,7 +1349,7 @@ const styles = StyleSheet.create({
   quickActionsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   actionItem: {
     alignItems: "center",
@@ -1344,8 +1376,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionHeader: {
-    marginTop: 24, // Reduced from 40
-    marginBottom: 12,
+    marginTop: 12,
+    marginBottom: 4,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-end",
@@ -1355,7 +1387,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 12,
   },
   seeAllButton: {
     flexDirection: "row",
@@ -1364,7 +1396,7 @@ const styles = StyleSheet.create({
   productsHorizontalScroll: {
     marginLeft: -24,
     paddingLeft: 24,
-    marginBottom: 32,
+    marginBottom: 12,
   },
   productCardWrapper: {
     width: 160,
@@ -1463,7 +1495,7 @@ const styles = StyleSheet.create({
   },
   blogGrid: {
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   blogRowCard: {
     flexDirection: "row",

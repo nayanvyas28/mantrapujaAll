@@ -22,6 +22,7 @@ interface Banner {
     is_active: boolean;
     display_order: number;
     show_offer: boolean;
+    show_text_overlay: boolean;
     offer_tag?: string;
     offer_tag_hi?: string;
     created_at: string;
@@ -53,6 +54,7 @@ export default function BannerManagementPage() {
         linkType: 'custom' as 'custom' | 'puja',
         selectedPujaSlug: '',
         show_offer: false,
+        show_text_overlay: true,
         offer_tag: '',
         offer_tag_hi: ''
     });
@@ -191,6 +193,7 @@ export default function BannerManagementPage() {
                 is_active: form.is_active,
                 display_order: form.display_order,
                 show_offer: form.show_offer,
+                show_text_overlay: form.show_text_overlay,
                 offer_tag: form.offer_tag,
                 offer_tag_hi: form.offer_tag_hi
             };
@@ -247,6 +250,7 @@ export default function BannerManagementPage() {
             linkType: 'custom',
             selectedPujaSlug: '',
             show_offer: false,
+            show_text_overlay: true,
             offer_tag: '',
             offer_tag_hi: ''
         });
@@ -270,6 +274,7 @@ export default function BannerManagementPage() {
             linkType: banner.route?.startsWith('puja:') ? 'puja' : 'custom',
             selectedPujaSlug: banner.route?.startsWith('puja:') ? banner.route.split(':')[1] : '',
             show_offer: banner.show_offer || false,
+            show_text_overlay: banner.show_text_overlay !== false,
             offer_tag: banner.offer_tag || '',
             offer_tag_hi: banner.offer_tag_hi || ''
         });
@@ -491,31 +496,45 @@ export default function BannerManagementPage() {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] pl-1">Target Platform</label>
-                                                <div className="flex gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
-                                                    {(['app', 'web', 'both'] as const).map((t) => (
-                                                        <button
-                                                            key={t}
-                                                            type="button"
-                                                            onClick={() => setForm({ ...form, target: t })}
-                                                            className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${form.target === t ? 'bg-white text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
-                                                        >
-                                                            {t}
-                                                        </button>
-                                                    ))}
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] pl-1">Configuration</label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div 
+                                                    onClick={() => setForm({ ...form, show_offer: !form.show_offer })}
+                                                    className={`p-3 rounded-2xl border cursor-pointer transition-all flex flex-col gap-2 ${form.show_offer ? 'bg-orange-500/20 border-orange-500/50' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <Gift size={16} className={form.show_offer ? 'text-orange-500' : 'text-gray-500'} />
+                                                        <div className={`w-8 h-4 rounded-full relative transition-colors ${form.show_offer ? 'bg-orange-500' : 'bg-white/10'}`}>
+                                                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.show_offer ? 'left-4.5' : 'left-0.5'}`} />
+                                                        </div>
+                                                    </div>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${form.show_offer ? 'text-white' : 'text-gray-500'}`}>Offer Badge</span>
+                                                </div>
+
+                                                <div 
+                                                    onClick={() => setForm({ ...form, show_text_overlay: !form.show_text_overlay })}
+                                                    className={`p-3 rounded-2xl border cursor-pointer transition-all flex flex-col gap-2 ${form.show_text_overlay ? 'bg-blue-500/20 border-blue-500/50' : 'bg-white/5 border-white/10 hover:border-white/20'}`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <Layout size={16} className={form.show_text_overlay ? 'text-blue-500' : 'text-gray-500'} />
+                                                        <div className={`w-8 h-4 rounded-full relative transition-colors ${form.show_text_overlay ? 'bg-blue-500' : 'bg-white/10'}`}>
+                                                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${form.show_text_overlay ? 'left-4.5' : 'left-0.5'}`} />
+                                                        </div>
+                                                    </div>
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${form.show_text_overlay ? 'text-white' : 'text-gray-500'}`}>Text Overlay</span>
                                                 </div>
                                             </div>
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] pl-1">Display Order</label>
-                                                <input
-                                                    type="number"
-                                                    value={form.display_order}
-                                                    onChange={(e) => setForm({ ...form, display_order: parseInt(e.target.value) })}
-                                                    className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500 transition-all font-bold"
-                                                />
-                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] pl-1">Display Order</label>
+                                            <input
+                                                type="number"
+                                                value={form.display_order}
+                                                onChange={(e) => setForm({ ...form, display_order: parseInt(e.target.value) })}
+                                                className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500 transition-all font-bold"
+                                            />
                                         </div>
 
                                         <div className="space-y-4">

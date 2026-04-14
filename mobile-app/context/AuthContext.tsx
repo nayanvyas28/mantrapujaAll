@@ -113,7 +113,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .eq('id', userId)
                 .single();
 
-            if (data) setProfile(data);
+            if (data) {
+                // Update Login Streak
+                const today = new Date().toISOString().split('T')[0];
+                const onboarding = data.onboarding_data || {};
+                const lastLogin = onboarding.last_login_at;
+                let currentStreak = onboarding.login_streak || 0;
+
+                if (lastLogin !== today) {
+                    if (lastLogin) {
+                        const lastDate = new Date(lastLogin);
+                        const todayDate = new Date(today);
+                        const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays === 1) {
+                            currentStreak += 1;
+                        } else {
+                            currentStreak = 1;
+                        }
+                    } else {
+                        currentStreak = 1;
+                    }
+
+                    const updatedOnboarding = { 
+                        ...onboarding, 
+                        login_streak: currentStreak, 
+                        last_login_at: today 
+                    };
+                    
+                    await supabase
+                        .from('profiles')
+                        .update({ onboarding_data: updatedOnboarding })
+                        .eq('id', userId);
+                    
+                    data.onboarding_data = updatedOnboarding;
+                }
+                
+                setProfile(data);
+            }
         } catch (e) {
             console.error('Fetch Profile Error:', e);
         } finally {
