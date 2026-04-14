@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import FeedPlayer from "../feed/FeedPlayer";
 import { motion } from "framer-motion";
 import { Video, ChevronRight, Sparkles } from "lucide-react";
@@ -23,7 +23,6 @@ const FeedSection = () => {
 
     useEffect(() => {
         const fetchReels = async () => {
-            const supabase = createClient();
             const { data, error } = await supabase
                 .from("reels")
                 .select("*")
