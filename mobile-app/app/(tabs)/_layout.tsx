@@ -1,95 +1,87 @@
 import { Tabs } from 'expo-router';
-import { Compass, Flame, Home, Music, Play, UserRound } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
-import { Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../context/ThemeContext';
-import { SidebarProvider, useSidebar } from '../../context/SidebarContext';
-import { Sidebar } from '../../components/Sidebar';
 import { View } from 'react-native';
-
-function SidebarWrapper({ children }: { children: React.ReactNode }) {
-  const { isSidebarOpen, closeSidebar } = useSidebar();
-  return (
-    <View style={{ flex: 1 }}>
-      {children}
-      <Sidebar isVisible={isSidebarOpen} onClose={closeSidebar} />
-    </View>
-  );
-}
+import { Home, Sparkles, User, Layout, Rss, Play, Headphones } from 'lucide-react-native';
 
 export default function TabLayout() {
-  const { theme, colors: themeColors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-
   return (
-    <SidebarProvider>
-      <SidebarWrapper>
-        <Tabs
+    <Tabs
+      initialRouteName="index"
       screenOptions={{
-        headerShown: false,
-        sceneStyle: { backgroundColor: 'transparent' },
-        tabBarActiveTintColor: themeColors.saffron,
-        tabBarInactiveTintColor: themeColors.muted,
+        tabBarActiveTintColor: '#FF4D00',
+        tabBarInactiveTintColor: '#94A3B8',
         tabBarStyle: {
-          backgroundColor: themeColors.card,
-          borderTopColor: themeColors.border,
-          height: Platform.OS === 'android' ? 70 + insets.bottom : 60 + insets.bottom,
-          paddingBottom: Platform.OS === 'android' ? 10 + insets.bottom : insets.bottom,
+          borderTopWidth: 0,
+          elevation: 20,
+          height: 75,
+          paddingBottom: 15,
           paddingTop: 10,
+          backgroundColor: '#FFFFFF',
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -10 },
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
         },
         tabBarLabelStyle: {
-          fontFamily: 'sans-serif',
-          fontSize: 12,
-          fontWeight: '600',
+          fontSize: 8,
+          fontWeight: '800',
+          textTransform: 'uppercase',
+          letterSpacing: 0.2,
+          marginTop: 2,
         },
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t('tabs.home', 'Home'),
-          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="pujas"
-        options={{
-          title: t('tabs.pujas', 'Pooja'),
-          tabBarIcon: ({ color }) => <Flame size={24} color={color} />,
-        }}
-      />
+        headerShown: false,
+      }}
+    >
       <Tabs.Screen
         name="feed"
         options={{
-          title: t('tabs.feed', 'Feed'),
-          tabBarIcon: ({ color }) => <Play size={24} color={color} />,
+          title: 'Feed',
+          tabBarIcon: ({ color }) => <Rss size={20} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="puja"
+        options={{
+          title: 'Puja',
+          tabBarIcon: ({ color }) => <Sparkles size={20} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <View className={`w-14 h-14 rounded-full items-center justify-center -mt-9 ${focused ? 'bg-primary shadow-xl shadow-primary/40' : 'bg-white border border-gray-100 shadow-sm'}`}>
+              <Home size={26} color={focused ? 'white' : '#FF4D00'} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="astro"
+        options={{
+          title: 'Astro',
+          tabBarIcon: ({ color }) => <Layout size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="music"
         options={{
-          title: t('tabs.music', 'Music'),
-          tabBarIcon: ({ color }) => <Music size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: t('tabs.tirth', 'Tirth'),
-          tabBarIcon: ({ color }) => <Compass size={24} color={color} />,
+          title: 'Music',
+          tabBarIcon: ({ color }) => <Play size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           href: null,
-          title: t('tabs.profile', 'Profile'),
-          tabBarIcon: ({ color }) => <UserRound size={24} color={color} />,
         }}
       />
     </Tabs>
-      </SidebarWrapper>
-    </SidebarProvider>
   );
 }
