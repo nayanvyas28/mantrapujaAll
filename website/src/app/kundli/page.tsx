@@ -405,7 +405,7 @@ export default function KundliPage() {
             // API Variations (Nakshatras & Planets)
             'SHRAVAN': 'श्रवण', 'HAST': 'हस्त', 'SHATBHISHA': 'शतभिषा', 'ASCENDANT': 'लग्न', 'Lagna': 'लग्न', 'CHITRA': 'चित्रा', 'SWATI': 'स्वाती', 'VISHAKHA': 'विशाखा', 'ANURADHA': 'अनुराधा', 'JYESHTHA': 'ज्येष्ठा', 'MULA': 'मूल', 'PURVA ASHADHA': 'पूर्वाषाढ़ा', 'UTTARA ASHADHA': 'उत्तराषाढ़ा', 'SHRAVANA': 'श्रवण', 'DHANISHTA': 'धनिष्ठा', 'SHATABHISHA': 'शतभिषा', 'PURVA BHADRAPADA': 'पूर्व भाद्रपद', 'UTTARA BHADRAPADA': 'उत्तर भाद्रपद', 'REVATI': 'रेवती',
             'SUN': 'सूर्य', 'MOON': 'चंद्रमा', 'MARS': 'मंगल', 'MERCURY': 'बुध', 'JUPITER': 'बृहस्पति', 'VENUS': 'शुक्र', 'SATURN': 'शनि', 'RAHU': 'राहू', 'KETU': 'केतु',
-            'Aries': 'मेष', 'Taurus': 'वृषभ', 'Gemini': 'मिथुन', 'Cancer': 'कर्क', 'Leo': 'सिंह', 'Virgo': 'कन्या', 'Libra': 'तुला', 'Scorpio': 'वृश्चिक', 'Sagittarius': 'धनु', 'Capricorn': 'मकर', 'Aquarius': 'कुंभ', 'Pisces': 'मीन',
+
             'ARIES': 'मेष', 'TAURUS': 'वृषभ', 'GEMINI': 'मिथुन', 'CANCER': 'कर्क', 'LEO': 'सिंह', 'VIRGO': 'कन्या', 'LIBRA': 'तुला', 'SCORPIO': 'वृश्चिक', 'SAGITTARIUS': 'धनु', 'CAPRICORN': 'मकर', 'AQUARIUS': 'कुंभ', 'PISCES': 'मीन'
         };
         const cleanV = String(v).trim();

@@ -268,7 +268,7 @@ If this is the start of a conversation, please generate a very short title (max 
         decrypted += decipher.final('utf8');
 
         // 3. Call Gemini API (with Retry Logic for 503/429)
-        let response: Response;
+        let response: any = null;
         let data: any;
         const maxRetries = 2;
         let attempt = 0;
@@ -300,15 +300,15 @@ If this is the start of a conversation, please generate a very short title (max 
             throw new Error(data.error?.message || 'Failed to generate content from AI');
         }
 
-        if (!response.ok) {
+        if (!response || !response.ok) {
             console.error("Gemini API Error:", data);
-            throw new Error(data.error?.message || 'Failed to generate content from AI');
+            throw new Error(data?.error?.message || 'Failed to generate content from AI');
         }
 
         let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Guruji is meditating. Try again.";
         
         // --- Automated Profile Update Capture ---
-        const updateRegex = /\[\[VEDIC_UPDATE:\s*({.*?})\]\]/s;
+        const updateRegex = /\[\[VEDIC_UPDATE:\s*({[\s\S]*?})\]\]/;
         const match = aiText.match(updateRegex);
         
         if (match && identifier !== 'anonymous') {

@@ -18,6 +18,8 @@ interface PopupData {
     redirect_value: string;
     frequency: "once" | "session" | "always";
     recurrence_interval_mins: number;
+    show_text_overlay?: boolean;
+    display_delay_ms?: number;
 }
 
 export default function PromoPopup() {
@@ -33,8 +35,11 @@ export default function PromoPopup() {
             const now = new Date().toISOString();
             console.log("[PromoPopup] Fetching for time:", now);
 
+            let data: any = null;
+            let error: any = null;
+
             // Fetch active popups for web that are within the schedule
-            let { data, error } = await supabase
+            const firstResult = await supabase
                 .from("marketing_popups")
                 .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date, show_text_overlay, recurrence_interval_mins")
                 .eq("is_active", true)
@@ -44,6 +49,9 @@ export default function PromoPopup() {
                 .order("created_at", { ascending: false })
                 .limit(1)
                 .single();
+            
+            data = firstResult.data;
+            error = firstResult.error;
 
             // Fallback if column doesn't exist yet
             if (error && error.code === '42703') {

@@ -72,7 +72,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     // Booking Flow State
     const [bookingStep, setBookingStep] = useState<'selecting' | 'naming' | 'success'>('selecting');
     const [selectedPkg, setSelectedPkg] = useState<any>(null);
-    const [sankalpName, setSankalpName] = useState(user?.full_name || "");
+    const [sankalpName, setSankalpName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -112,7 +112,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                     puja_slug: puja.slug,
                     package_name: selectedPkg.name,
                     price: selectedPkg.price,
-                    user_id: user.id
+                    user_id: user?.id
                 })
             });
 

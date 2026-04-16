@@ -147,6 +147,7 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* @ts-expect-error styled-jsx */}
             <style jsx global>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

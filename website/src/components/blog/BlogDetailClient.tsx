@@ -1,3 +1,6 @@
+"use client";
+
+import {
     Calendar,
     Clock,
     ArrowLeft,
@@ -9,6 +12,9 @@
     Search,
     Star
 } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import CollapsibleText from '@/components/ui/CollapsibleText';
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import { getBlogCategoryStyle } from '@/lib/uiMapping';

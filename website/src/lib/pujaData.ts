@@ -99,6 +99,15 @@ export interface PujaData {
             answer: string;
         }[];
     };
+    packages?: {
+        id: string;
+        name: string;
+        price: number;
+        description?: string;
+        inclusions?: string[];
+        image?: string;
+        tag?: string;
+    }[];
     seoTitle?: string;
     seoDescription?: string;
 }

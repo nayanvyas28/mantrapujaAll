@@ -189,6 +189,7 @@ export default function AboutPage() {
                 </motion.div>
             </div>
 
+            {/* @ts-expect-error styled-jsx */}
             <style jsx global>{`
                 .glass-morphism {
                     background: rgba(255, 255, 255, 0.03);

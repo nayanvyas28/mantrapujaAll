@@ -8,7 +8,10 @@ interface Package {
     id: string;
     name: string;
     price: number;
-    description: string;
+    description?: string;
+    inclusions?: string[];
+    image?: string;
+    tag?: string;
 }
 
 interface BookingPackagesPopupProps {
@@ -312,7 +315,8 @@ export default function BookingPackagesPopup({
                 </motion.div>
                 
                 {/* Style adjustments for snake border */}
-                <style jsx>{`
+                {/* @ts-expect-error styled-jsx */}
+                <style jsx global>{`
                     @keyframes snake-border {
                         0% { stroke-dashoffset: 1000; }
                         100% { stroke-dashoffset: 0; }

@@ -1131,6 +1131,7 @@ export default function PujaManagementPage() {
                 )}
             </AnimatePresence>
 
+            {/* @ts-expect-error styled-jsx */}
             <style jsx global>{`
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
