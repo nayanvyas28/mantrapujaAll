@@ -733,7 +733,7 @@ export default function BannerManagementPage() {
                 )}
             </AnimatePresence>
 
-            {/* @ts-expect-error styled-jsx */}
+
             <style jsx global>{`
                 @keyframes shine {
                     from { transform: translateX(-100%) skewX(-20deg); }

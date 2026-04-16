@@ -315,7 +315,7 @@ export default function BookingPackagesPopup({
                 </motion.div>
                 
                 {/* Style adjustments for snake border */}
-                {/* @ts-expect-error styled-jsx */}
+            
                 <style jsx global>{`
                     @keyframes snake-border {
                         0% { stroke-dashoffset: 1000; }
