@@ -1,6 +1,17 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { 
+  Users, 
+  ShoppingBag, 
+  IndianRupee, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Flame, 
+  Search,
+  Activity,
+  TrendingUp,
+  ChevronRight
+} from 'lucide-react';
 
 export default async function DashboardPage() {
     const supabase = await createClient();
@@ -10,198 +21,252 @@ export default async function DashboardPage() {
         redirect('/login');
     }
 
-    // We make a simple signout action for the server-side component form
-    async function signOut() {
-        'use server';
-        const supabase = await createClient();
-        await supabase.auth.signOut();
-        redirect('/login');
-    }
+    // 1. Fetch Total Users
+    const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+    // 2. Fetch Active Bookings (Puja Bookings via Wallet)
+    const { count: activeBookings } = await supabase
+        .from('wallet_transactions')
+        .select('*', { count: 'exact', head: true })
+        .eq('category', 'puja_booking')
+        .eq('status', 'success');
+
+    // 3. Calculate Revenue (Sum of Puaj Bookings)
+    const { data: revenueData } = await supabase
+        .from('wallet_transactions')
+        .select('amount')
+        .eq('category', 'puja_booking')
+        .eq('status', 'success');
+    
+    const revenue = revenueData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
+
+    // 4. Fetch Recent Bookings for the "Live Feed"
+    const { data: recentBookings } = await supabase
+        .from('wallet_transactions')
+        .select('*, profiles(full_name, email)')
+        .eq('category', 'puja_booking')
+        .order('created_at', { ascending: false })
+        .limit(5);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white p-8 font-sans relative overflow-hidden">
-            {/* Background gradients */}
-            <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-purple-900/20 blur-[120px] rounded-full pointer-events-none" />
+        <div className="space-y-10 animate-in fade-in duration-700">
+            {/* Page Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent mb-2">
+                        Platform Overview
+                    </h1>
+                    <p className="text-gray-400 text-sm max-w-xl leading-relaxed font-medium">
+                        Real-time analytics and performance metrics for the Mantra Puja ecosystem. 
+                        Monitoring <span className="text-purple-400 uppercase text-[10px] font-black tracking-widest px-2 py-0.5 bg-purple-500/10 rounded-md border border-purple-500/20 ml-1">Live Database</span>
+                    </p>
+                </div>
 
-            <div className="max-w-6xl mx-auto relative z-10">
-                <header className="flex items-center justify-between mb-12 py-4 border-b border-white/10">
-                    <div>
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">
-                            Mantra Pooja Admin
-                        </h1>
-                        <p className="text-sm text-gray-400">Welcome back, {user.email}</p>
-                    </div>
-                    <form action={signOut}>
-                        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors text-sm font-medium text-gray-300 hover:text-white">
-                            <LogOut className="w-4 h-4" />
-                            Sign Out
-                        </button>
-                    </form>
-                </header>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {/* NEW: Notification Manager at 1st Position */}
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-900/40 to-indigo-900/30 border border-purple-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent mb-1">Notification Manager</h2>
-                            <p className="text-sm text-gray-300 mb-4">Schedule daily Tithi and Festival alerts. Configure delivery time and message templates.</p>
+                <div className="flex items-center gap-3">
+                    <div className="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 group hover:border-purple-500/30 transition-all cursor-default">
+                        <div className="p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-all">
+                            <Activity size={16} className="text-green-400" />
                         </div>
-                        <a
-                            href="/dashboard/notifications"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Notifications
-                        </a>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-900/40 to-orange-900/30 border border-purple-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent mb-1">App Home Settings</h2>
-                            <p className="text-sm text-gray-300 mb-4">Curate exactly what displays on the Mobile App Home Screen.</p>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">System Status</span>
+                            <span className="text-xs font-bold text-white">All Systems Operational</span>
                         </div>
-                        <a
-                            href="/dashboard/home-settings"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Home
-                        </a>
                     </div>
+                </div>
+            </div>
 
-                    {/* NEW: Website Homepage Settings */}
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-orange-900/40 to-purple-900/30 border border-orange-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent mb-1">Website Homepage</h2>
-                            <p className="text-sm text-gray-300 mb-4">Manage Top Banners and Popular Vedic Pujas displayed on the main Website Homepage.</p>
-                        </div>
-                        <a
-                            href="/dashboard/website-home"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Website Home
-                        </a>
+            {/* Analytics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Total Users Card */}
+                <div className="p-8 rounded-[32px] bg-white/5 border border-white/10 relative overflow-hidden group hover:border-purple-500/40 transition-all duration-500">
+                    <div className="absolute top-0 right-0 p-8 text-white/5 group-hover:text-purple-500/10 transition-colors">
+                        <Users size={80} />
                     </div>
-
-                    {/* NEW: Marketing Popups */}
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-orange-900/40 to-amber-900/30 border border-orange-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent mb-1">Marketing Popups</h2>
-                            <p className="text-sm text-gray-300 mb-4">Launch cross-platform popup campaigns with smart scheduling and targeting.</p>
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                                <Users size={20} className="text-purple-400" />
+                            </div>
+                            <span className="flex items-center gap-1 text-green-400 text-xs font-bold bg-green-400/10 px-2 py-1 rounded-lg">
+                                <TrendingUp size={12} /> +12%
+                            </span>
                         </div>
-                        <a
-                            href="/dashboard/popups"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Popups
-                        </a>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 to-cyan-900/30 border border-blue-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent mb-1">Music Manager</h2>
-                            <p className="text-sm text-gray-300 mb-4">Add & Manage Deities, Bhajans, Mantras and more Assets.</p>
+                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Total Users</h3>
+                        <div className="flex items-baseline gap-2">
+                            <p className="text-4xl font-black text-white">{totalUsers?.toLocaleString() || '0'}</p>
+                            <p className="text-xs text-gray-500 font-medium">Registered Profiles</p>
                         </div>
-                        <a
-                            href="/dashboard/music"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Music
-                        </a>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-orange-900/40 to-red-900/30 border border-orange-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent mb-1">Puja Manager</h2>
-                            <p className="text-sm text-gray-300 mb-4">Manage your Puja catalog and configure ₹999 Special Offers.</p>
-                        </div>
-                        <a
-                            href="/dashboard/pujas"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Pujas
-                        </a>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 to-indigo-900/30 border border-blue-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent mb-1">AI Guru Chat</h2>
-                            <p className="text-sm text-gray-300 mb-4">Configure the AI engine to power the smart spiritual assistant.</p>
-                        </div>
-                        <a
-                            href="/dashboard/settings"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Configure AI
-                        </a>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-green-900/40 to-teal-900/30 border border-green-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent mb-1">WhatsApp API Info</h2>
-                            <p className="text-sm text-gray-300 mb-4">Securely configure the dynamic WhatsApp REST API for App user authentication routing.</p>
-                        </div>
-                        <a
-                            href="/dashboard/settings/whatsapp"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Configure WhatsApp
-                        </a>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-orange-900/40 to-amber-900/30 border border-orange-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent mb-1">Referral Manager</h2>
-                            <p className="text-sm text-gray-300 mb-4">Customize the message users share when inviting friends.</p>
-                        </div>
-                        <a
-                            href="/dashboard/referral"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Referrals
-                        </a>
-                    </div>
-
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-saffron to-amber-900/30 border border-orange-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-amber-400 to-saffron bg-clip-text text-transparent mb-1">Kundli Manager</h2>
-                            <p className="text-sm text-gray-300 mb-4">Manage Astrology API providers, pricing, and display settings for the Kundli section.</p>
-                        </div>
-                        <a
-                            href="/dashboard/kundli"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Kundli
-                        </a>
-                    </div>
-
-                    {/* NEW: Reels/Feed Manager */}
-                    <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 to-purple-900/30 border border-blue-500/20 flex flex-col justify-between gap-4">
-                        <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-1">Divine Reels Feed</h2>
-                            <p className="text-sm text-gray-300 mb-4">Curate vertical video "reels" for the center Feed tab on the mobile app.</p>
-                        </div>
-                        <a
-                            href="/dashboard/reels"
-                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
-                        >
-                            Manage Reels
-                        </a>
                     </div>
                 </div>
 
-                <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-colors">
-                        <h2 className="text-lg font-semibold mb-2">Total Users</h2>
-                        <p className="text-3xl font-bold text-purple-400">1,248</p>
+                {/* Active Bookings Card */}
+                <div className="p-8 rounded-[32px] bg-white/5 border border-white/10 relative overflow-hidden group hover:border-orange-500/40 transition-all duration-500">
+                    <div className="absolute top-0 right-0 p-8 text-white/5 group-hover:text-orange-500/10 transition-colors">
+                        <ShoppingBag size={80} />
                     </div>
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-orange-500/50 transition-colors">
-                        <h2 className="text-lg font-semibold mb-2">Active Bookings</h2>
-                        <p className="text-3xl font-bold text-orange-400">34</p>
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
+                                <ShoppingBag size={20} className="text-orange-400" />
+                            </div>
+                            <span className="flex items-center gap-1 text-orange-400 text-xs font-bold bg-orange-400/10 px-2 py-1 rounded-lg">
+                                <Activity size={12} /> Live
+                            </span>
+                        </div>
+                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Active Bookings</h3>
+                        <div className="flex items-baseline gap-2">
+                            <p className="text-4xl font-black text-white">{activeBookings?.toLocaleString() || '0'}</p>
+                            <p className="text-xs text-gray-500 font-medium">Puja Sessions</p>
+                        </div>
                     </div>
-                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-colors">
-                        <h2 className="text-lg font-semibold mb-2">Revenue</h2>
-                        <p className="text-3xl font-bold text-purple-400">₹45,200</p>
+                </div>
+
+                {/* Revenue Card */}
+                <div className="p-8 rounded-[32px] bg-white/5 border border-white/10 relative overflow-hidden group hover:border-green-500/40 transition-all duration-500">
+                    <div className="absolute top-0 right-0 p-8 text-white/5 group-hover:text-green-500/10 transition-colors">
+                        <IndianRupee size={80} />
                     </div>
-                </main>
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                                <IndianRupee size={20} className="text-green-400" />
+                            </div>
+                            <span className="flex items-center gap-1 text-green-400 text-xs font-bold bg-green-400/10 px-2 py-1 rounded-lg">
+                                <TrendingUp size={12} /> Net Sales
+                            </span>
+                        </div>
+                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Total Revenue</h3>
+                        <div className="flex items-baseline gap-2">
+                            <p className="text-4xl font-black text-white">₹{revenue?.toLocaleString() || '0'}</p>
+                            <p className="text-xs text-gray-500 font-medium">Volume</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Section: Recent Activity & Action Center */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Recent Activity Feed */}
+                <div className="lg:col-span-8 space-y-6">
+                    <div className="flex items-center justify-between px-2">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-white/5 rounded-xl border border-white/10">
+                                <TrendingUp size={18} className="text-purple-400" />
+                            </div>
+                            <h2 className="text-lg font-bold tracking-tight">Recent Puja Bookings</h2>
+                        </div>
+                        <button className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors uppercase tracking-widest">
+                            View All Bookings
+                        </button>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-[40px] overflow-hidden backdrop-blur-sm">
+                        <div className="p-4 overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-gray-500 font-black">
+                                        <th className="px-6 py-4">User</th>
+                                        <th className="px-6 py-4">Package</th>
+                                        <th className="px-6 py-4 text-center">Amount</th>
+                                        <th className="px-6 py-4 text-center">Status</th>
+                                        <th className="px-6 py-4 text-right">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.03]">
+                                    {recentBookings && recentBookings.length > 0 ? (
+                                        recentBookings.map((booking: any) => (
+                                            <tr key={booking.id} className="group hover:bg-white/[0.02] transition-colors">
+                                                <td className="px-6 py-5">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">
+                                                            {booking.profiles?.full_name || 'Anonymous User'}
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-500 group-hover:text-gray-400 transition-colors">
+                                                            {booking.profiles?.email || 'No email provided'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-semibold text-gray-400 truncate max-w-[150px]">
+                                                            {booking.description || 'Puja Booking'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    <span className="text-sm font-black text-white">₹{booking.amount}</span>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    <span className={`
+                                                        px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest
+                                                        ${booking.status === 'success' 
+                                                            ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
+                                                            : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'}
+                                                    `}>
+                                                        {booking.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-5 text-right">
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                                        {new Date(booking.created_at).toLocaleDateString()}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-10 text-center text-gray-500 font-medium text-sm italic">
+                                                No recent bookings detected in the catalog.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Actions / Featured Stat */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="flex items-center gap-3 px-2">
+                        <div className="p-2 bg-white/5 rounded-xl border border-white/10">
+                            <Flame size={18} className="text-orange-400" />
+                        </div>
+                        <h2 className="text-lg font-bold tracking-tight">AI Insights</h2>
+                    </div>
+
+                    <div className="p-8 rounded-[40px] bg-gradient-to-br from-purple-600/20 to-orange-600/10 border border-purple-500/20 space-y-6">
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-bold text-purple-400 uppercase tracking-widest">Platform Growth</h3>
+                            <p className="text-gray-300 text-sm leading-relaxed">
+                                User registration is up by <span className="text-white font-bold">12%</span> this week. Recommend launching a new festival popup to capitalize on the momentum.
+                            </p>
+                        </div>
+
+                        <div className="pt-4 border-t border-white/5 space-y-4">
+                            <button className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                        <Activity size={16} className="text-purple-400" />
+                                    </div>
+                                    <span className="text-xs font-bold uppercase tracking-wider">System Logs</span>
+                                </div>
+                                <ChevronRight size={16} className="text-gray-600 group-hover:text-white transition-colors" />
+                            </button>
+                            <button className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                                        <Users size={16} className="text-orange-400" />
+                                    </div>
+                                    <span className="text-xs font-bold uppercase tracking-wider">User Support</span>
+                                </div>
+                                <ChevronRight size={16} className="text-gray-600 group-hover:text-white transition-colors" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

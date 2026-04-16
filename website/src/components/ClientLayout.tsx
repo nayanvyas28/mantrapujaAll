@@ -35,28 +35,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         setIsMounted(true);
-
-        // Mandatory Onboarding Check
-        const checkOnboarding = async () => {
-            if (user) {
-                const { data: profile } = await supabase
-                    .from('user_profiles')
-                    .select('onboarding_completed')
-                    .eq('id', user.id)
-                    .single();
-
-                const isAuthPage = pathname === '/onboarding' || pathname === '/login' || pathname === '/signup' || pathname?.startsWith('/admin');
-
-                if (profile && !profile.onboarding_completed && !isAuthPage) {
-                    router.push('/onboarding');
-                }
-            }
-        };
-
-        if (isMounted) {
-            checkOnboarding();
-        }
-    }, [isMounted, pathname, router, user]);
+    }, []);
 
     useEffect(() => {
         window.scrollTo(0, 0);

@@ -88,7 +88,7 @@ const TopBar = () => {
             <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="container mx-auto px-4 flex items-center justify-between py-2 gap-4"
+                className="container mx-auto px-4 flex items-center justify-between py-2.5 gap-4"
             >
                 {/* -- LEFT: Options -- */}
                 <div className="flex items-center gap-1.5 md:gap-2">
@@ -98,10 +98,10 @@ const TopBar = () => {
                             <Link
                                 key={link.name}
                                 href={link.href}
-                                className="px-3 md:px-4 py-1.5 rounded-full flex items-center gap-2 hover:bg-white dark:hover:bg-white/10 transition-all group"
+                                className="px-3 md:px-5 py-2 rounded-full flex items-center gap-2.5 hover:bg-white dark:hover:bg-white/10 transition-all group"
                             >
-                                <link.icon size={12} className="text-orange-500 group-hover:rotate-12 transition-transform" />
-                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-300 group-hover:text-orange-600 transition-colors">
+                                <link.icon size={15} className="text-orange-500 group-hover:rotate-12 transition-transform" />
+                                <span className="text-[11px] font-black tracking-wider text-zinc-600 dark:text-zinc-300 group-hover:text-orange-600 transition-colors">
                                     {link.name}
                                 </span>
                             </Link>
@@ -110,10 +110,10 @@ const TopBar = () => {
                         {user && (
                             <Link
                                 href="/kundli"
-                                className="px-3 md:px-4 py-1.5 rounded-full flex items-center gap-2 hover:bg-white dark:hover:bg-white/10 transition-all group"
+                                className="px-3 md:px-5 py-2 rounded-full flex items-center gap-2.5 hover:bg-white dark:hover:bg-white/10 transition-all group"
                             >
-                                <Scroll size={12} className="text-orange-500 group-hover:rotate-12 transition-transform" />
-                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-300 group-hover:text-orange-600">
+                                <Scroll size={15} className="text-orange-500 group-hover:rotate-12 transition-transform" />
+                                <span className="text-[11px] font-black tracking-wider text-zinc-600 dark:text-zinc-300 group-hover:text-orange-600">
                                     {t.kundali}
                                 </span>
                             </Link>
@@ -124,10 +124,10 @@ const TopBar = () => {
                             onMouseEnter={() => setIsCalculatorOpen(true)}
                             onMouseLeave={() => setIsCalculatorOpen(false)}
                         >
-                            <button className={`px-4 py-1.5 rounded-full flex items-center gap-2 transition-all ${isCalculatorOpen ? 'bg-white dark:bg-white/10 text-orange-600 shadow-sm' : 'hover:bg-white dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300'}`}>
-                                <Calculator size={12} className="text-orange-500" />
-                                <span className="text-[9px] font-black uppercase tracking-wider">{t.calculator}</span>
-                                <ChevronDown size={11} className={`transition-transform duration-300 ${isCalculatorOpen ? 'rotate-180' : ''}`} />
+                            <button className={`px-5 py-3 rounded-full flex items-center gap-2.5 transition-all ${isCalculatorOpen ? 'bg-white dark:bg-white/10 text-orange-600 shadow-sm' : 'hover:bg-white dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300'}`}>
+                                <Calculator size={15} className="text-orange-500" />
+                                <span className="text-[11px] font-black tracking-wider">{t.calculator}</span>
+                                <ChevronDown size={13} className={`transition-transform duration-300 ${isCalculatorOpen ? 'rotate-180' : ''}`} />
                             </button>
 
                             <AnimatePresence>
@@ -138,20 +138,20 @@ const TopBar = () => {
                                         exit={{ opacity: 0, y: 5, scale: 0.95 }}
                                         className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-zinc-900 rounded-[24px] shadow-2xl border border-orange-200/30 dark:border-white/10 py-3 overflow-hidden z-[1000]"
                                     >
-                                        <div className="px-5 py-2 mb-2 border-b border-zinc-100 dark:border-white/5">
-                                            <p className="text-[9px] font-black uppercase text-orange-500 tracking-widest">{t.calculators_heading}</p>
+                                        <div className="px-5 py-3 mb-2 border-b border-zinc-100 dark:border-white/5">
+                                            <p className="text-[11px] font-black text-orange-500 tracking-widest">{t.calculators_heading}</p>
                                         </div>
                                         <div className="max-h-[50vh] overflow-y-auto no-scrollbar px-2">
                                             {calculators.map((calc) => (
                                                 <Link
                                                     key={calc.name}
                                                     href={calc.href}
-                                                    className="flex items-center justify-between px-4 py-2 rounded-xl hover:bg-orange-50 dark:hover:bg-white/5 transition-all group"
+                                                    className="flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-orange-50 dark:hover:bg-white/5 transition-all group"
                                                 >
-                                                    <span className="text-[9px] font-black text-zinc-700 dark:text-zinc-300 group-hover:text-orange-600 uppercase tracking-tight">
+                                                    <span className="text-[11px] font-black text-zinc-700 dark:text-zinc-300 group-hover:text-orange-600 tracking-tight">
                                                         {calc.name}
                                                     </span>
-                                                    <ChevronRight size={10} className="text-zinc-300 dark:text-zinc-700 group-hover:text-orange-500" />
+                                                    <ChevronRight size={13} className="text-zinc-300 dark:text-zinc-700 group-hover:text-orange-500" />
                                                 </Link>
                                             ))}
                                         </div>
@@ -167,13 +167,13 @@ const TopBar = () => {
                     {/* Live Guru Chat Button */}
                     <button
                         onClick={() => window.dispatchEvent(new CustomEvent('toggle-guru-chat'))}
-                        className="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-lg shadow-orange-500/25 flex items-center gap-2 active:scale-95 transition-all group hidden sm:flex"
+                        className="bg-orange-500 hover:bg-orange-600 px-4 py-2 md:px-5 md:py-2.5 rounded-full shadow-lg shadow-orange-500/25 flex items-center gap-2 active:scale-95 transition-all group hidden sm:flex"
                     >
                         <div className="relative">
                             <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-30" />
-                            <div className="relative w-1.5 h-1.5 bg-white rounded-full" />
+                            <div className="relative w-2 h-2 bg-white rounded-full" />
                         </div>
-                        <span className="text-[9px] font-black text-white uppercase tracking-widest">
+                        <span className="text-[11px] font-black text-white tracking-widest">
                             {t.live_chat}
                         </span>
                     </button>

@@ -43,7 +43,7 @@ const Header = () => {
         en: {
             welcome: "Namaste",
             logout: "Sign Out",
-            signin_signup: "Join / Sign In",
+            signin_signup: "Join / Sign in",
             my_account: "Account"
         },
         hi: {
@@ -132,7 +132,7 @@ const Header = () => {
                     <img
                         src="/logo.png"
                         alt="MantraPuja - Vedic Services Logo"
-                        className="h-8 xs:h-9 md:h-11 w-auto group-hover:scale-105 transition-all duration-300"
+                        className="h-10 xs:h-11 md:h-14 w-auto group-hover:scale-105 transition-all duration-300"
                     />
                 </Link>
 
@@ -142,7 +142,7 @@ const Header = () => {
                         <Link
                             key={link.name}
                             href={link.href}
-                            className="px-4 py-1.5 text-xs font-bold text-zinc-600 dark:text-zinc-300 hover:text-orange-600 transition-colors uppercase tracking-tight rounded-full hover:bg-white dark:hover:bg-white/10"
+                            className="px-5 py-2.5 text-sm font-black text-zinc-600 dark:text-zinc-300 hover:text-orange-600 transition-colors tracking-tight rounded-full hover:bg-white dark:hover:bg-white/10"
                         >
                             {link.name}
                         </Link>
@@ -154,7 +154,7 @@ const Header = () => {
                     {/* 3D Primary Button: Book A Pooja */}
                     <Link
                         href="/pooja-services"
-                        className="hidden sm:inline-flex items-center justify-center h-9 px-6 font-black text-[10px] text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-[0_3px_0_0_#9a3412] hover:translate-y-[1px] active:translate-y-[3px] transition-all uppercase tracking-widest"
+                        className="hidden sm:inline-flex items-center justify-center h-11 px-8 font-black text-xs text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-[0_4px_0_0_#9a3412] hover:translate-y-[1px] active:translate-y-[4px] transition-all tracking-widest"
                     >
                         Book Puja
                     </Link>
@@ -163,31 +163,31 @@ const Header = () => {
                     <div className="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
                         {user ? (
                             <div className="flex items-center gap-3">
-                                <Link href="/profile" className="hidden border-r md:flex flex-col items-end pr-3 border-zinc-200 dark:border-white/10">
-                                    <span className="text-[10px] font-black text-zinc-900 dark:text-white capitalize truncate max-w-[100px]">
+                                <Link href="/profile" className="hidden border-r md:flex flex-col items-end pr-4 border-zinc-200 dark:border-white/10">
+                                    <span className="text-xs font-black text-zinc-900 dark:text-white capitalize truncate max-w-[120px]">
                                         {user.email?.split('@')[0]}
                                     </span>
                                 </Link>
                                 <button
                                     onClick={handleLogout}
-                                    className="p-2.5 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-red-500 hover:text-white transition-all text-zinc-600 dark:text-zinc-400"
+                                    className="p-3 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-red-500 hover:text-white transition-all text-zinc-600 dark:text-zinc-400"
                                     title={t.logout}
                                 >
-                                    <LogOut size={16} />
+                                    <LogOut size={18} />
                                 </button>
                             </div>
                         ) : (
                             <Link
                                 href="/login"
-                                className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5 transition-all group"
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5 transition-all group"
                             >
-                                <div className="hidden sm:flex flex-col items-end pr-2">
-                                    <span className="text-[9px] font-black text-zinc-600 dark:text-zinc-300 uppercase tracking-tighter">
+                                <div className="hidden sm:flex flex-col items-end pr-3">
+                                    <span className="text-xs font-black text-zinc-600 dark:text-zinc-300 tracking-tighter">
                                         {t.signin_signup}
                                     </span>
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-zinc-950 dark:bg-white/10 flex items-center justify-center text-white dark:text-orange-500 group-hover:scale-110 transition-transform">
-                                    <UserIcon size={16} />
+                                <div className="w-10 h-10 rounded-full bg-zinc-950 dark:bg-white/10 flex items-center justify-center text-white dark:text-orange-500 group-hover:scale-110 transition-transform">
+                                    <UserIcon size={18} />
                                 </div>
                             </Link>
                         )}
@@ -220,7 +220,7 @@ const Header = () => {
                                 <Link
                                     key={link.name}
                                     href={link.href}
-                                    className="text-lg font-bold text-zinc-800 dark:text-zinc-100"
+                                    className="text-lg font-black text-zinc-800 dark:text-zinc-100"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
                                     {link.name}

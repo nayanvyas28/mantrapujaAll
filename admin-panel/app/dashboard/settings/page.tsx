@@ -21,6 +21,8 @@ export default function AISettingsPage() {
     // Prompting State
     const [corePrompt, setCorePrompt] = useState('You are a spiritual guide.');
     const [rulebook, setRulebook] = useState('1. Only answer questions related to spirituality, religion, and internal peace.\n2. You must refuse to answer any questions about technology, logic, math, backend systems, AI models, or other irrelevant topics.');
+    const [chatStartInstruction, setChatStartInstruction] = useState('');
+    const [chatEndInstruction, setChatEndInstruction] = useState('');
 
     // Limits & Upsell State
     const [freeQueryLimit, setFreeQueryLimit] = useState<number>(10);
@@ -47,6 +49,12 @@ export default function AISettingsPage() {
                 }
                 if (data.rulebook) {
                     setRulebook(data.rulebook);
+                }
+                if (data.chatStartInstruction) {
+                    setChatStartInstruction(data.chatStartInstruction);
+                }
+                if (data.chatEndInstruction) {
+                    setChatEndInstruction(data.chatEndInstruction);
                 }
                 if (data.freeQueryLimit !== undefined) {
                     setFreeQueryLimit(data.freeQueryLimit);
@@ -125,6 +133,8 @@ export default function AISettingsPage() {
             gemini_selected_model: selectedModel,
             core_prompt: corePrompt,
             rulebook: rulebook,
+            chat_start_instruction: chatStartInstruction,
+            chat_end_instruction: chatEndInstruction,
             free_query_limit: freeQueryLimit,
             guest_query_limit: guestQueryLimit,
             chat_reset_hours: chatResetHours,
@@ -283,6 +293,40 @@ export default function AISettingsPage() {
                                         <p className="text-xs text-gray-500 mt-2">
                                             Define absolute technical, topical, or behavior limits. The AI will be explicitly instructed to never break these rules.
                                         </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider text-green-400">
+                                                Response Start Instruction
+                                            </label>
+                                            <textarea
+                                                value={chatStartInstruction}
+                                                onChange={(e) => setChatStartInstruction(e.target.value)}
+                                                placeholder="Example: Begin with 2-3 lines of planetary analysis..."
+                                                rows={4}
+                                                className="w-full px-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-green-500 transition-all text-white placeholder:text-gray-600 focus:ring-4 focus:ring-green-500/10 resize-y"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                Instruction for how EVERY message should start.
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider text-purple-400">
+                                                Response End Instruction
+                                            </label>
+                                            <textarea
+                                                value={chatEndInstruction}
+                                                onChange={(e) => setChatEndInstruction(e.target.value)}
+                                                placeholder="Example: End with a curiosity question about their job or health..."
+                                                rows={4}
+                                                className="w-full px-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-purple-500 transition-all text-white placeholder:text-gray-600 focus:ring-4 focus:ring-purple-500/10 resize-y"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                Instruction for how EVERY message should end.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
 

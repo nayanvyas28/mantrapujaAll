@@ -20,7 +20,9 @@ export async function POST(request: Request) {
             guest_query_limit,
             chat_reset_hours,
             premium_upsell_message,
-            referral_message
+            referral_message,
+            chat_start_instruction,
+            chat_end_instruction
         } = await request.json();
 
         // Allow updating any of the configuration flags
@@ -32,7 +34,9 @@ export async function POST(request: Request) {
             guest_query_limit === undefined &&
             chat_reset_hours === undefined &&
             premium_upsell_message === undefined &&
-            referral_message === undefined) {
+            referral_message === undefined &&
+            chat_start_instruction === undefined &&
+            chat_end_instruction === undefined) {
             return NextResponse.json({ error: 'No configuration provided' }, { status: 400 });
         }
 
@@ -111,6 +115,22 @@ export async function POST(request: Request) {
             });
         }
 
+        if (chat_start_instruction !== undefined) {
+            updates.push({
+                key: 'chat_start_instruction',
+                value: chat_start_instruction,
+                updated_at: timestamp
+            });
+        }
+
+        if (chat_end_instruction !== undefined) {
+            updates.push({
+                key: 'chat_end_instruction',
+                value: chat_end_instruction,
+                updated_at: timestamp
+            });
+        }
+
         // Store in Supabase
         const { error } = await supabase
             .from('settings')
@@ -149,7 +169,9 @@ export async function GET() {
                 'guest_query_limit',
                 'chat_reset_hours',
                 'premium_upsell_message',
-                'referral_message'
+                'referral_message',
+                'chat_start_instruction',
+                'chat_end_instruction'
             ]);
 
         if (error && error.code !== 'PGRST116') {
@@ -165,6 +187,8 @@ export async function GET() {
         const resetHoursSetting = data?.find(s => s.key === 'chat_reset_hours');
         const upsellSetting = data?.find(s => s.key === 'premium_upsell_message');
         const referralSetting = data?.find(s => s.key === 'referral_message');
+        const startInstSetting = data?.find(s => s.key === 'chat_start_instruction');
+        const endInstSetting = data?.find(s => s.key === 'chat_end_instruction');
 
         return NextResponse.json({
             isConfigured: !!apiKeySetting,
@@ -176,6 +200,8 @@ export async function GET() {
             chatResetHours: resetHoursSetting ? parseInt(resetHoursSetting.value, 10) : 3,
             premiumUpsellMessage: upsellSetting?.value || 'Guruji says you have reached your free query limit. Please upgrade to Pro to unlock unlimited spiritual guidance.',
             referralMessage: referralSetting?.value || 'Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app',
+            chatStartInstruction: startInstSetting?.value || '',
+            chatEndInstruction: endInstSetting?.value || '',
             updatedAt: apiKeySetting?.updated_at || null
         });
     } catch (error) {

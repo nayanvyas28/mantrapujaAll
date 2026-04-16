@@ -1,5 +1,10 @@
-import { BadgeCheck, Calendar, Clock, HelpCircle, MapPin, MessageCircle, Phone, Star, User, UserCheck, ArrowRight, ShieldCheck, Sun, CheckCircle, ChevronDown, IndianRupee, Flower, Scroll, Flame, Heart } from "lucide-react";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { BadgeCheck, Calendar, Clock, HelpCircle, MapPin, MessageCircle, Phone, Star, User, UserCheck, ArrowRight, ShieldCheck, Sun, CheckCircle, ChevronDown, IndianRupee, Flower, Scroll, Flame, Heart, X, Loader2, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { PujaData } from "@/lib/pujaData";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import FireParticles from "@/components/FireParticles"; // Ensure this component exists or remove if not needed
@@ -59,8 +64,16 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
         footer
     } = puja;
 
+    const { user } = useAuth();
+    const router = useRouter();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+    
+    // Booking Flow State
+    const [bookingStep, setBookingStep] = useState<'selecting' | 'naming' | 'success'>('selecting');
+    const [selectedPkg, setSelectedPkg] = useState<any>(null);
+    const [sankalpName, setSankalpName] = useState(user?.full_name || "");
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -71,14 +84,50 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     }, []);
 
     const scrollToBooking = () => {
+        if (!user) {
+            // Force login for booking
+            router.push('/login?redirect=' + encodeURIComponent(window.location.pathname));
+            return;
+        }
+        setBookingStep('selecting');
         setIsBookingModalOpen(true);
     };
 
     const handlePackageSelect = (pkg: any) => {
-        setIsBookingModalOpen(false);
-        // Redirect to WhatsApp with pre-filled message
-        const message = encodeURIComponent(`Hello MantraPuja, I would like to book the "${pkg.name}" for "${name}". Please guide me with the next steps.`);
-        window.open(`https://wa.me/918989271245?text=${message}`, '_blank');
+        setSelectedPkg(pkg);
+        setBookingStep('naming');
+    };
+
+    const handleBookingConfirm = async () => {
+        if (!sankalpName.trim()) return;
+        
+        setIsSubmitting(true);
+        try {
+            const response = await fetch('/api/puja-bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sankalp_name: sankalpName,
+                    puja_name: name,
+                    puja_slug: puja.slug,
+                    package_name: selectedPkg.name,
+                    price: selectedPkg.price,
+                    user_id: user.id
+                })
+            });
+
+            if (response.ok) {
+                setBookingStep('success');
+            } else {
+                const err = await response.json();
+                alert(err.error || 'Something went wrong');
+            }
+        } catch (error) {
+            console.error('Booking error:', error);
+            alert('Failed to book. Please try again or check if the database table exists.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const SectionHeading = ({ children, subtitle }: { children: React.ReactNode, subtitle?: string }) => {
@@ -904,13 +953,140 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                 }
             </AnimatePresence>
             <BookingPackagesPopup 
-                isOpen={isBookingModalOpen}
+                isOpen={isBookingModalOpen && bookingStep === 'selecting'}
                 onClose={() => setIsBookingModalOpen(false)}
                 pujaName={name}
                 packages={puja.packages || []}
                 onSelect={handlePackageSelect}
             />
 
+            {/* Step 2: Sankalp Name Entry */}
+            <AnimatePresence>
+                {isBookingModalOpen && bookingStep === 'naming' && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsBookingModalOpen(false)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-[32px] border border-orange-500/20 shadow-2xl p-8 overflow-hidden"
+                        >
+                            {/* Decorative element */}
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-600" />
+                            
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <h3 className="text-2xl font-black text-gray-900 dark:text-white font-serif">Sankalp Ritual Details</h3>
+                                    <p className="text-xs text-orange-500 font-bold uppercase tracking-widest mt-1">Personalizing your puja</p>
+                                </div>
+                                <button onClick={() => setIsBookingModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-colors">
+                                    <X className="w-6 h-6 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="p-4 rounded-2xl bg-orange-50 dark:bg-orange-500/5 border border-orange-100 dark:border-orange-500/10 mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                                        <p className="text-xs font-black text-orange-600 dark:text-orange-400 uppercase tracking-tighter">Selected Package</p>
+                                    </div>
+                                    <p className="text-lg font-bold text-gray-800 dark:text-white mt-1">{selectedPkg?.name}</p>
+                                    <p className="text-xl font-black text-orange-600 mt-1 flex items-center"><IndianRupee size={18} /> {selectedPkg?.price}</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-3">Entrance Name for Sankalp</label>
+                                    <input 
+                                        type="text"
+                                        value={sankalpName}
+                                        onChange={(e) => setSankalpName(e.target.value)}
+                                        placeholder="Full Name (for Vedic chanting)"
+                                        className="w-full px-6 py-4 rounded-2xl border-2 border-orange-100 dark:border-white/10 bg-gray-50 dark:bg-black/20 focus:border-orange-500 dark:focus:border-orange-500 focus:outline-none transition-all text-lg font-bold"
+                                        autoFocus
+                                    />
+                                    <p className="text-[10px] text-gray-400 mt-2 italic px-1">This name will be used by our Panditji during the ritual invocation.</p>
+                                </div>
+
+                                <button 
+                                    onClick={handleBookingConfirm}
+                                    disabled={!sankalpName.trim() || isSubmitting}
+                                    className="w-full py-5 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-black text-lg shadow-xl shadow-orange-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
+                                >
+                                    {isSubmitting ? (
+                                        <Loader2 className="w-6 h-6 animate-spin" />
+                                    ) : (
+                                        <>
+                                            Complete Booking <ArrowRight className="w-6 h-6" />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Step 3: Success Screen */}
+            <AnimatePresence>
+                {isBookingModalOpen && bookingStep === 'success' && (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-emerald-950/90 backdrop-blur-xl"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            className="relative w-full max-w-lg bg-white dark:bg-zinc-900 rounded-[40px] border-4 border-emerald-500/20 shadow-2xl p-10 text-center overflow-hidden"
+                        >
+                            <div className="absolute -top-20 -right-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
+                            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl animate-pulse" />
+                            
+                            <motion.div 
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", damping: 10, stiffness: 100, delay: 0.2 }}
+                                className="w-24 h-24 bg-emerald-500 rounded-full mx-auto flex items-center justify-center mb-8 shadow-2xl shadow-emerald-500/40"
+                            >
+                                <CheckCircle className="w-12 h-12 text-white" strokeWidth={3} />
+                            </motion.div>
+
+                            <h3 className="text-3xl font-black text-gray-900 dark:text-white font-serif mb-4">Jai Ho! 🎉</h3>
+                            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">Booking Confirmed Successfully</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-10 leading-relaxed">
+                                Divine blessings await you, <span className="text-gray-900 dark:text-white font-black">{sankalpName}</span>. Your ritual has been scheduled.
+                            </p>
+
+                            <div className="space-y-4">
+                                <a
+                                    href={`https://wa.me/918989271245?text=${encodeURIComponent(`Namaste! My booking for ${selectedPkg?.name} is confirmed for ${name} (Sankalp: ${sankalpName}). Please share the ritual details.`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full py-5 rounded-2xl bg-[#25D366] text-white font-black text-lg flex items-center justify-center gap-3 hover:scale-[1.02] transition-all shadow-xl shadow-emerald-500/20"
+                                >
+                                    <MessageCircle className="w-6 h-6 fill-current" />
+                                    पंडित जी से WhatsApp पर बात करें
+                                </a>
+                                
+                                <button 
+                                    onClick={() => setIsBookingModalOpen(false)}
+                                    className="w-full py-4 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 font-bold hover:bg-gray-200 transition-colors"
+                                >
+                                    Close and Continue
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div >
     );
 }

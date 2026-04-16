@@ -237,18 +237,18 @@ export default function BookingPackagesPopup({
                                                     </h5>
 
                                                     {/* Divine Image */}
-                                                    <div className={`mb-5 relative aspect-square rounded-2xl overflow-hidden ring-1 shadow-inner transition-all duration-500 ${isSelected ? 'ring-saffron/40' : 'ring-slate-200 dark:ring-white/10 grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100'}`}>
+                                                    <div className={`mb-5 relative aspect-square rounded-2xl overflow-hidden ring-1 shadow-inner transition-all duration-500 ${isSelected ? 'ring-saffron/40' : 'ring-slate-200 dark:ring-white/10 opacity-80 group-hover:opacity-100'}`}>
                                                         <img 
                                                             src={pkg.image} 
                                                             alt={pkg.name}
                                                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                         />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60 dark:opacity-100"></div>
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-40 dark:opacity-80"></div>
                                                     </div>
 
                                                     {/* Price Bottom */}
                                                     <div className="mt-auto">
-                                                        <div className={`text-xl font-black flex items-center transition-all ${isSelected ? 'text-saffron scale-110 origin-left' : 'text-slate-400 dark:text-gray-500'}`}>
+                                                        <div className={`text-xl font-black flex items-center transition-all ${isSelected ? 'text-saffron scale-110 origin-left' : 'text-slate-600 dark:text-gray-300'}`}>
                                                             <IndianRupee className="w-4 h-4 mr-0.5" strokeWidth={3} />
                                                             {pkg.price}
                                                         </div>
