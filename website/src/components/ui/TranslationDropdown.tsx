@@ -27,9 +27,11 @@ declare global {
     }
 }
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export function TranslationDropdown() {
+    const { language: currentLang, setLanguage } = useLanguage();
     const [isOpen, setIsOpen] = React.useState(false);
-    const [currentLang, setCurrentLang] = React.useState("en");
     const [mounted, setMounted] = React.useState(false);
 
     // Initialize Google Translate
@@ -56,33 +58,11 @@ export function TranslationDropdown() {
                 );
             };
         }
-
-        // Check for existing cookie to set initial state
-        const getCookie = (name: string) => {
-            const v = document.cookie.match("(^|;) ?" + name + "=([^;]*)(;|$)");
-            return v ? v[2] : null;
-        };
-
-        const googTrans = getCookie("googtrans");
-        if (googTrans) {
-            // Format is usually /en/hi
-            const lang = googTrans.split("/")[2];
-            if (lang) setCurrentLang(lang);
-        }
     }, []);
 
     const changeLanguage = (langCode: string) => {
-        setCurrentLang(langCode);
+        setLanguage(langCode);
         setIsOpen(false);
-
-        const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
-        if (combo) {
-            combo.value = langCode;
-            combo.dispatchEvent(new Event("change"));
-        } else {
-            // Fallback if the combo isn't ready yet (rare)
-            console.warn("Google Translate combo not found");
-        }
     };
 
     if (!mounted) return null;

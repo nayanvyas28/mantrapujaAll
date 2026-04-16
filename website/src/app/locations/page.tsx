@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Map as MapIcon, Grid, List, Sparkles, ChevronDown, ArrowRight, Filter, IndianRupee, MapPin, Compass } from 'lucide-react';
+import { Search, Map as MapIcon, Grid, List, Sun, ChevronDown, ArrowRight, Filter, IndianRupee, MapPin, Compass } from 'lucide-react';
 import IndiaMap from '../../components/IndiaMap';
 import { createClient } from '@supabase/supabase-js';
 import { locations as staticLocations, Location, LocationType } from '../../data/spiritual-locations';

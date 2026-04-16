@@ -170,7 +170,7 @@ export default function BlogContent() {
                                 )}
                             </>
                         ) : (
-                            <div className="text-center py-20 bg-card/50 rounded-[2rem] border border-border dashed">
+                            <div className="text-center py-8 bg-card/50 rounded-[2rem] border border-border dashed">
                                 <h3 className="text-2xl font-bold mb-2">No wisdom found</h3>
                                 <p className="text-muted-foreground">Try adjusting your search or category.</p>
                             </div>

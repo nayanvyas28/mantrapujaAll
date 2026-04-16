@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard,
     Grid3X3,
-    Sparkles,
     Calendar,
     User,
     MapPin,
@@ -30,10 +29,19 @@ import {
     GraduationCap,
     Users,
     BookOpen,
-    Download
+    Download,
+    Home,
+    ArrowLeft,
+    Crown,
+    CheckCircle2
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import Link from 'next/link';
+import { Plus, Trash2, History } from 'lucide-react';
 
 // 🖌️ Veda Local Chart Engine (North Indian Style)
 const NorthIndianChart = ({ planets }: { planets: any[] }) => {
@@ -92,7 +100,7 @@ const NorthIndianChart = ({ planets }: { planets: any[] }) => {
 export default function KundliPage() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [activeChart, setActiveChart] = useState('Lagna (D1)');
-    const [activePredTab, setActivePredTab] = useState('Character');
+    const [activePredTab, setActivePredTab] = useState('character');
     const [activeNumeroTab, setActiveNumeroTab] = useState('Personality Report');
     const [loading, setLoading] = useState(false);
     const [isGenerated, setIsGenerated] = useState(false);
@@ -100,7 +108,15 @@ export default function KundliPage() {
     const [error, setError] = useState<string | null>(null);
     const [apiData, setApiData] = useState<any>(null);
     const [fetchingChart, setFetchingChart] = useState(false);
-    const [language, setLanguage] = useState<'hi' | 'en'>('hi');
+    const { language, setLanguage } = useLanguage();
+    const { user } = useAuth();
+
+    // 📂 Multi-Kundali State
+    const [savedKundalis, setSavedKundalis] = useState<any[]>([]);
+    const [isCreationMode, setIsCreationMode] = useState(false);
+    const [suggestions, setSuggestions] = useState<any[]>([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [fetchingSaved, setFetchingSaved] = useState(false);
 
     // 🔮 Veda Universal Report Flattener
     const getR = (d: any, category?: string) => {
@@ -108,11 +124,11 @@ export default function KundliPage() {
         const errMsg = d.message || d.msg || '';
         if (d.error && (errMsg.toLowerCase().includes('plan') || errMsg.toLowerCase().includes('authorized'))) {
             const fallbacks: { [key: string]: string } = {
-                'Character': "He will have full of vigour and vitality as also intelligence of the highest order. He is firm believer of god and leads a life of truthful existence. He does not believe in the orthodox principles nor the age old tradition. He is fond of adopting modern ideas. Mostly he lives away from his family. He is ready to give weight to others in excess of what actually required depending the weight of the person's to whom he is dealing in. Slavery is suicidal for him. While the is very much religiously active, he does not follow any superstitious religious fanaticism. He treats all religions, castes and creed as one. He is a follower of Gandhian philosopohy of Ahimsa Paramodharma' ( Religion is Non-violence) and 'Truth is God'. In certain cases I have seen that such type of persons accept Sanyasa (saintism) when they touch 35 years of age. When we say sanyasa it does not mean that complete detraction from the 'Grihastashram' (duty towards the family). He will smiultaneously look after the family and follow sanyasa.",
-                'Career & Edu': "Your career trajectory is strongly influenced by your innate ability to synthesize complex ideas and execute them with precision. You are well-suited for professional environments that value both strategic foresight and tactical efficiency. While the path may present periodic challenges, your natural resilience and intellect will inevitably lead you toward leadership roles where you can make a meaningful contribution to your field and society at large.",
-                'Relationship': "You seek deep spiritual connection and intellectual harmony in all high-stakes relationships. Your presence is characterized by intense loyalty and a shared quest for truth with your partner. Your refined aesthetic sense and emotional transparency make you a supportive and insightful companion, though you may sometimes need to communicate your needs more directly to maintain energetic balance and harmony in the home.",
-                'Health': "Maintaining your physical and energetic vitality requires a consistent routine that keeps your internal 'Prana' in alignment with natural cycles. By observing the movement of the celestial bodies and adapting your habits accordingly, you can ensure peak metabolic efficiency and long-term metabolic health. Focus on grounding practices and balanced hydration to prevent burnout and ensure that your robust constitution remains sustainable for years to come.",
-                'Physical': "You carry an energetic presence that is both commanding and approachable, leaving a lasting impression on those you encounter. Your physical signature suggests a balanced constitution that responds well to structured physical activity and holistic wellness practices. By paying attention to your physical signs and honoring your body's need for rest and regeneration, you can maintain a vibrant and youthful appearance that reflects your inner spiritual clarity.",
+                'character': "He will have full of vigour and vitality as also intelligence of the highest order. He is firm believer of god and leads a life of truthful existence. He does not believe in the orthodox principles nor the age old tradition. He is fond of adopting modern ideas. Mostly he lives away from his family. He is ready to give weight to others in excess of what actually required depending the weight of the person's to whom he is dealing in. Slavery is suicidal for him. While the is very much religiously active, he does not follow any superstitious religious fanaticism. He treats all religions, castes and creed as one. He is a follower of Gandhian philosopohy of Ahimsa Paramodharma' ( Religion is Non-violence) and 'Truth is God'. In certain cases I have seen that such type of persons accept Sanyasa (saintism) when they touch 35 years of age. When we say sanyasa it does not mean that complete detraction from the 'Grihastashram' (duty towards the family). He will smiultaneously look after the family and follow sanyasa.",
+                'career': "Your career trajectory is strongly influenced by your innate ability to synthesize complex ideas and execute them with precision. You are well-suited for professional environments that value both strategic foresight and tactical efficiency. While the path may present periodic challenges, your natural resilience and intellect will inevitably lead you toward leadership roles where you can make a meaningful contribution to your field and society at large.",
+                'relation': "You seek deep spiritual connection and intellectual harmony in all high-stakes relationships. Your presence is characterized by intense loyalty and a shared quest for truth with your partner. Your refined aesthetic sense and emotional transparency make you a supportive and insightful companion, though you may sometimes need to communicate your needs more directly to maintain energetic balance and harmony in the home.",
+                'health': "Maintaining your physical and energetic vitality requires a consistent routine that keeps your internal 'Prana' in alignment with natural cycles. By observing the movement of the celestial bodies and adapting your habits accordingly, you can ensure peak metabolic efficiency and long-term metabolic health. Focus on grounding practices and balanced hydration to prevent burnout and ensure that your robust constitution remains sustainable for years to come.",
+                'physical': "You carry an energetic presence that is both commanding and approachable, leaving a lasting impression on those you encounter. Your physical signature suggests a balanced constitution that responds well to structured physical activity and holistic wellness practices. By paying attention to your physical signs and honoring your body's need for rest and regeneration, you can maintain a vibrant and youthful appearance that reflects your inner spiritual clarity.",
                 'Yoga': "Powerful cosmic alignments within your chart indicate profound hidden potentials that activate during specific life phases. These 'Yogas' contribute to your natural wisdom, authority, and spiritual resilience, providing you with the energetic reserves needed to overcome any mundane obstacle. By tapping into these dormant strengths through meditation and mindfulness, you can unlock a deeper sense of purpose and reach new heights of personal realization.",
                 'Personality Report': "Your numerical vibration suggests a personality that balances intellectual depth with a strong sense of purpose. You possess a unique frequency that attracts leadership roles and allows you to bridge the gap between abstract ideas and practical execution. Your presence in a group is often stabilizing, as you provide a clear sense of direction and a grounded perspective that others find naturally inspiring and trustworthy.",
                 'Favorable Timing': "Your most auspicious windows for new beginnings occur during the waxing moon cycles. These periods are ideal for launching new ventures, making significant life transitions, or initiating important conversations. By aligning your major actions with these high-frequency numerical windows, you minimize resistance and maximize the potential for success and harmony. Pay close attention to dates that resonate with your root number for even greater impact.",
@@ -229,11 +245,22 @@ export default function KundliPage() {
             persistent: 'Persistent',
             entity_identity: 'ENTITY IDENTITY',
             calendar_sync: 'CALENDAR SYNC',
-            chronos_time: 'CHRONOS TIME',
-            birth_location: 'BIRTH LOCATION',
-            reveal_chart: 'REVEAL COSMIC CHART',
             node_conn: 'Node-1 Connected: Veda Systems Active',
-            current_age: 'Current Age'
+            current_age: 'Current Age',
+            back_to_website: 'Back to Website',
+            saved_profile: 'Saved Profile',
+            birth_details: 'Birth Details',
+            enter_name: 'Enter Full Name',
+            search_city: 'Search Birth City...',
+            back_to_saved: 'Back to Saved',
+            view_kundali: 'View Kundali',
+            select_primary: 'Select for Guru AI',
+            active_profile: 'Primary Profile',
+            create_new: 'Create New',
+            analysis_for: 'ANALYSIS FOR',
+            pdf_report: 'PDF Report',
+            yrs: 'Yrs',
+            reveal_chart: 'GENERATE KUNDALI'
         },
         hi: {
             dashboard: 'डैशबोर्ड',
@@ -322,11 +349,24 @@ export default function KundliPage() {
             calendar_sync: 'कैलेंडर सिंक',
             chronos_time: 'जन्म समय',
             birth_location: 'जन्म स्थान',
-            reveal_chart: 'भाग्य चक्र देखें',
+            reveal_chart: 'कुंडली जनरेट करें',
             node_conn: 'नोड-1 कनेक्टेड: वेद सिस्टम्स सक्रिय',
-            current_age: 'वर्तमान आयु'
+            current_age: 'वर्तमान आयु',
+            back_to_website: 'वेबसाइट पर वापस जाएं',
+            saved_profile: 'सेवड प्रोफाइल',
+            birth_details: 'जन्म विवरण',
+            enter_name: 'नाम दर्ज करें',
+            search_city: 'शहर खोजें...',
+            back_to_saved: 'वापस जाएं',
+            view_kundali: 'कुंडली देखें',
+            select_primary: 'गुरु जी के लिए चुनें',
+            active_profile: 'मुख्य प्रोफाइल',
+            create_new: 'नया बनाएं',
+            analysis_for: 'के लिए विश्लेषण',
+            pdf_report: 'पीडीएफ रिपोर्ट',
+            yrs: 'वर्ष'
         }
-    }[language] as any;
+    }[language as 'en' | 'hi'] as any;
 
     const translateValue = (v: any) => {
         if (!v || language === 'en') return v;
@@ -364,7 +404,9 @@ export default function KundliPage() {
             'MONDAY': 'सोमवार', 'TUESDAY': 'मंगलवार', 'WEDNESDAY': 'बुधवार', 'THURSDAY': 'गुरुवार', 'FRIDAY': 'शुक्रवार', 'SATURDAY': 'शनिवार', 'SUNDAY': 'रविवार',
             // API Variations (Nakshatras & Planets)
             'SHRAVAN': 'श्रवण', 'HAST': 'हस्त', 'SHATBHISHA': 'शतभिषा', 'ASCENDANT': 'लग्न', 'Lagna': 'लग्न', 'CHITRA': 'चित्रा', 'SWATI': 'स्वाती', 'VISHAKHA': 'विशाखा', 'ANURADHA': 'अनुराधा', 'JYESHTHA': 'ज्येष्ठा', 'MULA': 'मूल', 'PURVA ASHADHA': 'पूर्वाषाढ़ा', 'UTTARA ASHADHA': 'उत्तराषाढ़ा', 'SHRAVANA': 'श्रवण', 'DHANISHTA': 'धनिष्ठा', 'SHATABHISHA': 'शतभिषा', 'PURVA BHADRAPADA': 'पूर्व भाद्रपद', 'UTTARA BHADRAPADA': 'उत्तर भाद्रपद', 'REVATI': 'रेवती',
-            'SUN': 'सूर्य', 'MOON': 'चंद्रमा', 'MARS': 'मंगल', 'MERCURY': 'बुध', 'JUPITER': 'बृहस्पति', 'VENUS': 'शुक्र', 'SATURN': 'शनि', 'RAHU': 'राहू', 'KETU': 'केतु'
+            'SUN': 'सूर्य', 'MOON': 'चंद्रमा', 'MARS': 'मंगल', 'MERCURY': 'बुध', 'JUPITER': 'बृहस्पति', 'VENUS': 'शुक्र', 'SATURN': 'शनि', 'RAHU': 'राहू', 'KETU': 'केतु',
+            'Aries': 'मेष', 'Taurus': 'वृषभ', 'Gemini': 'मिथुन', 'Cancer': 'कर्क', 'Leo': 'सिंह', 'Virgo': 'कन्या', 'Libra': 'तुला', 'Scorpio': 'वृश्चिक', 'Sagittarius': 'धनु', 'Capricorn': 'मकर', 'Aquarius': 'कुंभ', 'Pisces': 'मीन',
+            'ARIES': 'मेष', 'TAURUS': 'वृषभ', 'GEMINI': 'मिथुन', 'CANCER': 'कर्क', 'LEO': 'सिंह', 'VIRGO': 'कन्या', 'LIBRA': 'तुला', 'SCORPIO': 'वृश्चिक', 'SAGITTARIUS': 'धनु', 'CAPRICORN': 'मकर', 'AQUARIUS': 'कुंभ', 'PISCES': 'मीन'
         };
         const cleanV = String(v).trim();
         if (dict[cleanV]) return dict[cleanV];
@@ -413,7 +455,7 @@ export default function KundliPage() {
         { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
         { id: 'charts', label: t.charts, icon: Grid3X3 },
         { id: 'predictions', label: t.predictions, icon: FilePieChart },
-        { id: 'numerology', label: t.numerology, icon: Sparkles },
+        { id: 'numerology', label: t.numerology, icon: Star },
         { id: 'dasha', label: t.dasha, icon: Zap },
     ];
 
@@ -438,7 +480,165 @@ export default function KundliPage() {
         const savedForm = localStorage.getItem('veda_pro_form');
         if (savedData) { setApiData(JSON.parse(savedData)); setIsGenerated(true); }
         if (savedForm) setForm(JSON.parse(savedForm));
-    }, []);
+
+        if (user) {
+            fetchSavedKundalis();
+        }
+    }, [user]);
+
+    const fetchSavedKundalis = async () => {
+        if (!user) return;
+        setFetchingSaved(true);
+        try {
+            const { data, error } = await supabase
+                .from('user_kundalis')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+            
+            if (data) setSavedKundalis(data);
+        } catch (err) {
+            console.error('Failed to fetch saved kundalis:', err);
+        } finally {
+            setFetchingSaved(false);
+        }
+    };
+
+    const handlePlaceSearch = async (query: string) => {
+        setForm(prev => ({ ...prev, birthPlace: query }));
+        if (query.length < 3) {
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`);
+            const data = await res.json();
+            if (data.features) {
+                setSuggestions(data.features);
+                setShowSuggestions(true);
+            }
+        } catch (err) {
+            console.error('Photon search failed:', err);
+        }
+    };
+
+    const selectSuggestion = (feature: any) => {
+        const { name, city, country, state } = feature.properties;
+        const [lon, lat] = feature.geometry.coordinates;
+        const placeName = [name, city, state, country].filter(Boolean).join(', ');
+        
+        setForm(prev => ({
+            ...prev,
+            birthPlace: placeName,
+            lat: lat.toString(),
+            lon: lon.toString()
+        }));
+        setSuggestions([]);
+        setShowSuggestions(false);
+    };
+
+    const handleSelectKundali = async (k: any) => {
+        const newForm = {
+            name: k.full_name,
+            birthDate: k.date_of_birth,
+            birthTime: k.time_of_birth,
+            birthPlace: k.place_of_birth,
+            lat: k.lat?.toString() || '19.076',
+            lon: k.lon?.toString() || '72.8777'
+        };
+        setForm(newForm);
+        // Trigger generation with this form and use existing data if available
+        const generatedData = await executeGeneration(newForm, k.full_data);
+
+        // ✨ Auto-Patch: If the saved record was missing data, save it now for future instant loading
+        if (!k.full_data && generatedData && user) {
+            await supabase.from('user_kundalis').update({ full_data: generatedData }).eq('id', k.id);
+            // Refresh list so the local state has the new data
+            fetchSavedKundalis();
+        }
+    };
+
+    const handleSetActive = async (k: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!user) return;
+        
+        try {
+            // 1. Reset all others
+            await supabase.from('user_kundalis').update({ is_active: false }).eq('user_id', user.id);
+            // 2. Set this one as active
+            await supabase.from('user_kundalis').update({ is_active: true }).eq('id', k.id);
+            
+            // 3. Sync with main Vedic Profile for Guru AI
+            await supabase.from('user_vedic_profiles').upsert({
+                user_id: user.id,
+                full_name: k.full_name,
+                date_of_birth: k.date_of_birth,
+                time_of_birth: k.time_of_birth,
+                place_of_birth: k.place_of_birth,
+                gender: 'male', // Default or can be extended
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+
+            fetchSavedKundalis();
+        } catch (err) {
+            console.error('Failed to set active profile:', err);
+        }
+    };
+
+    const executeGeneration = async (formData: any, existingData?: any) => {
+        setLoading(true);
+        setError(null);
+        try {
+            // Priority 1: Use provided data (from DB)
+            if (existingData && typeof existingData === 'object') {
+                setApiData(existingData);
+                setIsGenerated(true);
+                setActiveTab('dashboard');
+                setIsCreationMode(false);
+                setLoading(false);
+                return existingData;
+            }
+
+            const datetime = `${formData.birthDate}T${formData.birthTime}:00+05:30`;
+            const response = await fetch('/api/vedaluna', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ params: { datetime, coordinates: `${formData.lat},${formData.lon}`, name: formData.name, language } })
+            });
+
+            const result = await response.json();
+            if (!response.ok && !result.data) throw new Error(result.error || 'SYNC_FAIL');
+
+            localStorage.setItem('veda_pro_cache', JSON.stringify(result.data));
+            localStorage.setItem('veda_pro_form', JSON.stringify(formData));
+            setApiData(result.data);
+            setIsGenerated(true);
+            setActiveTab('dashboard');
+            setIsCreationMode(false);
+            return result.data;
+        } catch (err: any) {
+            setError(err.message || 'ENGINE_SYNC_FAILED');
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteKundali = async (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm('Are you sure you want to delete this Kundali?')) return;
+        
+        try {
+            const { error } = await supabase.from('user_kundalis').delete().eq('id', id);
+            if (!error) {
+                setSavedKundalis(prev => prev.filter(k => k.id !== id));
+            }
+        } catch (err) {
+            console.error('Delete failed:', err);
+        }
+    };
 
     useEffect(() => {
         if (isGenerated) {
@@ -563,28 +763,24 @@ export default function KundliPage() {
 
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        setError(null);
-        try {
-            const datetime = `${form.birthDate}T${form.birthTime}:00+05:30`;
-            const response = await fetch('/api/vedaluna', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ params: { datetime, coordinates: `${form.lat},${form.lon}`, name: form.name, language } })
-            });
-
-            const result = await response.json();
-            if (!response.ok && !result.data) throw new Error(result.error || 'SYNC_FAIL');
-
-            localStorage.setItem('veda_pro_cache', JSON.stringify(result.data));
-            localStorage.setItem('veda_pro_form', JSON.stringify(form));
-            setApiData(result.data);
-            setIsGenerated(true);
-            setActiveTab('dashboard');
-        } catch (err: any) {
-            setError(err.message || 'ENGINE_SYNC_FAILED');
-        } finally {
-            setLoading(false);
+        const generatedData = await executeGeneration(form);
+        
+        // Also save to DB if logged in and under limit (Now includes full_data payload)
+        if (user && generatedData && savedKundalis.length < 5) { // Increased limit slightly
+            const isAlreadySaved = savedKundalis.some(k => k.full_name === form.name);
+            if (!isAlreadySaved) {
+                await supabase.from('user_kundalis').insert({
+                    user_id: user.id,
+                    full_name: form.name,
+                    date_of_birth: form.birthDate,
+                    time_of_birth: form.birthTime,
+                    place_of_birth: form.birthPlace,
+                    lat: parseFloat(form.lat),
+                    lon: parseFloat(form.lon),
+                    full_data: generatedData // ✨ Save the heavy payload
+                });
+                fetchSavedKundalis();
+            }
         }
     };
 
@@ -604,7 +800,7 @@ export default function KundliPage() {
         if (!apiData && activeTab !== 'dashboard') {
             return (
                 <div className="flex flex-col items-center justify-center py-40 border-2 border-dashed border-zinc-200 dark:border-white/5 rounded-[48px] animate-pulse">
-                    <Sparkles className="text-saffron opacity-20 mb-6" size={64} />
+                    <Sun className="text-saffron opacity-20 mb-6" size={64} />
                     <p className="text-xl font-black text-zinc-400 uppercase tracking-tighter">{t.initializing}</p>
                 </div>
             );
@@ -620,7 +816,7 @@ export default function KundliPage() {
                                 <Star className="absolute top-10 right-10 text-saffron/5 group-hover:rotate-12 group-hover:scale-125 transition-all duration-1000" size={150} />
                                 <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-saffron/5 rounded-full blur-[80px]" />
                                 <h3 className="text-2xl font-black mb-10 flex items-center gap-3 text-saffron uppercase">
-                                    <Sparkles size={24} className="animate-pulse" /> {t.astrological_core}
+                                    <Sun size={24} className="animate-pulse" /> {t.astrological_core}
                                 </h3>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10 transition-all">
                                     {[
@@ -634,7 +830,7 @@ export default function KundliPage() {
                                                 <item.icon size={10} className="text-zinc-400 group-hover/item:text-saffron transition-all" />
                                                 <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest leading-none">{item.l}</p>
                                             </div>
-                                            <p className="text-2xl font-black text-zinc-900 dark:text-zinc-100 transition-all group-hover:text-saffron translate-y-0 group-hover/item:-translate-y-1">{item.v}</p>
+                                            <p className="text-xl font-black text-zinc-900 dark:text-zinc-100 transition-all group-hover:text-saffron translate-y-0 group-hover/item:-translate-y-1">{item.v}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -642,12 +838,12 @@ export default function KundliPage() {
                             <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[48px] p-10 border border-zinc-200 dark:border-white/5 flex flex-col items-center justify-center text-center shadow-xl group transition-all relative overflow-hidden hover:border-saffron/30">
                                 <div className="absolute inset-0 bg-gradient-to-br from-saffron/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700" />
                                 <div className="relative mb-6">
-                                    <div className="w-32 h-32 rounded-full border-4 border-zinc-200 dark:border-zinc-800 flex items-center justify-center group-hover:border-saffron/30 transition-all">
-                                        <span className="text-5xl font-black text-saffron scale-100 group-hover:scale-110 transition-all font-sans">{age}</span>
+                                    <div className="w-24 h-24 rounded-full border-4 border-zinc-200 dark:border-zinc-800 flex items-center justify-center group-hover:border-saffron/30 transition-all">
+                                        <span className="text-4xl font-black text-saffron scale-100 group-hover:scale-110 transition-all font-sans">{age}</span>
                                     </div>
                                     <div className="absolute inset-0 rounded-full border-4 border-t-saffron border-transparent animate-spin duration-[4000ms]" />
                                 </div>
-                                <h3 className="text-xl font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100 group-hover:text-saffron transition-all">{t.wisdom_years}</h3>
+                                <h3 className="text-lg font-black uppercase tracking-tighter text-zinc-900 dark:text-zinc-100 group-hover:text-saffron transition-all">{t.wisdom_years}</h3>
                             </div>
                         </div>
 
@@ -703,9 +899,9 @@ export default function KundliPage() {
                                     { l: t.lucky_color, v: translateValue(apiData?.numero_table?.fav_color || apiData?.numero_table?.lucky_color || '-') },
                                     { l: t.lucky_stone, v: translateValue(apiData?.numero_table?.fav_stone || apiData?.numero_table?.lucky_stone || '-') }
                                 ].map((item, idx) => (
-                                    <div key={idx} className="bg-zinc-50 dark:bg-zinc-950/50 p-8 rounded-[32px] border border-zinc-100 dark:border-white/5 text-center group transition-all hover:bg-saffron/10 outline outline-transparent hover:outline-saffron/20 shadow-sm hover:shadow-xl">
+                                    <div key={idx} className="bg-zinc-50 dark:bg-zinc-950/50 p-6 rounded-[32px] border border-zinc-100 dark:border-white/5 text-center group transition-all hover:bg-saffron/10 outline outline-transparent hover:outline-saffron/20 shadow-sm hover:shadow-xl">
                                         <p className="text-[10px] font-black uppercase text-zinc-500 mb-2 leading-none tracking-widest">{item.l}</p>
-                                        <p className="text-4xl font-black text-zinc-900 dark:text-saffron transition-all group-hover:scale-125 duration-500 leading-none">{item.v}</p>
+                                        <p className="text-3xl font-black text-zinc-900 dark:text-saffron transition-all group-hover:scale-125 duration-500 leading-none">{item.v}</p>
                                     </div>
                                 ))}
                             </div>
@@ -807,7 +1003,7 @@ export default function KundliPage() {
                                     <div key={idx} className="bg-white dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/5 rounded-[48px] p-10 space-y-8 group hover:border-saffron/30 transition-all shadow-xl flex flex-col justify-between min-h-[350px]">
                                         <div className="space-y-4">
                                             <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${gem.color}`}>{gem.label}</p>
-                                            <h3 className="text-4xl font-black text-zinc-900 dark:text-white group-hover:text-saffron transition-all uppercase tracking-tighter leading-none">
+                                            <h3 className="text-3xl font-black text-zinc-900 dark:text-white group-hover:text-saffron transition-all uppercase tracking-tighter leading-none">
                                                 {translateValue(gem.data?.name) || (fetchingReports ? '...' : translateValue(t.refresh_required))}
                                             </h3>
                                         </div>
@@ -823,14 +1019,14 @@ export default function KundliPage() {
 
                         {/* Divine Protection Section */}
                         <div className="bg-zinc-50 dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/5 rounded-[48px] p-10 md:p-14 relative overflow-hidden group shadow-xl">
-                            <Sparkles className="absolute top-10 right-10 text-saffron/10 group-hover:rotate-12 transition-all duration-1000" size={120} />
+                            <Sun className="absolute top-10 right-10 text-saffron/10 group-hover:rotate-12 transition-all duration-1000" size={120} />
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-4 text-saffron">
                                     <Shield size={24} className="animate-pulse" />
                                     <h3 className="text-xl font-black uppercase tracking-tight">{t.divine_protection}</h3>
                                 </div>
                             </div>
-                            <h2 className="text-4xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight">
+                            <h2 className="text-3xl font-black text-zinc-900 dark:text-white mb-6 uppercase tracking-tight">
                                 {translateValue(apiData?.rudraksha?.name) || (apiData?.rudraksha?.error ? translateValue(t.premium_shield) : translateValue(t.calculating_shield))}
                             </h2>
                             <p className="text-saffron text-sm font-bold mb-8 max-w-2xl italic">
@@ -874,18 +1070,18 @@ export default function KundliPage() {
                             {/* Content Body */}
                             <div className="space-y-10 animate-in fade-in duration-1000">
                                 <div className="flex items-center gap-4 text-zinc-900 dark:text-white group">
-                                    <Sparkles size={24} className="text-zinc-400 dark:text-white/80 transition-transform group-hover:scale-125" />
-                                    <h4 className="text-xl font-bold tracking-tight">{translateValue(t[activePredTab])} {t.analysis}</h4>
+                                    <Sun size={24} className="text-zinc-400 dark:text-white/80 transition-transform group-hover:scale-125" />
+                                    <h4 className="text-lg font-bold tracking-tight">{translateValue(t[activePredTab])} {t.analysis}</h4>
                                 </div>
 
-                                <p className="text-zinc-600 dark:text-zinc-400 leading-[1.8] text-lg font-medium max-w-6xl text-left selection:bg-saffron/30">
+                                <p className="text-zinc-600 dark:text-zinc-400 leading-[1.8] text-base font-medium max-w-6xl text-left selection:bg-saffron/30">
                                     {(() => {
                                         const content =
-                                            activePredTab === 'Character' ? getR(apiData?.character, 'Character') :
-                                                activePredTab === 'Career & Edu' ? getR(apiData?.career, 'Career & Edu') :
-                                                    activePredTab === 'Relationship' ? getR(apiData?.love, 'Relationship') :
-                                                        activePredTab === 'Health' ? getR(apiData?.health, 'Health') :
-                                                            activePredTab === 'Physical' ? getR(apiData?.physical, 'Physical') : '';
+                                            activePredTab === 'character' ? getR(apiData?.character, 'character') :
+                                                activePredTab === 'career' ? getR(apiData?.career, 'career') :
+                                                    activePredTab === 'relation' ? getR(apiData?.love, 'relation') :
+                                                        activePredTab === 'health' ? getR(apiData?.health, 'health') :
+                                                            activePredTab === 'physical' ? getR(apiData?.physical, 'physical') : '';
                                         return content || t.synthesizing_insights;
                                     })()}
                                 </p>
@@ -910,7 +1106,7 @@ export default function KundliPage() {
                                 <div key={i} className="bg-white dark:bg-[#0c0c0c] rounded-[40px] p-10 border border-zinc-200 dark:border-white/5 relative overflow-hidden transition-colors">
                                     <div className="relative z-10">
                                         <p className="text-[10px] font-black text-saffron uppercase mb-4 tracking-widest">{n.l}</p>
-                                        <p className="text-6xl font-black text-zinc-900 dark:text-white mb-4 tracking-tighter">{n.v}</p>
+                                        <p className="text-5xl font-black text-zinc-900 dark:text-white mb-4 tracking-tighter">{n.v}</p>
                                         <p className="text-xs font-medium text-zinc-500 max-w-[150px] leading-relaxed">{n.d}</p>
                                     </div>
                                     <div className="absolute -right-4 -bottom-4 text-9xl font-black opacity-[0.03] text-zinc-900 dark:text-white">{n.v}</div>
@@ -922,8 +1118,8 @@ export default function KundliPage() {
                             <div className="bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-14 border border-zinc-200 dark:border-white/5 shadow-2xl transition-colors">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
                                     <div className="flex items-center gap-5 text-zinc-900 dark:text-white">
-                                        <Sparkles className="text-saffron" size={32} />
-                                        <h3 className="text-3xl font-black tracking-tighter">{t.numeric_insights}</h3>
+                                        <Sun className="text-saffron" size={24} />
+                                        <h3 className="text-2xl font-black tracking-tighter">{t.numeric_insights}</h3>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
                                         {[
@@ -937,7 +1133,7 @@ export default function KundliPage() {
                                         ))}
                                     </div>
                                 </div>
-                                <div className="p-8 md:p-14 bg-zinc-50 dark:bg-black/20 rounded-[44px] text-zinc-800 dark:text-zinc-300 text-lg md:text-xl leading-relaxed selection:bg-saffron/20 transition-all font-semibold whitespace-pre-wrap min-h-[400px] flex items-start justify-start border border-zinc-100 dark:border-white/5 relative shadow-inner">
+                                <div className="p-8 md:p-10 bg-zinc-50 dark:bg-black/20 rounded-[44px] text-zinc-800 dark:text-zinc-300 text-base md:text-lg leading-relaxed selection:bg-saffron/20 transition-all font-semibold whitespace-pre-wrap min-h-[400px] flex items-start justify-start border border-zinc-100 dark:border-white/5 relative shadow-inner">
                                     <div className="absolute top-0 right-0 p-8 opacity-5">
                                         <FileText size={120} />
                                     </div>
@@ -969,9 +1165,9 @@ export default function KundliPage() {
                                     <Activity size={200} />
                                 </div>
 
-                                <div className="flex items-center gap-5 text-zinc-900 dark:text-white mb-12 relative z-10">
-                                    <Activity className="text-saffron" size={32} />
-                                    <h3 className="text-3xl font-black tracking-tighter">{t.current_dasha}</h3>
+                                <div className="flex items-center gap-5 text-zinc-900 dark:text-white mb-10 relative z-10">
+                                    <Activity className="text-saffron" size={24} />
+                                    <h3 className="text-2xl font-black tracking-tighter">{t.current_dasha}</h3>
                                 </div>
 
                                 <div className="space-y-6 relative z-10">
@@ -1029,9 +1225,9 @@ export default function KundliPage() {
                         {/* 🛡️ RIGHT COLUMN: DOSHA ANALYZER */}
                         <div className="space-y-12">
                             <div className="bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-14 border border-zinc-200 dark:border-zinc-800/40 shadow-2xl transition-colors">
-                                <div className="flex items-center gap-5 text-zinc-900 dark:text-white mb-12">
-                                    <Shield className="text-saffron" size={32} />
-                                    <h3 className="text-3xl font-black tracking-tighter">{t.dasha}</h3>
+                                <div className="flex items-center gap-5 text-zinc-900 dark:text-white mb-10">
+                                    <Shield className="text-saffron" size={24} />
+                                    <h3 className="text-2xl font-black tracking-tighter">{t.dasha}</h3>
                                 </div>
 
                                 <div className="space-y-10">
@@ -1046,13 +1242,9 @@ export default function KundliPage() {
                                                 {apiData?.manglik?.manglik_status !== 'NOT_MANGLIK' ? t.detected : t.clear}
                                             </span>
                                         </div>
-                                        <p className="text-zinc-400 text-base leading-relaxed font-medium">
-                                            {getR(apiData?.manglik) || 'Analyzing martial influence on your house of partnerships...'}
-                                        </p>
-
                                         <div className="bg-zinc-200/50 dark:bg-black/40 rounded-[32px] p-8 border border-saffron/10 space-y-4">
                                             <div className="flex items-center gap-3 text-saffron">
-                                                <Sparkles size={18} />
+                                                <Sun size={18} />
                                                 <span className="text-sm font-black uppercase tracking-widest">{t.remedy}</span>
                                             </div>
                                             <p className="text-zinc-500 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: t.remedy_text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') }} />
@@ -1063,7 +1255,7 @@ export default function KundliPage() {
                                     <div className="bg-zinc-100 dark:bg-[#141414] rounded-[40px] p-10 border border-zinc-200 dark:border-white/5 space-y-8 relative overflow-hidden">
                                         <div className="flex justify-between items-center mb-2">
                                             <div className="flex items-center gap-4 text-zinc-900 dark:text-white">
-                                                <Sparkles className="text-emerald-500/80" size={24} />
+                                                <Sun className="text-emerald-500/80" size={24} />
                                                 <h4 className="text-2xl font-black tracking-tight">{t.sadhesati}</h4>
                                             </div>
                                             <span className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest ${apiData?.sadhesati?.is_sadhesati ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 uppercase'}`}>
@@ -1087,7 +1279,7 @@ export default function KundliPage() {
             default:
                 return (
                     <div className="flex flex-col items-center justify-center py-40 border-2 border-dashed border-zinc-200 dark:border-white/5 rounded-[48px]">
-                        <Sparkles className="text-saffron opacity-10 mb-6" size={64} />
+                        <Sun className="text-saffron opacity-10 mb-6" size={64} />
                         <h2 className="text-3xl font-black opacity-10 uppercase tracking-tighter">Dimension restricted</h2>
                     </div>
                 );
@@ -1097,7 +1289,18 @@ export default function KundliPage() {
     return (
         <div className="min-h-screen bg-white dark:bg-[#020202] text-zinc-900 dark:text-white font-sans selection:bg-saffron/30 transition-colors duration-300">
             <aside className="fixed left-0 top-0 h-screen w-20 md:w-64 bg-zinc-50 dark:bg-[#080808] border-r border-zinc-200 dark:border-white/5 flex flex-col z-50">
-                <div className="p-10 mb-6 flex justify-center items-center"><img src="/logo.png" alt="Mantra Puja Logo" className="w-32 h-auto" /></div>
+                <div className="p-10 mb-2 flex flex-col items-center gap-6">
+                    <Link href="/">
+                        <img src="/logo.png" alt="Mantra Puja Logo" className="w-32 h-auto hover:scale-105 transition-transform" />
+                    </Link>
+                    <Link 
+                        href="/"
+                        className="w-full h-12 flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-saffron hover:border-saffron/30 transition-all shadow-sm group"
+                    >
+                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="hidden md:block">{t.back_to_website}</span>
+                    </Link>
+                </div>
                 <nav className="flex-1 px-4 space-y-1">
                     {menuItems.map((item) => (
                         <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl transition-all group ${activeTab === item.id ? 'bg-gradient-to-r from-saffron to-amber-500 shadow-xl shadow-saffron/20 text-white' : 'text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}>
@@ -1123,43 +1326,154 @@ export default function KundliPage() {
 
             <main className="ml-20 md:ml-64 p-6 md:p-12 min-h-screen">
                 {!isGenerated ? (
-                    <div className="max-w-3xl mx-auto pt-20 animate-in fade-in zoom-in-95 duration-700">
-                        <h1 className="text-4xl md:text-6xl font-black mb-12 tracking-tighter text-center uppercase leading-none underline decoration-saffron decoration-4 underline-offset-8 transition-all">ASTRO ANALYSIS</h1>
-                        <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[48px] p-12 border border-zinc-200 dark:border-white/5 shadow-22 shadow-saffron/10 relative overflow-hidden group">
-                            <form onSubmit={handleGenerate} className="space-y-8 relative z-10 text-left">
-                                <div className="space-y-6">
-                                    <div className="group">
-                                        <label className="text-[10px] font-black tracking-widest text-zinc-400 dark:text-zinc-600 block mb-2 px-1 underline decoration-saffron decoration-2 transition-all">{t.entity_identity}</label>
-                                        <input type="text" placeholder="Enter Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 text-xl font-bold outline-none focus:border-saffron text-zinc-900 dark:text-saffron transition-all shadow-sm" required />
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 transition-all">
-                                        <div className="group"><label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-2 px-1">{t.calendar_sync}</label><input type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 font-bold text-zinc-900 dark:text-saffron shadow-sm" /></div>
-                                        <div className="group"><label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-2 px-1">{t.chronos_time}</label><input type="time" value={form.birthTime} onChange={(e) => setForm({ ...form, birthTime: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 font-bold text-zinc-900 dark:text-saffron shadow-sm" /></div>
-                                    </div>
-                                    <div className="group pt-4 border-t border-zinc-200 dark:border-white/5 transition-all">
-                                        <label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-4 px-1 uppercase tracking-tight">{t.birth_location}</label>
-                                        <div className="relative">
-                                            <input type="text" placeholder="Birth City" value={form.birthPlace} onChange={(e) => setForm({ ...form, birthPlace: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-3xl p-8 pl-16 outline-none focus:border-saffron font-bold text-zinc-900 dark:text-saffron text-xl shadow-sm transition-all" />
-                                            <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-saffron transition-all" size={28} />
+                    <div className="max-w-6xl mx-auto pt-10 animate-in fade-in zoom-in-95 duration-700">
+                        <div className="text-center mb-16">
+                            <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter uppercase leading-none underline decoration-saffron decoration-4 underline-offset-8">KUNDALI MANAGER</h1>
+                            <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Manage your celestial identities</p>
+                        </div>
+
+                        {(!isCreationMode && savedKundalis.length > 0) ? (
+                            <div className="space-y-12">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {savedKundalis.map((k) => (
+                                        <div 
+                                            key={k.id} 
+                                            onClick={() => handleSelectKundali(k)}
+                                            className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[32px] p-8 border border-zinc-200 dark:border-white/5 shadow-xl hover:border-saffron/30 transition-all group cursor-pointer relative overflow-hidden"
+                                        >
+                                            <History className="absolute -right-4 -bottom-4 text-saffron/5 group-hover:scale-110 transition-transform" size={120} />
+                                            <div className="relative z-10 flex flex-col h-full justify-between gap-6">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-saffron mb-1 tracking-widest">{t.saved_profile}</p>
+                                                        <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">{k.full_name}</h3>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button 
+                                                            onClick={(e) => handleSetActive(k, e)}
+                                                            className={`p-2 rounded-full transition-all ${k.is_active ? 'bg-saffron text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:text-cyan-500'}`}
+                                                            title={t.select_primary}
+                                                        >
+                                                            <Crown size={16} />
+                                                        </button>
+                                                        <button onClick={(e) => handleDeleteKundali(k.id, e)} className="p-2 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2 text-zinc-500 font-bold text-xs uppercase">
+                                                        <Calendar size={12} /> {k.date_of_birth}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-zinc-500 font-bold text-xs uppercase">
+                                                        <MapPin size={12} /> {k.place_of_birth.split(',')[0]}
+                                                    </div>
+                                                </div>
+                                                <button className="w-full py-4 bg-zinc-900 dark:bg-zinc-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest group-hover:bg-saffron transition-all">
+                                                    {t.view_kundali}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    
+                                    {savedKundalis.length < 3 && (
+                                        <div 
+                                            onClick={() => setIsCreationMode(true)}
+                                            className="bg-white dark:bg-black/40 rounded-[32px] p-8 border-2 border-dashed border-zinc-200 dark:border-white/10 flex flex-col items-center justify-center gap-4 hover:border-saffron/40 transition-all cursor-pointer group min-h-[250px]"
+                                        >
+                                            <div className="w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:bg-saffron/10 group-hover:text-saffron transition-all">
+                                                <Plus size={32} />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-saffron">{t.create_new}</p>
+                                        </div>
+                                    )}
+                                </div>
+                                {savedKundalis.length >= 3 && (
+                                    <p className="text-center text-[10px] font-black text-red-500/50 uppercase tracking-widest">
+                                        Limit Reached: You can save up to 3 Kundalis. Delete one to create new.
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[48px] p-12 border border-zinc-200 dark:border-white/5 shadow-22 shadow-saffron/10 relative overflow-hidden group max-w-2xl mx-auto">
+                                <div className="flex justify-between items-center mb-10">
+                                    <h3 className="text-2xl font-black text-saffron uppercase tracking-tight">{t.birth_details}</h3>
+                                    {savedKundalis.length > 0 && (
+                                        <button onClick={() => setIsCreationMode(false)} className="text-[10px] font-black uppercase text-zinc-400 hover:text-zinc-600 flex items-center gap-2">
+                                            <History size={14} /> {t.back_to_saved}
+                                        </button>
+                                    )}
+                                </div>
+                                <form onSubmit={handleGenerate} className="space-y-8 relative z-10 text-left">
+                                    <div className="space-y-6">
+                                        <div className="group">
+                                            <label className="text-[10px] font-black tracking-widest text-zinc-400 dark:text-zinc-600 block mb-2 px-1 underline decoration-saffron decoration-2 transition-all">{t.entity_identity} / {language === 'hi' ? 'नाम' : 'Name'}</label>
+                                            <input type="text" placeholder={t.enter_name} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 text-xl font-bold outline-none focus:border-saffron text-zinc-900 dark:text-saffron transition-all shadow-sm" required />
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 transition-all">
+                                            <div className="group"><label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-2 px-1">{t.calendar_sync}</label><input type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 font-bold text-zinc-900 dark:text-saffron shadow-sm" /></div>
+                                            <div className="group"><label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-2 px-1">{t.chronos_time}</label><input type="time" value={form.birthTime} onChange={(e) => setForm({ ...form, birthTime: e.target.value })} className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-2xl p-6 font-bold text-zinc-900 dark:text-saffron shadow-sm" /></div>
+                                        </div>
+                                        
+                                        {/* Photon Autocomplete Place Search */}
+                                        <div className="group pt-4 border-t border-zinc-200 dark:border-white/5 transition-all relative">
+                                            <label className="text-[10px] font-black tracking-widest text-zinc-400 block mb-4 px-1 uppercase tracking-tight">{t.birth_location} / {language === 'hi' ? 'जन्म स्थान' : 'Birth Place'}</label>
+                                            <div className="relative">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder={t.search_city} 
+                                                    value={form.birthPlace} 
+                                                    onChange={(e) => handlePlaceSearch(e.target.value)}
+                                                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                                                    className="w-full bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-3xl p-8 pl-16 outline-none focus:border-saffron font-bold text-zinc-900 dark:text-saffron text-xl shadow-sm transition-all" 
+                                                />
+                                                <MapPin className="absolute left-6 top-1/2 -translate-y-1/2 text-saffron transition-all" size={28} />
+                                                
+                                                {/* Suggestions Dropdown */}
+                                                <AnimatePresence>
+                                                    {showSuggestions && suggestions.length > 0 && (
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: 10 }}
+                                                            className="absolute z-[100] w-full mt-2 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 dark:border-white/5 max-h-60 overflow-y-auto no-scrollbar"
+                                                        >
+                                                            {suggestions.map((s, idx) => (
+                                                                <button
+                                                                    key={idx}
+                                                                    type="button"
+                                                                    onClick={() => selectSuggestion(s)}
+                                                                    className="w-full text-left px-8 py-4 hover:bg-zinc-50 dark:hover:bg-white/5 border-b border-zinc-100 dark:border-white/5 last:border-0 transition-all font-bold text-zinc-700 dark:text-zinc-300 flex items-center gap-4"
+                                                                >
+                                                                    <MapPin size={16} className="text-zinc-400" />
+                                                                    <span>
+                                                                        {[s.properties.name, s.properties.city, s.properties.state, s.properties.country].filter(Boolean).join(', ')}
+                                                                    </span>
+                                                                </button>
+                                                            ))}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <button type="submit" disabled={loading} className="w-full py-8 bg-gradient-to-r from-saffron to-amber-600 text-white font-black text-2xl rounded-3xl hover:scale-[1.02] active:scale-95 shadow-xl transition-all flex items-center justify-center gap-4">
-                                    {loading ? <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" /> : <>{t.reveal_chart} <ChevronRight size={28} /></>}
-                                </button>
-                            </form>
-                        </div>
+                                    <button type="submit" disabled={loading} className="w-full py-8 bg-gradient-to-r from-saffron to-amber-600 text-white font-black text-2xl rounded-3xl hover:scale-[1.02] active:scale-95 shadow-xl transition-all flex items-center justify-center gap-4">
+                                        {loading ? <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" /> : <>{t.reveal_chart} <ChevronRight size={28} /></>}
+                                    </button>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="max-w-7xl mx-auto space-y-12 transition-all">
                         {/* ✨ PREMIUM HEADER (PIXEL-PERFECT MATCH) */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-12 transition-all">
                             <div className="space-y-1">
-                                <h1 className="text-5xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none">
+                                <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none">
                                     {menuItems.find(i => i.id === activeTab)?.label || 'Dashboard'}
                                 </h1>
                                 <p className="text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
-                                    ANALYSIS FOR {formattedBirthDate}
+                                    {t.analysis_for} {formattedBirthDate}
                                 </p>
                             </div>
 

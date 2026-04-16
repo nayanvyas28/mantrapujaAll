@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
-import { Sparkles, Target, Eye, ChevronRight } from "lucide-react";
+import { Sun, Target, Eye, ChevronRight } from "lucide-react";
 
 interface AboutPageData {
     content: {
@@ -111,13 +111,13 @@ export default function AboutPage() {
                             className="glass-morphism p-10 md:p-14 rounded-[48px] border border-white/10 shadow-3xl relative overflow-hidden group"
                         >
                             <div className="absolute -top-10 -right-10 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-all duration-1000">
-                                <Sparkles className="w-64 h-64 text-saffron" />
+                                <Sun className="w-64 h-64 text-saffron" />
                             </div>
 
                             <div className="relative z-10 flex flex-col md:flex-row gap-10 md:gap-14 items-start">
                                 {/* Icon Container */}
                                 <div className="w-20 h-20 shrink-0 rounded-[28px] bg-saffron/10 flex items-center justify-center border border-saffron/20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-700 shadow-inner">
-                                    <Sparkles className="w-10 h-10 text-saffron" />
+                                    <Sun className="w-10 h-10 text-saffron" />
                                 </div>
 
                                 {/* Content Container */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, LogIn, ChevronRight } from "lucide-react";
+import { X, Sun, LogIn, ChevronRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -59,7 +59,7 @@ export default function StickyAuthDrawer() {
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 bg-saffron/10 rounded-2xl border border-saffron/20">
-                                    <Sparkles className="w-5 h-5 text-saffron" />
+                                    <Sun className="w-5 h-5 text-saffron" />
                                 </div>
                                 <div>
                                     <h4 className="text-lg font-black tracking-tight">Vedic Wisdom Awaits</h4>

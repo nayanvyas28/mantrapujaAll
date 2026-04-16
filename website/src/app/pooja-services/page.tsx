@@ -3,19 +3,19 @@
 import { useState, useMemo, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Search, Filter, ArrowRight, Star, Sparkles, Clock, Calendar, BadgeCheck, MapPin, Video, Headphones, Zap, Gift } from 'lucide-react';
+import { Search, Filter, ArrowRight, Star, Sun, Clock, Calendar, BadgeCheck, MapPin, Video, Headphones, Zap, Gift, IndianRupee } from 'lucide-react';
 import { CustomDropdown } from '@/components/CustomDropdown';
-import { ThemeDebug } from '@/components/ThemeDebug';
 import FireParticles from '@/components/FireParticles';
 import EmberParticles from '@/components/EmberParticles';
 import { CosmicBackground } from '@/components/CosmicBackground';
 import { UnifiedPujaBackground } from '@/components/UnifiedPujaBackground';
 import { useLoading } from "@/context/LoadingContext";
 import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
+import BookingPackagesPopup from "@/components/BookingPackagesPopup";
 
 const backgroundIcons = [
     "/zodiac/aquarius.png", "/zodiac/aries.png", "/zodiac/cancer.png", "/zodiac/capricorn.png",
-    "/zodiac/gemini.png", "/zodiac/leo.png", "/zodiac/libra.png", "/zodiac/pisces.png",
+    "/zodiac/leo.png", "/zodiac/libra.png", "/zodiac/pisces.png",
     "/zodiac/sagittarius.png", "/zodiac/scorpio.png", "/zodiac/taurus.png", "/zodiac/virgo.png",
     "/om.png", "/premium-loader.png", "/kalasha.png", "/premium-loader.png",
     "/diya.png", "/temple.png", "/sun.png", "/moon.png"
@@ -97,6 +97,8 @@ interface Puja extends UiConfig {
     desc: string;
     benefits: string[];
     price: number;
+    display_price?: number;
+    packages?: any[];
     tags?: string[];
 }
 
@@ -110,6 +112,8 @@ interface DatabasePooja {
     tagline?: string;
     benefits: string[];
     price: number;
+    display_price?: number;
+    packages?: any[];
     tags?: string[];
 }
 
@@ -203,6 +207,25 @@ export default function PoojaServicesPage() {
     const [sortBy, setSortBy] = useState('popularity');
     const [priceFilter, setPriceFilter] = useState('all');
 
+    // Booking Popup State
+    const [isBookingOpen, setIsBookingOpen] = useState(false);
+    const [selectedPujaForBooking, setSelectedPujaForBooking] = useState<Puja | null>(null);
+
+    const handleBookNow = (puja: Puja) => {
+        setSelectedPujaForBooking(puja);
+        setIsBookingOpen(true);
+    };
+
+    const handlePackageSelect = (pkg: any) => {
+        if (!selectedPujaForBooking) return;
+
+        const message = `Namaste, I want to book ${selectedPujaForBooking.name}.\n\nSelected Package: ${pkg.name}\nPrice: ₹${pkg.price}`;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/918989271245?text=${encodedMessage}`;
+        window.open(whatsappUrl, '_blank');
+        setIsBookingOpen(false);
+    };
+
     useEffect(() => {
         const fetchPujas = async () => {
             try {
@@ -226,6 +249,8 @@ export default function PoojaServicesPage() {
                             desc: item.description || item.about_description || item.tagline || '',
                             benefits: item.benefits || [],
                             price: item.price,
+                            display_price: item.display_price,
+                            packages: item.packages,
                             category: item.slug.includes('festival') ? 'Festival' : 'Rituals',
                             tags: item.tags || []
                         };
@@ -268,18 +293,18 @@ export default function PoojaServicesPage() {
             const matchesCategory = selectedCategory === 'All Pujas' || puja.category === selectedCategory;
 
             let matchesPrice = true;
-            if (priceFilter === 'under-5000') matchesPrice = puja.price < 5000;
-            if (priceFilter === '5000-10000') matchesPrice = puja.price >= 5000 && puja.price <= 10000;
-            if (priceFilter === 'above-10000') matchesPrice = puja.price > 10000;
+            if (priceFilter === 'under-5000') matchesPrice = (puja.display_price || puja.price) < 5000;
+            if (priceFilter === '5000-10000') matchesPrice = (puja.display_price || puja.price) >= 5000 && (puja.display_price || puja.price) <= 10000;
+            if (priceFilter === 'above-10000') matchesPrice = (puja.display_price || puja.price) > 10000;
 
             return matchesSearch && matchesCategory && matchesPrice;
         });
 
         // Sorting
         if (sortBy === 'price-low') {
-            result.sort((a, b) => a.price - b.price);
+            result.sort((a, b) => (a.display_price || a.price) - (b.display_price || b.price));
         } else if (sortBy === 'price-high') {
-            result.sort((a, b) => b.price - a.price);
+            result.sort((a, b) => (b.display_price || b.price) - (a.display_price || a.price));
         } else {
             // Default: Popularity (Featured first, then ID)
             result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
@@ -304,14 +329,14 @@ export default function PoojaServicesPage() {
             {/* Unified Background with Animations */}
             <UnifiedPujaBackground />
 
-            <div className="relative z-10 pt-20 pb-20 container mx-auto px-4 max-w-7xl">
+            <div className="relative z-10 pt-10 pb-20 container mx-auto px-2 md:px-6 max-w-[1450px]">
 
                 {/* Header Section */}
-                <div className="text-center max-w-5xl mx-auto mb-16">
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-widest mb-6 border border-orange-100 dark:border-orange-800/50">
+                <div className="text-center max-w-6xl mx-auto mb-12">
+                    <span className="inline-block px-4 py-1.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-widest mb-2 border border-orange-100 dark:border-orange-800/50">
                         Sacred Rituals
                     </span>
-                    <h1 className="text-5xl md:text-7xl font-black mb-6 leading-snug text-foreground tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
+                    <h1 className="text-5xl md:text-7xl font-black mb-3 leading-snug text-foreground tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
                         Browse Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 animate-gradient whitespace-nowrap py-2">Divine Pujas</span>
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground font-light max-w-2xl mx-auto leading-relaxed">
@@ -320,11 +345,11 @@ export default function PoojaServicesPage() {
                 </div>
 
                 {/* Modern Filter Bar with Golden Glow - STATIC (No Sticky) */}
-                <div className="relative z-40 bg-card/80 dark:bg-card/80 backdrop-blur-md border border-border/40 dark:border-border/10 rounded-2xl shadow-[0_8px_32px_rgba(249,115,22,0.05)] dark:shadow-xl p-6 mb-12 max-w-7xl mx-auto transition-all duration-300 ring-1 ring-black/5 hover:shadow-[0_8px_32px_rgba(249,115,22,0.1)] hover:border-saffron/20">
+                <div className="relative z-40 bg-card/80 dark:bg-card/80 backdrop-blur-md border border-border/40 dark:border-border/10 rounded-2xl shadow-[0_8px_32_rgba(249,115,22,0.05)] dark:shadow-xl p-6 mb-12 max-w-[1450px] mx-auto transition-all duration-300 ring-1 ring-black/5 hover:shadow-[0_8px_32px_rgba(249,115,22,0.1)] hover:border-saffron/20">
                     <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
 
                         {/* Search Input */}
-                        <div className="relative w-full md:w-64 lg:w-96 group">
+                        <div className="relative w-full md:flex-1 lg:max-w-2xl group">
                             <input
                                 type="text"
                                 placeholder="Search divine rituals..."
@@ -348,7 +373,7 @@ export default function PoojaServicesPage() {
                                         { value: "price-low", label: "Price: Low to High" },
                                         { value: "price-high", label: "Price: High to Low" }
                                     ]}
-                                    icon={<Sparkles className="w-4 h-4" />}
+                                    icon={<Sun className="w-4 h-4" />}
                                 />
                             </div>
 
@@ -389,15 +414,10 @@ export default function PoojaServicesPage() {
                     </div>
                 </div>
 
-                {/* Results Count */}
-                <div className="text-center mb-8">
-                    <p className="text-muted-foreground">
-                        Showing <span className="font-bold text-foreground">{visiblePujas.length}</span> of {filteredPujas.length} rituals
-                    </p>
-                </div>
+
 
                 {/* Puja Grid - Premium "Snake Border" Style (Replicated from Homepage) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 mb-16 px-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
                     {visiblePujas.map((puja, idx) => {
                         const rotatingGradients = [
                             'from-indigo-500 to-purple-600',
@@ -450,7 +470,8 @@ export default function PoojaServicesPage() {
                                     </svg>
 
                                     {/* Top Badge - Floating - Replaced by Tags */}
-                                    <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2">
+                                    <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2 text-right">
+
                                         {/* Original Badge if exists */}
                                         {puja.badge && (
                                             <div className="relative">
@@ -499,12 +520,12 @@ export default function PoojaServicesPage() {
                                     </Link>
 
                                     {/* 3. Benefits (Outcomes) - Single Row Pills */}
-                                    <div className="mb-8">
-                                        <div className="flex flex-wrap gap-2">
+                                    <div className="mb-6">
+                                        <div className="flex flex-nowrap gap-1.5 overflow-x-hidden">
                                             {puja.benefits.slice(0, 3).map((benefit, i) => (
-                                                <span key={i} className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary/50 border border-border/50 text-muted-foreground flex items-center gap-1.5 max-w-full truncate">
-                                                    <div className={`w-1.5 h-1.5 shrink-0 rounded-full bg-gradient-to-r ${displayGradient}`}></div>
-                                                    <span className="truncate">{benefit}</span>
+                                                <span key={i} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-secondary/40 border border-border/30 text-muted-foreground flex items-center gap-1 shrink-0 whitespace-nowrap">
+                                                    <div className={`w-1 h-1 shrink-0 rounded-full bg-gradient-to-r ${displayGradient}`}></div>
+                                                    {benefit}
                                                 </span>
                                             ))}
                                         </div>
@@ -514,8 +535,8 @@ export default function PoojaServicesPage() {
                                     <div className="mt-auto"></div>
 
                                     {/* 4. Action Button - Attractive Glow */}
-                                    <Link
-                                        href={`/pooja-services/${puja.slug}`}
+                                    <button
+                                        onClick={() => handleBookNow(puja)}
                                         className={`group/btn relative inline-flex items-center justify-center w-full py-4 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 bg-[length:200%_auto] bg-right hover:bg-left transition-all duration-500 shadow-lg hover:shadow-xl hover:-translate-y-1 overflow-hidden`}
                                     >
                                         {/* Inner Glow */}
@@ -524,7 +545,7 @@ export default function PoojaServicesPage() {
                                         <span className="relative z-10 text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
                                             Book Now <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" strokeWidth={2.5} />
                                         </span>
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         );
@@ -589,12 +610,20 @@ export default function PoojaServicesPage() {
                         ))}
                     </div>
                 </section>
-
-                <ThemeDebug />
-                <ThemeDebug />
             </div>
 
             <SpiritualFamilySection />
-        </div >
+
+            {/* Direct Booking Popup */}
+            {selectedPujaForBooking && (
+                <BookingPackagesPopup
+                    isOpen={isBookingOpen}
+                    onClose={() => setIsBookingOpen(false)}
+                    pujaName={selectedPujaForBooking.name}
+                    packages={selectedPujaForBooking.packages || []}
+                    onSelect={handlePackageSelect}
+                />
+            )}
+        </div>
     );
 }

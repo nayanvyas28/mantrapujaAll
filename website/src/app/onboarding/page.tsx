@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
-import { ChevronRight, Check, Sparkles, MapPin, Heart } from 'lucide-react';
+import { ChevronRight, Check, Sun, MapPin, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function OnboardingPage() {
@@ -108,7 +108,7 @@ export default function OnboardingPage() {
                             >
                                 <div className="mb-8">
                                     <span className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-900/30 text-orange-600 mb-6">
-                                        <Sparkles className="w-6 h-6" />
+                                        <Sun className="w-6 h-6" />
                                     </span>
                                     <h2 className="text-3xl md:text-4xl font-black font-serif mb-4 leading-tight">How did you find us?</h2>
                                     <p className="text-lg text-muted-foreground">We'd love to know the beginning of this connection.</p>

@@ -23,7 +23,9 @@ export default function AISettingsPage() {
     const [rulebook, setRulebook] = useState('1. Only answer questions related to spirituality, religion, and internal peace.\n2. You must refuse to answer any questions about technology, logic, math, backend systems, AI models, or other irrelevant topics.');
 
     // Limits & Upsell State
-    const [freeQueryLimit, setFreeQueryLimit] = useState<number>(5);
+    const [freeQueryLimit, setFreeQueryLimit] = useState<number>(10);
+    const [guestQueryLimit, setGuestQueryLimit] = useState<number>(3);
+    const [chatResetHours, setChatResetHours] = useState<number>(3);
     const [premiumUpsellMessage, setPremiumUpsellMessage] = useState('Guruji says you have reached your free query limit. Please upgrade to Pro to unlock unlimited spiritual guidance.');
 
     useEffect(() => {
@@ -48,6 +50,12 @@ export default function AISettingsPage() {
                 }
                 if (data.freeQueryLimit !== undefined) {
                     setFreeQueryLimit(data.freeQueryLimit);
+                }
+                if (data.guestQueryLimit !== undefined) {
+                    setGuestQueryLimit(data.guestQueryLimit);
+                }
+                if (data.chatResetHours !== undefined) {
+                    setChatResetHours(data.chatResetHours);
                 }
                 if (data.premiumUpsellMessage) {
                     setPremiumUpsellMessage(data.premiumUpsellMessage);
@@ -118,6 +126,8 @@ export default function AISettingsPage() {
             core_prompt: corePrompt,
             rulebook: rulebook,
             free_query_limit: freeQueryLimit,
+            guest_query_limit: guestQueryLimit,
+            chat_reset_hours: chatResetHours,
             premium_upsell_message: premiumUpsellMessage
         };
 
@@ -278,19 +288,53 @@ export default function AISettingsPage() {
 
                                 {/* Free Query Limits Section */}
                                 <div className="space-y-6 pt-6 border-t border-white/10">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider text-yellow-500">
+                                                Registered User Limit
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={freeQueryLimit}
+                                                onChange={(e) => setFreeQueryLimit(parseInt(e.target.value) || 0)}
+                                                className="w-full px-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-yellow-500 transition-all text-white placeholder:text-gray-600 focus:ring-4 focus:ring-yellow-500/10"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                Questions allowed for logged-in users before timeout.
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider text-orange-500">
+                                                Guest User Limit
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={guestQueryLimit}
+                                                onChange={(e) => setGuestQueryLimit(parseInt(e.target.value) || 0)}
+                                                className="w-full px-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500 transition-all text-white placeholder:text-gray-600 focus:ring-4 focus:ring-orange-500/10"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                Questions allowed for anonymous visitors.
+                                            </p>
+                                        </div>
+                                    </div>
+
                                     <div>
-                                        <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider text-yellow-500">
-                                            Free Query Limit (Per User)
+                                        <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider text-blue-400">
+                                            Chat Reset Window (Hours)
                                         </label>
                                         <input
                                             type="number"
-                                            min="0"
-                                            value={freeQueryLimit}
-                                            onChange={(e) => setFreeQueryLimit(parseInt(e.target.value) || 0)}
-                                            className="w-full px-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-yellow-500 transition-all text-white placeholder:text-gray-600 focus:ring-4 focus:ring-yellow-500/10"
+                                            min="1"
+                                            value={chatResetHours}
+                                            onChange={(e) => setChatResetHours(parseInt(e.target.value) || 1)}
+                                            className="w-full px-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-blue-500 transition-all text-white placeholder:text-gray-600 focus:ring-4 focus:ring-blue-500/10"
                                         />
                                         <p className="text-xs text-gray-500 mt-2">
-                                            Number of free questions a single user device can ask before hitting the paywall. Set to 0 to require Premium immediately.
+                                            How many hours the user must wait for their query limit to reset to zero.
                                         </p>
                                     </div>
 

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+html {
+  font-size: 80%;
+}
+
+
 
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -43,8 +48,8 @@
 
 :root {
   /* Light Mode (Divine Saffron Light) */
-  --background: #fffbf5;
-  /* Warm Cream */
+  --background: #ffffff;
+  /* Pure White */
   --foreground: #0f172a;
   /* Dark Navy for text contrast */
   --card: #ffffff;
@@ -71,8 +76,8 @@
   /* Orange-tinited border */
   --input: #ffedd5;
   --ring: #f97316;
-  --radius: 0.75rem;
-  /* Slightly softer corners */
+  --radius: 0.6rem;
+  /* Reduced from 0.75rem */
 }
 
 .dark {

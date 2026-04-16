@@ -6,7 +6,7 @@ import { Send, Instagram, Facebook, Youtube, Twitter, Mail } from "lucide-react"
 
 export default function BlogCTA() {
     return (
-        <section className="relative py-24 overflow-hidden mt-10">
+        <section className="relative py-10 overflow-hidden mt-4">
             {/* Backgrounds */}
             <div className="absolute inset-0 border-t border-saffron/10 dark:border-white/5">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-saffron/5 to-transparent dark:via-purple-900/10"></div>
@@ -21,7 +21,7 @@ export default function BlogCTA() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="text-center mb-20"
+                        className="text-center mb-8"
                     >
                         <h2 className="text-4xl md:text-6xl font-black font-serif mb-6 tracking-tight">
                             Join Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-saffron to-gold">Spiritual Family</span>
@@ -32,7 +32,7 @@ export default function BlogCTA() {
                     </motion.div>
 
                     {/* 3 Columns Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
                         {/* Newsletter card */}
                         <motion.div
                             whileHover={{ y: -8 }}
@@ -95,7 +95,7 @@ export default function BlogCTA() {
                             className="inline-block relative"
                         >
                             <div className="absolute inset-0 bg-saffron/20 blur-3xl rounded-full"></div>
-                            <h3 className="text-3xl md:text-4xl font-black font-serif mb-12 relative z-10">Follow Our Journey</h3>
+                            <h3 className="text-3xl md:text-4xl font-black font-serif mb-4 relative z-10">Follow Our Journey</h3>
                         </motion.div>
 
                         <div className="flex flex-wrap justify-center gap-6 md:gap-8">

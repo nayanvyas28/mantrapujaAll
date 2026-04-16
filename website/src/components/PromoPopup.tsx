@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const POPUP_STORAGE_KEY = "mantrapuja_web_popup_seen_";
+const POPUP_LAST_SEEN_KEY = "mantrapuja_web_popup_last_seen_";
 
 interface PopupData {
     id: string;
@@ -15,8 +16,8 @@ interface PopupData {
     image_web: string;
     redirect_type: "internal" | "external" | "none";
     redirect_value: string;
-    display_delay_ms: number;
     frequency: "once" | "session" | "always";
+    recurrence_interval_mins: number;
 }
 
 export default function PromoPopup() {
@@ -35,7 +36,7 @@ export default function PromoPopup() {
             // Fetch active popups for web that are within the schedule
             let { data, error } = await supabase
                 .from("marketing_popups")
-                .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date, show_text_overlay")
+                .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date, show_text_overlay, recurrence_interval_mins")
                 .eq("is_active", true)
                 .eq("show_on_web", true)
                 .lte("start_date", now)
@@ -49,7 +50,7 @@ export default function PromoPopup() {
                 console.warn("[PromoPopup] show_text_overlay column missing, falling back...");
                 const result = await supabase
                     .from("marketing_popups")
-                    .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date")
+                    .select("id, name, image_web, redirect_type, redirect_value, display_delay_ms, frequency, start_date, end_date, recurrence_interval_mins")
                     .eq("is_active", true)
                     .eq("show_on_web", true)
                     .lte("start_date", now)
@@ -92,6 +93,23 @@ export default function PromoPopup() {
                 return;
             }
 
+            // Check Recurrence Interval (New Feature)
+            if (data.recurrence_interval_mins && data.recurrence_interval_mins > 0) {
+                const lastSeenKey = `${POPUP_LAST_SEEN_KEY}${data.id}`;
+                const lastSeen = localStorage.getItem(lastSeenKey);
+                
+                if (lastSeen) {
+                    const lastSeenTime = parseInt(lastSeen);
+                    const nowTime = Date.now();
+                    const diffMins = (nowTime - lastSeenTime) / (1000 * 60);
+
+                    if (diffMins < data.recurrence_interval_mins) {
+                        console.log(`[PromoPopup] Skipping: Recurrence interval of ${data.recurrence_interval_mins}m not yet met. (Mins since last seen: ${diffMins.toFixed(1)})`);
+                        return;
+                    }
+                }
+            }
+
             setPopup(data as PopupData);
 
             // Display after delay
@@ -115,7 +133,9 @@ export default function PromoPopup() {
     const handleClose = () => {
         if (popup) {
             const storageKey = `${POPUP_STORAGE_KEY}${popup.id}`;
+            const lastSeenKey = `${POPUP_LAST_SEEN_KEY}${popup.id}`;
             localStorage.setItem(storageKey, "true");
+            localStorage.setItem(lastSeenKey, Date.now().toString());
             sessionStorage.setItem(storageKey, "true");
         }
         setIsVisible(false);

@@ -21,7 +21,7 @@ export default function BlogCard({ blog }: { blog: BlogPost }) {
                 <div className="absolute inset-0 bg-white dark:bg-slate-900/80 backdrop-blur-md border border-saffron/10 dark:border-gold/20 group-hover:border-saffron/40 dark:group-hover:border-gold/50 shadow-sm group-hover:shadow-xl dark:shadow-black/40 transition-all duration-500"></div>
 
                 {/* Image Section */}
-                <div className="relative h-60 overflow-hidden w-full">
+                <div className="relative aspect-video overflow-hidden w-full">
                     <img
                         src={blog.image_url}
                         alt={`${blog.title} - MantraPuja Blog`}

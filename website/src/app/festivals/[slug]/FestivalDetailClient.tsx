@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, ArrowRight, ChevronDown, CheckCircle, Sparkles, Star, Flame, User, MessageCircle, Phone, IndianRupee, Flower, Heart, Scroll, ShieldCheck, BadgeCheck } from "lucide-react";
+import { Calendar, Clock, ArrowRight, ChevronDown, CheckCircle, Sun, Star, Flame, User, MessageCircle, Phone, IndianRupee, Flower, Heart, Scroll, ShieldCheck, BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { createClient } from '@supabase/supabase-js';
 import { Festival } from "@/lib/festivalData";
@@ -194,7 +194,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                                 <div className="absolute bottom-4 sm:bottom-6 md:bottom-10 left-4 sm:left-6 md:left-10 right-4 sm:right-6 md:right-10 p-4 sm:p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-white">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-saffron flex items-center justify-center">
-                                            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                            <Sun className="w-5 h-5 md:w-6 md:h-6 text-white" />
                                         </div>
                                         <div>
                                             <p className="text-[10px] md:text-xs uppercase tracking-widest opacity-80">Divine Occasion</p>
@@ -385,7 +385,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                                     </div>
 
                                     <span className="relative z-10 flex items-center gap-3">
-                                        <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                                        <Sun className="w-8 h-8 text-white animate-pulse" />
                                         <span>Book Ritual Now</span>
                                     </span>
                                 </button>

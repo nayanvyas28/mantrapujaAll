@@ -39,15 +39,15 @@ const Footer = () => {
                 maskImage: 'linear-gradient(to bottom, black, transparent)'
             }}></div>
 
-            <div className="container mx-auto px-4 py-12 md:py-16 relative z-10">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16 px-4">
+            <div className="container mx-auto px-4 py-8 md:py-10 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10 px-4">
                     {/* Brand */}
                     <div className="space-y-6">
                         <Link href="/" className="inline-block group">
                             <img
                                 src="/logo.png"
                                 alt="MantraPuja - Trusted Vedic Services"
-                                className="h-24 w-auto group-hover:scale-105 transition-transform duration-300"
+                                className="h-20 w-auto group-hover:scale-105 transition-transform duration-300"
                             />
                         </Link>
                         <p className="text-sm leading-relaxed text-muted-foreground/80 font-light">

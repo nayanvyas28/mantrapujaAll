@@ -10,7 +10,6 @@ import {
     Moon, 
     Sun, 
     Compass, 
-    Sparkles, 
     Activity,
     Shield,
     Flame,
@@ -66,7 +65,7 @@ const categories = [
             { name: "Name Numerology", href: "/calculators/numerology", icon: Calculator, color: "bg-cyan-50 text-cyan-600 border-cyan-100", desc: "Power of your name and numbers." },
             { name: "Lo Shu Grid", href: "/calculators/lo-shu", icon: Grid3X3, color: "bg-teal-50 text-teal-600 border-teal-100", desc: "Chinese grid numerology." },
             { name: "Lucky Vehicle Number", href: "/calculators/lucky-vehicle", icon: Car, color: "bg-lime-50 text-lime-600 border-lime-100", desc: "Is your car plate lucky?" },
-            { name: "Ishta Devata", href: "/calculators/ishta-devata", icon: Sparkles, color: "bg-saffron/10 text-saffron border-saffron/20", desc: "Find your guiding deity." },
+            { name: "Ishta Devata", href: "/calculators/ishta-devata", icon: Sun, color: "bg-saffron/10 text-saffron border-saffron/20", desc: "Find your guiding deity." },
             { name: "Atma/Darakaraka", href: "/calculators/karaka", icon: Trophy, color: "bg-violet-50 text-violet-600 border-violet-100", desc: "Soul and Spouse significators." },
         ]
     }
@@ -147,7 +146,7 @@ export default function CalculatorsPage() {
                     className="mt-24 p-10 bg-slate-900 rounded-[40px] text-white text-center relative overflow-hidden shadow-2xl"
                 >
                     <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none" />
-                    <Sparkles className="w-12 h-12 text-saffron mx-auto mb-6 animate-pulse" />
+                    <Sun className="w-12 h-12 text-saffron mx-auto mb-6 animate-pulse" />
                     <h3 className="text-3xl font-black mb-4">Cosmic Wisdom Awaits</h3>
                     <p className="text-slate-400 max-w-2xl mx-auto font-medium leading-relaxed mb-8">
                         Our suite of calculators combines ancient Vedic scriptures with modern astronomical data to provide you with the most accurate spiritual insights possible.

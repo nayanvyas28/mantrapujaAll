@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import FeedPlayer from "@/components/feed/FeedPlayer";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Sparkles, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Sun, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -49,7 +49,7 @@ export default function FeedPage() {
                         <div>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-3 bg-saffron/10 rounded-2xl border border-saffron/20">
-                                    <Sparkles className="w-6 h-6 text-saffron" />
+                                    <Sun className="w-6 h-6 text-saffron" />
                                 </div>
                                 <h1 className="text-4xl font-bold text-white tracking-tight">Divine <span className="text-saffron">Feed</span></h1>
                             </div>

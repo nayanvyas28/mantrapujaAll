@@ -489,7 +489,7 @@ export default function BannerManagementPage() {
                                                     <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer">
                                                         <Upload className="w-12 h-12 text-gray-600 mb-4 group-hover:text-orange-500 group-hover:scale-110 transition-all" />
                                                         <span className="text-xs font-black uppercase tracking-widest text-gray-500">Upload High-Res Banner</span>
-                                                        <span className="text-[10px] text-gray-600 mt-2 font-medium">Recommended: 1200 x 600px</span>
+                                                        <span className="text-[10px] text-gray-600 mt-2 font-medium">Recommended: 2400 x 400px <span className="text-orange-500 font-bold ml-1 bg-orange-500/10 px-2 py-0.5 rounded">Ratio 6:1</span></span>
                                                         <input type="file" className="hidden" accept="image/*" onChange={(e) => setForm({ ...form, imageFile: e.target.files?.[0] || null })} />
                                                     </label>
                                                 )}

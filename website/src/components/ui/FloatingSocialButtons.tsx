@@ -8,9 +8,11 @@ const socialLinks = [
     {
         name: "WhatsApp",
         icon: (
-            <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-4.752 8.995h-.013c-2.104 0-4.17-.567-5.975-1.637l-.428-.254-4.443 1.165 1.186-4.333-.278-.443c-1.176-1.87-1.798-4.04-1.798-6.267 0-6.441 5.244-11.685 11.688-11.685 3.12 0 6.054 1.216 8.261 3.424 2.208 2.208 3.422 5.142 3.422 8.26 0 6.443-5.242 11.685-11.685 11.685m10.222-18.784c-2.731-2.73-6.362-4.234-10.222-4.234-7.962 0-14.442 6.481-14.442 14.444 0 2.544.664 5.027 1.921 7.238l-2.043 7.462 7.639-2.004c2.143 1.168 4.558 1.786 7.014 1.786h.016c7.965 0 14.444-6.481 14.444-14.444 0-3.854-1.503-7.478-4.233-10.208" />
-            </svg>
+            <img 
+                src="/whatsapp-icon.png" 
+                alt="WhatsApp" 
+                className="w-10 h-10 object-contain pointer-events-none"
+            />
         ),
         color: "bg-[#25D366]",
         href: "https://wa.me/918989271245",
@@ -64,7 +66,7 @@ export const FloatingSocialButtons = () => {
     // Desktop View: Always show all buttons
     if (!isMobile) {
         return (
-            <div className="fixed right-6 bottom-24 z-[60] flex flex-col gap-4">
+            <div className="fixed right-6 bottom-48 z-[60] flex flex-col gap-4">
                 {socialLinks.map((social, idx) => (
                     <motion.a
                         key={social.name}
@@ -110,7 +112,7 @@ export const FloatingSocialButtons = () => {
 
     // Mobile View: Single toggle with dropup
     return (
-        <div className="fixed right-6 bottom-6 z-[60] flex flex-col items-center gap-4">
+        <div className="fixed right-6 bottom-40 z-[60] flex flex-col items-center gap-4">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -150,7 +152,7 @@ export const FloatingSocialButtons = () => {
                                     className="absolute inset-0 rounded-full"
                                     style={{ backgroundColor: social.pulseColor }}
                                 />
-                                <div className="relative z-10 scale-90">{social.icon}</div>
+                                <div className="relative z-10">{social.icon}</div>
                             </motion.a>
                         ))}
                     </motion.div>

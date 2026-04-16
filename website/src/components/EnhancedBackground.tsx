@@ -3,7 +3,7 @@ import StarsGalaxyBackground from '@/components/ui/StarsGalaxyBackground';
 
 const backgroundIcons = [
     "/zodiac/aquarius.png", "/zodiac/aries.png", "/zodiac/cancer.png", "/zodiac/capricorn.png",
-    "/zodiac/gemini.png", "/zodiac/leo.png", "/zodiac/libra.png", "/zodiac/pisces.png",
+    "/zodiac/leo.png", "/zodiac/libra.png", "/zodiac/pisces.png",
     "/zodiac/sagittarius.png", "/zodiac/scorpion.png", "/zodiac/taurus.png", "/zodiac/virgo.png",
     "/bhagwan/brahma.png", "/bhagwan/durga.png", "/bhagwan/ganesha.png", "/bhagwan/hanuman.png",
     "/bhagwan/krishna.png", "/bhagwan/lakshmi.png", "/bhagwan/rama.png", "/bhagwan/shiv.png",

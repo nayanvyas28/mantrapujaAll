@@ -32,6 +32,8 @@ interface Puja {
     tagline_hi?: string;
     about_description?: string;
     about_description_hi?: string;
+    display_price?: number;
+    packages?: any[];
 }
 
 export default function PujaManagementPage() {
@@ -66,6 +68,13 @@ export default function PujaManagementPage() {
         about_description_hi: '',
         offer_999_tax: 0,
         offer_999_dakshina: 0,
+        display_price: 0,
+        packages: [
+            { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
+            { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
+            { id: 'couple', name: 'Couple Package (Offline)', price: 2100, description: 'Offline ritual for couples at sacred location.' },
+            { id: 'family', name: 'Family Package (Offline)', price: 5100, description: 'Offline ritual for families at sacred location.' },
+        ],
         imageFile: null as File | null
     });
 
@@ -260,6 +269,8 @@ export default function PujaManagementPage() {
                 sort_order: pujasForm.sort_order,
                 about_description: pujasForm.about_description,
                 about_description_hi: pujasForm.about_description_hi,
+                display_price: pujasForm.display_price,
+                packages: pujasForm.packages,
                 image_url: imageUrl,
                 images: imageUrl ? [imageUrl] : []
             };
@@ -321,6 +332,13 @@ export default function PujaManagementPage() {
             about_description_hi: '',
             offer_999_tax: 0,
             offer_999_dakshina: 0,
+            display_price: 0,
+            packages: [
+                { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
+                { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
+                { id: 'couple', name: 'Couple Package (Offline)', price: 2100, description: 'Offline ritual for couples at sacred location.' },
+                { id: 'family', name: 'Family Package (Offline)', price: 5100, description: 'Offline ritual for families at sacred location.' },
+            ],
             imageFile: null
         });
         setIsAutoSlug(true);
@@ -354,6 +372,13 @@ export default function PujaManagementPage() {
             about_description_hi: puja.about_description_hi || '',
             offer_999_tax: summary?.offer_999_tax || 0,
             offer_999_dakshina: summary?.offer_999_dakshina || 0,
+            display_price: puja.display_price || 0,
+            packages: puja.packages || [
+                { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
+                { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
+                { id: 'couple', name: 'Couple Package (Offline)', price: 2100, description: 'Offline ritual for couples at sacred location.' },
+                { id: 'family', name: 'Family Package (Offline)', price: 5100, description: 'Offline ritual for families at sacred location.' },
+            ],
             imageFile: null
         });
         setIsAutoSlug(!puja.slug);
@@ -713,6 +738,24 @@ export default function PujaManagementPage() {
                                                     />
                                                 </div>
                                             </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Display Price on Card (₹)</label>
+                                                    <div className="relative group">
+                                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg border border-white/10 group-focus-within:border-orange-500/30 transition-all">
+                                                            <IndianRupee className="w-3.5 h-3.5 text-orange-400" />
+                                                        </div>
+                                                        <input
+                                                            type="number"
+                                                            value={pujasForm.display_price}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, display_price: parseInt(e.target.value) || 0 })}
+                                                            placeholder="0"
+                                                            className="w-full pl-16 pr-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-bold text-sm text-white"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
                                                 <div className="space-y-2">
                                                     <label className="block text-[10px] font-bold text-brand-blue uppercase tracking-widest pl-1 flex items-center justify-between">
                                                         URL Slug
@@ -821,6 +864,51 @@ export default function PujaManagementPage() {
                                                                 placeholder="आध्यात्मिक महत्व..."
                                                                 className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
                                                             />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Tiered Packages Section */}
+                                                    <div className="pt-8 space-y-6">
+                                                        <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                                                            <Briefcase className="w-4 h-4 text-orange-500" />
+                                                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Booking Packages (Tiers)</h4>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            {pujasForm.packages?.map((pkg, idx) => (
+                                                                <div key={pkg.id} className="p-5 rounded-[2rem] bg-white/[0.02] border border-white/10 space-y-4 hover:border-orange-500/30 transition-all">
+                                                                    <div className="flex flex-col gap-2">
+                                                                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest px-2">{pkg.name}</span>
+                                                                        <div className="flex items-center gap-3 px-2">
+                                                                            <span className="text-[10px] font-bold text-gray-500 uppercase shrink-0">Price (₹):</span>
+                                                                            <input 
+                                                                                type="number"
+                                                                                value={pkg.price}
+                                                                                onChange={(e) => {
+                                                                                    const newPkgs = [...pujasForm.packages!];
+                                                                                    newPkgs[idx].price = parseInt(e.target.value) || 0;
+                                                                                    setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                                }}
+                                                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-orange-500/50"
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1 px-2">
+                                                                        <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest">Description</label>
+                                                                        <textarea
+                                                                            rows={2}
+                                                                            value={pkg.description}
+                                                                            onChange={(e) => {
+                                                                                const newPkgs = [...pujasForm.packages!];
+                                                                                newPkgs[idx].description = e.target.value;
+                                                                                setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                            }}
+                                                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-gray-400 focus:outline-none focus:border-orange-500/50 resize-none leading-relaxed"
+                                                                            placeholder="Enter package benefits..."
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1007,6 +1095,7 @@ export default function PujaManagementPage() {
                                                         <Upload className="w-10 h-10 text-gray-600 mb-3 mx-auto transition-transform group-hover/upload:-translate-y-1" />
                                                         <p className="text-xs font-bold text-gray-400">UPLOAD BANNER</p>
                                                         <p className="text-[10px] text-gray-600 font-medium mt-1 uppercase tracking-tight">Landscape JPG/PNG only</p>
+                                                        <p className="text-[10px] text-orange-500 font-bold mt-2 uppercase tracking-widest bg-orange-500/10 px-3 py-1 rounded-full w-fit mx-auto">Ratio 4:3</p>
                                                     </div>
                                                 )}
                                             </div>

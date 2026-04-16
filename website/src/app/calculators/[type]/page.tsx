@@ -12,7 +12,6 @@ import {
     Star, 
     Users, 
     Compass, 
-    Sparkles, 
     Activity,
     Shield,
     Flame,
@@ -159,7 +158,7 @@ const calculatorConfig: any = {
         apiEndpoint: null 
     },
     'ishta-devata': { 
-        name: "Ishta Devata", icon: Sparkles, color: "text-saffron", fields: ['dob', 'time', 'place'], 
+        name: "Ishta Devata", icon: Sun, color: "text-saffron", fields: ['dob', 'time', 'place'], 
         description: "Find your guiding deity.", 
         longDescription: "In Vedic tradition, your Ishta Devata is your chosen deity or guiding light. This tool helps identify the form of divinity that resonates with your soul.",
         apiEndpoint: 'ishta-devata' 

@@ -17,6 +17,8 @@ export async function POST(request: Request) {
             core_prompt,
             rulebook,
             free_query_limit,
+            guest_query_limit,
+            chat_reset_hours,
             premium_upsell_message,
             referral_message
         } = await request.json();
@@ -27,6 +29,8 @@ export async function POST(request: Request) {
             core_prompt === undefined &&
             rulebook === undefined &&
             free_query_limit === undefined &&
+            guest_query_limit === undefined &&
+            chat_reset_hours === undefined &&
             premium_upsell_message === undefined &&
             referral_message === undefined) {
             return NextResponse.json({ error: 'No configuration provided' }, { status: 400 });
@@ -70,7 +74,23 @@ export async function POST(request: Request) {
         if (free_query_limit !== undefined) {
             updates.push({
                 key: 'free_query_limit',
-                value: free_query_limit.toString(), // Ensure string for DB
+                value: free_query_limit.toString(),
+                updated_at: timestamp
+            });
+        }
+
+        if (guest_query_limit !== undefined) {
+            updates.push({
+                key: 'guest_query_limit',
+                value: guest_query_limit.toString(),
+                updated_at: timestamp
+            });
+        }
+
+        if (chat_reset_hours !== undefined) {
+            updates.push({
+                key: 'chat_reset_hours',
+                value: chat_reset_hours.toString(),
                 updated_at: timestamp
             });
         }
@@ -126,6 +146,8 @@ export async function GET() {
                 'core_prompt',
                 'rulebook',
                 'free_query_limit',
+                'guest_query_limit',
+                'chat_reset_hours',
                 'premium_upsell_message',
                 'referral_message'
             ]);
@@ -139,6 +161,8 @@ export async function GET() {
         const corePromptSetting = data?.find(s => s.key === 'core_prompt');
         const rulebookSetting = data?.find(s => s.key === 'rulebook');
         const limitSetting = data?.find(s => s.key === 'free_query_limit');
+        const guestLimitSetting = data?.find(s => s.key === 'guest_query_limit');
+        const resetHoursSetting = data?.find(s => s.key === 'chat_reset_hours');
         const upsellSetting = data?.find(s => s.key === 'premium_upsell_message');
         const referralSetting = data?.find(s => s.key === 'referral_message');
 
@@ -147,7 +171,9 @@ export async function GET() {
             selectedModel: selectedModelSetting?.value || null,
             corePrompt: corePromptSetting?.value || '',
             rulebook: rulebookSetting?.value || '',
-            freeQueryLimit: limitSetting ? parseInt(limitSetting.value, 10) : 5, // Default to 5
+            freeQueryLimit: limitSetting ? parseInt(limitSetting.value, 10) : 10, 
+            guestQueryLimit: guestLimitSetting ? parseInt(guestLimitSetting.value, 10) : 3,
+            chatResetHours: resetHoursSetting ? parseInt(resetHoursSetting.value, 10) : 3,
             premiumUpsellMessage: upsellSetting?.value || 'Guruji says you have reached your free query limit. Please upgrade to Pro to unlock unlimited spiritual guidance.',
             referralMessage: referralSetting?.value || 'Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app',
             updatedAt: apiKeySetting?.updated_at || null

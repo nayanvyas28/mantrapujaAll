@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import FeedPlayer from "../feed/FeedPlayer";
 import { motion } from "framer-motion";
-import { Video, ChevronRight, Sparkles } from "lucide-react";
+import { Video, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 interface Reel {
@@ -44,39 +44,41 @@ const FeedSection = () => {
     if (reels.length === 0) return null;
 
     return (
-        <section className="py-24 relative overflow-hidden bg-zinc-950">
+        <section className="pt-20 pb-12 md:pt-28 md:pb-16 relative overflow-hidden bg-zinc-950">
             {/* Background Sacred Accents */}
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-saffron/5 blur-[120px] rounded-full pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-orange-950/20 blur-[100px] rounded-full pointer-events-none" />
 
             <div className="container mx-auto px-4 relative z-10">
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
-                    <div className="max-w-2xl">
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-saffron/10 border border-saffron/20 mb-6"
-                        >
-                            <Sparkles className="w-3.5 h-3.5 text-saffron" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-saffron">Divine Experience</span>
-                        </motion.div>
-                        <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
-                            Divine <span className="text-saffron">Feed</span>
-                        </h2>
-                        <p className="text-zinc-400 text-lg">
-                            Experience the sacred traditions through our curated spiritual reels. 
-                            Witness the rituals, chants, and divine moments in high definition.
-                        </p>
+                <div className="text-center max-w-3xl mx-auto mb-4">
+                    <div className="flex items-center justify-center gap-3 mb-3">
+                        <div className="h-[1px] w-8 md:w-16 bg-gradient-to-r from-transparent to-saffron/40"></div>
+                        <span className="text-saffron font-bold tracking-[0.2em] uppercase text-[10px] md:text-xs">Divine Experience</span>
+                        <div className="h-[1px] w-8 md:w-16 bg-gradient-to-l from-transparent to-saffron/40"></div>
                     </div>
-
+                    <h2 className="text-2xl md:text-4xl font-black text-white mb-3 pb-1" style={{ fontFamily: 'Georgia, serif' }}>
+                        Divine <span className="text-saffron">Feed</span>
+                    </h2>
+                    <p className="max-w-2xl mx-auto text-sm md:text-base text-zinc-400 font-light leading-relaxed mb-8">
+                        Experience the sacred traditions through our curated spiritual reels. 
+                        Witness the rituals, chants, and divine moments in high definition.
+                    </p>
+                    
                     <Link 
                         href="/feed"
-                        className="group flex items-center gap-3 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all active:scale-95"
+                        className="group relative inline-flex items-center gap-3 px-6 py-3 md:px-10 md:py-4 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden"
                     >
-                        Explore Feed
-                        <ChevronRight className="w-4 h-4 text-saffron group-hover:translate-x-1 transition-transform" />
+                        <span className="relative z-10 flex items-center gap-2 text-sm uppercase tracking-widest">
+                            Explore Feed
+                        </span>
+                        <div className="absolute inset-0 overflow-hidden rounded-full transform translate-z-0">
+                            <div className="absolute bottom-0 left-0 right-0 bg-saffron transition-all duration-500 ease-in-out h-[15%] group-hover:h-full"></div>
+                            <div className="absolute bottom-[15%] left-0 w-[200%] h-4 bg-repeat-x animate-wave group-hover:bottom-[100%] transition-all duration-500 ease-in-out"
+                                style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 1200 120\' preserveAspectRatio=\'none\'%3E%3Cpath d=\'M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z\' fill=\'%23f97316\' transform=\'scale(1, -1) translate(0, -120)\'/%3E%3C/svg%3E")', backgroundSize: '50% 100%' }}>
+                            </div>
+                        </div>
                     </Link>
-                </header>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {reels.map((reel, index) => (
@@ -103,11 +105,11 @@ const FeedSection = () => {
                                 <span className="text-[10px] uppercase font-black tracking-widest text-saffron mb-2 block">
                                     {reel.category || "Divine"}
                                 </span>
-                                <h3 className="text-xl font-bold text-white leading-tight mb-2 drop-shadow-lg">
+                                <h3 className="text-base md:text-lg font-bold text-white leading-tight mb-2 drop-shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
                                     {reel.title}
                                 </h3>
                                 {reel.title_hi && (
-                                    <p className="text-sm text-zinc-400 font-medium drop-shadow-md">
+                                    <p className="text-xs text-zinc-400 font-medium drop-shadow-md">
                                         {reel.title_hi}
                                     </p>
                                 )}

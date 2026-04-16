@@ -1,17 +1,13 @@
-'use client';
-
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import {
     Calendar,
     Clock,
     ArrowLeft,
-    Sparkles,
+    Sun,
     Share2,
     BookOpen,
     MessageSquare,
     ChevronRight,
-    Search
+    Search,
+    Star
 } from 'lucide-react';
 import CollapsibleText from '@/components/ui/CollapsibleText';
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
@@ -28,7 +24,7 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
             <UnifiedPujaBackground />
 
             {/* Hero Header with Image Fallback */}
-            <div className={`relative ${blog.image_url && blog.image_url !== 'null' && blog.image_url !== '' ? 'h-[60vh] md:h-[70vh]' : 'h-[50vh]'} w-full overflow-hidden pt-20`}>
+            <div className={`relative ${blog.image_url && blog.image_url !== 'null' && blog.image_url !== '' ? 'aspect-square md:aspect-[21/9]' : 'aspect-video md:aspect-[3/1]'} w-full overflow-hidden pt-20`}>
                 <div className="absolute inset-0 z-0">
                     {blog.image_url && blog.image_url !== 'null' && blog.image_url !== '' ? (
                         <>
@@ -49,7 +45,7 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-[#1a1a1a] via-[#2a1a0f] to-[#0a0500] flex items-center justify-center border-none outline-none">
                             <div className="absolute inset-0 opacity-10">
-                                <Sparkles className="w-full h-full p-40" />
+                                <Sun className="w-full h-full p-40" />
                             </div>
                         </div>
                     )}
@@ -76,7 +72,7 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                                     whileHover={{ scale: 1.05 }}
                                     className="px-4 py-1.5 rounded-full bg-saffron text-white text-[11px] font-black uppercase tracking-[0.2em] shadow-[0_8px_20px_-4px_rgba(234,88,12,0.5)] border border-saffron/50 flex items-center justify-center"
                                 >
-                                    <Sparkles className="w-3 h-3 mr-1.5 text-white/80" />
+                                    <Star className="w-3 h-3 mr-1.5 text-white/80" />
                                     {tag}
                                 </motion.span>
                             ))}
@@ -150,7 +146,7 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                                     <section>
                                         <div className="border-l-4 border-saffron pl-8 italic relative">
                                             <div className="absolute top-0 left-0 -translate-x-full pr-4 opacity-20">
-                                                <Sparkles className="w-12 h-12 text-saffron" />
+                                                <Sun className="w-12 h-12 text-saffron" />
                                             </div>
                                             <CollapsibleText
                                                 text={structuredContent.introduction}
@@ -224,7 +220,7 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                                     {structuredContent.conclusion && (
                                         <div className="text-center py-16 px-8 bg-black/5 rounded-[40px] border border-white/10 relative overflow-hidden group">
                                             <div className="absolute top-0 left-0 p-8 opacity-5">
-                                                <Sparkles className="w-32 h-32" />
+                                                <Star className="w-32 h-32" />
                                             </div>
                                             <p className="text-2xl md:text-3xl font-serif font-black text-foreground italic leading-tight max-w-2xl mx-auto relative z-10">
                                                 "{structuredContent.conclusion}"
@@ -293,7 +289,7 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                                         <ChevronRight className="w-6 h-6" />
                                     </div>
                                     <div className="absolute top-0 right-0 p-2 opacity-10">
-                                        <Sparkles className="w-20 h-32" />
+                                        <Sun className="w-20 h-32" />
                                     </div>
                                 </Link>
                             </motion.div>

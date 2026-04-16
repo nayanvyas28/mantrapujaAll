@@ -1,14 +1,11 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { BadgeCheck, Calendar, Clock, HelpCircle, MapPin, MessageCircle, Phone, Star, User, UserCheck, ArrowRight, ShieldCheck, Sparkles, CheckCircle, ChevronDown, IndianRupee, Flower, Scroll, Flame, Heart } from "lucide-react";
+import { BadgeCheck, Calendar, Clock, HelpCircle, MapPin, MessageCircle, Phone, Star, User, UserCheck, ArrowRight, ShieldCheck, Sun, CheckCircle, ChevronDown, IndianRupee, Flower, Scroll, Flame, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PujaData } from "@/lib/pujaData";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import FireParticles from "@/components/FireParticles"; // Ensure this component exists or remove if not needed
 import CollapsibleText from "@/components/ui/CollapsibleText";
 import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
+import BookingPackagesPopup from "@/components/BookingPackagesPopup";
 
 export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     // Helper to render icons
@@ -20,12 +17,12 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
         if (lower.includes('rupee') || icon === '💰') return <IndianRupee className="w-10 h-10" />;
         if (lower.includes('peace') || icon === '☮️' || icon === '🧘' || icon === '🕊️') return <Flower className="w-10 h-10" />;
         if (lower.includes('heart') || icon === '❤️') return <Heart className="w-10 h-10" />;
-        if (icon === '🌟' || icon === '✨' || icon === '🚀' || icon === '💡' || icon === '🔓') return <Sparkles className="w-10 h-10" />;
+        if (icon === '🌟' || icon === '✨' || icon === '🚀' || icon === '💡' || icon === '🔓') return <Sun className="w-10 h-10" />;
         if (icon === '🏠' || icon === '🏡' || icon === '🚧' || icon === '📍') return <MapPin className="w-10 h-10" />;
         if (icon === '🎓' || icon === '🧠' || icon === '📜') return <Scroll className="w-10 h-10" />;
         if (icon === '⚕️' || icon === '💪' || icon === '🔥' || icon === '🌱') return <Flame className="w-10 h-10" />;
         if (icon === '🛡️') return <ShieldCheck className="w-10 h-10" />;
-        if (icon === '🕉️') return <Sparkles className="w-10 h-10" />;
+        if (icon === '🕉️') return <Sun className="w-10 h-10" />;
 
         return <Star className="w-10 h-10" />;
     };
@@ -63,6 +60,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     } = puja;
 
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -73,10 +71,14 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     }, []);
 
     const scrollToBooking = () => {
-        const element = document.getElementById('book-now');
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
+        setIsBookingModalOpen(true);
+    };
+
+    const handlePackageSelect = (pkg: any) => {
+        setIsBookingModalOpen(false);
+        // Redirect to WhatsApp with pre-filled message
+        const message = encodeURIComponent(`Hello MantraPuja, I would like to book the "${pkg.name}" for "${name}". Please guide me with the next steps.`);
+        window.open(`https://wa.me/918989271245?text=${message}`, '_blank');
     };
 
     const SectionHeading = ({ children, subtitle }: { children: React.ReactNode, subtitle?: string }) => {
@@ -84,7 +86,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
         const titleGradient = "from-orange-500 via-yellow-500 to-orange-600";
 
         return (
-            <div className="text-center mb-10 md:mb-16 relative z-10 px-4">
+            <div className="text-center mb-4 md:mb-6 relative z-10 px-4">
                 {subtitle && (
                     <div className="flex items-center justify-center gap-3 md:gap-4 mb-3 md:mb-4">
                         <div className={`h-[1px] w-6 md:w-12 bg-gradient-to-r from-transparent to-${themeColor}-500/50`}></div>
@@ -92,7 +94,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                         <div className={`h-[1px] w-6 md:w-12 bg-gradient-to-l from-transparent to-${themeColor}-500/50`}></div>
                     </div>
                 )}
-                <h2 className={`text-2xl sm:text-3xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} bg-[length:200%_auto] animate-gradient mb-4 md:mb-6 pb-2 leading-tight`} style={{ fontFamily: 'Georgia, serif' }}>
+                <h2 className={`text-2xl sm:text-3xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r ${titleGradient} bg-[length:200%_auto] animate-gradient mb-2 md:mb-3 pb-1 leading-tight`} style={{ fontFamily: 'Georgia, serif' }}>
                     {children}
                 </h2>
             </div>
@@ -105,7 +107,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             <UnifiedPujaBackground />
 
             {/* --- HERO SECTION --- */}
-            <section className="relative pt-24 pb-16 lg:pt-32 lg:pb-32 overflow-hidden min-h-[90vh] flex items-center">
+            <section className="relative pt-4 pb-2 lg:pt-8 lg:pb-6 overflow-hidden min-h-[60vh] flex items-center">
 
                 {/* Hero Background Image */}
                 <div className="absolute inset-0 z-0">
@@ -129,10 +131,10 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, ease: "easeOut" }}
                             >
-                                <span className={`inline-block px-5 py-1.5 md:px-6 md:py-2 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] mb-4 md:mb-6 border border-${themeColor}-500/20 bg-${themeColor}-500/10 text-${themeColor}-600 backdrop-blur-md`}>
+                                <span className={`inline-block px-5 py-1.5 md:px-6 md:py-2 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] mb-2 md:mb-3 border border-${themeColor}-500/20 bg-${themeColor}-500/10 text-${themeColor}-600 backdrop-blur-md`}>
                                     {hero?.badgeText || "Premium Vedic Ritual"}
                                 </span>
-                                <h1 className={`text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-black mb-4 md:mb-6 leading-[1.2] md:leading-[1.1] font-serif text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-600 animate-gradient pb-2 px-2`}>
+                                <h1 className={`text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-black mb-2 md:mb-3 leading-[1.2] md:leading-[1.1] font-serif text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-600 animate-gradient pb-2 px-2`}>
                                     {name}
                                 </h1>
                                 <CollapsibleText
@@ -213,7 +215,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                 initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
                                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                                 transition={{ duration: 0.8 }}
-                                className="relative rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 border-white/10 aspect-square sm:aspect-[4/3] lg:aspect-auto lg:h-full group"
+                                className="relative rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 border-white/10 w-full aspect-[4/3] group"
                             >
                                 <img src={heroImage} alt={name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:from-black/80 md:via-transparent"></div>
@@ -222,7 +224,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                 <div className="absolute bottom-4 sm:bottom-6 md:bottom-10 left-4 sm:left-6 md:left-10 right-4 sm:right-6 md:right-10 p-4 sm:p-6 rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-white">
                                     <div className="flex items-center gap-4">
                                         <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${theme.gradient} flex items-center justify-center`}>
-                                            <Sparkles className="w-6 h-6 text-white" />
+                                            <Sun className="w-6 h-6 text-white" />
                                         </div>
                                         <div>
                                             <p className="text-xs uppercase tracking-widest opacity-80">{hero?.glassBadgeLabel || "Performed By"}</p>
@@ -237,7 +239,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             </section>
 
             {/* --- ABOUT SECTION --- */}
-            <section className="py-12 md:py-24 relative z-10">
+            <section className="py-6 md:py-10 relative z-10">
                 <div className="container mx-auto px-4">
                     <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-center">
                         <div className="order-2 md:order-1 relative">
@@ -258,7 +260,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                 {/* Animated Shine Effect */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shine pointer-events-none"></div>
 
-                                <h3 className="text-xl md:text-3xl font-black mb-6 md:mb-8 font-serif flex items-center gap-3 md:gap-4 text-gray-900 dark:text-white">
+                                <h3 className="text-xl md:text-3xl font-black mb-3 md:mb-4 font-serif flex items-center gap-3 md:gap-4 text-gray-900 dark:text-white">
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-orange-500/20 blur-xl rounded-full animate-pulse"></div>
                                         <div className="relative p-2 md:p-3 bg-orange-500/20 rounded-xl md:rounded-2xl border border-orange-500/30">
@@ -267,7 +269,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                     </div>
                                     {about.significanceTitle || "Spiritual Significance"}
                                 </h3>
-                                <p className="text-base md:text-xl leading-relaxed text-gray-700 dark:text-white/80 mb-8 md:mb-10 font-light">
+                                <p className="text-base md:text-xl leading-relaxed text-gray-700 dark:text-white/80 mb-4 md:mb-5 font-light">
                                     {about.significance}
                                 </p>
                                 <div className={`relative p-6 md:p-8 rounded-2xl md:rounded-[2rem] bg-gradient-to-br from-orange-500/[0.08] to-yellow-500/[0.04] border border-orange-500/20 dark:border-white/5 shadow-inner group/box overflow-hidden`}>
@@ -301,7 +303,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             </section>
 
             {/* 3️⃣ WHY PEOPLE PERFORM THIS PUJA (Snake Cards) */}
-            <section className="py-16 md:py-32 relative z-10">
+            <section className="py-8 md:py-16 relative z-10">
                 <div className="container mx-auto px-4">
                     <SectionHeading subtitle="Purpose">{whyPerform.title}</SectionHeading>
 
@@ -335,7 +337,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                     </div>
 
                     {/* CTA Button - Floating Water Animation */}
-                    <div className="text-center mt-12 md:mt-20 px-4">
+                    <div className="text-center mt-6 md:mt-10 px-4">
                         <button
                             onClick={scrollToBooking}
                             className={`group relative inline-flex items-center justify-center gap-2 md:gap-3 px-8 md:px-14 py-6 md:py-10 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] hover:shadow-[0_0_60px_-10px_rgba(249,115,22,0.8)] hover:-translate-y-1`}
@@ -360,7 +362,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             </section>
 
             {/* --- PROCESS SECTION --- */}
-            <section className={`py-16 md:py-32 relative overflow-hidden bg-gradient-to-b from-transparent via-${themeColor}-500/5 to-transparent dark:via-${themeColor}-900/10`}>
+            <section className={`py-8 md:py-16 relative overflow-hidden bg-gradient-to-b from-transparent via-${themeColor}-500/5 to-transparent dark:via-${themeColor}-900/10`}>
                 {/* Subtle Texture Overlay (CSS-based to avoid 404) */}
                 <div
                     className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none"
@@ -371,7 +373,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                 <div className="container mx-auto px-4 relative z-10">
                     <SectionHeading subtitle={process.subtitle || "Vedic Vidhi"}>{process.title}</SectionHeading>
 
-                    <div className="mt-16 relative">
+                    <div className="mt-8 relative">
                         {/* Enhanced Process Timeline Line with Shimmer effect */}
                         <div className="absolute left-6 lg:left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2 lg:block overflow-hidden">
                             {/* Base Glow Line */}
@@ -382,7 +384,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/40 to-transparent animate-snake-border" style={{ animationDuration: '4s' }}></div>
                         </div>
 
-                        <div className="space-y-10 md:space-y-24 lg:relative">
+                        <div className="space-y-6 md:space-y-12 lg:relative">
                             {process.steps.map((step, idx) => (
                                 <div key={idx} className={`flex flex-col lg:flex-row items-start lg:items-center gap-8 ${idx % 2 === 0 ? 'lg:flex-row-reverse' : ''}`}>
 
@@ -427,7 +429,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                         </div>
 
                         {/* Features Grid at Bottom */}
-                        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-6">
                             {process.features.map((feature, idx) => (
                                 <div key={idx} className={`flex flex-col items-center text-center gap-3 p-6 rounded-2xl bg-white/50 dark:bg-card/30 border border-${themeColor}-500/10 dark:border-white/5 hover:bg-white/70 dark:hover:bg-card/50 hover:border-${themeColor}-500/30 dark:hover:border-orange-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg`}>
                                     <div className="w-10 h-10 rounded-full bg-green-500/10 dark:bg-green-500/20 flex items-center justify-center text-green-600 dark:text-green-400">
@@ -439,10 +441,9 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                         </div>
 
                         {/* Enhanced "Sacred Fire" CTA Button */}
-                        <div className="text-center mt-20 relative z-20">
-                            <Link
-                                href="#booking-form"
-                                onClick={(e) => { e.preventDefault(); scrollToBooking(); }}
+                        <div className="text-center mt-10 relative z-20">
+                            <button
+                                onClick={() => setIsBookingModalOpen(true)}
                                 className="group relative inline-flex items-center justify-center h-16 px-12 font-bold text-lg text-white rounded-full transition-all duration-150 overflow-visible"
                                 style={{
                                     boxShadow: `0 8px 0 0 ${theme.shadowHex}`,
@@ -488,18 +489,18 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                 </div>
 
                                 <span className="relative z-10 flex items-center gap-3 text-base uppercase tracking-[0.25em] drop-shadow-lg">
-                                    <Sparkles className="w-5 h-5 animate-pulse" />
+                                    <Sun className="w-5 h-5 animate-pulse" />
                                     Start Your Sacred Journey
                                     <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
                                 </span>
-                            </Link>
+                            </button>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* 6️⃣ BENEFITS GRID (Snake Cards) */}
-            <section className="py-16 md:py-32 relative z-10">
+            <section className="py-8 md:py-16 relative z-10">
                 <div className="container mx-auto px-4">
                     <SectionHeading subtitle="Blessings">{benefits.title}</SectionHeading>
 
@@ -520,7 +521,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
 
                                     {/* Top Sparkle */}
                                     <div className="absolute top-0 right-0 p-6 md:p-8 opacity-0 group-hover:opacity-20 transition-opacity">
-                                        <Sparkles className={`w-16 h-16 md:w-24 md:h-24 text-orange-500 rotate-12`} />
+                                        <Star className={`w-16 h-16 md:w-24 md:h-24 text-orange-500 rotate-12`} />
                                     </div>
 
                                     <div className="text-4xl md:text-6xl mb-6 md:mb-8 transform group-hover:scale-110 md:group-hover:scale-125 group-hover:rotate-6 transition-transform duration-500 origin-left filter drop-shadow-2xl">
@@ -534,7 +535,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                     </div>
 
                     {/* CTA Button - Floating Water Animation */}
-                    <div className="text-center mt-12 md:mt-20 px-4">
+                    <div className="text-center mt-6 md:mt-10 px-4">
                         <button
                             onClick={scrollToBooking}
                             className={`group relative inline-flex items-center justify-center gap-2 md:gap-3 px-8 md:px-14 py-6 md:py-10 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] hover:shadow-[0_0_60px_-10px_rgba(249,115,22,0.8)] hover:-translate-y-1`}
@@ -561,7 +562,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             {/* 7️⃣ WHEN TO PERFORM */}
             {/* 7️⃣ WHEN TO PERFORM */}
             {/* 7️⃣ WHEN TO PERFORM */}
-            <section className="py-12 md:py-24 relative overflow-hidden">
+            <section className="py-6 md:py-12 relative overflow-hidden">
                 {/* Subtle Texture Overlay (CSS-based to avoid 404) */}
                 <div
                     className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none"
@@ -591,7 +592,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                             <div className="grid grid-cols-1 md:grid-cols-2 relative z-10">
                                 {/* Left: Occasions (Cosmic Alignment) */}
                                 <div className={`p-6 sm:p-10 md:p-14 text-left border-b md:border-b-0 md:border-r border-saffron/10 dark:border-white/10 relative overflow-hidden backdrop-blur-sm`}>
-                                    <h3 className="text-lg md:text-2xl lg:text-3xl font-bold mb-6 md:mb-10 font-serif flex items-center gap-3 md:gap-4 text-gray-900 dark:text-white">
+                                    <h3 className="text-lg md:text-2xl lg:text-3xl font-bold mb-3 md:mb-5 font-serif flex items-center gap-3 md:gap-4 text-gray-900 dark:text-white">
                                         <div className={`relative w-8 h-8 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-saffron/10 flex items-center justify-center border border-saffron/20 shadow-inner`}>
                                             <Star className={`w-4 h-4 md:w-6 md:h-6 text-saffron`} fill="currentColor" />
                                         </div>
@@ -602,7 +603,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                         {timing.occasions.map((occasion, i) => (
                                             <li key={i} className={`flex items-start gap-3 md:gap-4 p-2.5 md:p-4 rounded-xl md:rounded-2xl bg-white/40 dark:bg-white/5 border border-transparent hover:border-saffron/30 dark:hover:border-saffron/30 hover:bg-saffron/[0.03] transition-all duration-300 group/item`}>
                                                 <div className="mt-1 bg-saffron/10 p-1 md:p-1.5 rounded-lg">
-                                                    <Sparkles className={`w-3.5 h-3.5 md:w-4 h-4 text-saffron opacity-60 group-hover/item:opacity-100 group-hover/item:scale-125 transition-all`} />
+                                                    <Star className={`w-3.5 h-3.5 md:w-4 h-4 text-saffron opacity-60 group-hover/item:opacity-100 group-hover/item:scale-125 transition-all`} />
                                                 </div>
                                                 <span className="text-sm md:text-lg text-gray-700 dark:text-white/80 group-hover/item:text-gray-900 dark:group-hover/item:text-white transition-colors font-medium tracking-tight">
                                                     {occasion}
@@ -661,7 +662,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
 
             {/* --- TESTIMONIALS --- */}
             {testimonials.reviews && testimonials.reviews.length > 0 && (
-                <section className="py-16 md:py-32 relative z-10">
+                <section className="py-8 md:py-16 relative z-10">
                     <div className="container mx-auto px-4">
                         <SectionHeading subtitle="Trust">{testimonials.title || "What Devotees Say"}</SectionHeading>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
@@ -704,7 +705,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
 
             {/* --- FAQ SECTION --- */}
             {faq.items && faq.items.length > 0 && (
-                <section className="py-12 md:py-24">
+                <section className="py-6 md:py-12">
                     <div className="container mx-auto px-4 max-w-4xl">
                         <SectionHeading subtitle="Common Questions">{faq.title || "Frequently Asked Questions"}</SectionHeading>
                         <div className="space-y-4 md:space-y-6">
@@ -736,7 +737,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             )}
 
             {/* --- FINAL BOOKING CTA --- */}
-            <section id="book-now" className="py-20 md:py-32 relative overflow-hidden bg-background transition-colors duration-1000">
+            <section id="book-now" className="py-10 md:py-16 relative overflow-hidden bg-background transition-colors duration-1000">
                 {/* Background: Clean & Sacred Aura */}
                 <div className="absolute inset-0 pointer-events-none select-none">
                     {/* Radial Brand Gradient */}
@@ -777,10 +778,10 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
 
                             {/* Corner Decorative Ornaments (More subtle) */}
                             <div className="absolute top-0 right-0 p-6 md:p-10 opacity-10 dark:opacity-20 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
-                                <Sparkles className="w-16 h-16 md:w-24 md:h-24 text-saffron" strokeWidth={0.5} />
+                                <Sun className="w-16 h-16 md:w-24 md:h-24 text-saffron" strokeWidth={0.5} />
                             </div>
                             <div className="absolute bottom-0 left-0 p-6 md:p-10 opacity-10 dark:opacity-20 pointer-events-none group-hover:scale-110 transition-transform duration-1000 rotate-180">
-                                <Sparkles className="w-16 h-16 md:w-24 md:h-24 text-saffron" strokeWidth={0.5} />
+                                <Sun className="w-16 h-16 md:w-24 md:h-24 text-saffron" strokeWidth={0.5} />
                             </div>
 
                             {/* Floating Sacred Elements (Reduced for better arrangement) */}
@@ -808,14 +809,14 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                 <motion.div
                                     initial={{ scale: 0.9, opacity: 0 }}
                                     whileInView={{ scale: 1, opacity: 1 }}
-                                    className="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-1.5 md:py-2 rounded-full bg-saffron/10 border border-saffron/20 text-saffron font-black uppercase tracking-[0.2em] md:tracking-[0.25em] text-[10px] md:text-xs mb-6 md:mb-8"
+                                    className="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-1.5 md:py-2 rounded-full bg-saffron/10 border border-saffron/20 text-saffron font-black uppercase tracking-[0.2em] md:tracking-[0.25em] text-[10px] md:text-xs mb-2 md:mb-4"
                                 >
-                                    <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" />
+                                    <Star className="w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" />
                                     Divine Vedic Tradition
-                                    <Sparkles className="w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" />
+                                    <Star className="w-3 h-3 md:w-3.5 md:h-3.5 animate-pulse" />
                                 </motion.div>
 
-                                <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-black font-serif mb-6 md:mb-10 leading-[1.2] md:leading-[1.15] text-gray-900 dark:text-white tracking-tight px-2">
+                                <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-black font-serif mb-4 md:mb-6 leading-[1.2] md:leading-[1.15] text-gray-900 dark:text-white tracking-tight px-2">
                                     {footer?.title?.split('\n').map((line, lid) => (
                                         <React.Fragment key={lid}>
                                             {line} <br className="hidden md:block" />
@@ -830,14 +831,14 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                         )}
                                 </h2>
 
-                                <p className="text-sm md:text-xl text-gray-600 dark:text-white/60 mb-10 md:mb-12 max-w-2xl mx-auto font-light leading-relaxed px-4">
+                                <p className="text-sm md:text-xl text-gray-600 dark:text-white/60 mb-4 md:mb-6 max-w-2xl mx-auto font-light leading-relaxed px-4">
                                     {footer?.description || "Experience the sacred peace of ancient rituals. Our Vedic experts are here to help you invite prosperity into your home."}
                                 </p>
 
-                                <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-12 md:mb-16 px-4">
+                                <div className="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center items-center mb-6 md:mb-8 px-4">
                                     <a
-                                        href="https://wa.me/919999999999"
-                                        className="group/wa relative w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-[#25D366] text-white font-black text-base md:text-xl shadow-[0_15px_30px_-10px_rgba(37,211,102,0.4)] hover:shadow-[0_20px_40px_-10px_rgba(37,211,102,0.6)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 md:gap-4 overflow-hidden"
+                                        href="https://wa.me/918989271245"
+                                        className="group/wa relative w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 rounded-2xl bg-[#25D366] text-white font-black text-base md:text-xl shadow-[0_15px_30_rgba(37,211,102,0.4)] hover:shadow-[0_20px_40px_-10px_rgba(37,211,102,0.6)] hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3 md:gap-4 overflow-hidden"
                                     >
                                         <MessageCircle className="w-5 h-5 md:w-6 md:h-6 fill-current relative z-10 animate-shake" />
                                         <span className="relative z-10 tracking-tight">Chat on WhatsApp</span>
@@ -901,7 +902,14 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                         </motion.div>
                     )
                 }
-            </AnimatePresence >
+            </AnimatePresence>
+            <BookingPackagesPopup 
+                isOpen={isBookingModalOpen}
+                onClose={() => setIsBookingModalOpen(false)}
+                pujaName={name}
+                packages={puja.packages || []}
+                onSelect={handlePackageSelect}
+            />
 
         </div >
     );

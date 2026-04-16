@@ -74,8 +74,12 @@ export default function SignupPage() {
                     ]);
 
                 if (profileError) {
-                    console.error("Profile Error:", profileError);
-                    console.error("Profile Error Message:", profileError.message);
+                    console.error("Profile Creation Failed:", {
+                        code: profileError.code,
+                        message: profileError.message,
+                        details: profileError.details,
+                        hint: profileError.hint
+                    });
                 }
 
                 // Successful signup, redirect to onboarding

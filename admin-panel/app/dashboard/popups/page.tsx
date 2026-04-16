@@ -26,6 +26,7 @@ interface MarketingPopup {
     show_on_app: boolean;
     show_on_web: boolean;
     show_text_overlay: boolean;
+    recurrence_interval_mins: number;
     created_at: string;
 }
 
@@ -55,6 +56,7 @@ export default function PopupManagementPage() {
         show_on_app: true,
         show_on_web: true,
         show_text_overlay: true,
+        recurrence_interval_mins: 0,
         mobileImageFile: null as File | null,
         webImageFile: null as File | null,
     });
@@ -131,6 +133,7 @@ export default function PopupManagementPage() {
                 show_on_app: form.show_on_app,
                 show_on_web: form.show_on_web,
                 show_text_overlay: form.show_text_overlay,
+                recurrence_interval_mins: form.recurrence_interval_mins,
             };
 
             let error;
@@ -180,6 +183,7 @@ export default function PopupManagementPage() {
             show_on_app: true,
             show_on_web: true,
             show_text_overlay: true,
+            recurrence_interval_mins: 0,
             mobileImageFile: null,
             webImageFile: null,
         });
@@ -203,6 +207,7 @@ export default function PopupManagementPage() {
             show_on_app: popup.show_on_app,
             show_on_web: popup.show_on_web,
             show_text_overlay: popup.show_text_overlay !== false, 
+            recurrence_interval_mins: popup.recurrence_interval_mins || 0,
             mobileImageFile: null,
             webImageFile: null,
         });
@@ -422,18 +427,17 @@ export default function PopupManagementPage() {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Frequency</label>
+                                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3">Recurrence (Mins)</label>
                                                     <div className="relative">
-                                                        <Layout size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" />
-                                                        <select
-                                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-5 py-4 focus:ring-2 focus:ring-orange-500 outline-none appearance-none font-bold text-sm text-white"
-                                                            value={form.frequency}
-                                                            onChange={(e) => setForm({ ...form, frequency: e.target.value as any })}
-                                                        >
-                                                            <option className="bg-[#111]" value="once">Total Only Once</option>
-                                                            <option className="bg-[#111]" value="session">Once per Session</option>
-                                                            <option className="bg-[#111]" value="always">Show Every Time</option>
-                                                        </select>
+                                                        <Clock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" />
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={form.recurrence_interval_mins}
+                                                            onChange={(e) => setForm({ ...form, recurrence_interval_mins: parseInt(e.target.value) || 0 })}
+                                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-5 py-4 focus:ring-2 focus:ring-orange-500 outline-none transition-all text-white font-bold"
+                                                            placeholder="0"
+                                                        />
                                                     </div>
                                                 </div>
                                             </div>
@@ -545,7 +549,7 @@ export default function PopupManagementPage() {
 
                                         <div className="grid grid-cols-2 gap-6">
                                             <div>
-                                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 text-center">App (Portrait)</label>
+                                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 text-center flex items-center justify-center gap-2">App (Portrait) <span className="text-[9px] text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full">Ratio 3:4</span></label>
                                                 <div className={`relative aspect-[3/4] rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center p-4 ${form.show_on_app ? 'border-orange-500/30 bg-orange-500/5' : 'border-white/5 bg-transparent opacity-30 grayscale'}`}>
                                                     {(form.mobileImageFile || form.image_mobile) ? (
                                                         <img src={form.mobileImageFile ? URL.createObjectURL(form.mobileImageFile) : form.image_mobile} className="absolute inset-0 w-full h-full object-cover" />
@@ -562,7 +566,7 @@ export default function PopupManagementPage() {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 text-center">Web (Standard)</label>
+                                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 text-center flex items-center justify-center gap-2">Web (Standard) <span className="text-[9px] text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">Ratio 3:4</span></label>
                                                 <div className={`relative aspect-[3/4] rounded-3xl border-2 border-dashed transition-all overflow-hidden flex flex-col items-center justify-center p-4 ${form.show_on_web ? 'border-blue-500/30 bg-blue-500/5' : 'border-white/5 bg-transparent opacity-30 grayscale'}`}>
                                                     {(form.webImageFile || form.image_web) ? (
                                                         <img src={form.webImageFile ? URL.createObjectURL(form.webImageFile) : form.image_web} className="absolute inset-0 w-full h-full object-cover" />

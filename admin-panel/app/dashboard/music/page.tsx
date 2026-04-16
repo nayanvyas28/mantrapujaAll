@@ -583,7 +583,7 @@ export default function MusicManagementPage() {
                                         <div className="flex flex-col items-center gap-2">
                                             <Upload className="w-8 h-8 text-gray-500 mb-1" />
                                             <p className="text-sm font-medium">Click to upload image</p>
-                                            <p className="text-xs text-gray-500">Circular profile, PNG or JPG preferred</p>
+                                            <p className="text-xs text-gray-500">Circular profile, PNG or JPG preferred <span className="text-blue-500 ml-1 font-bold">Ratio 1:1</span></p>
                                         </div>
                                     )}
                                 </div>
@@ -697,7 +697,7 @@ export default function MusicManagementPage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-400 mb-1 uppercase">Song Cover (Square)</label>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1 uppercase flex items-center justify-between">Song Cover (Square) <span className="text-[9px] text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">Ratio 1:1</span></label>
                                     <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-blue-500/50 transition-colors relative">
                                         <input type="file" accept="image/*" onChange={(e) => setSongForm({ ...songForm, imageFile: e.target.files?.[0] || null })} className="absolute inset-0 opacity-0 cursor-pointer" />
                                         {songForm.imageFile ? (

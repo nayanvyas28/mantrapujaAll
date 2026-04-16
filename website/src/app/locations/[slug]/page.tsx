@@ -13,7 +13,8 @@ import {
     Car,
     Info,
     ArrowLeft,
-    Sparkles,
+    Sun,
+    Star,
     Waves,
     Mountain,
     Compass,
@@ -108,14 +109,14 @@ export default function DestinationDetailPage() {
     // Generate Sections for ToC
     const sections = useMemo(() => {
         const s = [
-            { id: 'essence', label: 'Spiritual Essence', icon: Sparkles, color: 'text-saffron' },
+            { id: 'essence', label: 'Spiritual Essence', icon: Sun, color: 'text-saffron' },
         ];
         if (fullDetails.keyRituals?.length) s.push({ id: 'rituals', label: 'Sacred Rituals', icon: Waves, color: 'text-orange-500' });
         if (fullDetails.highlights?.length) s.push({ id: 'sites', label: 'Must-Visit Sites', icon: Mountain, color: 'text-amber-500' });
         if (fullDetails.longDescription) s.push({ id: 'narrative', label: 'Divine Narrative', icon: BookText, color: 'text-indigo-500' });
         if (fullDetails.spiritualArchitecture) s.push({ id: 'architecture', label: 'Architecture', icon: Compass, color: 'text-emerald-500' });
         if (fullDetails.vedicReferences) s.push({ id: 'vedic', label: 'Vedic Wisdom', icon: History, color: 'text-purple-500' });
-        if (fullDetails.localLegends) s.push({ id: 'legends', label: 'Legends', icon: Sparkles, color: 'text-rose-500' });
+        if (fullDetails.localLegends) s.push({ id: 'legends', label: 'Legends', icon: Star, color: 'text-rose-500' });
         if (fullDetails.faqs?.length) s.push({ id: 'faqs', label: 'Insights (FAQ)', icon: Info, color: 'text-blue-500' });
         return s;
     }, [fullDetails]);
@@ -192,7 +193,7 @@ export default function DestinationDetailPage() {
 
 
             {/* 1. Immersive Hero Section */}
-            <section className={`relative ${fullDetails.image && fullDetails.image !== 'null' && fullDetails.image !== '' ? 'h-[75vh] md:h-[85vh]' : 'h-[60vh]'} flex items-end overflow-hidden pt-20`}>
+            <section className={`relative w-full ${fullDetails.image && fullDetails.image !== 'null' && fullDetails.image !== '' ? 'aspect-square md:aspect-[21/9]' : 'aspect-video md:aspect-[3/1]'} flex items-end overflow-hidden pt-20`}>
                 {/* Background Image with Parallax Effect & Fallback */}
                 <div className="absolute inset-0 z-0">
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-black/40 z-10"></div>
@@ -231,7 +232,7 @@ export default function DestinationDetailPage() {
                                 whileHover={{ scale: 1.05 }}
                                 className="px-5 py-2 rounded-full bg-saffron text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_8px_30px_-5px_rgba(234,88,12,0.5)] border border-saffron/50 flex items-center justify-center gap-2"
                             >
-                                <Sparkles className="w-3.5 h-3.5" />
+                                <Sun className="w-3.5 h-3.5" />
                                 {fullDetails.type}
                             </motion.span>
                             <div className="flex items-center gap-2 text-white/90 text-[10px] font-black uppercase tracking-[0.2em] bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
@@ -311,7 +312,7 @@ export default function DestinationDetailPage() {
                                     </Link>
                                 </div>
                                 <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-[80px] group-hover:scale-125 transition-transform duration-1000"></div>
-                                <Sparkles className="absolute top-4 right-4 w-12 h-12 opacity-10 group-hover:rotate-12 transition-transform" />
+                                <Sun className="absolute top-4 right-4 w-12 h-12 opacity-10 group-hover:rotate-12 transition-transform" />
                             </motion.div>
 
                             {/* Practical Info */}
@@ -358,7 +359,7 @@ export default function DestinationDetailPage() {
                         <section id="essence" className="scroll-mt-32">
                             <div className="flex items-center gap-4 mb-10">
                                 <div className="p-4 rounded-[24px] bg-saffron/10 border border-saffron/20 shadow-inner">
-                                    <Sparkles className="w-8 h-8 text-saffron" />
+                                    <Sun className="w-8 h-8 text-saffron" />
                                 </div>
                                 <div>
                                     <h2 className="text-4xl md:text-5xl font-black font-serif tracking-tight">Spiritual Essence</h2>
@@ -556,7 +557,7 @@ export default function DestinationDetailPage() {
                                     viewport={{ once: true }}
                                     className="p-10 md:p-16 rounded-[48px] border-4 border-double border-purple-500/20 bg-gradient-to-br from-purple-500/10 via-background to-background relative overflow-hidden"
                                 >
-                                    <Sparkles className="absolute -top-10 -right-10 w-32 h-32 text-purple-500/10" />
+                                    <Sun className="absolute -top-10 -right-10 w-32 h-32 text-purple-500/10" />
                                     <div className="text-2xl md:text-4xl text-foreground font-serif leading-tight italic mb-8">
                                         "Scriptural Foundation"
                                     </div>
@@ -593,7 +594,7 @@ export default function DestinationDetailPage() {
                             <section id="legends" className="scroll-mt-32">
                                 <div className="flex items-center gap-4 mb-10">
                                     <div className="p-4 rounded-[24px] bg-rose-500/10 border border-rose-500/20 shadow-inner">
-                                        <Sparkles className="w-8 h-8 text-rose-500" />
+                                        <Star className="w-8 h-8 text-rose-500" />
                                     </div>
                                     <div>
                                         <h2 className="text-4xl md:text-5xl font-black font-serif tracking-tight">Ancient Lore</h2>
@@ -761,7 +762,7 @@ export default function DestinationDetailPage() {
 
                                 <div className="relative z-10">
                                     <div className="w-20 h-20 bg-orange-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 group-hover:bg-orange-500 group-hover:text-white transition-all duration-500 shadow-inner">
-                                        <Sparkles className="w-10 h-10 group-hover:scale-110 transition-transform" />
+                                        <Sun className="w-10 h-10 group-hover:scale-110 transition-transform" />
                                     </div>
                                     <h3 className="text-2xl font-black mb-3">Vedic Pujas</h3>
                                     <p className="text-muted-foreground text-sm leading-relaxed">

@@ -2,148 +2,188 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { MessageCircle, Wallet, User, ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronRight, Menu, X, Compass, Calendar as CalendarIcon, Calculator, MessageSquare, LogOut, User as UserIcon, Scroll, Star } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TranslationDropdown } from "./ui/TranslationDropdown";
+import { ThemeToggle } from "./ThemeToggle";
 
 const TopBar = () => {
-    const { user, signOut } = useAuth();
+    const { user } = useAuth();
+    const { language } = useLanguage();
     const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
-    const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
-    const buttonRef = useRef<HTMLDivElement>(null);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+    const mobileMenuRef = useRef<HTMLDivElement>(null);
 
+    // Handle scroll for glass effect intensification
     useEffect(() => {
-        if (isCalculatorOpen && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setDropdownPos({
-                top: rect.bottom,
-                left: Math.min(rect.left, window.innerWidth - 260) // Keep in viewport
-            });
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 20);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const t = {
+        en: {
+            horoscope: "Daily Rashifal",
+            calendar: "Calendar 2026",
+            kundali: "Kundali",
+            calculator: "Calculators",
+            calculators_heading: "Tools",
+            more: "Options",
+            live_chat: "Guru AI",
+            all_calculators: "All Calculators",
+            numerology: "Numerology",
+            love: "Love Match",
+            sun_sign: "Sun Sign",
+            moon_sign: "Moon Sign",
+            mangal_dosha: "Mangal Dosha",
+            sade_sati: "Shani Sade Sati",
+            birth_chart: "Birth Chart",
+            lo_shu: "Lo Shu Grid"
+        },
+        hi: {
+            horoscope: "दैनिक राशिफल",
+            calendar: "2026 कैलेंडर",
+            kundali: "कुंडली",
+            calculator: "कैलकुलेटर",
+            calculators_heading: "टूल्स",
+            more: "विकल्प",
+            live_chat: "गुरु AI",
+            all_calculators: "सभी कैलकुलेटर",
+            numerology: "अंकशास्त्र",
+            love: "लव कैलकुलेटर",
+            sun_sign: "सूर्य राशि",
+            moon_sign: "चंद्र राशि",
+            mangal_dosha: "मंगल दोष",
+            sade_sati: "शनि की साढ़ेसाती",
+            birth_chart: "जन्म कुंडली",
+            lo_shu: "लो शु ग्रिड"
         }
-    }, [isCalculatorOpen]);
+    }[language === 'hi' ? 'hi' : 'en'] as any;
 
     const topLinks = [
-        { name: "Today Horoscope/Rashifal", href: "/today-horoscope" },
-        { name: "Calendar 2026", href: "/calendar-2026" },
+        { name: t.horoscope, href: "/today-horoscope", icon: Compass },
+        { name: t.calendar, href: "/calendar-2026", icon: CalendarIcon },
     ];
 
     const calculators = [
-        { name: "Numerology Calculator", href: "/calculators/numerology" },
-        { name: "Love Calculator", href: "/calculators/love" },
-        { name: "Sun Sign", href: "/calculators/sun-sign" },
-        { name: "Moon Sign (Rasi)", href: "/calculators/moon-sign" },
-        { name: "Mangal Dosha", href: "/calculators/mangal-dosha" },
-        { name: "Shani Sade Sati", href: "/calculators/sade-sati" },
-        { name: "Birth Chart (Natal)", href: "/calculators/birth-chart" },
-        { name: "Lo Shu Grid", href: "/calculators/lo-shu" },
-        { name: "All 19+ Calculators", href: "/calculators" },
+        { name: t.numerology, href: "/calculators/numerology", icon: Star },
+        { name: t.love, href: "/calculators/love", icon: null },
+        { name: t.sun_sign, href: "/calculators/sun-sign", icon: null },
+        { name: t.moon_sign, href: "/calculators/moon-sign", icon: null },
+        { name: t.mangal_dosha, href: "/calculators/mangal-dosha", icon: null },
+        { name: t.sade_sati, href: "/calculators/sade-sati", icon: null },
+        { name: t.birth_chart, href: "/calculators/birth-chart", icon: null },
+        { name: t.lo_shu, href: "/calculators/lo-shu", icon: null },
+        { name: t.all_calculators, href: "/calculators", icon: ChevronRight },
     ];
 
     return (
-        <div className="bg-[#FFB100] w-full py-1 px-3 sm:px-4 border-b border-orange-600/10">
-            <div className="container mx-auto flex items-center justify-between gap-4">
-                {/* Left: Logo & Links */}
-                <div className="flex items-center gap-4 sm:gap-6 flex-1 min-w-0">
-                    {/* <Link href="/" className="shrink-0">
-                        <img src="/logo.png" alt="Logo" className="h-8 w-auto invert brightness-0 opacity-80" />
-                    </Link> */}
-                    
-                    <nav className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-3 sm:gap-4 md:gap-5 scroll-smooth py-1">
-                        {topLinks.map((link, index) => (
-                            <React.Fragment key={link.name}>
-                                <Link 
-                                    href={link.href}
-                                    className="text-xs xl:text-sm font-semibold text-orange-950 hover:text-black whitespace-nowrap transition-colors"
-                                >
+        <div className="w-full z-[100] border-t border-zinc-100 dark:border-white/5">
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="container mx-auto px-4 flex items-center justify-between py-2 gap-4"
+            >
+                {/* -- LEFT: Options -- */}
+                <div className="flex items-center gap-1.5 md:gap-2">
+                    {/* Desktop Links */}
+                    <div className="flex items-center gap-1 bg-zinc-100/50 dark:bg-white/5 p-1 rounded-full border border-zinc-200/50 dark:border-white/5">
+                        {topLinks.map((link) => (
+                            <Link
+                                key={link.name}
+                                href={link.href}
+                                className="px-3 md:px-4 py-1.5 rounded-full flex items-center gap-2 hover:bg-white dark:hover:bg-white/10 transition-all group"
+                            >
+                                <link.icon size={12} className="text-orange-500 group-hover:rotate-12 transition-transform" />
+                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-300 group-hover:text-orange-600 transition-colors">
                                     {link.name}
-                                </Link>
-                                <span className="shrink-0 text-orange-900/20 text-[10px] hidden sm:block">|</span>
-                            </React.Fragment>
+                                </span>
+                            </Link>
                         ))}
+                        
+                        {user && (
+                            <Link
+                                href="/kundli"
+                                className="px-3 md:px-4 py-1.5 rounded-full flex items-center gap-2 hover:bg-white dark:hover:bg-white/10 transition-all group"
+                            >
+                                <Scroll size={12} className="text-orange-500 group-hover:rotate-12 transition-transform" />
+                                <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 dark:text-zinc-300 group-hover:text-orange-600">
+                                    {t.kundali}
+                                </span>
+                            </Link>
+                        )}
 
-                        {/* Calculator Dropdown - Inside scrollable area */}
                         <div 
-                            ref={buttonRef}
-                            className="relative flex items-center py-1 cursor-pointer"
+                            className="relative hidden sm:block"
                             onMouseEnter={() => setIsCalculatorOpen(true)}
                             onMouseLeave={() => setIsCalculatorOpen(false)}
-                            onClick={() => setIsCalculatorOpen(!isCalculatorOpen)}
                         >
-                            <button className="flex items-center gap-1 text-xs xl:text-sm font-semibold text-orange-950 hover:text-black whitespace-nowrap transition-colors pointer-events-none">
-                                Calculator
-                                <span className={`inline-block transition-transform duration-200 ${isCalculatorOpen ? 'rotate-180 text-black' : 'text-orange-900/50'}`}>▾</span>
+                            <button className={`px-4 py-1.5 rounded-full flex items-center gap-2 transition-all ${isCalculatorOpen ? 'bg-white dark:bg-white/10 text-orange-600 shadow-sm' : 'hover:bg-white dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-300'}`}>
+                                <Calculator size={12} className="text-orange-500" />
+                                <span className="text-[9px] font-black uppercase tracking-wider">{t.calculator}</span>
+                                <ChevronDown size={11} className={`transition-transform duration-300 ${isCalculatorOpen ? 'rotate-180' : ''}`} />
                             </button>
 
-                            {/* Dropdown Menu - Fixed position to avoid clipping */}
-                            {isCalculatorOpen && (
-                                <div 
-                                    className="fixed bg-white rounded-md shadow-2xl border border-orange-200 py-3 z-[2000] animate-in fade-in zoom-in-95 duration-200 origin-top"
-                                    style={{ 
-                                        top: `${dropdownPos.top}px`, 
-                                        left: `${dropdownPos.left}px`,
-                                        width: '256px'
-                                    }}
-                                >
-                                    <div className="flex flex-col">
-                                        {calculators.map((calc) => (
-                                            <Link
-                                                key={calc.name}
-                                                href={calc.href}
-                                                className="block px-5 py-2.5 text-xs xl:text-sm font-bold text-gray-800 hover:bg-orange-50 hover:text-orange-700 transition-colors border-b border-gray-50 last:border-0"
-                                                onClick={() => setIsCalculatorOpen(false)}
-                                            >
-                                                {calc.name}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                            <AnimatePresence>
+                                {isCalculatorOpen && (
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 5, scale: 0.95 }}
+                                        className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-zinc-900 rounded-[24px] shadow-2xl border border-orange-200/30 dark:border-white/10 py-3 overflow-hidden z-[1000]"
+                                    >
+                                        <div className="px-5 py-2 mb-2 border-b border-zinc-100 dark:border-white/5">
+                                            <p className="text-[9px] font-black uppercase text-orange-500 tracking-widest">{t.calculators_heading}</p>
+                                        </div>
+                                        <div className="max-h-[50vh] overflow-y-auto no-scrollbar px-2">
+                                            {calculators.map((calc) => (
+                                                <Link
+                                                    key={calc.name}
+                                                    href={calc.href}
+                                                    className="flex items-center justify-between px-4 py-2 rounded-xl hover:bg-orange-50 dark:hover:bg-white/5 transition-all group"
+                                                >
+                                                    <span className="text-[9px] font-black text-zinc-700 dark:text-zinc-300 group-hover:text-orange-600 uppercase tracking-tight">
+                                                        {calc.name}
+                                                    </span>
+                                                    <ChevronRight size={10} className="text-zinc-300 dark:text-zinc-700 group-hover:text-orange-500" />
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
-                    </nav>
+                    </div>
                 </div>
 
-                {/* Right: Actions */}
-                <div className="flex items-center gap-3 shrink-0">
-                    {/* Chat Button */}
-                    <button 
-                        className="flex items-center gap-2 bg-white px-2 sm:px-3 py-1 rounded-md shadow-sm hover:bg-gray-50 transition-all group scale-95 sm:scale-100"
-                        title="Chat with Astrologer"
+                {/* -- RIGHT: Actions & Settings -- */}
+                <div className="flex items-center gap-2 pr-0 md:pr-1.5 transition-all">
+                    {/* Live Guru Chat Button */}
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('toggle-guru-chat'))}
+                        className="bg-orange-500 hover:bg-orange-600 px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-lg shadow-orange-500/25 flex items-center gap-2 active:scale-95 transition-all group hidden sm:flex"
                     >
-                        <MessageCircle className="w-4 h-4 text-gray-600" />
-                        <span className="text-[10px] sm:text-xs font-semibold text-gray-700 hidden xs:block">Chat</span>
-                        <span className="hidden md:inline text-xs font-semibold text-gray-700">with Astrologer</span>
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shrink-0" />
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-30" />
+                            <div className="relative w-1.5 h-1.5 bg-white rounded-full" />
+                        </div>
+                        <span className="text-[9px] font-black text-white uppercase tracking-widest">
+                            {t.live_chat}
+                        </span>
                     </button>
 
-                    {/* Auth */} 
-                    {user ? (
-                        <div className="flex items-center gap-4 ml-2 sm:ml-4">
-                            <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-orange-950" />
-                                <span className="text-[10px] sm:text-xs font-black text-orange-950 truncate max-w-[80px] sm:max-w-none">
-                                    {user.email?.split('@')[0].toUpperCase()}
-                                </span>
-                            </div>
-                            <button 
-                                onClick={() => signOut()}
-                                className="text-[10px] sm:text-xs font-black text-orange-950/60 hover:text-red-700 transition-colors"
-                            >
-                                LOGOUT
-                            </button>
-                        </div>
-                    ) : (
-                        <Link 
-                            href="/login"
-                            className="text-[10px] sm:text-xs xl:text-sm font-black text-orange-950 hover:text-black transition-colors flex items-center gap-1 sm:gap-1.5 ml-1 sm:ml-4 whitespace-nowrap"
-                        >
-                            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            <span className="hidden sm:inline">SIGN IN / SIGN UP</span>
-                            <span className="sm:hidden">LOGIN</span>
-                        </Link>
-                    )}
+                    <div className="flex items-center gap-1 md:gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
+                        <TranslationDropdown />
+                        <ThemeToggle />
+                    </div>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

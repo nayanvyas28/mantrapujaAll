@@ -67,17 +67,17 @@ export default async function DashboardPage() {
                         </a>
                     </div>
 
-                    {/* NEW: Banner Manager */}
+                    {/* NEW: Website Homepage Settings */}
                     <div className="p-6 rounded-2xl bg-gradient-to-r from-orange-900/40 to-purple-900/30 border border-orange-500/20 flex flex-col justify-between gap-4">
                         <div>
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent mb-1">Home Page Banners</h2>
-                            <p className="text-sm text-gray-300 mb-4">Manage sliding banners for both Mobile App and Website high-impact sections.</p>
+                            <h2 className="text-xl font-bold bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent mb-1">Website Homepage</h2>
+                            <p className="text-sm text-gray-300 mb-4">Manage Top Banners and Popular Vedic Pujas displayed on the main Website Homepage.</p>
                         </div>
                         <a
-                            href="/dashboard/banners"
+                            href="/dashboard/website-home"
                             className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
                         >
-                            Manage Banners
+                            Manage Website Home
                         </a>
                     </div>
 

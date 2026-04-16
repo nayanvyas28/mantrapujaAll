@@ -7,11 +7,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ThemeTransitionOverlay } from "@/components/ui/ThemeTransitionOverlay";
 import { LoadingProvider, useLoading } from "@/context/LoadingContext";
+import { useAuth } from "@/context/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import VisualEditorOverlay from "@/components/admin/VisualEditorOverlay";
 import PromoPopup from "@/components/PromoPopup";
 import StickyAuthDrawer from "@/components/StickyAuthDrawer";
+import GuruAIChat from "@/components/GuruAIChat";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -26,6 +28,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 function LayoutContent({ children }: { children: React.ReactNode }) {
     const [isMounted, setIsMounted] = useState(false);
     const { isLoading } = useLoading();
+    const { user } = useAuth();
 
     const pathname = usePathname();
     const router = useRouter();
@@ -35,7 +38,6 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
         // Mandatory Onboarding Check
         const checkOnboarding = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const { data: profile } = await supabase
                     .from('user_profiles')
@@ -54,7 +56,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         if (isMounted) {
             checkOnboarding();
         }
-    }, [isMounted, pathname, router]);
+    }, [isMounted, pathname, router, user]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -87,6 +89,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
             <PromoPopup />
             <StickyAuthDrawer />
+            <GuruAIChat />
 
             {!pathname?.startsWith('/kundli') && <Header />}
             <main className={`flex-1 ${pathname?.startsWith('/kundli') ? 'bg-black' : ''}`} id="website-content-root">
