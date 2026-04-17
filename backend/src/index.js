@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/admin');
 const astrologyRoutes = require('./routes/astrology');
 const chatRoutes = require('./routes/chat');
 const musicRoutes = require('./routes/music');
+const pujaRoutes = require('./routes/pujas');
 
 // Import Services
 const { initializeScheduler } = require('./services/notificationService');
@@ -30,6 +31,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/astrology', astrologyRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/music', musicRoutes);
+app.use('/api/pujas', pujaRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

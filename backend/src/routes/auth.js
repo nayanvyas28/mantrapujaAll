@@ -8,7 +8,7 @@ const {
     checkLoginVerification,
     verifyLoginAuth,
     checkUser,
-    finalizeRegister
+    updateProfile
 } = require('../controllers/auth');
 
 // 0. Pre-Check for user existence
@@ -17,8 +17,7 @@ router.get('/check-user', checkUser);
 // 1. Initial Registration -> Generates OTP & Unverified User
 router.post('/register', initiateRegister);
 
-// 1.5 Finalize registration after OTP
-router.post('/finalize-register', finalizeRegister);
+// Removed redundant finalizeRegister reference
 
 // 2. Verify OTP for Register or Reset (Handles both)
 // For RESET: Provide generic or specific endpoint? We'll make it generic.
@@ -36,5 +35,6 @@ router.post('/check-verification', checkLoginVerification, (req, res) => {
 });
 
 router.post('/verify-login-otp', verifyLoginAuth);
+router.post('/update-profile', updateProfile);
 
 module.exports = router;

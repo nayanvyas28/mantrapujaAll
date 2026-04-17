@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, FlatList, Dimensions, Animated, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useSidebar } from '../../context/SidebarContext';
 import { Heart, Wallet, Bell, Sparkles, Calendar, ChevronRight, Star, ShoppingBag, MapPin, Users } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
@@ -15,35 +16,12 @@ const TESTIMONIALS = [
 
 export default function HomeScreen() {
   const { user, signOut } = useAuth();
+  const { toggle } = useSidebar();
   const router = useRouter();
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Bhakt';
 
-  // Sidebar Animation
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const sidebarTranslateX = useRef(new Animated.Value(-width * 0.8)).current;
-  const backdropOpacity = useRef(new Animated.Value(0)).current;
 
-  const toggleSidebar = (open: boolean) => {
-    setIsSidebarOpen(open);
-    Animated.parallel([
-      Animated.timing(sidebarTranslateX, {
-        toValue: open ? 0 : -width * 0.8,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(backdropOpacity, {
-        toValue: open ? 1 : 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const categories = [
-    { id: 'kundli', name: 'Kundli', free: true, icon: '📜', route: '/coming-soon' },
-    { id: 'rashifal', name: 'Rashifal', free: false, icon: '♈', route: '/coming-soon' },
-    { id: 'shop', name: 'Shop', free: false, icon: '🛍️', route: '/coming-soon' },
-  ];
+  const [categories, setCategories] = useState<any[]>([]);
 
   const [upcomingPujas, setUpcomingPujas] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
@@ -70,32 +48,35 @@ export default function HomeScreen() {
       }, 4000);
       return () => clearInterval(timer);
     }
-  }, [banners, activeBannerIndex, loading]);
+  }, [banners.length, activeBannerIndex, loading]);
 
-  const fetchHomeData = async () => {
+  const fetchHomeData = useCallback(async () => {
     try {
       const [
         { data: pujaData },
         { data: bannerData },
         { data: productData },
-        { data: destinationData }
+        { data: destinationData },
+        { data: categoryData }
       ] = await Promise.all([
         supabase.from('poojas').select('*').eq('is_active', true).eq('show_on_home', true).order('sort_order', { ascending: false }),
         supabase.from('home_banners').select('*').eq('is_active', true).order('display_order'),
         supabase.from('products_99').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order'),
-        supabase.from('destinations').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order')
+        supabase.from('destinations').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order'),
+        supabase.from('categories').select('*').eq('is_active', true).order('sort_order')
       ]);
         
       if (pujaData) setUpcomingPujas(pujaData);
       if (bannerData) setBanners(bannerData);
       if (productData) setProducts(productData);
       if (destinationData) setDestinations(destinationData);
+      if (categoryData) setCategories(categoryData);
     } catch (error) {
       console.error('[Home] Fetch Data Error:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
 
   return (
     <View className="flex-1 bg-[#FFFDFB]">
@@ -105,7 +86,7 @@ export default function HomeScreen() {
       <View className="bg-primary pt-12 pb-6 px-6 rounded-b-[40px] shadow-2xl shadow-primary/40">
         <View className="flex-row justify-between items-center">
           <TouchableOpacity 
-            onPress={() => toggleSidebar(true)}
+            onPress={() => toggle(true)}
             className="flex-row items-center"
           >
             <View className="w-12 h-12 rounded-2xl bg-white/20 items-center justify-center border border-white/30">
@@ -419,12 +400,17 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Floating Widgets Container */}
-      <View className="absolute bottom-10 left-6 right-6 flex-row justify-between items-center pointer-events-none">
+      <View 
+        pointerEvents="box-none"
+        style={{ zIndex: 99 }}
+        className="absolute inset-x-0 bottom-0 h-64"
+      >
         
-        {/* Floating Calendar Widget (Vertical Left Center - Moved to side in actual app logic, but placing here for completeness) */}
+        {/* Floating Calendar Widget */}
         <TouchableOpacity 
-          className="absolute -left-6 bottom-32 w-12 h-14 bg-white border-y border-r border-primary/20 rounded-r-2xl items-center justify-center shadow-xl shadow-black/10 pointer-events-auto"
-          style={{ elevation: 15 }}
+          onPress={() => router.push('/coming-soon')}
+          className="absolute left-0 bottom-44 w-12 h-14 bg-white border-y border-r border-primary/20 rounded-r-2xl items-center justify-center shadow-xl shadow-black/10"
+          style={{ elevation: 25, zIndex: 100 }}
         >
           <Calendar size={20} color="#FF4D00" />
           <View className="w-1 h-3 bg-primary/20 rounded-full mt-1" />
@@ -432,12 +418,16 @@ export default function HomeScreen() {
 
         {/* Floating AI Pandit Widget (Bottom Right) */}
         <TouchableOpacity 
-          onPress={() => router.push('/chat')}
-          className="absolute -right-2 bottom-20 w-24 h-24 items-center justify-center pointer-events-auto"
-          style={{ elevation: 15 }}
+          onPress={() => {
+            console.log('Chat button pressed');
+            router.push('/chat');
+          }}
+          activeOpacity={0.7}
+          className="absolute right-4 bottom-24 w-24 h-24 items-center justify-center"
+          style={{ elevation: 30, zIndex: 101 }}
         >
           <View className="absolute inset-0 bg-primary/20 rounded-full scale-110" />
-          <View className="w-20 h-20 bg-white rounded-full items-center justify-center shadow-2xl border-2 border-primary">
+          <View className="w-20 h-20 bg-white rounded-full items-center justify-center shadow-2xl border-2 border-primary" style={{ overflow: 'hidden' }}>
              <Image 
                 source={require('../../assets/images/3d_pandit.jpg')} 
                 className="w-16 h-16 rounded-full"
@@ -448,113 +438,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Sidebar Overlay */}
-      {isSidebarOpen && (
-        <View style={StyleSheet.absoluteFill} className="z-50">
-          <Animated.View 
-            style={{ opacity: backdropOpacity }}
-            className="flex-1 bg-black/50"
-          >
-            <TouchableOpacity 
-              activeOpacity={1} 
-              onPress={() => toggleSidebar(false)} 
-              className="flex-1" 
-            />
-          </Animated.View>
-
-          <Animated.View 
-            style={{ 
-              transform: [{ translateX: sidebarTranslateX }],
-              width: width * 0.8,
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              backgroundColor: '#FFFFFF',
-              borderTopRightRadius: 40,
-              borderBottomRightRadius: 40,
-              paddingTop: 60,
-              paddingHorizontal: 30,
-            }}
-            className="shadow-2xl"
-          >
-            {/* Sidebar Header */}
-            <View className="items-center mb-10">
-              <View className="w-20 h-20 rounded-3xl bg-primary/10 items-center justify-center mb-4 border border-primary/20">
-                 <Image 
-                   source={require('../../assets/images/logo.png')} 
-                   className="w-16 h-16" 
-                   resizeMode="contain" 
-                 />
-              </View>
-              <Text className="text-xl font-bold text-gray-900">Mantra Pooja</Text>
-              <Text className="text-gray-400 text-xs">Divine Spiritual Haven</Text>
-            </View>
-
-            {/* Profile Section & Links */}
-            <View className="flex-1">
-              {user ? (
-                <>
-                  <View className="bg-gray-50 p-4 rounded-3xl mb-8 border border-gray-100">
-                    <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Logged in as</Text>
-                    <Text className="text-gray-900 font-bold text-lg mt-1">{user.user_metadata?.full_name || 'Bhakt ji'}</Text>
-                    <Text className="text-gray-400 text-xs">{user.phone || user.email}</Text>
-                  </View>
-
-                  <TouchableOpacity className="flex-row items-center py-4 mb-2">
-                    <View className="w-10 h-10 rounded-2xl bg-orange-50 items-center justify-center mr-4">
-                      <Sparkles size={20} color="#FF4D00" />
-                    </View>
-                    <Text className="text-gray-700 font-bold text-base">My Bookings</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity className="flex-row items-center py-4 mb-2">
-                    <View className="w-10 h-10 rounded-2xl bg-orange-50 items-center justify-center mr-4">
-                      <Wallet size={20} color="#FF4D00" />
-                    </View>
-                    <Text className="text-gray-700 font-bold text-base">Divine Wallet</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity className="flex-row items-center py-4 mb-8">
-                    <View className="w-10 h-10 rounded-2xl bg-gray-50 items-center justify-center mr-4">
-                       <Layout size={20} color="#64748B" />
-                    </View>
-                    <Text className="text-gray-700 font-bold text-base">Settings</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    onPress={() => {
-                      toggleSidebar(false);
-                      signOut();
-                    }}
-                    className="flex-row items-center py-4 border-t border-gray-100"
-                  >
-                    <Text className="text-red-500 font-bold text-base">Sign Out</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <View className="flex-1 justify-center -mt-20">
-                  <Text className="text-center text-gray-400 mb-6">Create an account to track your rituals and bookings.</Text>
-                  <TouchableOpacity 
-                    onPress={() => {
-                      toggleSidebar(false);
-                      router.push('/(auth)/login');
-                    }}
-                    className="bg-primary h-14 rounded-2xl items-center justify-center shadow-lg shadow-primary/20"
-                  >
-                    <Text className="text-white font-bold text-lg">Login / Sign Up</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-
-            {/* Footer */}
-            <View className="pb-10 items-center">
-              <Text className="text-gray-300 text-[10px] uppercase font-bold tracking-widest">Version 1.0.0</Text>
-            </View>
-          </Animated.View>
-        </View>
-      )}
     </View>
   );
 }

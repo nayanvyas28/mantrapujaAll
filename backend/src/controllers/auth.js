@@ -2,6 +2,9 @@ const { supabase, supabaseClientAuth } = require('../utils/supabase');
 const crypto = require('crypto');
 const { encryptOTP, decryptOTP } = require('../utils/crypto');
 
+// Shared bridge password for frictionless mobile handover
+const AUTH_BRIDGE_PASSWORD = 'Mantra@OTP#Verified2024';
+
 // Utility to generate 6 digit OTP
 const generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -239,7 +242,7 @@ const verifyOtp = async (req, res) => {
             return res.status(400).json({ error: 'Phone, OTP, and Purpose are required' });
         }
 
-        // 1. Fetch encrypted OTP based purely on phone and purpose (without filtering by plain-text OTP securely stored)
+        // 1. Fetch encrypted OTP based purely on phone and purpose
         const { data: otpData, error: otpError } = await supabase
             .from('otps')
             .select('*')
@@ -259,13 +262,10 @@ const verifyOtp = async (req, res) => {
 
         const rawExpiry = otpData.expires_at;
         const now = Date.now();
-        // If the date string doesn't have Z or + (common with some DB drivers), append Z to force UTC parsing
         const dateToParse = (typeof rawExpiry === 'string' && !rawExpiry.includes('Z') && !rawExpiry.includes('+')) 
             ? rawExpiry + 'Z' 
             : rawExpiry;
         const expiryTime = new Date(dateToParse).getTime();
-
-        console.log(`[OTP Verification] phone=${phone} purpose=${purpose} stored=${rawExpiry} parsed=${new Date(expiryTime).toISOString()} now=${new Date(now).toISOString()}`);
 
         if (expiryTime < now) {
             return res.status(400).json({ error: 'This OTP has expired' });
@@ -273,158 +273,116 @@ const verifyOtp = async (req, res) => {
 
         // 2. Handle Purpose Logic
         if (purpose === 'REGISTER') {
-            // In our new flow, if we are just verifying the OTP (Step 1 -> Step 3),
-            // there won't be an unverified_user entry yet.
-            if (!req.body.password) {
+            const passwordToUse = req.body.password || AUTH_BRIDGE_PASSWORD;
+            
+            // Masked phone as a unique default name
+            const maskedPhone = phone.length > 4 ? `+91 ******${phone.slice(-4)}` : phone;
+
+            if (!req.body.password && !req.body.is_handshake) {
                 return res.status(200).json({ message: 'OTP Verified successfully', verified: true, allow_details: true });
             }
 
-            // Fetch unverified user data (only if we are trying to finalize reg)
+            // Fetch unverified user data
             const { data: uvUser } = await supabase
                 .from('unverified_users')
                 .select('*')
                 .eq('phone', phone)
                 .single();
 
-            if (!uvUser) {
-                return res.status(400).json({ error: 'Registration request expired or not found' });
-            }
-
-            // 2.A) Create Supabase Auth User
+            // 2.A) Ensure Supabase Auth User exists
             let { data: authData, error: authError } = await supabase.auth.admin.createUser({
                 phone: phone, 
-                email: uvUser.email || undefined,
-                password: req.body.password,
+                email: uvUser?.email || undefined,
+                password: passwordToUse,
                 phone_confirm: true,
                 user_metadata: {
-                    full_name: uvUser.full_name,
-                    provider: 'phone'
+                    full_name: uvUser?.full_name || maskedPhone,
+                    provider: 'phone_otp'
                 }
             });
 
-            // Handle Recovery if User already exists (idempotent registration)
-            // Broader check for "already exists" patterns
             const isConflict = authError && (
                 authError.message.toLowerCase().includes("exists") || 
                 authError.message.toLowerCase().includes("already") ||
-                authError.code === '23505' || // Postgres unique constraint
                 authError.status === 422
             );
 
             if (isConflict) {
-                console.log(`[Verify] Auth conflict detected for ${phone}. Attempting recovery/bridge. Error: ${authError.message}`);
-                
-                // Helper to check if phone numbers match regardless of + prefix
+                const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
                 const phonesMatch = (p1, p2) => {
-                    if (!p1 || !p2) return false;
-                    const clean = (p) => p.replace(/[^\d]/g, '');
-                    const c1 = clean(p1);
-                    const c2 = clean(p2);
-                    return (c1 && c2) && (c1.endsWith(c2) || c2.endsWith(c1));
+                    const clean = (p) => p?.replace(/[^\d]/g, '') || '';
+                    return clean(p1).endsWith(clean(p2)) || clean(p2).endsWith(clean(p1));
                 };
 
-                // Fetch users with a larger limit to ensure we find the existing user
-                // If the user count grows beyond 1000, we might need true pagination, but this covers most cases.
-                const { data: userList, error: listError } = await supabase.auth.admin.listUsers({
-                    perPage: 1000
-                });
-
-                if (listError) console.error("[Verify] listUsers failed:", listError);
-
-                const existingUser = userList?.users?.find(u => 
-                    phonesMatch(u.phone, phone) || 
-                    (uvUser.email && u.email?.toLowerCase() === uvUser.email.toLowerCase())
-                );
+                const existingUser = userList?.users?.find(u => phonesMatch(u.phone, phone));
 
                 if (existingUser) {
-                    console.log(`[Verify] Found existing Auth user ${existingUser.id} during recovery for ${phone}`);
-                    // Security Check: If email exists but phone doesn't match, it's a conflict!
-                    if (existingUser.phone && !phonesMatch(existingUser.phone, phone)) {
-                         console.warn(`[Verify] Recovery Conflict: Email ${uvUser.email} belongs to ${existingUser.phone}, not ${phone}`);
-                         return res.status(400).json({ error: 'This email is already associated with a different phone number.' });
-                    }
+                    await supabase.auth.admin.updateUserById(existingUser.id, {
+                        password: passwordToUse,
+                        phone_confirm: true,
+                        user_metadata: {
+                            // Only update name if it was never set
+                            full_name: existingUser.user_metadata?.full_name || uvUser?.full_name || maskedPhone
+                        }
+                    });
                     authData = { user: existingUser };
                     authError = null;
-                } else {
-                    console.warn(`[Verify] Recovery failed: User ${phone}/${uvUser.email} not found in Auth list despite error.`);
                 }
             }
 
-            // Handle Bridge Fallback natively using Admin if Phone fails (Standard bridge logic)
-            let finalUser = authData?.user;
-            if (authError && authError.message.toLowerCase().includes("phone")) {
-                console.log("Falling back to email-phone bridge (ADMIN API)");
-                const bridgeEmail = uvUser.email || `${phone}@mantrapooja.auth`;
-                const bridgeFallback = await supabase.auth.admin.createUser({
-                    email: bridgeEmail,
-                    password: req.body.password,
-                    email_confirm: true,
-                    user_metadata: {
-                        phone: phone,
-                        full_name: uvUser.full_name,
-                        provider: 'phone'
-                    }
-                });
-                if (bridgeFallback.error) {
-                    return res.status(500).json({ error: bridgeFallback.error.message });
-                }
-                finalUser = bridgeFallback.data.user;
-            } else if (authError) {
-                return res.status(500).json({ error: authError.message });
-            }
+            if (authError) return res.status(500).json({ error: authError.message });
 
-            // Make sure profile exists and lists phone_verified
-            // USE UPSERT: This handles cases where the auth row exists but profile creation trigger failed or was missed.
-            const { error: profileSyncError } = await supabase.from('profiles').upsert({
+            const finalUser = authData.user;
+            const finalPhoneStr = finalUser.phone || `+91${phone}`;
+
+            // Sync Profile
+            await supabase.from('profiles').upsert({
                 id: finalUser.id,
                 phone: phone,
-                email: uvUser.email || finalUser.email,
+                email: uvUser?.email || finalUser.email,
                 phone_verified: true,
-                full_name: uvUser.full_name || finalUser.user_metadata?.full_name,
+                full_name: uvUser?.full_name || finalUser.user_metadata?.full_name,
             }, { onConflict: 'id' });
-
-            if (profileSyncError) {
-                console.error(`[Verify] Profile Sync Failed for ${finalUser.id}:`, profileSyncError);
-                // We don't return 500 here because the Auth account IS created/verified, 
-                // but this might cause login issues later if profiles table is empty.
-            }
 
             // Cleanup
             await supabase.from('unverified_users').delete().eq('phone', phone);
             await supabase.from('otps').delete().eq('id', otpData.id);
 
-            // Log them in natively to return Session via client library trick or just tell frontend to call standard login
-            return res.status(200).json({ message: 'Registration complete', verified: true, next_step: 'login' });
+            return res.status(200).json({ 
+                message: 'Registration complete', 
+                verified: true, 
+                bridgePassword: AUTH_BRIDGE_PASSWORD,
+                finalAuthPhone: finalPhoneStr 
+            });
 
-        } else if (purpose === 'RESET_PASSWORD') {
-            // For Password Reset, simply issue a temporary verified token or tell frontend to set new password NOW
+        } else if (purpose === 'RESET_PASSWORD' || purpose === 'LOGIN_VERIFICATION') {
+            // Force Bridge Handshake for Login/Reset
+            const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+            const phonesMatch = (p1, p2) => {
+                const clean = (p) => p?.replace(/[^\d]/g, '') || '';
+                return clean(p1).endsWith(clean(p2)) || clean(p2).endsWith(clean(p1));
+            };
+            const existingUser = userList?.users?.find(u => phonesMatch(u.phone, phone));
 
-            if (!req.body.new_password) {
-                // Return success so frontend can show "Enter New Password" input
-                return res.status(200).json({ message: 'OTP Verified. Proceed to reset.', otp_verified: true, otp_id: otpData.id });
+            if (existingUser) {
+                await supabase.auth.admin.updateUserById(existingUser.id, {
+                    password: AUTH_BRIDGE_PASSWORD,
+                    phone_confirm: true
+                });
+
+                await supabase.from('profiles').update({ phone_verified: true }).eq('id', existingUser.id);
             }
 
-            // If frontend passes new_password, perform reset
-            // 1. Fetch user by phone in profiles
-            const { data: profileData } = await supabase.from('profiles').select('id, email').eq('phone', phone).single();
-            if (!profileData) {
-                return res.status(404).json({ error: 'User not found in profiles' });
-            }
-
-            const { error: resetError } = await supabase.auth.admin.updateUserById(
-                profileData.id,
-                { password: req.body.new_password }
-            );
-
-            if (resetError) {
-                return res.status(500).json({ error: 'Failed to reset password: ' + resetError.message });
-            }
-
-            // Delete OTP and return
             await supabase.from('otps').delete().eq('id', otpData.id);
-            return res.status(200).json({ message: 'Password reset successful', verified: true });
+            
+            return res.status(200).json({ 
+                message: 'OTP Verified. Handshake ready.', 
+                otp_verified: true, 
+                verified: true,
+                bridgePassword: AUTH_BRIDGE_PASSWORD,
+                finalAuthPhone: existingUser?.phone || phone
+            });
         }
-
 
     } catch (err) {
         console.error('Verify OTP Error:', err);
@@ -646,95 +604,48 @@ const checkUser = async (req, res) => {
     }
 };
 
-const finalizeRegister = async (req, res) => {
-    console.log(`[Auth] POST /finalize-register - Request Body:`, JSON.stringify(req.body));
+const updateProfile = async (req, res) => {
     try {
-        const { password, full_name, email } = req.body;
-        const phone = normalizePhone(req.body.phone);
+        const { userId, full_name, email, dob, location, address } = req.body;
+        if (!userId) return res.status(400).json({ error: 'User ID is required' });
 
-        if (!phone || !password || !full_name) {
-            return res.status(400).json({ error: 'Phone, password, and full name are required' });
-        }
+        const updateData = {};
+        if (full_name) updateData.full_name = full_name;
+        if (email) updateData.email = email;
+        if (dob) updateData.dob = dob;
+        if (location) updateData.location = location;
+        if (address) updateData.address = address;
 
-        // 1. Check if user already exists (idempotent check)
-        const { data: profileCheck } = await supabase
+        // 1. Update Profiles table
+        const { error: profileError } = await supabase
             .from('profiles')
-            .select('id')
-            .or(`phone.eq.${phone},phone.eq.+91${phone},phone.eq.91${phone}`)
-            .maybeSingle();
-
-        // We don't error out here if profile exists. 
-        // We let the logic proceed to ensure auth is synced and profile is upserted.
-
-        // 2. Create or Find Supabase Auth User
-        let { data: authData, error: authError } = await supabase.auth.admin.createUser({
-            phone: phone,
-            email: email || undefined,
-            password: password,
-            phone_confirm: true,
-            user_metadata: {
-                full_name: full_name,
-                provider: 'phone'
-            }
-        });
-
-        const isConflict = authError && (
-            authError.message.toLowerCase().includes("exists") || 
-            authError.message.toLowerCase().includes("already") ||
-            authError.code === '23505' ||
-            authError.status === 422
-        );
-
-        let finalUser = authData?.user;
-
-        if (isConflict) {
-            console.log(`[FinalizeRegister] Auth conflict detected for ${phone}. Attempting recovery/bridge.`);
-            const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-            
-            const phonesMatch = (p1, p2) => {
-                if (!p1 || !p2) return false;
-                const clean = (p) => p.replace(/[^\d]/g, '');
-                return clean(p1).endsWith(clean(p2)) || clean(p2).endsWith(clean(p1));
-            };
-
-            const existingUser = userList?.users?.find(u => phonesMatch(u.phone, phone));
-            
-            if (existingUser) {
-                finalUser = existingUser;
-                authError = null;
-                // Also update password if they are here
-                await supabase.auth.admin.updateUserById(existingUser.id, { password: password });
-            }
-        }
-
-        if (authError) {
-            return res.status(500).json({ error: authError.message });
-        }
-
-        if (!finalUser) {
-            return res.status(500).json({ error: 'Failed to create or find user.' });
-        }
-
-        // 3. Create Profile
-        const { error: profileError } = await supabase.from('profiles').upsert({
-            id: finalUser.id,
-            phone: phone,
-            email: email || finalUser.email,
-            phone_verified: true,
-            full_name: full_name || finalUser.user_metadata?.full_name,
-        }, { onConflict: 'id' });
+            .update(updateData)
+            .eq('id', userId);
 
         if (profileError) {
-            console.error('[FinalizeRegister] Profile sync error:', profileError);
+            console.error('[UpdateProfile] Profile Error:', profileError);
+            return res.status(500).json({ error: 'Failed to update profiles table' });
         }
 
-        return res.status(200).json({ message: 'Registration complete', verified: true });
+        // 2. Update Supabase Auth User Metadata (if name or email changed)
+        if (full_name || email) {
+            const authData = {};
+            if (full_name) authData.data = { full_name };
+            if (email) authData.email = email;
 
+            const { error: authError } = await supabase.auth.admin.updateUserById(userId, authData);
+            if (authError) {
+                console.warn('[UpdateProfile] Auth Update Warning:', authError.message);
+                // We don't return 500 here because the profiles table is updated
+            }
+        }
+
+        return res.status(200).json({ message: 'Profile updated successfully', success: true });
     } catch (err) {
-        console.error('Finalize Register Error:', err);
+        console.error('Update Profile Error:', err);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
-};
+}
 
 module.exports = {
     initiateRegister,
@@ -743,5 +654,5 @@ module.exports = {
     checkLoginVerification,
     verifyLoginAuth,
     checkUser,
-    finalizeRegister
+    updateProfile
 };

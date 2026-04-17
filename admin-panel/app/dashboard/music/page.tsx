@@ -22,6 +22,12 @@ interface Song {
     video_url?: string;
 }
 
+const extractYoutubeId = (url: string) => {
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[7].length === 11) ? match[7] : null;
+};
+
 export default function MusicManagementPage() {
     const supabase = createClient();
     const [activeTab, setActiveTab] = useState<'deities' | 'songs'>('deities');
@@ -129,12 +135,20 @@ export default function MusicManagementPage() {
 
     const handleAddSong = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!songForm.title || !songForm.god_id || !songForm.audioFile) return;
+        const ytId = extractYoutubeId(songForm.video_url);
+        if (!songForm.title || !songForm.god_id || (!songForm.audioFile && !ytId)) {
+            alert("Please provide either an Audio File or a valid YouTube Video URL.");
+            return;
+        }
 
         setIsSaving(true);
         try {
-            let audioUrl = await handleFileUpload(songForm.audioFile, 'music_assets', 'audio_files');
+            let audioUrl = ytId || '';
             let imageUrl = '';
+
+            if (songForm.audioFile) {
+                audioUrl = await handleFileUpload(songForm.audioFile, 'music_assets', 'audio_files');
+            }
 
             if (songForm.imageFile) {
                 imageUrl = await handleFileUpload(songForm.imageFile, 'music_assets', 'song_covers');
@@ -323,11 +337,19 @@ export default function MusicManagementPage() {
                                                             </div>
                                                             <div>
                                                                 <p className="font-bold text-white">{song.title}</p>
-                                                                <div className="flex items-center gap-3 mt-0.5">
-                                                                    <a href={song.audio_url} target="_blank" className="text-[10px] uppercase font-bold text-blue-400 hover:text-blue-300">Play Audio</a>
-                                                                    {song.video_url && <a href={song.video_url} target="_blank" className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300">Watch Video</a>}
-                                                                    {song.lyrics && <span className="text-[10px] uppercase font-bold text-gray-500">Includes Lyrics</span>}
-                                                                </div>
+                                                                    <div className="flex items-center gap-3 mt-0.5">
+                                                                        {song.audio_url?.length === 11 ? (
+                                                                            <span className="text-[10px] uppercase font-bold text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                                                                                <Music2 className="w-2.5 h-2.5" /> YouTube Stream
+                                                                            </span>
+                                                                        ) : (
+                                                                            <a href={song.audio_url} target="_blank" className="text-[10px] uppercase font-bold text-blue-400 hover:text-blue-300">Play Audio</a>
+                                                                        )}
+                                                                        {song.video_url && song.audio_url !== song.video_url && song.audio_url !== extractYoutubeId(song.video_url) && (
+                                                                            <a href={song.video_url} target="_blank" className="text-[10px] uppercase font-bold text-red-400 hover:text-red-300">Watch Video</a>
+                                                                        )}
+                                                                        {song.lyrics && <span className="text-[10px] uppercase font-bold text-gray-500">Includes Lyrics</span>}
+                                                                    </div>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -498,8 +520,12 @@ export default function MusicManagementPage() {
                                                         <div>
                                                             <p className="font-semibold text-white">{song.title}</p>
                                                             <div className="flex gap-2">
-                                                                <a href={song.audio_url} target="_blank" className="text-xs text-blue-400 hover:underline">Listen to Audio</a>
-                                                                {song.video_url && <a href={song.video_url} target="_blank" className="text-xs text-red-500 hover:underline">Watch Video</a>}
+                                                                {song.audio_url?.length === 11 ? (
+                                                                    <span className="text-[10px] uppercase font-bold text-red-400">YouTube Stream</span>
+                                                                ) : (
+                                                                    <a href={song.audio_url} target="_blank" className="text-xs text-blue-400 hover:underline">Listen to Audio</a>
+                                                                )}
+                                                                {song.video_url && song.audio_url !== song.video_url && <a href={song.video_url} target="_blank" className="text-xs text-red-500 hover:underline">Watch Video</a>}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -680,9 +706,14 @@ export default function MusicManagementPage() {
                             <div className="space-y-4">
                                 <h4 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Media Assets</h4>
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-400 mb-1 uppercase">Audio File (.mp3/.m4a)</label>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1 uppercase flex-row justify-between items-center">
+                                        Audio File (.mp3/.m4a)
+                                        {songForm.video_url && extractYoutubeId(songForm.video_url) && (
+                                            <span className="ml-2 text-[9px] text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">Optional (Using YouTube)</span>
+                                        )}
+                                    </label>
                                     <div className="border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-blue-500/50 transition-colors relative">
-                                        <input type="file" required accept="audio/*" onChange={(e) => setSongForm({ ...songForm, audioFile: e.target.files?.[0] || null })} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        <input type="file" required={!extractYoutubeId(songForm.video_url)} accept="audio/*" onChange={(e) => setSongForm({ ...songForm, audioFile: e.target.files?.[0] || null })} className="absolute inset-0 opacity-0 cursor-pointer" />
                                         {songForm.audioFile ? (
                                             <div className="flex items-center justify-center gap-2 text-blue-400">
                                                 <Check className="w-5 h-5" />
@@ -719,7 +750,7 @@ export default function MusicManagementPage() {
                                         disabled={isSaving}
                                         className="w-full py-4 bg-blue-500 hover:bg-blue-600 font-bold rounded-xl shadow-lg shadow-blue-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
-                                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> Upload & Save Song</>}
+                                        {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> {extractYoutubeId(songForm.video_url) ? 'Save YouTube Song' : 'Upload & Save Song'}</>}
                                     </button>
                                     <p className="text-[10px] text-center text-gray-500 mt-4">
                                         Uploading assets can take a few seconds depending on file size.

@@ -5,7 +5,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import { SidebarProvider, useSidebar } from '../context/SidebarContext';
 import { View, ActivityIndicator, Animated, Image } from 'react-native';
+import Sidebar from '../components/Sidebar';
 
 export {
   ErrorBoundary,
@@ -38,7 +40,9 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <SidebarProvider>
+        <RootLayoutNav />
+      </SidebarProvider>
     </AuthProvider>
   );
 }
@@ -47,48 +51,30 @@ function RootLayoutNav() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const fadeAnim = useRef(new Animated.Value(0.5)).current;
-
-  useEffect(() => {
-    if (loading) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(fadeAnim, {
-            toValue: 0.5,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    }
-  }, [loading]);
 
   useEffect(() => {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-
-    // Only redirect AWAY from auth screens if user is already logged in
+    
+    // Only redirect logged-in users away from auth screens (home is public)
     if (user && inAuthGroup) {
-      router.replace('/(tabs)');
+      const timer = setTimeout(() => {
+        router.replace('/(tabs)');
+      }, 50);
+      return () => clearTimeout(timer);
     }
-    // We NO LONGER redirect unauthenticated users to login automatically.
-    // Guests can now browse (tabs) freely.
-  }, [user, loading, segments]);
+  }, [user?.id, loading, segments[0]]);
 
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
-        <Animated.Image 
+        <Image 
           source={require('../assets/images/logo.png')} 
-          style={{ width: 120, height: 120, opacity: fadeAnim }} 
+          style={{ width: 120, height: 120, marginBottom: 20 }} 
           resizeMode="contain"
         />
+        <ActivityIndicator size="large" color="#FF4D00" />
       </View>
     );
   }
