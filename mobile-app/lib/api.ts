@@ -1,4 +1,4 @@
-const ADMIN_URL = "http://lk8ogw0kkok0sso484swc0wc.34.93.68.183.sslip.io";
+const ADMIN_URL = process.env.EXPO_PUBLIC_ADMIN_URL || "http://lk8ogw0kkok0sso484swc0wc.34.93.68.183.sslip.io";
 
 const fetchWithTimeout = async (url: string, options: any = {}, timeout = 8000) => {
   const controller = new AbortController();
@@ -95,12 +95,97 @@ export const api = {
     }
   },
 
+  // --- Astrology API ---
+  astrology: {
+    getKundliData: async (birthData: any, language: string = 'en') => {
+      try {
+        const response = await fetch(`${ADMIN_URL}/api/astrology/kundli`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ birthData, language }),
+        });
+        return await response.json();
+      } catch (error) {
+        console.error('getKundliData error:', error);
+        throw error;
+      }
+    },
+
+    fetchSavedKundalis: async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('user_kundalis')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('fetchSavedKundalis error:', error);
+        throw error;
+      }
+    },
+
+    saveKundali: async (kundaliData: any) => {
+      try {
+        const { data, error } = await supabase
+          .from('user_kundalis')
+          .upsert(kundaliData, { onConflict: 'user_id,full_name' })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.error('saveKundali error:', error);
+        throw error;
+      }
+    },
+
+    deleteKundali: async (id: string) => {
+      try {
+        const { error } = await supabase
+          .from('user_kundalis')
+          .delete()
+          .eq('id', id);
+        if (error) throw error;
+        return true;
+      } catch (error) {
+        console.error('deleteKundali error:', error);
+        throw error;
+      }
+    }
+  },
+
+  // --- Music API ---
+  music: {
+    fetchGods: async () => {
+      try {
+        const response = await fetchWithTimeout(`${ADMIN_URL}/api/music/gods`);
+        return await handleResponse(response);
+      } catch (error) {
+        console.error('fetchGods error:', error);
+        throw error;
+      }
+    },
+
+    fetchSongs: async (params?: { god_id?: string; category?: string }) => {
+      try {
+        const query = new URLSearchParams(params as any).toString();
+        const response = await fetchWithTimeout(`${ADMIN_URL}/api/music/songs?${query}`);
+        return await handleResponse(response);
+      } catch (error) {
+        console.error('fetchSongs error:', error);
+        throw error;
+      }
+    }
+  },
+
   guruChat: async (data: { 
     message: string; 
     chatHistory: any[]; 
     userId?: string; 
     sessionId?: string;
-    language?: 'hi' | 'en'
+    language?: string;
   }) => {
     try {
       const url = `${ADMIN_URL}/api/chat`;

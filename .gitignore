@@ -32,4 +32,9 @@ Thumbs.db
 
 # Other
 .vercel
-.turbo
+# Cache & Internal
+.expo/
+.expo_cache/
+.planning/
+scratch/
+node_modules_old/
