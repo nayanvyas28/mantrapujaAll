@@ -1,69 +1,103 @@
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
-import 'react-native-reanimated';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import '../global.css';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useFonts } from 'expo-font';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect, useRef, useState } from 'react';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import { View, ActivityIndicator, Animated, Image } from 'react-native';
 
-// Type-safe alias for React 19/Expo 54 compatibility
-const RNView = View as any;
-import { GuruFloatingButton } from '../components/GuruFloatingButton';
-import { AnimatedStarfield } from '../components/ui/AnimatedStarfield';
-import { AuthProvider } from '../context/AuthContext';
-import { ThemeProvider, useTheme } from '../context/ThemeContext';
-import { usePushNotifications } from '../hooks/usePushNotifications';
-import { MarketingPopup } from '../components/MarketingPopup';
-import { AuthUpsellPopup } from '../components/AuthUpsellPopup';
-import '../utils/i18n'; // Initialize i18next
+export {
+  ErrorBoundary,
+} from 'expo-router';
 
-function RootLayoutContent() {
-  const { theme, colors } = useTheme();
-  usePushNotifications();
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
+
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
+  const [loaded, error] = useFonts({
+    ...FontAwesome.font,
+  });
+
+  useEffect(() => {
+    if (error) throw error;
+  }, [error]);
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
-    <RNView style={{ flex: 1, backgroundColor: colors?.background || '#000' }}>
-      {theme === 'dark' && (
-        <RNView style={StyleSheet.absoluteFill}>
-          <AnimatedStarfield />
-        </RNView>
-      )}
-      
-      <Stack screenOptions={{ 
-        headerShown: false, 
-        animation: 'fade',
-        contentStyle: { backgroundColor: 'transparent' } 
-      }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="guru-ai" options={{ animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="intro" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="zodiac" />
-        <Stack.Screen name="permissions" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-
-      <GuruFloatingButton />
-      <MarketingPopup />
-      <AuthUpsellPopup />
-      <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-    </RNView>
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
   );
 }
 
-import { GuruAssistantProvider } from '../context/GuruAssistantContext';
-import { WalletProvider } from '../context/WalletContext';
+function RootLayoutNav() {
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+  const fadeAnim = useRef(new Animated.Value(0.5)).current;
 
-export default function RootLayout() {
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 0.5,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    // Only redirect AWAY from auth screens if user is already logged in
+    if (user && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+    // We NO LONGER redirect unauthenticated users to login automatically.
+    // Guests can now browse (tabs) freely.
+  }, [user, loading, segments]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <Animated.Image 
+          source={require('../assets/images/logo.png')} 
+          style={{ width: 120, height: 120, opacity: fadeAnim }} 
+          resizeMode="contain"
+        />
+      </View>
+    );
+  }
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <AuthProvider>
-          <WalletProvider>
-            <GuruAssistantProvider>
-              <RootLayoutContent />
-            </GuruAssistantProvider>
-          </WalletProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    </Stack>
   );
 }

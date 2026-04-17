@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const { proxyAstroRequest } = require('../controllers/astrology');
+const { proxyAstroRequest, getKundliData } = require('../controllers/astrology');
 
 /**
  * Endpoint: POST /api/astrology/proxy/:endpoint
- * Example: /api/astrology/proxy/numero_table
  */
 router.post('/proxy/:endpoint', proxyAstroRequest);
+
+/**
+ * Endpoint: POST /api/astrology/kundli
+ * Bundled data fetching for mobile app
+ */
+router.post('/kundli', getKundliData);
 
 module.exports = router;

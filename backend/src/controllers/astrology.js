@@ -3,7 +3,41 @@ const { supabase } = require('../utils/supabase');
 const ASTROLOGY_API_BASE_URL = "https://json.astrologyapi.com/v1";
 
 /**
- * Proxy request to AstrologyAPI/Prokerala with automatic failover and load balancing
+ * Shared logic to execute an AstrologyAPI request with a specific node
+ */
+const executeNodeRequest = async (node, endpoint, body, lang) => {
+    let provider = node.provider || (node.api_key ? 'astrologyapi' : null);
+    
+    let headers = {
+        'Content-Type': 'application/json',
+        'Accept-Language': lang
+    };
+
+    let url = `${ASTROLOGY_API_BASE_URL}/${endpoint}`;
+
+    if (provider === 'astrologyapi') {
+        headers['x-astrologyapi-key'] = node.api_key;
+        if (node.user_id) {
+            const auth = Buffer.from(`${node.user_id}:${node.api_key}`).toString('base64');
+            headers['Authorization'] = `Basic ${auth}`;
+        }
+    } else {
+        throw new Error(`Provider ${provider} not supported.`);
+    }
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15000)
+    });
+
+    const data = await response.json().catch(() => ({ msg: "Internal Error" }));
+    return { status: response.status, ok: response.ok, data };
+};
+
+/**
+ * Proxy request for a single endpoint (Legacy/Standard)
  */
 const proxyAstroRequest = async (req, res) => {
     const { endpoint } = req.params;
@@ -11,123 +45,90 @@ const proxyAstroRequest = async (req, res) => {
     const lang = req.headers['accept-language'] || 'en';
 
     try {
-        // 1. Fetch Dynamic Configuration from Supabase
-        const { data: settings, error: fetchError } = await supabase
-            .from('kundli_settings')
-            .select('setting_value')
-            .eq('setting_key', 'api_config')
-            .single();
+        const { data: settings } = await supabase.from('kundli_settings').select('setting_value').eq('setting_key', 'api_config').single();
+        const config = settings?.setting_value || { apis: [{ name: 'Default', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0' }], failover_enabled: true };
 
-        if (fetchError && fetchError.code !== 'PGRST116') {
-            console.error('[AstroProxy] DB Fetch Error:', fetchError);
-        }
-
-        const config = settings?.setting_value || {
-            apis: [
-                { id: 'h1', name: 'Hardcoded Fallback 1', provider: 'astrologyapi', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true, priority: 1 },
-                { id: 'h2', name: 'Hardcoded Fallback 2', provider: 'astrologyapi', api_key: 'ak-36483fc8a7f94df8504faacc4db3a46cafb353bd', is_enabled: true, priority: 1 }
-            ],
-            load_balance_strategy: 'round-robin',
-            failover_enabled: true
-        };
-
-        // 2. Filter and Sort Nodes
-        let nodes = config.apis.filter(api => api.is_enabled);
-        
-        if (config.load_balance_strategy === 'priority') {
-            nodes.sort((a, b) => (a.priority || 1) - (b.priority || 1));
-        } else if (config.load_balance_strategy === 'random') {
-            nodes.sort(() => Math.random() - 0.5);
-        }
-
-        if (nodes.length === 0) {
-            throw new Error("No active astrology nodes configured in Veda Manager.");
-        }
-
+        const nodes = config.apis.filter(api => api.is_enabled);
         let lastError = null;
 
-        // 3. Execution Loop with Failover
         for (const node of nodes) {
             try {
-                let provider = node.provider || (node.api_key ? 'astrologyapi' : null);
-                
-                console.log(`[AstroProxy] Attempting ${endpoint} with Node: ${node.name} (${provider})`);
+                const result = await executeNodeRequest(node, endpoint, body, lang);
+                const isLimit = result.data.msg?.toLowerCase().includes('limit') || result.data.msg?.toLowerCase().includes('expired');
 
-                let headers = {
-                    'Content-Type': 'application/json',
-                    'Accept-Language': lang
-                };
-
-                let url = `${ASTROLOGY_API_BASE_URL}/${endpoint}`;
-
-                if (provider === 'astrologyapi') {
-                    headers['x-astrologyapi-key'] = node.api_key;
-                    // Some endpoints might need basic auth instead of header
-                    if (node.user_id) {
-                        const auth = Buffer.from(`${node.user_id}:${node.api_key}`).toString('base64');
-                        headers['Authorization'] = `Basic ${auth}`;
-                    }
-                } else if (provider && provider.startsWith('prokerala')) {
-                    // Placeholder for Prokerala implementation if needed
-                    // For now, only AstrologyAPI is fully mapped in this proxy
-                    console.warn(`[AstroProxy] Provider ${provider} not fully supported in Node.js Proxy yet.`);
-                    continue; 
-                } else {
-                    console.warn(`[AstroProxy] Unknown or missing provider for node: ${node.name}`);
-                    continue;
+                if (result.ok && !isLimit) {
+                    return res.status(result.status).json(result.data);
                 }
-
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(body),
-                    signal: AbortSignal.timeout(15000)
-                });
-
-                const responseData = await response.json().catch(() => ({ msg: "Internal Error" }));
-
-                if (response.ok) {
-                    // Check for internal API errors disguised as 200 OK
-                    const isLimit = responseData.msg?.toLowerCase().includes('limit') || responseData.msg?.toLowerCase().includes('expired');
-                    if (isLimit) {
-                        console.warn(`[AstroProxy] Limit detected on node ${node.name}. Triggering failover...`);
-                        lastError = { status: 429, msg: responseData.msg };
-                        continue;
-                    }
-
-                    console.log(`[AstroProxy] Success with Node: ${node.name}`);
-                    return res.status(response.status).json(responseData);
-                }
-
-                console.error(`[AstroProxy] Node ${node.name} Failed (${response.status}):`, responseData.msg || response.statusText);
-                
-                if (!config.failover_enabled) {
-                    return res.status(response.status).json(responseData);
-                }
-
-                lastError = { status: response.status, msg: responseData.msg || response.statusText };
-                continue;
-
+                lastError = { status: result.status, msg: result.data.msg || "Node Error" };
+                if (!config.failover_enabled) break;
             } catch (err) {
-                console.error(`[AstroProxy] Exception on Node ${node.name}:`, err.message);
                 lastError = { status: 500, msg: err.message };
-                continue;
             }
         }
+        return res.status(lastError?.status || 500).json({ error: "ALL_NODES_EXHAUSTED", msg: lastError?.msg });
+    } catch (error) {
+        return res.status(500).json({ error: "INTERNAL_SERVER_ERROR", msg: error.message });
+    }
+};
 
-        // Exhausted all nodes
-        return res.status(lastError?.status || 500).json({
-            error: "ALL_NODES_EXHAUSTED",
-            msg: lastError?.msg || "Veda Cluster failed to process request.",
-            nodes_attempted: nodes.length
-        });
+/**
+ * Bundled Kundli Data (Mega Route for Mobile parity)
+ */
+const getKundliData = async (req, res) => {
+    try {
+        const { birthData, language } = req.body;
+        const lang = language || 'en';
+
+        const { data: settings } = await supabase.from('kundli_settings').select('setting_value').eq('setting_key', 'api_config').single();
+        const config = settings?.setting_value || { apis: [{ name: 'Default', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0' }] };
+        const nodes = config.apis.filter(api => api.is_enabled);
+
+        const endpoints = [
+            { key: 'core', url: 'astro_details' },
+            { key: 'panchang', url: 'basic_panchang' },
+            { key: 'dasha', url: 'major_vdasha' },
+            { key: 'current_dasha', url: 'current_vdasha' },
+            { key: 'gemstone', url: 'basic_gem_suggestion' },
+            { key: 'character', url: 'personal_characteristics' },
+            { key: 'planets', url: 'planets' },
+            { key: 'yoga_report', url: 'yoga_report' },
+            { key: 'manglik', url: 'manglik' },
+            { key: 'sadhesati', url: 'sadhesati_current_status' },
+            { key: 'chart_d1', url: 'horo_chart_image/D1' },
+            { key: 'chart_d9', url: 'horo_chart_image/D9' }
+        ];
+
+        const results = {};
+        
+        // Execute sequentially to avoid rate limiting on trial keys, but use failover nodes
+        for (const ep of endpoints) {
+            let epSuccess = false;
+            for (const node of nodes) {
+                try {
+                    const result = await executeNodeRequest(node, ep.url, birthData, lang);
+                    const isLimit = result.data.msg?.toLowerCase().includes('limit') || result.data.msg?.toLowerCase().includes('expired');
+                    
+                    if (result.ok && !isLimit) {
+                        results[ep.key] = ep.url.includes('chart') ? (result.data.svg || null) : result.data;
+                        epSuccess = true;
+                        break;
+                    }
+                } catch (err) {
+                    console.error(`[AstroBundler] Node ${node.name} failed for ${ep.key}`);
+                }
+            }
+            if (!epSuccess) results[ep.key] = { error: true, msg: "FETCH_FAILED" };
+        }
+
+        return res.json({ success: true, data: results });
 
     } catch (error) {
-        console.error('[AstroProxy] CRITICAL FAILURE:', error);
+        console.error('[AstroBundler] Critical Error:', error);
         return res.status(500).json({ error: "INTERNAL_SERVER_ERROR", msg: error.message });
     }
 };
 
 module.exports = {
-    proxyAstroRequest
+    proxyAstroRequest,
+    getKundliData
 };

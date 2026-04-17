@@ -5,7 +5,6 @@ node_modules/
 
 # Expo
 .expo/
-.expo_home/
 dist/
 web-build/
 expo-env.d.ts
@@ -37,13 +36,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example
-
 # generated native folders
 /ios
 /android
-
-# build artifacts
-Android_PlayStore_Release/
-*.zip
-*.keystore

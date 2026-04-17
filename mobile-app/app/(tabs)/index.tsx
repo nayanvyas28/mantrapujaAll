@@ -1,1634 +1,560 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Image as RNImage } from "expo-image";
-const Image = RNImage as any;
-import { useRouter } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import {
-  ArrowRight,
-  Bell,
-  Calendar,
-  Droplets,
-  Gift,
-  Globe,
-  Header,
-  Heart,
-  Languages,
-  Sun,
-  Users,
-  Wallet,
-  Check,
-  X,
-  Disc,
-  Instagram,
-  Menu,
-  Sparkles
-} from "lucide-react-native";
-import { Sidebar } from "../../components/Sidebar";
-import { SocialMediaModal } from "../../components/SocialMediaModal";
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator as RNActivityIndicator,
-  Alert,
-  Dimensions,
-  Platform,
-  ScrollView as RNScrollView,
-  StyleSheet,
-  TouchableOpacity as RNTouchableOpacity,
-  View as RNView,
-  Modal as RNModal,
-  Text as RNText
-} from "react-native";
-import { getLocalized } from "../../utils/translation";
+import React, { useRef, useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, FlatList, Dimensions, Animated, StyleSheet, ActivityIndicator } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+import { Heart, Wallet, Bell, Sparkles, Calendar, ChevronRight, Star, ShoppingBag, MapPin, Users } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { AntDesign } from '@expo/vector-icons';
+import { supabase } from '../../lib/supabase';
 
-// Type-safe aliases for React 19/Expo 54 compatibility
-const View = RNView as any;
-const ScrollView = RNScrollView as any;
-const TouchableOpacity = RNTouchableOpacity as any;
-const ActivityIndicator = RNActivityIndicator as any;
-const Text = RNText as any;
-import { AnimatedWaveButton } from "../../components/ui/AnimatedWaveButton";
-import { Card } from "../../components/ui/Card";
-import { FallbackImage } from "../../components/ui/FallbackImage";
-import { Footer } from "../../components/ui/Footer";
-import { Typography } from "../../components/ui/Typography";
-import { useTheme } from "../../context/ThemeContext";
-import { getImageSource } from "../../utils/imageResolver";
-import { sanitizeData, sanitizeText } from "../../utils/sanitizer";
-import { supabase } from "../../utils/supabase";
+const { width } = Dimensions.get('window');
 
-import { useTranslation } from "react-i18next";
-import { useAuth } from "../../context/AuthContext";
-import { useSidebar } from "../../context/SidebarContext";
-import { useGuruAssistant } from "../../context/GuruAssistantContext";
-import { useWallet } from "../../context/WalletContext";
-import { AstroSection } from "../../components/AstroSection";
-// import { PRODUCTS_LIST } from "../../utils/mockData"; // Removed in favor of Supabase
+const TESTIMONIALS = [
+  { id: '1', user: 'Rahul S.', text: 'Very detailed Kundli analysis. Highly recommended!', rating: 5 },
+  { id: '2', user: 'Priya M.', text: 'The Pandit ji was very knowledgeable. Satisfied.', rating: 5 },
+];
 
 export default function HomeScreen() {
+  const { user, signOut } = useAuth();
   const router = useRouter();
-  const { theme, colors, toggleTheme } = useTheme();
-  const { openSidebar } = useSidebar();
-  const { user, profile } = useAuth(); // dynamically get auth state
-  const { t, i18n } = useTranslation();
-  const { handleScroll } = useGuruAssistant();
-  const { balance } = useWallet();
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0] || 'Bhakt';
 
-  const [isLanguageModalVisible, setIsLanguageModalVisible] = useState(false);
+  // Sidebar Animation
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const sidebarTranslateX = useRef(new Animated.Value(-width * 0.8)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
 
-  const handleLanguageChange = () => {
-    setIsLanguageModalVisible(true);
+  const toggleSidebar = (open: boolean) => {
+    setIsSidebarOpen(open);
+    Animated.parallel([
+      Animated.timing(sidebarTranslateX, {
+        toValue: open ? 0 : -width * 0.8,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: open ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
-  const changeLanguage = async (lang: string) => {
-    try {
-      await i18n.changeLanguage(lang);
-      await AsyncStorage.setItem("appLanguage", lang);
-      setIsLanguageModalVisible(false);
-    } catch (error) {
-      console.error("Error changing language:", error);
-    }
-  };
-
-  // Dynamic state
-  const isGuest = !user;
-  const userName = profile?.full_name || user?.email?.split('@')[0] || t("home.guest", "Guest");
-  const spiritualSubheading = t("home.subtitle", "Awaken Your Spirit");
-  const userRashi = profile?.onboarding_data?.rashi?.name || null;
-
-  const { width } = Dimensions.get("window");
-  const bannerWidth = width ; // Fill entire screen width
-  const [activeBanner, setActiveBanner] = useState(0);
-  const bannerScrollRef = useRef<ScrollView>(null);
-
-  const [blogs, setBlogs] = useState<any[]>([]);
-  const [blogsLoading, setBlogsLoading] = useState(true);
-  const [blogsErrorMsg, setBlogsErrorMsg] = useState<string | null>(null);
-
-  const [popularPujas, setPopularPujas] = useState<any[]>([]);
-  const [pujasLoading, setPujasLoading] = useState(true);
-  const [pujasErrorMsg, setPujasErrorMsg] = useState<string | null>(null);
-
-  const [festivals, setFestivals] = useState<any[]>([]);
-  const [festivalsLoading, setFestivalsLoading] = useState(true);
-
-  const [destinations, setDestinations] = useState<any[]>([]);
-  const [destinationsLoading, setDestinationsLoading] = useState(true);
-
-  const [products, setProducts] = useState<any[]>([]);
-  const [productsLoading, setProductsLoading] = useState(true);
-
-  const [offerPujas, setOfferPujas] = useState<any[]>([]);
-  const [offerPujasLoading, setOfferPujasLoading] = useState(true);
-
-  const [dynamicBanners, setDynamicBanners] = useState<any[]>([]);
-  const [bannersLoading, setBannersLoading] = useState(true);
-
-  // Daily Astro Reading
-  const [dailyAstro, setDailyAstro] = useState<string | null>(null);
-
-  const [isSocialModalVisible, setIsSocialModalVisible] = useState(false);
-
-
-
-  const BANNERS = useMemo(() => [
-    {
-      id: "1",
-      title: t("home.banner1.title", "Special Mahashivratri Puja"),
-      subtitle: t("home.banner1.subtitle", "Book sacred rituals at Kashi Vishwanath."),
-      image: require("../../assets/images/banner_shivratri.jpg"),
-      route: "/pujas/1",
-    },
-    {
-      id: "2",
-      title: t("home.banner2.title", "Sacred Spiritual Walk"),
-      subtitle: t("home.banner2.subtitle", "Experience local traditions."),
-      image: require("../../assets/images/vedic_blog.jpg"),
-      route: "/explore",
-    },
-    {
-      id: "3",
-      title: t("home.banner3.title", "Sacred Ganga Aarti"),
-      subtitle: t("home.banner3.subtitle", "Live streaming from Dashashwamedh Ghat."),
-      image: require("../../assets/images/ujjain_location.jpg"),
-      route: "/explore/1",
-    },
-  ], [t]);
-
-  useEffect(() => {
-    // fetchRecentBlogs(); // Hidden for Play Store Compliance
-    fetchPopularPujas();
-    fetchOfferPujas();
-    fetchUpcomingFestivals();
-    fetchDestinations();
-    fetchProducts();
-    fetchDynamicBanners();
-    if (!isGuest && userRashi) {
-      fetchDailyAstro(userRashi);
-    } else if (!isGuest && !userRashi) {
-      // maybe fetch generic astro or nothing
-    }
-
-    // --- REALTIME SUBSCRIPTIONS ---
-    // Use a unique channel name per session to avoid collision warnings
-    const channelId = `home-content-${Date.now()}`;
-    const contentSubscription = supabase
-      .channel(channelId)
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'poojas' },
-        () => {
-          fetchPopularPujas();
-          fetchOfferPujas();
-        }
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'blogs' },
-        () => fetchRecentBlogs()
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'destinations' },
-        () => fetchDestinations()
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'products_99' },
-        () => fetchProducts()
-      )
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'home_banners' },
-        () => fetchDynamicBanners()
-      )
-      .subscribe();
-
-    // Cleanup subscription on unmount
-    return () => {
-      supabase.removeChannel(contentSubscription);
-    };
-  }, [userRashi, isGuest]);
-
-  // Utils
-  const handleProtectedNavigation = (route: string) => {
-    if (isGuest) {
-      Alert.alert(
-        t("common.login_required", "Login Required"),
-        t("common.login_msg", "Please log in to access this feature."),
-        [
-          { text: t("common.cancel", "Cancel"), style: "cancel" },
-          { text: t("common.login", "Log In"), onPress: () => router.push("/login") }
-        ]
-      );
-    } else {
-      router.push(route as any);
-    }
-  };
-
-  const fetchDailyAstro = async (rashiName: string) => {
-    try {
-      const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const cacheKey = `daily_astro_${rashiName}_${today}`;
-
-      // Try local cache first
-      const cached = await AsyncStorage.getItem(cacheKey);
-      if (cached) {
-        console.log(`[HomeScreen] Serving daily astro for ${rashiName} from cache.`);
-        setDailyAstro(cached);
-        return;
-      }
-
-      console.log(`[HomeScreen] Fetching fresh daily astro for ${rashiName}...`);
-      const { data, error } = await supabase
-        .from('daily_astro_notif')
-        .select('content')
-        .eq('rashi_name', rashiName)
-        .eq('target_date', today)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116' && error.code !== '42P01') {
-        throw error;
-      }
-
-      let contentStr = "Your spiritual energy is high today. Check back later for a specific reading.";
-      if (data && data.content) {
-        contentStr = sanitizeText(typeof data.content === 'object' ? data.content.reading : data.content) || contentStr;
-      }
-
-      setDailyAstro(contentStr);
-      // Cache for the day
-      await AsyncStorage.setItem(cacheKey, contentStr);
-    } catch (err) {
-      console.error("Error fetching daily astro:", err);
-    }
-  };
-
-  const fetchDestinations = async () => {
-    try {
-      setDestinationsLoading(true);
-      const { data, error } = await supabase
-        .from('destinations')
-        .select('id, name, tagline, description, images')
-        .eq('show_on_home', true)
-        .order('home_order', { ascending: true })
-        .limit(4);
-
-      if (error || !data || data.length === 0) {
-        // Fallback to is_active if admin columns don't exist yet or are unused
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('destinations')
-          .select('id, name, tagline, description, images')
-          .limit(4);
-
-        if (fallbackError) throw fallbackError;
-        if (fallbackData) setDestinations(sanitizeData(fallbackData));
-      } else {
-        setDestinations(sanitizeData(data));
-      }
-    } catch (err) {
-      console.error('Error fetching destinations:', err);
-    } finally {
-      setDestinationsLoading(false);
-    }
-  };
-
-  const fetchUpcomingFestivals = async () => {
-    try {
-      setFestivalsLoading(true);
-      const now = new Date();
-      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-      // Try to read from calendar's complete cache first
-      const cached = await AsyncStorage.getItem("cached_all_festivals");
-      if (cached) {
-        const allFestivals = JSON.parse(cached);
-        // Dynamic filter: only show festivals that are >= today
-        const upcoming = allFestivals
-          .filter((f: any) => f.date >= today)
-          .slice(0, 5);
-
-        if (upcoming.length > 0) {
-          setFestivals(sanitizeData(upcoming));
-          setFestivalsLoading(false);
-        }
-      }
-
-      // Fetch fresh data
-      const { data, error } = await supabase
-        .from("festivals")
-        .select("*")
-        .eq("is_active", true)
-        .gte("date", today) // Real-time server side filter
-        .order("date", { ascending: true })
-        .limit(5);
-
-      if (error) throw error;
-      if (data) {
-        setFestivals(sanitizeData(data));
-      }
-    } catch (err) {
-      console.error("Error fetching upcoming festivals:", err);
-    } finally {
-      setFestivalsLoading(false);
-    }
-  };
-
-  const fetchPopularPujas = async () => {
-    try {
-      setPujasLoading(true);
-
-      const sortPujas = (pujas: any[]) => {
-        return [...pujas]
-          .sort((a, b) => {
-            const getWeight = (name: string) => {
-              const lower = name.toLowerCase();
-              if (lower.includes("shani")) return 1;
-              if (lower.includes("pitru")) return 2;
-              if (lower.includes("kaal sarp") || lower.includes("kaal"))
-                return 3;
-              return 4;
-            };
-            return getWeight(a.name) - getWeight(b.name);
-          })
-          .slice(0, 3);
-      };
-
-      // Try offline cache first
-      const cached = await AsyncStorage.getItem("cached_all_pujas");
-      if (cached) {
-        const allPujas = JSON.parse(cached);
-        const popular = allPujas.filter((p: any) => p.is_featured);
-        if (popular.length > 0) {
-          setPopularPujas(sanitizeData(sortPujas(popular)));
-          setPujasLoading(false);
-        }
-      }
-
-      // Fetch fresh data based on Admin Home Page Ordering
-      const { data, error } = await supabase
-        .from("poojas")
-        .select("id, name, tagline, about_description, images, is_featured")
-        .eq("is_active", true)
-        .eq("show_on_home", true)
-        .order("home_order", { ascending: true })
-        .limit(3);
-
-      if (error || !data || data.length === 0) {
-        // Fallback to is_featured or latest if admin columns don't exist yet or empty
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from("poojas")
-          .select("id, name, tagline, about_description, images, is_featured")
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (fallbackError) throw fallbackError;
-        if (fallbackData) setPopularPujas(sanitizeData(sortPujas(fallbackData)));
-      } else {
-        setPopularPujas(sanitizeData(data));
-      }
-    } catch (err: any) {
-      console.error("Error fetching popular pujas for home:", err);
-      setPujasErrorMsg(t("common.error_loading", "Could not load pujas."));
-    } finally {
-      setPujasLoading(false);
-    }
-  };
-
-  const fetchOfferPujas = async () => {
-    try {
-      setOfferPujasLoading(true);
-      const { data, error } = await supabase
-        .from("poojas")
-        .select("id, name, tagline, about_description, images")
-        .eq("is_active", true)
-        .eq("is_offer_999", true)
-        .order("offer_order", { ascending: true })
-        .limit(5);
-
-      // Handle cases where columns might not exist yet gracefully
-      if (error) {
-        if (error.code === '42703') { // undefined_column
-          console.warn("is_offer_999 columns not found yet. Please run DB guide.");
-          setOfferPujas([]);
-        } else {
-          throw error;
-        }
-      } else {
-        setOfferPujas(sanitizeData(data || []));
-      }
-    } catch (err) {
-      console.error("Error fetching offer pujas:", err);
-    } finally {
-      setOfferPujasLoading(false);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      setProductsLoading(true);
-      const { data, error } = await supabase
-        .from('products_99')
-        .select('*')
-        .eq('is_active', true)
-        .eq('show_on_home', true)
-        .order('home_order', { ascending: true })
-        .limit(5);
-
-      if (error || !data || data.length === 0) {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('products_99')
-          .select('*')
-          .limit(5);
-
-        if (fallbackError) throw fallbackError;
-        if (fallbackData) setProducts(sanitizeData(fallbackData));
-      } else {
-        setProducts(sanitizeData(data));
-      }
-    } catch (err) {
-      console.error('Error fetching products for home:', err);
-    } finally {
-      setProductsLoading(false);
-    }
-  };
-
-  const fetchDynamicBanners = async () => {
-    try {
-      setBannersLoading(true);
-      let { data, error } = await supabase
-        .from('home_banners')
-        .select('*, show_text_overlay')
-        .eq('is_active', true)
-        .or('target.eq.app,target.eq.both')
-        .order('display_order', { ascending: true });
-
-      if (error && error.code === '42703') {
-        console.warn('[HomeScreen] show_text_overlay column missing, falling back...');
-        const result = await supabase
-          .from('home_banners')
-          .select('*')
-          .eq('is_active', true)
-          .or('target.eq.app,target.eq.both')
-          .order('display_order', { ascending: true });
-        data = result.data;
-        error = result.error;
-      }
-
-      if (error) {
-        if (error.code === '42P01') {
-          console.log('[HomeScreen] Banners table not created yet, using defaults.');
-        } else {
-          console.error('Error fetching dynamic banners:', error);
-        }
-        return;
-      }
-
-      if (data && data.length > 0) {
-        setDynamicBanners(sanitizeData(data));
-      }
-    } catch (err) {
-      console.error('Error in fetchDynamicBanners:', err);
-    } finally {
-      setBannersLoading(false);
-    }
-  };
-
-  const fetchRecentBlogs = async () => {
-    try {
-      setBlogsLoading(true);
-      const { data, error } = await supabase
-        .from("blogs")
-        .select("*")
-        .eq("show_on_home", true)
-        .order("home_order", { ascending: true })
-        .limit(3);
-
-      if (error || !data || data.length === 0) {
-        // Fallback to newest blogs if show_on_home columns don't exist yet or no true values
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from("blogs")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(3);
-
-        if (fallbackError) {
-          throw new Error('Fallback also failed: ' + fallbackError.message);
-        }
-
-        if (!fallbackData || fallbackData.length === 0) {
-          setBlogsErrorMsg("No blogs found in DB (even in fallback)");
-        }
-        setBlogs(fallbackData || []);
-      } else {
-        setBlogs(data || []);
-      }
-    } catch (err: any) {
-      console.error("Error fetching recent blogs:", err);
-      setBlogsErrorMsg(err.message || 'Unknown error');
-    } finally {
-      setBlogsLoading(false);
-    }
-  };
-
-  const activeBannersSource = dynamicBanners.length > 0 ? dynamicBanners : BANNERS;
-
-  // Auto-scroll logic (only if more than 1 banner)
-  useEffect(() => {
-    if (activeBannersSource.length <= 1) return;
-    
-    const interval = setInterval(() => {
-      const nextIndex = (activeBanner + 1) % activeBannersSource.length;
-      bannerScrollRef.current?.scrollTo({
-        x: nextIndex * (bannerWidth + 16),
-        animated: true,
-      });
-      setActiveBanner(nextIndex);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [activeBanner, bannerWidth, activeBannersSource.length]);
-
-  const QUICK_ACTIONS = [
-    { id: "jal", name: t("home.jal_abhishek", "Jal Abhishek"), icon: Droplets, color: "#3b82f6", route: "/pujas/jal-abhishek" },
-    { id: "prasad", name: t("home.prasad", "Prasad"), icon: Gift, color: "#f59e0b", route: "/pujas/prasad-seva" },
-    { id: "gau", name: t("home.gau_seva", "Gau Seva"), icon: Heart, color: "#ef4444", route: "/pujas/gau-seva" },
-    { id: "rudraksh", name: t("home.rudraksh", "Rudraksh"), icon: Disc, color: "#8b5e3c", route: "/pujas/rudraksh" },
+  const categories = [
+    { id: 'kundli', name: 'Kundli', free: true, icon: '📜', route: '/coming-soon' },
+    { id: 'rashifal', name: 'Rashifal', free: false, icon: '♈', route: '/coming-soon' },
+    { id: 'shop', name: 'Shop', free: false, icon: '🛍️', route: '/coming-soon' },
   ];
 
-  const renderBlogImage = (imageUrl: string) => {
-    if (!imageUrl || imageUrl === "/logo.png") {
-      return require("../../assets/images/vedic_blog.jpg");
+  const [upcomingPujas, setUpcomingPujas] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [destinations, setDestinations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const bannerRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    fetchHomeData();
+  }, []);
+
+  // Auto-slide banners
+  useEffect(() => {
+    if (banners.length > 1 && !loading) {
+      const timer = setInterval(() => {
+        const nextIndex = (activeBannerIndex + 1) % banners.length;
+        setActiveBannerIndex(nextIndex);
+        bannerRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+      }, 4000);
+      return () => clearInterval(timer);
     }
-    return imageUrl;
+  }, [banners, activeBannerIndex, loading]);
+
+  const fetchHomeData = async () => {
+    try {
+      const [
+        { data: pujaData },
+        { data: bannerData },
+        { data: productData },
+        { data: destinationData }
+      ] = await Promise.all([
+        supabase.from('poojas').select('*').eq('is_active', true).eq('show_on_home', true).order('sort_order', { ascending: false }),
+        supabase.from('home_banners').select('*').eq('is_active', true).order('display_order'),
+        supabase.from('products_99').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order'),
+        supabase.from('destinations').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order')
+      ]);
+        
+      if (pujaData) setUpcomingPujas(pujaData);
+      if (bannerData) setBanners(bannerData);
+      if (productData) setProducts(productData);
+      if (destinationData) setDestinations(destinationData);
+    } catch (error) {
+      console.error('[Home] Fetch Data Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: "transparent" }]}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
-
-      {/* Top Navigation Bar */}
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: colors.background,
-            borderBottomColor: colors.borderMuted,
-          },
-        ]}
-      >
-        <View style={[styles.headerLeft, { flexDirection: 'row', alignItems: 'center' }]}>
+    <View className="flex-1 bg-[#FFFDFB]">
+      <StatusBar barStyle="light-content" backgroundColor="#FF4D00" />
+      
+      {/* Premium Navbar */}
+      <View className="bg-primary pt-12 pb-6 px-6 rounded-b-[40px] shadow-2xl shadow-primary/40">
+        <View className="flex-row justify-between items-center">
           <TouchableOpacity 
-            style={[styles.iconButton, { marginLeft: -10, marginRight: 10 }]} 
-            onPress={openSidebar}
+            onPress={() => toggleSidebar(true)}
+            className="flex-row items-center"
           >
-            <Menu size={24} color={colors.foreground} />
+            <View className="w-12 h-12 rounded-2xl bg-white/20 items-center justify-center border border-white/30">
+               <Image 
+                  source={require('../../assets/images/logo.png')} 
+                  className="w-10 h-10"
+                  resizeMode="contain"
+               />
+            </View>
+            <View className="ml-3">
+               <Text className="text-white/60 text-[10px] font-bold uppercase tracking-[2px]">Namaste,</Text>
+               <Text className="text-white font-bold text-lg leading-tight">{firstName}<Text className="text-white/60 font-medium"> ji</Text></Text>
+            </View>
           </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Typography 
-              variant="h2" 
-              color={colors.foreground} 
-              style={{ fontSize: 20 }}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-            >
-              {userName}
-            </Typography>
+
+          <View className="flex-row space-x-2">
+            <TouchableOpacity className="w-9 h-9 bg-white/10 rounded-xl items-center justify-center border border-white/10">
+              <Heart size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity className="w-9 h-9 bg-white/10 rounded-xl items-center justify-center border border-white/10">
+              <Wallet size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity className="w-9 h-9 bg-white/10 rounded-xl items-center justify-center border border-white/10">
+              <Bell size={18} color="white" />
+            </TouchableOpacity>
           </View>
-        </View>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton} onPress={handleLanguageChange}>
-            <Globe size={20} color={colors.foreground} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => handleProtectedNavigation("/notifications")}>
-            <Bell size={22} color={colors.foreground} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push("/calendar")}>
-            <Calendar size={22} color={colors.foreground} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => setIsSocialModalVisible(true)}>
-            <Instagram size={22} color={colors.foreground} />
-          </TouchableOpacity>
         </View>
       </View>
 
-      <SocialMediaModal 
-        isVisible={isSocialModalVisible} 
-        onClose={() => setIsSocialModalVisible(false)} 
-      />
+      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+        {/* Main Banner Slider - Live Data */}
+        <View className="mt-6">
+          {loading ? (
+            <View className="items-center justify-center h-44 mx-6 bg-gray-50 rounded-[40px] border border-gray-100">
+               <Image 
+                 source={require('../../assets/images/logo.png')} 
+                 style={{ width: 60, height: 60, opacity: 0.3 }} 
+                 resizeMode="contain"
+               />
+            </View>
+          ) : banners.length > 0 ? (
+            <FlatList
+              ref={bannerRef}
+              data={banners}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              snapToInterval={width}
+              snapToAlignment="center"
+              decelerationRate="fast"
+              onMomentumScrollEnd={(e) => {
+                const index = Math.round(e.nativeEvent.contentOffset.x / width);
+                setActiveBannerIndex(index);
+              }}
+              keyExtractor={(item) => item.id?.toString()}
+              renderItem={({ item }) => (
+                <View style={{ width: width }} className="items-center">
+                  <TouchableOpacity 
+                     onPress={() => item.route && item.route !== "#" ? router.push(item.route) : router.push("/coming-soon")}
+                     style={{ width: width - 40 }} 
+                     className="h-44 rounded-[40px] overflow-hidden bg-gray-100"
+                  >
+                     <Image 
+                        source={{ uri: item.image_url || 'https://via.placeholder.com/1200x600?text=Special+Offer' }} 
+                        className="w-full h-full" 
+                        defaultSource={require('../../assets/images/icon.png')}
+                     />
+                     {item.show_text_overlay && (
+                       <View className="absolute inset-x-0 bottom-0 p-6 bg-black/40">
+                          <Text className="text-white font-bold text-xl">{item.title}</Text>
+                          <Text className="text-white/90 text-xs mt-1">{item.subtitle}</Text>
+                       </View>
+                     )}
+                     {item.show_offer && (
+                       <View className="absolute top-4 right-4 bg-orange-600 px-3 py-1 rounded-full border border-white/20 shadow-lg">
+                          <Text className="text-white text-[9px] font-black uppercase tracking-widest">{item.offer_tag}</Text>
+                       </View>
+                     )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+          ) : (
+            <TouchableOpacity 
+               style={{ width: width - 40 }} 
+               className="h-44 rounded-[40px] overflow-hidden bg-primary/10 self-center items-center justify-center border border-primary/20"
+            >
+               <Sparkles size={40} color="#FF4D00" opacity={0.2} />
+               <Text className="text-primary font-bold text-lg mt-2">Welcome to Mantra Pooja</Text>
+               <Text className="text-primary/60 text-xs">Explore divine rituals and items</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={(e: any) => handleScroll(e.nativeEvent.contentOffset.y)}
-        style={{ backgroundColor: 'transparent' }}
-      >
-        {/* Scrollable Banner */}
-        <View style={styles.bannerWrapper}>
-          <ScrollView
-            ref={bannerScrollRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={(e: any) => {
-              const x = e.nativeEvent.contentOffset.x;
-              setActiveBanner(Math.round(x / bannerWidth));
-            }}
-            scrollEventThrottle={16}
-            decelerationRate="fast"
-            snapToInterval={bannerWidth} // width of one banner
-            style={styles.bannerScroll}
-          >
-            {activeBannersSource.map((banner, index) => (
-              <TouchableOpacity
-                key={banner.id}
-                style={[styles.bannerContainer, { width: bannerWidth }]}
-                activeOpacity={0.9}
-                onPress={() => {
-                  if (banner.route) {
-                    if (banner.route.startsWith('puja:')) {
-                      const slug = banner.route.split(':')[1];
-                      router.push(`/pujas/${slug}` as any);
-                    } else {
-                      router.push(banner.route as any);
-                    }
-                  }
-                }}
-              >
-                <Image
-                  source={banner.image_url ? { uri: banner.image_url } : banner.image}
-                  style={styles.bannerBg}
-                  contentFit="cover"
-                />
-
-                {/* Conditionally render all text-based overlays */}
-                {banner.show_text_overlay !== false && (
-                  <>
-                    {/* Special Offer Badge on the RIGHT */}
-                    {banner.show_offer && (
-                      <View style={styles.offerBadgeContainer}>
-                        <View style={styles.offerBadgeGradient}>
-                          <Gift size={12} color="white" />
-                          <Text style={styles.offerBadgeText} numberOfLines={1}>
-                            {i18n.language === 'hi' ? banner.offer_tag_hi : banner.offer_tag}
-                          </Text>
-                        </View>
+        {/* Action Grid */}
+        <View className="px-6 mt-8">
+           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
+              {categories.map((cat) => (
+                <TouchableOpacity 
+                   key={cat.id} 
+                   onPress={() => router.push(cat.route as any)}
+                   className="mr-6 items-center"
+                >
+                  <View className="w-16 h-16 bg-orange-50 rounded-[24px] items-center justify-center mb-1 border border-orange-100 shadow-sm shadow-orange-200/50">
+                    <Text className="text-2xl">{cat.icon}</Text>
+                    {cat.free && (
+                      <View className="absolute -top-2 -right-2 bg-green-500 px-1.5 py-0.5 rounded-md">
+                        <Text className="text-white text-[8px] font-bold uppercase">Free</Text>
                       </View>
                     )}
-                    <View style={styles.bannerOverlay}>
-                      <View style={styles.bannerContent}>
-                        <Typography variant="h3" color="#ffffff">
-                          {getLocalized(banner, 'title', i18n.language) || banner.title}
-                        </Typography>
-                        <Typography
-                          variant="bodySmall"
-                          color="#fed7aa"
-                          style={{ marginTop: 4 }}
-                        >
-                          {getLocalized(banner, 'subtitle', i18n.language) || banner.subtitle}
-                        </Typography>
+                  </View>
+                  <Text className="text-gray-700 text-[10px] font-bold uppercase tracking-tight">{cat.name}</Text>
+                </TouchableOpacity>
+              ))}
+           </ScrollView>
+        </View>
+
+        {/* Promo Bar */}
+        <View className="px-6 mt-10">
+           <TouchableOpacity className="bg-primary/5 rounded-[32px] p-6 border border-primary/10 flex-row items-center justify-between">
+              <View>
+                 <Text className="text-primary text-lg font-bold">All for Rupees ₹1 only</Text>
+                 <Text className="text-gray-500 text-xs mt-0.5">Limited time divine offers</Text>
+              </View>
+              <View className="w-10 h-10 bg-primary rounded-full items-center justify-center shadow-lg shadow-primary/30">
+                 <ChevronRight size={20} color="white" />
+              </View>
+           </TouchableOpacity>
+        </View>
+
+        {/* Upcoming Puja Carousel (5:3 Ratio) */}
+        <View className="mt-10">
+          <View className="px-6 flex-row justify-between items-end mb-4">
+             <View>
+                <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Upcoming</Text>
+                <Text className="text-gray-900 text-2xl font-bold">Divine Puja</Text>
+             </View>
+             <TouchableOpacity>
+                <Text className="text-primary font-bold text-xs">View All</Text>
+             </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={upcomingPujas}
+            horizontal
+            loading={loading}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity 
+                style={{ width: width * 0.8 }} 
+                className="mr-5 bg-white rounded-[40px] shadow-xl shadow-black/5 border border-orange-50 overflow-hidden"
+              >
+                {/* 5:3 Aspect Ratio Image Container */}
+                <View style={{ width: '100%', aspectRatio: 5/3 }} className="relative bg-gray-100">
+                   <Image 
+                      source={{ uri: item.image_url || 'https://via.placeholder.com/500x300?text=Puja' }} 
+                      className="w-full h-full"
+                      resizeMode="cover"
+                   />
+                   {/* Badges */}
+                   <View className="absolute top-4 left-4 bg-black/40 px-3 py-1.5 rounded-full border border-white/30">
+                      <Text className="text-white text-[10px] font-bold uppercase">{item.seats} Seats Left</Text>
+                   </View>
+                   <TouchableOpacity className="absolute top-4 right-4 w-9 h-9 bg-white/80 rounded-full items-center justify-center border border-white shadow-sm">
+                      <Heart size={18} color="#FF4D00" />
+                   </TouchableOpacity>
+                </View>
+
+                {/* Card Details */}
+                <View className="p-6">
+                   <Text className="text-[#1A1A1A] text-xl font-bold leading-tight">{item.name}</Text>
+                   
+                   <View className="mt-3 space-y-2">
+                      <View className="flex-row items-center">
+                         <MapPin size={14} color="#FF4D00" />
+                         <Text className="text-gray-500 text-xs ml-2 font-medium">{item.location}</Text>
                       </View>
-                    </View>
-                  </>
-                )}
+                      <View className="flex-row items-center">
+                         <Calendar size={14} color="#FF4D00" />
+                         <Text className="text-gray-500 text-xs ml-2 font-medium">{item.date}</Text>
+                      </View>
+                   </View>
+
+                   <View className="mt-6 flex-row items-center justify-between border-t border-gray-50 pt-5">
+                      <View className="flex-row items-center">
+                         <View className="flex-row -space-x-2 mr-2">
+                            {[1,2,3].map(i => (
+                              <View key={i} className="w-6 h-6 rounded-full bg-orange-100 border-2 border-white" />
+                            ))}
+                         </View>
+                         <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-tighter">Trusted by {item.trustedBy}</Text>
+                      </View>
+                      <TouchableOpacity className="bg-primary px-5 py-2.5 rounded-2xl shadow-lg shadow-primary/20">
+                         <Text className="text-white font-bold text-xs uppercase">Book Now</Text>
+                      </TouchableOpacity>
+                   </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+
+        {/* Divine Solutions Section - Live Mapping */}
+        <View className="mt-10">
+          <View className="px-6 flex-row justify-between items-center mb-5">
+            <View>
+              <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Divine Solutions</Text>
+              <Text className="text-gray-900 text-2xl font-bold">Life Problem Rituals</Text>
+            </View>
+            <TouchableOpacity onPress={() => router.push('/puja')}>
+               <Text className="text-primary text-xs font-bold">View All</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
+            {upcomingPujas.filter(p => p.is_offer_999).map((item) => (
+              <TouchableOpacity key={item.id} className="mr-4 bg-white p-5 rounded-[32px] border border-orange-50 shadow-sm items-center w-40">
+                <View className="bg-orange-50 w-16 h-16 rounded-2xl items-center justify-center mb-3">
+                   <Image source={{ uri: item.image_url }} className="w-full h-full rounded-2xl" />
+                </View>
+                <Text className="text-gray-900 font-bold text-[10px] text-center">{item.name}</Text>
+                <Text className="text-orange-500 text-[8px] font-black mt-1 uppercase">Remedy</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
 
-          {/* Pagination Dots */}
-          <View style={styles.paginationContainer}>
-            {activeBannersSource.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.paginationDot,
-                  {
-                    backgroundColor:
-                      activeBanner === index ? colors.saffron : colors.border,
-                  },
-                ]}
-              />
+        {/* Divine Shop Section - Live Products */}
+        <View className="mt-10 mb-10">
+          <View className="px-6 flex-row justify-between items-center mb-5">
+            <Text className="text-gray-900 text-2xl font-bold">Divine Shop</Text>
+            <TouchableOpacity className="flex-row items-center">
+               <ShoppingBag size={14} color="#FF4D00" />
+               <Text className="text-primary text-xs font-bold ml-2">All Products</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
+            {products.map((item) => (
+              <TouchableOpacity key={item.id} className="mr-4 bg-white p-5 rounded-[32px] border border-orange-50 shadow-sm items-center w-36">
+                <View className="w-16 h-16 bg-gray-50 rounded-2xl items-center justify-center mb-3 overflow-hidden">
+                  <Image source={{ uri: item.image_url || 'https://via.placeholder.com/200' }} className="w-full h-full" resizeMode="contain" />
+                </View>
+                <Text className="text-gray-700 font-bold text-[10px] text-center line-clamp-1">{item.name}</Text>
+                <Text className="text-primary text-[10px] font-extrabold mt-1">₹{item.price || item.mrp}</Text>
+              </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
-        {/* Astro Section: Kundli & Know Yourself */}
-        <AstroSection />
-
-        {/* Daily Rashi Phal Section */}
-        {!isGuest && userRashi && dailyAstro && (
-            <TouchableOpacity
-              style={{ marginHorizontal: 0, marginBottom: 16 }}
-              activeOpacity={0.9}
-              onPress={() => router.push('/horoscope' as any)}
-            >
-              <Card
-                variant="solid"
-                style={{
-                  padding: 20,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  borderColor: colors.saffron + '30',
-                  backgroundColor: theme === 'dark' ? colors.card : '#fffaf0'
-                }}
-              >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.saffron + '15', justifyContent: 'center', alignItems: 'center', marginRight: 12 }}>
-                    <Sun size={24} color={colors.saffron} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Typography variant="h3" color={colors.foreground} style={{ fontSize: 18 }}>Daily Rashifal</Typography>
-                    <Typography variant="label" color={colors.saffron} style={{ marginTop: 2, fontWeight: '600' }}>
-                      {userRashi.charAt(0).toUpperCase() + userRashi.slice(1)} • {new Date().getDate().toString().padStart(2, '0')} {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][new Date().getMonth()]} {new Date().getFullYear()}
-                    </Typography>
-                  </View>
-                </View>
-                <ArrowRight size={20} color={colors.mutedForeground} style={{ marginTop: 12 }} />
-              </View>
-
-
-            </Card>
-          </TouchableOpacity>
-        )}
-
-        {/* Quick Action Cards (3 cards) */}
-        <View style={styles.quickActionsContainer}>
-          {QUICK_ACTIONS.map((action) => (
-            <TouchableOpacity
-              key={action.id}
-              style={styles.actionItem}
-              activeOpacity={0.7}
-              onPress={() => router.push(action.route as any)}
-            >
-              <View
-                style={[
-                  styles.actionIconBg, 
-                  { 
-                    backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
-                    borderColor: action.color + '40', // Semi-transparent border
-                  }
-                ]}
-              >
-                <action.icon size={28} color={action.color} />
-              </View>
-              <Typography
-                variant="label"
-                style={styles.actionTitle}
-                color={colors.foreground}
-                numberOfLines={1}
-              >
-                {action.name}
-              </Typography>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* ₹99 Products */}
-        <View style={styles.sectionHeader}>
-          <Typography variant="h3" color={colors.foreground}>
-            {t("home.99_products", "Sacred Items @ ₹99")}
-          </Typography>
-          <TouchableOpacity
-            style={styles.seeAllButton}
-            onPress={() => router.push("/products" as any)}
-          >
-            <Typography variant="label" color={colors.saffron}>
-              {t("common.see_all", "See All")}
-            </Typography>
-            <ArrowRight size={14} color={colors.saffron} style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 24 }}
-          style={styles.productsHorizontalScroll}
-        >
-          {productsLoading ? (
-            <View style={{ width: 100, height: 200, justifyContent: 'center', alignItems: 'center' }}>
-              <ActivityIndicator color={colors.saffron} />
+        {/* Live Spiritual Locations Section - Yatra */}
+        {destinations.length > 0 && (
+          <View className="mt-6 mb-16 px-6">
+            <View className="flex-row justify-between items-center mb-6">
+               <Text className="text-gray-900 text-2xl font-bold">Spiritual Yatra</Text>
+               <MapPin size={20} color="#FF4D00" />
             </View>
-          ) : products.length === 0 ? (
-            <View style={{ padding: 20 }}>
-              <Typography variant="bodySmall" color={colors.mutedForeground}>No products available.</Typography>
-            </View>
-          ) : products.map((product) => (
-            <TouchableOpacity
-              key={product.id}
-              style={styles.productCardWrapper}
-              activeOpacity={0.9}
-              onPress={() => router.push(`/products/${product.id}` as any)}
-            >
-              <Card variant="solid" style={styles.productCard}>
-                <View style={styles.productImageContainer}>
-                  <FallbackImage
-                    source={getImageSource(product.image_url)}
-                    style={styles.productImage}
-                    contentFit="cover"
-                  />
-                  <View style={styles.productPriceTag}>
-                    <Typography variant="label" style={{ fontWeight: 'bold' }} color="#ffffff">
-                      ₹{product.price}
-                    </Typography>
-                  </View>
-                </View>
-                <View style={styles.productInfo}>
-                  <Typography variant="label" color={colors.saffron} style={{ marginBottom: 4 }}>
-                    {product.category}
-                  </Typography>
-                  <Typography variant="body" style={{ fontWeight: 'bold' }} color={colors.foreground} numberOfLines={2}>
-                    {product.name}
-                  </Typography>
-                </View>
-              </Card>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* ₹999 Special Offer Pujas */}
-        {offerPujas.length > 0 && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Typography variant="h3" color={colors.foreground}>
-                {t("home.999_offer", "Special Offer @ ₹999")}
-              </Typography>
-              <TouchableOpacity
-                style={styles.seeAllButton}
-                onPress={() => router.push("/pujas/offer999" as any)}
-              >
-                <Typography variant="label" color={colors.saffron}>
-                  {t("common.see_all", "See All")}
-                </Typography>
-                <ArrowRight size={14} color={colors.saffron} style={{ marginLeft: 4 }} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingRight: 24 }}
-              style={styles.productsHorizontalScroll}
-            >
-              {offerPujasLoading ? (
-                <View style={{ width: 100, height: 200, justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator color={colors.saffron} />
-                </View>
-              ) : offerPujas.map((puja) => (
-                <TouchableOpacity
-                  key={puja.id}
-                  style={styles.productCardWrapper}
-                  activeOpacity={0.9}
-                  onPress={() => router.push(`/pujas/${puja.id}` as any)}
-                >
-                  <Card variant="solid" style={styles.productCard}>
-                    <View style={styles.productImageContainer}>
-                      <FallbackImage
-                        source={getImageSource(puja.images)}
-                        style={styles.productImage}
-                        contentFit="cover"
-                      />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+               {destinations.map((dest) => (
+                 <TouchableOpacity key={dest.id} className="mr-6 items-center">
+                    <View className="w-20 h-20 rounded-full border-2 border-primary/20 p-1">
+                       <Image source={{ uri: dest.image_url }} className="w-full h-full rounded-full" />
                     </View>
-                    <View style={styles.productInfo}>
-                      <Typography variant="body" style={{ fontWeight: 'bold' }} color={colors.foreground} numberOfLines={2}>
-                        {puja.name}
-                      </Typography>
-                      <Typography variant="bodySmall" color={colors.saffron} style={{ fontWeight: 'bold', fontSize: 10, marginTop: 4 }}>
-                        SPECIAL OFFER
-                      </Typography>
-                    </View>
-                  </Card>
-                </TouchableOpacity>
-              ))}
+                    <Text className="text-gray-900 text-[10px] font-bold mt-2 uppercase tracking-tighter">{dest.name}</Text>
+                 </TouchableOpacity>
+               ))}
             </ScrollView>
-          </>
+          </View>
         )}
 
-        {/* Popular Pujas */}
-        <View style={styles.sectionHeader}>
-          <Typography variant="h3" color={colors.foreground}>
-            {t("home.popular_pujas", "Popular Pujas")}
-          </Typography>
-        </View>
-        <View style={styles.pujasGrid}>
-          {pujasLoading && popularPujas.length === 0 ? (
-            <ActivityIndicator
-              color={colors.saffron}
-              style={{ marginVertical: 20, alignSelf: "center", width: "100%" }}
-            />
-          ) : pujasErrorMsg ? (
-            <View style={{ width: "100%", alignItems: "center", padding: 20 }}>
-              <Typography variant="bodySmall" color={colors.mutedForeground}>{pujasErrorMsg}</Typography>
-              <TouchableOpacity onPress={fetchPopularPujas} style={{ marginTop: 8 }}>
-                <Typography variant="label" color={colors.saffron}>RETRY</Typography>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            popularPujas.map((puja, index) => {
-              // Create an alternating layout logic where the first 2 are half width, the 3rd is full width, etc.
-              const isFullWidth = (index + 1) % 3 === 0;
-              return (
-                <TouchableOpacity
-                  key={puja.id}
-                  activeOpacity={0.8}
-                  style={{
-                    width: isFullWidth ? "100%" : "48%",
-                    marginTop: index > 1 ? 12 : 0,
-                  }}
-                  onPress={() => router.push(`/pujas/${puja.id}`)}
-                >
-                  <Card
-                    variant="solid"
-                    style={[
-                      styles.gridCard,
-                      { width: "100%", minHeight: isFullWidth ? "auto" : 210 },
-                    ]}
-                  >
-                    <FallbackImage
-                      source={getImageSource(puja.images)}
-                      style={styles.cardImageMock}
-                      contentFit="cover"
-                    />
-                    <Typography
-                      variant="body"
-                      style={{
-                        fontWeight: "bold",
-                        marginTop: 12,
-                        minHeight: isFullWidth ? "auto" : 44,
-                      }}
-                      numberOfLines={isFullWidth ? undefined : 2}
-                      color={colors.foreground}
-                    >
-                      {getLocalized(puja, 'name')}
-                    </Typography>
-                    <Typography
-                      variant="bodySmall"
-                      color={colors.mutedForeground}
-                      numberOfLines={1}
-                      style={{ marginTop: 4 }}
-                    >
-                      {getLocalized(puja, 'tagline') || getLocalized(puja, 'about_description')}
-                    </Typography>
-                  </Card>
-                </TouchableOpacity>
-              );
-            })
-          )}
+        {/* Testimonials Footer */}
+        <View className="bg-gray-50 pt-12 pb-24 rounded-t-[60px] border-t border-gray-100">
+           <View className="items-center mb-8 px-10">
+              <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-2">Social Proof</Text>
+              <Text className="text-gray-900 text-2xl font-bold text-center">Trusted by 10 Lakh+ Devotees</Text>
+           </View>
+
+           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
+              {TESTIMONIALS.map((item) => (
+                <View key={item.id} className="mr-5 bg-white p-8 rounded-[40px] w-72 shadow-sm border border-gray-100">
+                   <View className="flex-row mb-3">
+                      {[1,2,3,4,5].map(i => (
+                        <Star key={i} size={14} fill={i <= item.rating ? "#FFD700" : "none"} color="#FFD700" />
+                      ))}
+                   </View>
+                   <Text className="text-gray-600 text-sm italic leading-relaxed">"{item.text}"</Text>
+                   <View className="mt-5 flex-row items-center">
+                      <View className="w-8 h-8 rounded-full bg-orange-100 items-center justify-center mr-3">
+                         <Text className="text-primary font-bold text-xs">{item.user[0]}</Text>
+                      </View>
+                      <Text className="text-gray-900 font-bold text-xs">{item.user}</Text>
+                   </View>
+                </View>
+              ))}
+           </ScrollView>
+
+           <View className="items-center mt-12 mb-6">
+              <Image 
+                source={require('../../assets/images/icon.png')} 
+                className="w-12 h-12 rounded-2xl opacity-20 grayscale"
+                resizeMode="contain"
+              />
+              <Text className="text-gray-400 text-[10px] mt-4 font-bold uppercase tracking-widest">Mantra Puja • Pure Spiritual Guidance</Text>
+           </View>
         </View>
 
-        <View style={{ marginBottom: 24 }}>
-          <AnimatedWaveButton
-            title={t("home.explore_all_pujas", "EXPLORE ALL POOJA SERVICES")}
-            onPress={() => router.push("/(tabs)/pujas")}
-          />
-        </View>
+        {/* Extra Spacing */}
+        <View className="h-20" />
+      </ScrollView>
 
-        {/* Upcoming Festivals */}
-        <View style={styles.sectionHeader}>
-          <Typography variant="h3" color={colors.foreground}>
-            {t("home.upcoming_festivals", "Upcoming Festivals")}
-          </Typography>
-          <TouchableOpacity onPress={() => router.push("/calendar")}>
-            <Typography
-              variant="bodySmall"
-              color={colors.saffron}
-              style={{ fontWeight: "600" }}
-            >
-              {t("common.see_all", "See All")}
-            </Typography>
-          </TouchableOpacity>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.horizontalScroll}
+      {/* Floating Widgets Container */}
+      <View className="absolute bottom-10 left-6 right-6 flex-row justify-between items-center pointer-events-none">
+        
+        {/* Floating Calendar Widget (Vertical Left Center - Moved to side in actual app logic, but placing here for completeness) */}
+        <TouchableOpacity 
+          className="absolute -left-6 bottom-32 w-12 h-14 bg-white border-y border-r border-primary/20 rounded-r-2xl items-center justify-center shadow-xl shadow-black/10 pointer-events-auto"
+          style={{ elevation: 15 }}
         >
-          {festivalsLoading && festivals.length === 0 ? (
-            <ActivityIndicator
-              color={colors.saffron}
-              style={{ marginHorizontal: 24, marginVertical: 20 }}
-            />
-          ) : (
-            festivals.map((fest) => {
-              const monthStr = fest.month
-                ? fest.month.substring(0, 3).toUpperCase()
-                : "---";
-              const dayStr = fest.date ? fest.date.split("-")[2] : "--";
-
-              return (
-                <TouchableOpacity
-                  key={fest.id}
-                  activeOpacity={0.9}
-                  onPress={() => router.push(`/calendar/${fest.id}`)}
-                >
-                  <Card variant="solid" style={styles.horizontalCard}>
-                    <View
-                      style={[
-                        styles.festivalDateBox,
-                        {
-                          backgroundColor:
-                            theme === "dark" ? "#334155" : "#ffffff",
-                        },
-                      ]}
-                    >
-                      <Typography
-                        variant="label"
-                        color={colors.saffron}
-                        style={{ fontWeight: "bold" }}
-                      >
-                        {monthStr}
-                      </Typography>
-                      <Typography variant="h1" color={colors.foreground}>
-                        {dayStr}
-                      </Typography>
-                    </View>
-                    <View style={styles.festivalInfo}>
-                      <Typography
-                        variant="body"
-                        style={{ fontWeight: "bold" }}
-                        color={colors.foreground}
-                      >
-                        {fest.name}
-                      </Typography>
-                      <Typography
-                        variant="bodySmall"
-                        color={colors.mutedForeground}
-                        numberOfLines={2}
-                        style={{ marginTop: 4 }}
-                      >
-                        {fest.description}
-                      </Typography>
-                    </View>
-                  </Card>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </ScrollView>
-
-        {/* Spiritual Locations */}
-        <View style={styles.sectionHeader}>
-          <Typography variant="h3" color={colors.foreground}>
-            {t("home.spiritual_locations", "Spiritual Locations")}
-          </Typography>
-          <TouchableOpacity onPress={() => router.push("/explore")}>
-            <Typography
-              variant="bodySmall"
-              color={colors.saffron}
-              style={{ fontWeight: "600" }}
-            >
-              {t("common.see_all", "See All")}
-            </Typography>
-          </TouchableOpacity>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.horizontalScroll}
-        >
-          {destinationsLoading && destinations.length === 0 ? (
-            <ActivityIndicator color={colors.saffron} style={{ marginHorizontal: 24, marginVertical: 20 }} />
-          ) : (
-            destinations.map((loc) => (
-              <TouchableOpacity
-                key={loc.id}
-                activeOpacity={0.9}
-                onPress={() => router.push(`/explore/${loc.id}`)}
-              >
-                <Card variant="solid" style={styles.locationCard}>
-                  <FallbackImage
-                    source={getImageSource(loc.images)}
-                    style={styles.locationImage}
-                    contentFit="cover"
-                  />
-                  <Typography
-                    variant="body"
-                    style={{ fontWeight: "bold", marginTop: 12 }}
-                    color={colors.foreground}
-                  >
-                    {loc.name}
-                  </Typography>
-                  <Typography
-                    variant="bodySmall"
-                    color={colors.mutedForeground}
-                    style={{ marginTop: 4 }}
-                    numberOfLines={2}
-                  >
-                    {loc.tagline || loc.description}
-                  </Typography>
-                </Card>
-              </TouchableOpacity>
-            ))
-          )}
-        </ScrollView>
-
-        {/* Blog Section - Hidden for Play Store Compliance */}
-        {/* 
-        <View style={styles.sectionHeader}>
-          <Typography variant="h3" color={colors.foreground}>
-            {t("home.spiritual_insights", "Spiritual Insights")}
-          </Typography>
-        </View>
-        <View style={styles.blogGrid}>
-          {blogsLoading ? (
-            <ActivityIndicator color={colors.saffron} style={{ padding: 20 }} />
-          ) : blogsErrorMsg ? (
-            <View style={{ padding: 20 }}>
-              <Typography variant="body" color="red">{"Error: " + blogsErrorMsg}</Typography>
-            </View>
-          ) : blogs.length === 0 ? (
-            <View style={{ padding: 20 }}>
-              <Typography variant="body" color={colors.mutedForeground}>No spiritual insights selected or available yet.</Typography>
-            </View>
-          ) : (
-            blogs.map((blog) => (
-              <TouchableOpacity
-                key={blog.id}
-                activeOpacity={0.8}
-                onPress={() => router.push(`/blogs/${blog.id}`)}
-              >
-                <Card variant="solid" style={styles.blogRowCard}>
-                  <Image
-                    source={renderBlogImage(blog.image_url)}
-                    style={styles.blogImageMock}
-                    contentFit="cover"
-                  />
-                  <View style={styles.blogContent}>
-                    <Typography
-                      variant="bodySmall"
-                      color={colors.saffron}
-                      style={{ fontWeight: "bold", marginBottom: 4 }}
-                    >
-                      {(blog.category || "VEDIC").toUpperCase()}
-                    </Typography>
-                    <Typography
-                      variant="body"
-                      style={{ fontWeight: "bold" }}
-                      color={colors.foreground}
-                      numberOfLines={2}
-                    >
-                      {blog.title}
-                    </Typography>
-                  </View>
-                </Card>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-        */}
-
-        <View style={{ marginBottom: 24 }}>
-          <AnimatedWaveButton
-            title={t("home.read_all_insights", "READ ALL SPIRITUAL INSIGHTS")}
-            onPress={() => router.push("/blogs" as any)}
-          />
-        </View>
-
-        {/* Refer & Earn Promo - Premium Glow Card */}
-        <TouchableOpacity
-          onPress={() => router.push("/wallet/refer" as any)}
-          activeOpacity={0.9}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ marginBottom: 40, marginHorizontal: 24 }}
-        >
-          <View style={[styles.referralGlowCard, { backgroundColor: colors.saffron }]}>
-            <View style={styles.referralGlowContent}>
-              <View style={styles.referralIconCircle}>
-                <Users size={24} color={colors.saffron} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 16 }}>
-                <Typography variant="h3" color="#fff" style={{ fontWeight: '800' }}>REFER & EARN ₹51</Typography>
-                <Typography variant="bodySmall" color="rgba(255,255,255,0.9)">
-                  Invite friends & get rewards instantly!
-                </Typography>
-              </View>
-              <View style={styles.referralGoBtn}>
-                <ArrowRight size={20} color={colors.saffron} />
-              </View>
-            </View>
-          </View>
+          <Calendar size={20} color="#FF4D00" />
+          <View className="w-1 h-3 bg-primary/20 rounded-full mt-1" />
         </TouchableOpacity>
 
-        {/* Footer */}
-        <Footer />
-        {/* Custom Language Selection Modal */}
-        <RNModal
-          visible={isLanguageModalVisible}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={() => setIsLanguageModalVisible(false)}
+        {/* Floating AI Pandit Widget (Bottom Right) */}
+        <TouchableOpacity 
+          onPress={() => router.push('/chat')}
+          className="absolute -right-2 bottom-20 w-24 h-24 items-center justify-center pointer-events-auto"
+          style={{ elevation: 15 }}
         >
-          <RNTouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setIsLanguageModalVisible(false)}
+          <View className="absolute inset-0 bg-primary/20 rounded-full scale-110" />
+          <View className="w-20 h-20 bg-white rounded-full items-center justify-center shadow-2xl border-2 border-primary">
+             <Image 
+                source={require('../../assets/images/3d_pandit.jpg')} 
+                className="w-16 h-16 rounded-full"
+                resizeMode="contain"
+             />
+          </View>
+          <View className="absolute -top-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-2 border-white" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Sidebar Overlay */}
+      {isSidebarOpen && (
+        <View style={StyleSheet.absoluteFill} className="z-50">
+          <Animated.View 
+            style={{ opacity: backdropOpacity }}
+            className="flex-1 bg-black/50"
           >
-            <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
-              <View style={styles.modalHeader}>
-                <Typography variant="h3">{t("settings.select_language", "Select Language")}</Typography>
-                <RNTouchableOpacity onPress={() => setIsLanguageModalVisible(false)} style={styles.closeBtn}>
-                  <X size={24} color={colors.foreground} />
-                </RNTouchableOpacity>
-              </View>
+            <TouchableOpacity 
+              activeOpacity={1} 
+              onPress={() => toggleSidebar(false)} 
+              className="flex-1" 
+            />
+          </Animated.View>
 
-              <View style={styles.optionsList}>
-                <RNTouchableOpacity
-                  style={[
-                    styles.languageOption,
-                    i18n.language === 'en' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
-                  ]}
-                  onPress={() => changeLanguage('en')}
-                >
-                  <View style={styles.optionLeft}>
-                    <View style={[styles.langIcon, { backgroundColor: '#E0E7FF' }]}>
-                      <Typography style={{ fontWeight: 'bold', color: '#4F46E5' }}>EN</Typography>
-                    </View>
-                    <Typography style={{ marginLeft: 16, fontWeight: i18n.language === 'en' ? '700' : '400' }}>English</Typography>
-                  </View>
-                  {i18n.language === 'en' && <Check size={20} color={colors.saffron} />}
-                </RNTouchableOpacity>
-
-                <RNTouchableOpacity
-                  style={[
-                    styles.languageOption,
-                    i18n.language === 'hi' && { borderColor: colors.saffron, backgroundColor: colors.saffron + '05' }
-                  ]}
-                  onPress={() => changeLanguage('hi')}
-                >
-                  <View style={styles.optionLeft}>
-                    <View style={[styles.langIcon, { backgroundColor: '#FEF3C7' }]}>
-                      <Typography style={{ fontWeight: 'bold', color: '#D97706' }}>हि</Typography>
-                    </View>
-                    <Typography style={{ marginLeft: 16, fontWeight: i18n.language === 'hi' ? '700' : '400' }}>हिन्दी (Hindi)</Typography>
-                  </View>
-                  {i18n.language === 'hi' && <Check size={20} color={colors.saffron} />}
-                </RNTouchableOpacity>
+          <Animated.View 
+            style={{ 
+              transform: [{ translateX: sidebarTranslateX }],
+              width: width * 0.8,
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              backgroundColor: '#FFFFFF',
+              borderTopRightRadius: 40,
+              borderBottomRightRadius: 40,
+              paddingTop: 60,
+              paddingHorizontal: 30,
+            }}
+            className="shadow-2xl"
+          >
+            {/* Sidebar Header */}
+            <View className="items-center mb-10">
+              <View className="w-20 h-20 rounded-3xl bg-primary/10 items-center justify-center mb-4 border border-primary/20">
+                 <Image 
+                   source={require('../../assets/images/logo.png')} 
+                   className="w-16 h-16" 
+                   resizeMode="contain" 
+                 />
               </View>
+              <Text className="text-xl font-bold text-gray-900">Mantra Pooja</Text>
+              <Text className="text-gray-400 text-xs">Divine Spiritual Haven</Text>
             </View>
-          </RNTouchableOpacity>
-        </RNModal>
-      </ScrollView>
+
+            {/* Profile Section & Links */}
+            <View className="flex-1">
+              {user ? (
+                <>
+                  <View className="bg-gray-50 p-4 rounded-3xl mb-8 border border-gray-100">
+                    <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Logged in as</Text>
+                    <Text className="text-gray-900 font-bold text-lg mt-1">{user.user_metadata?.full_name || 'Bhakt ji'}</Text>
+                    <Text className="text-gray-400 text-xs">{user.phone || user.email}</Text>
+                  </View>
+
+                  <TouchableOpacity className="flex-row items-center py-4 mb-2">
+                    <View className="w-10 h-10 rounded-2xl bg-orange-50 items-center justify-center mr-4">
+                      <Sparkles size={20} color="#FF4D00" />
+                    </View>
+                    <Text className="text-gray-700 font-bold text-base">My Bookings</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity className="flex-row items-center py-4 mb-2">
+                    <View className="w-10 h-10 rounded-2xl bg-orange-50 items-center justify-center mr-4">
+                      <Wallet size={20} color="#FF4D00" />
+                    </View>
+                    <Text className="text-gray-700 font-bold text-base">Divine Wallet</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity className="flex-row items-center py-4 mb-8">
+                    <View className="w-10 h-10 rounded-2xl bg-gray-50 items-center justify-center mr-4">
+                       <Layout size={20} color="#64748B" />
+                    </View>
+                    <Text className="text-gray-700 font-bold text-base">Settings</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    onPress={() => {
+                      toggleSidebar(false);
+                      signOut();
+                    }}
+                    className="flex-row items-center py-4 border-t border-gray-100"
+                  >
+                    <Text className="text-red-500 font-bold text-base">Sign Out</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View className="flex-1 justify-center -mt-20">
+                  <Text className="text-center text-gray-400 mb-6">Create an account to track your rituals and bookings.</Text>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      toggleSidebar(false);
+                      router.push('/(auth)/login');
+                    }}
+                    className="bg-primary h-14 rounded-2xl items-center justify-center shadow-lg shadow-primary/20"
+                  >
+                    <Text className="text-white font-bold text-lg">Login / Sign Up</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+
+            {/* Footer */}
+            <View className="pb-10 items-center">
+              <Text className="text-gray-300 text-[10px] uppercase font-bold tracking-widest">Version 1.0.0</Text>
+            </View>
+          </Animated.View>
+        </View>
+      )}
     </View>
   );
 }
-
-const { width } = Dimensions.get("window");
-
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-    paddingBottom: 80,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    zIndex: 10,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  iconButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-
-  bannerWrapper: {
-    marginTop: -20,
-    marginHorizontal: -20,
-    marginBottom: 16,
-  },
-  bannerScroll: {
-    overflow: "visible",
-  },
-  bannerContainer: {
-    width: width,
-    overflow: "hidden",
-    shadowColor: "#f97316",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 4,
-  },
-  paginationContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
-    gap: 8,
-    zIndex: 10,
-  },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  bannerBg: {
-    width: "100%",
-    height: 125,
-  },
-  bannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.4)", // Dark overlay so white text always pops
-    padding: 24,
-    justifyContent: "center",
-  },
-  bannerContent: {
-    maxWidth: "80%",
-  },
-  quickActionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
-  },
-  actionItem: {
-    alignItems: "center",
-    width: "23%",
-  },
-  actionIconBg: {
-    width: 68,
-    height: 68,
-    borderRadius: 20, // More boutique rounded look
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-    borderWidth: 1.5,
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  actionTitle: {
-    textAlign: "center",
-    fontWeight: "700",
-    fontSize: 10,
-    letterSpacing: 0.5,
-  },
-  sectionHeader: {
-    marginTop: 12,
-    marginBottom: 4,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-  },
-
-  pujasGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  seeAllButton: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  productsHorizontalScroll: {
-    marginLeft: -24,
-    paddingLeft: 24,
-    marginBottom: 12,
-  },
-  productCardWrapper: {
-    width: 160,
-    marginRight: 16,
-  },
-  productCard: {
-    padding: 0,
-    borderRadius: 16,
-    overflow: "hidden",
-    height: 220,
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 3,
-  },
-  productImageContainer: {
-    width: "100%",
-    height: 120,
-    position: "relative",
-  },
-  productImage: {
-    width: "100%",
-    height: "100%",
-  },
-  productPriceTag: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "#ef4444",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  productInfo: {
-    padding: 12,
-    flex: 1,
-  },
-  gridCard: {
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  cardImageMock: {
-    height: 100,
-    borderRadius: 12,
-    width: "100%",
-  },
-  horizontalScroll: {
-    marginHorizontal: -24,
-    paddingHorizontal: 24,
-  },
-  horizontalCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    width: 280,
-    marginRight: 16,
-    borderRadius: 12,
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  festivalDateBox: {
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    padding: 12,
-    minWidth: 70,
-    marginRight: 16,
-  },
-  festivalInfo: {
-    flex: 1,
-  },
-  locationCard: {
-    width: 200,
-    marginRight: 16,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  locationImage: {
-    width: "100%",
-    height: 120,
-    borderRadius: 10,
-  },
-  blogGrid: {
-    gap: 16,
-    marginBottom: 16,
-  },
-  blogRowCard: {
-    flexDirection: "row",
-    padding: 12,
-    alignItems: "center",
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  blogImageMock: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    marginRight: 16,
-  },
-  blogContent: {
-    flex: 1,
-  },
-  referralGlowCard: {
-    padding: 2,
-    borderRadius: 24,
-    elevation: 8,
-    shadowColor: "#f97316",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-  },
-  referralGlowContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-    borderRadius: 22,
-    backgroundColor: "transparent", // Will be handled by the outer saffron container
-  },
-  referralIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  referralGoBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: 24,
-    paddingBottom: 40,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  optionsList: {
-    gap: 16,
-  },
-  languageOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  optionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  langIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  offerBadgeContainer: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    zIndex: 30,
-    shadowColor: "#f97316",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  offerBadgeGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#ea580c',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  offerBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-});

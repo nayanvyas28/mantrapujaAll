@@ -8,9 +8,6 @@
     "dev:web": "npm run dev -w website -- --port 3000",
     "dev:admin": "npm run dev -w admin-panel -- --port 3001",
     "dev:backend": "npm run dev -w backend",
-    "mobile:start": "npm run dev -w mobile-app",
-    "mobile:android": "npm run android -w mobile-app",
-    "mobile:ios": "npm run ios -w mobile-app",
     "backend": "npm run dev:backend",
     "admin": "npm run dev:admin",
     "web": "npm run dev:web",
@@ -19,7 +16,6 @@
   },
   "workspaces": [
     "website",
-    "mobile-app",
     "admin-panel",
     "backend",
     "packages/shared"

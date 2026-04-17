@@ -12,6 +12,8 @@ dotenv.config(); // CWD .env if started from mobile-app or similar
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const astrologyRoutes = require('./routes/astrology');
+const chatRoutes = require('./routes/chat');
+const musicRoutes = require('./routes/music');
 
 // Import Services
 const { initializeScheduler } = require('./services/notificationService');
@@ -26,6 +28,8 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/astrology', astrologyRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/music', musicRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

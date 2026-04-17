@@ -1,180 +1,91 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-    View, 
-    StyleSheet, 
-    Dimensions, 
-    FlatList, 
-    StatusBar, 
-    ActivityIndicator,
-    Alert,
-    RefreshControl
-} from 'react-native';
-import { supabase } from '../../utils/supabase';
-import { ReelPlayer } from '../../components/ReelPlayer';
-import { useTheme } from '../../context/ThemeContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Typography } from '../../components/ui/Typography';
-import { ArrowLeft, Video } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, Share } from 'react-native';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Sparkles } from 'lucide-react-native';
+import { StatusBar } from 'expo-status-bar';
 
-const { width, height } = Dimensions.get('window');
-
-interface Reel {
-    id: string;
-    title: string;
-    title_hi?: string;
-    video_url: string;
-    thumbnail_url?: string;
-    category?: string;
-    is_active: boolean;
-    order_index: number;
-}
+const POSTS = [
+  {
+    id: '1',
+    author: 'Pandit Asha ji',
+    time: '2 hours ago',
+    text: 'Today is a powerful day for Mahamrityunjaya Mantra. May Lord Shiva bless you with health and longevity. 🙏✨',
+    image: 'https://images.unsplash.com/photo-1545063914-a1a6ec821c88?q=80&w=1000&auto=format&fit=crop',
+    likes: '1.2K',
+    comments: 45
+  },
+  {
+    id: '2',
+    author: 'Sunil Vedic',
+    time: '5 hours ago',
+    text: 'The alignment of Jupiter suggests a great time for starting new ventures this week. Stay positive!',
+    image: 'https://images.unsplash.com/photo-1567113379515-6e85ee7c30ab?q=80&w=1000&auto=format&fit=crop',
+    likes: '850',
+    comments: 21
+  }
+];
 
 export default function FeedScreen() {
-    const { colors, theme } = useTheme();
-    const insets = useSafeAreaInsets();
-    const router = useRouter();
-    const { i18n, t } = useTranslation();
+  return (
+    <View className="flex-1 bg-[#FFFDFB]">
+      <StatusBar style="dark" />
+      
+      {/* Header */}
+      <View className="pt-14 pb-4 px-6 bg-white border-b border-gray-50 flex-row justify-between items-center">
+        <Text className="text-2xl font-bold text-gray-900">Divine <Text className="text-primary">Feed</Text></Text>
+        <TouchableOpacity className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center">
+          <Sparkles size={20} color="#FF4D00" />
+        </TouchableOpacity>
+      </View>
 
-    const [reels, setReels] = useState<Reel[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [isMuted, setIsMuted] = useState(false);
-
-    const fetchReels = async (isRefresh = false) => {
-        if (isRefresh) setIsRefreshing(true);
-        else setIsLoading(true);
-
-        try {
-            const { data, error } = await supabase
-                .from('reels')
-                .select('*')
-                .eq('is_active', true)
-                .order('order_index', { ascending: false });
-
-            if (error) throw error;
-            setReels(data || []);
-        } catch (error: any) {
-            console.error('Error fetching reels:', error);
-            Alert.alert('Error', 'Failed to load feed. Please try again.');
-        } finally {
-            setIsLoading(false);
-            setIsRefreshing(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchReels();
-    }, []);
-
-    const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-        if (viewableItems.length > 0) {
-            setActiveIndex(viewableItems[0].index);
-        }
-    }).current;
-
-    const viewabilityConfig = useRef({
-        itemVisiblePercentThreshold: 50
-    }).current;
-
-    const renderItem = useCallback(({ item, index }: { item: Reel, index: number }) => {
-        // "Sliding window" logic: only load current, previous, and next 2 items
-        const shouldLoad = Math.abs(index - activeIndex) <= 2;
-        const isActive = index === activeIndex;
-
-        return (
-            <ReelPlayer
-                id={item.id}
-                video_url={item.video_url}
-                title={item.title}
-                title_hi={item.title_hi}
-                category={item.category || t('feed.divine', 'Divine')}
-                isActive={isActive}
-                shouldLoad={shouldLoad}
-                thumbnail_url={item.thumbnail_url}
-                isMuted={isMuted}
-                onToggleMute={() => setIsMuted(prev => !prev)}
-            />
-        );
-    }, [activeIndex, isMuted, t]);
-
-    if (isLoading && !isRefreshing) {
-        return (
-            <View style={[styles.loadingContainer, { backgroundColor: '#000' }]}>
-                <StatusBar barStyle="light-content" />
-                <ActivityIndicator size="large" color={colors.saffron} />
-                <Typography variant="body2" color="#fff" style={{ marginTop: 10 }}>
-                    {t('feed.loading', 'Loading Divine Feed...')}
-                </Typography>
+      <ScrollView showsVerticalScrollIndicator={false} className="flex-1 px-4 pt-4">
+        {POSTS.map((post) => (
+          <View key={post.id} className="bg-white rounded-[32px] mb-6 shadow-sm border border-gray-100 overflow-hidden">
+            {/* Author */}
+            <View className="p-4 flex-row items-center justify-between">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 rounded-full bg-orange-100 border border-orange-200 items-center justify-center">
+                  <Text className="text-primary font-bold">{post.author[0]}</Text>
+                </View>
+                <View className="ml-3">
+                  <Text className="font-bold text-gray-900">{post.author}</Text>
+                  <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{post.time}</Text>
+                </View>
+              </View>
+              <TouchableOpacity>
+                <MoreHorizontal size={20} color="#94A3B8" />
+              </TouchableOpacity>
             </View>
-        );
-    }
 
-    if (reels.length === 0 && !isLoading) {
-        return (
-            <View style={[styles.emptyContainer, { backgroundColor: '#000' }]}>
-                <Video size={48} color={colors.muted} />
-                <Typography variant="h3" color="#fff" style={{ marginTop: 16 }}>
-                    {t('feed.no_reels', 'No reels available yet.')}
-                </Typography>
-                <Typography variant="body2" color={colors.muted} style={{ marginTop: 8 }}>
-                    {t('feed.check_back', 'Please check back later for divine content.')}
-                </Typography>
+            {/* Content Text */}
+            <View className="px-4 pb-3">
+              <Text className="text-gray-700 leading-relaxed text-[15px]">{post.text}</Text>
             </View>
-        );
-    }
 
-    return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-            
-            <FlatList
-                data={reels}
-                keyExtractor={(item) => item.id}
-                renderItem={renderItem}
-                pagingEnabled
-                vertical
-                showsVerticalScrollIndicator={false}
-                snapToInterval={height}
-                snapToAlignment="start"
-                decelerationRate="fast"
-                onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={viewabilityConfig}
-                windowSize={5}
-                maxToRenderPerBatch={3}
-                initialNumToRender={2}
-                removeClippedSubviews={true}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={isRefreshing}
-                        onRefresh={() => fetchReels(true)}
-                        tintColor="#fff"
-                        colors={[colors.saffron]}
-                    />
-                }
-                style={{ height: height }}
-            />
-        </View>
-    );
+            {/* Image */}
+            <View className="w-full aspect-video bg-gray-100">
+               <Image source={{ uri: post.image }} className="w-full h-full" resizeMode="cover" />
+            </View>
+
+            {/* Actions */}
+            <View className="p-5 flex-row items-center justify-between bg-white">
+              <View className="flex-row items-center space-x-6">
+                 <TouchableOpacity className="flex-row items-center">
+                    <Heart size={20} color="#94A3B8" />
+                    <Text className="ml-2 text-xs font-bold text-gray-500">{post.likes}</Text>
+                 </TouchableOpacity>
+                 <TouchableOpacity className="flex-row items-center">
+                    <MessageCircle size={20} color="#94A3B8" />
+                    <Text className="ml-2 text-xs font-bold text-gray-500">{post.comments}</Text>
+                 </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={() => Share.share({ message: post.text })}>
+                 <Share2 size={20} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+        <View className="h-24" />
+      </ScrollView>
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#000',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 40,
-        textAlign: 'center',
-    },
-});
