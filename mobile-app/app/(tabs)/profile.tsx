@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { User, Settings, CreditCard, Bell, Shield, LogOut, ChevronRight } from 'lucide-react-native';
+import { User, Settings, CreditCard, Bell, Shield, LogOut, ChevronRight, Wallet } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -73,7 +74,10 @@ export default function ProfileScreen() {
            <Text className="text-2xl font-bold text-gray-900">{user?.user_metadata?.full_name || 'Bhakt'}</Text>
            <Text className="text-gray-500">{user?.email}</Text>
            
-           <TouchableOpacity className="mt-4 px-6 py-2 bg-gray-100 rounded-full">
+           <TouchableOpacity 
+             onPress={() => router.push('/profile/edit-profile')}
+             className="mt-4 px-6 py-2 bg-gray-100 rounded-full"
+           >
              <Text className="text-gray-700 font-medium text-sm">Edit Profile</Text>
            </TouchableOpacity>
         </View>
@@ -81,6 +85,12 @@ export default function ProfileScreen() {
         {/* Menu Groups */}
         <View className="mt-8">
            <Text className="px-6 text-gray-400 text-xs font-bold uppercase tracking-widest mb-3">Account</Text>
+           <MenuItem 
+             icon={<Wallet size={20} color="#FF4D00" />} 
+             title="Divine Wallet" 
+             subtitle="Check balance & add divine credits" 
+             onPress={() => router.push('/profile/wallet')}
+           />
            <MenuItem icon={<Settings size={20} color="#64748B" />} title="Settings" subtitle="Notifications, Appearance, Data" />
            <MenuItem icon={<CreditCard size={20} color="#64748B" />} title="My Bookings" subtitle="Manage your puja and astrology orders" />
            <MenuItem icon={<Bell size={20} color="#64748B" />} title="Reminders" subtitle="Aarti and Mantra notifications" />
@@ -88,8 +98,16 @@ export default function ProfileScreen() {
 
         <View className="mt-8">
            <Text className="px-6 text-gray-400 text-xs font-bold uppercase tracking-widest mb-3">Support</Text>
-           <MenuItem icon={<Shield size={20} color="#64748B" />} title="Privacy Policy" />
-           <MenuItem icon={<LogOut size={20} color="#64748B" />} title="About App" />
+           <MenuItem 
+             icon={<Shield size={20} color="#64748B" />} 
+             title="Privacy Policy" 
+             onPress={() => router.push('/profile/legal?tab=policy')}
+           />
+           <MenuItem 
+             icon={<Info size={20} color="#64748B" />} 
+             title="About App" 
+             onPress={() => router.push('/profile/legal?tab=about')}
+           />
         </View>
 
         {/* Sign Out Button */}

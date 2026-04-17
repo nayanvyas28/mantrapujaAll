@@ -13,12 +13,14 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@supabase/supabase-js": "^2.98.0",
+    "@supabase/supabase-js": "^2.103.3",
+    "axios": "^1.15.0",
     "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
+    "dotenv": "^17.4.2",
     "expo-server-sdk": "^6.1.0",
     "express": "^5.2.1",
     "node-schedule": "^2.1.1",
+    "nodemon": "^3.1.14",
     "web-push": "^3.6.7"
   }
 }

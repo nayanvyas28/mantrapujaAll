@@ -58,11 +58,26 @@ export const api = {
       const response = await fetchWithTimeout(`${ADMIN_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        // is_handshake: true tells backend to always return bridgePassword for Supabase sign-in
+        body: JSON.stringify({ ...data, is_handshake: true }),
       });
       return await handleResponse(response);
     } catch (error: any) {
       console.error('[API] verifyOtp error:', error);
+      throw error;
+    }
+  },
+
+  updateProfile: async (data: { userId: string; full_name?: string; email?: string; dob?: string; location?: string; address?: string }) => {
+    try {
+      const response = await fetchWithTimeout(`${ADMIN_URL}/api/auth/update-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return await handleResponse(response);
+    } catch (error: any) {
+      console.error('[API] updateProfile error:', error);
       throw error;
     }
   },

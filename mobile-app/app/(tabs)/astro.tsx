@@ -18,8 +18,12 @@ import { api } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { useSidebar } from '../../context/SidebarContext';
+import { Menu } from 'lucide-react-native';
+
 export default function AstroScreen() {
     const router = useRouter();
+    const { toggle } = useSidebar();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [savedKundalis, setSavedKundalis] = useState<any[]>([]);
@@ -60,30 +64,39 @@ export default function AstroScreen() {
         return (
             <View className="flex-1 bg-white items-center justify-center">
                 <ActivityIndicator size="large" color="#FF4D00" />
-                <Text className="mt-4 text-gray-500 font-medium">Aligning Stars...</Text>
+                <Text className="mt-4 text-gray-500 font-medium tracking-[3px] uppercase text-[10px]">Aligning Stars...</Text>
             </View>
         );
     }
 
     return (
         <ScrollView 
-            className="flex-1 bg-gray-50" 
+            className="flex-1 bg-white" 
             contentContainerStyle={{ paddingBottom: 100 }}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            showsVerticalScrollIndicator={false}
         >
-            {/* Header */}
-            <LinearGradient colors={['#FFF5F0', '#FFFFFF']} className="px-6 pt-16 pb-8">
-                <View className="flex-row justify-between items-end">
+            {/* Premium Header */}
+            <LinearGradient colors={['#FF4D00', '#FF8C00']} className="px-6 pt-16 pb-12 rounded-b-[40px] shadow-2xl">
+                <View className="flex-row justify-between items-center mb-6">
                     <View>
-                        <Text className="text-gray-400 font-bold tracking-widest text-xs mb-1 uppercase">Astro Insights</Text>
-                        <Text className="text-3xl font-black text-gray-900">Vedic <Text className="text-primary">Aura</Text></Text>
+                        <Text className="text-white/60 font-black tracking-[4px] text-[10px] mb-1 uppercase">Astro Insights</Text>
+                        <Text className="text-3xl font-black text-white">Vedic <Text className="text-white/70">Aura</Text></Text>
                     </View>
-                    <TouchableOpacity 
-                        onPress={() => router.push('/kundli/new')}
-                        className="bg-primary w-12 h-12 rounded-2xl items-center justify-center shadow-lg shadow-primary/30"
-                    >
-                        <Plus color="white" size={24} />
-                    </TouchableOpacity>
+                    <View className="flex-row gap-3">
+                        <TouchableOpacity 
+                            onPress={() => router.push('/kundli/new')}
+                            className="bg-white/20 w-12 h-12 rounded-2xl items-center justify-center border border-white/20"
+                        >
+                            <Plus color="white" size={24} />
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={() => toggle(true)}
+                            className="bg-white/20 w-12 h-12 rounded-2xl items-center justify-center border border-white/20"
+                        >
+                            <Menu color="white" size={20} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </LinearGradient>
 

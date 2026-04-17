@@ -1,0 +1,24 @@
+0 verbose cli C:\nvm4w\nodejs\node.exe C:\Users\nayan\AppData\Local\nvm\v20.19.0\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.8.2
+2 info using node@v20.19.0
+3 silly config load:file:C:\Users\nayan\AppData\Local\nvm\v20.19.0\node_modules\npm\npmrc
+4 silly config load:file:E:\mantrapuja\mantrapujaAll\mobile-app\.npmrc
+5 silly config load:file:E:\mantrapuja\mantrapujaAll\mobile-app\.local_cache\.npmrc
+6 silly config load:file:C:\nvm4w\nodejs\etc\npmrc
+7 verbose title npm exec expo start --clear
+8 verbose argv "exec" "--" "expo" "start" "--clear"
+9 verbose logfile logs-max:10 dir:E:\mantrapuja\mantrapujaAll\mobile-app\.local_cache\_logs\2026-04-17T06_38_53_334Z-
+10 verbose logfile E:\mantrapuja\mantrapujaAll\mobile-app\.local_cache\_logs\2026-04-17T06_38_53_334Z-debug-0.log
+11 silly logfile done cleaning log files
+12 http fetch GET 200 https://registry.npmjs.org/npm 819ms
+13 verbose cwd E:\mantrapuja\mantrapujaAll\mobile-app
+14 verbose os Windows_NT 10.0.26200
+15 verbose node v20.19.0
+16 verbose npm  v10.8.2
+17 notice
+17 notice New [31mmajor[39m version of npm available! [31m10.8.2[39m -> [34m11.12.1[39m
+17 notice Changelog: [34mhttps://github.com/npm/cli/releases/tag/v11.12.1[39m
+17 notice To update run: [4mnpm install -g npm@11.12.1[24m
+17 notice  { force: true, [Symbol(proc-log.meta)]: true }
+18 verbose exit 0
+19 info ok
