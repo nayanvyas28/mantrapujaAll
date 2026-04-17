@@ -3,12 +3,13 @@ import {
   View, 
   Text, 
   ScrollView, 
+  Pressable, 
   TouchableOpacity, 
   ActivityIndicator, 
   Dimensions, 
-  StyleSheet 
+  StyleSheet
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { 
   ArrowLeft, 
   LayoutDashboard, 
@@ -20,7 +21,8 @@ import {
   Share2,
   ChevronRight,
   Info,
-  Menu
+  Menu,
+  Check
 } from 'lucide-react-native';
 import { SvgXml } from 'react-native-svg';
 import { api } from '../../lib/api';
@@ -30,7 +32,7 @@ import { useSidebar } from '../../context/SidebarContext';
 const { width } = Dimensions.get('window');
 
 export default function KundliReportScreen() {
-    const router = useRouter();
+// static router used for better stability
     const { toggle } = useSidebar();
     const params = useLocalSearchParams();
     const [loading, setLoading] = useState(true);
@@ -89,9 +91,9 @@ export default function KundliReportScreen() {
                 </View>
                 <Text className="text-gray-900 font-black text-xl mb-2">Grah Dosh Detected</Text>
                 <Text className="text-gray-500 font-medium text-center mb-8 leading-5">{error}</Text>
-                <TouchableOpacity onPress={() => router.back()} className="bg-primary w-full h-14 rounded-2xl items-center justify-center shadow-lg shadow-primary/20">
+                <Pressable onPress={() => router.back()} className="bg-primary w-full h-14 rounded-2xl items-center justify-center shadow-lg shadow-primary/20">
                     <Text className="text-white font-black uppercase tracking-widest text-base">Rectify Path</Text>
-                </TouchableOpacity>
+                </Pressable>
             </View>
         );
     }
@@ -106,36 +108,50 @@ export default function KundliReportScreen() {
     return (
         <View className="flex-1 bg-white">
             {/* Premium Header */}
-            <LinearGradient colors={['#FF4D00', '#FF8C00']} className="pt-16 pb-8 px-6 rounded-b-[50px] shadow-2xl">
+            <LinearGradient 
+                colors={['#FF4D00', '#FF8C00']} 
+                style={{ paddingTop: 64, paddingBottom: 32, paddingHorizontal: 24, borderBottomLeftRadius: 50, borderBottomRightRadius: 50, elevation: 10 }}
+            >
                 <View className="flex-row justify-between items-center mb-8">
-                    <TouchableOpacity 
+                    <Pressable 
                         onPress={() => router.back()} 
-                        className="bg-white/20 w-10 h-10 items-center justify-center rounded-full border border-white/20"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
                     >
                         <ArrowLeft color="white" size={24} />
-                    </TouchableOpacity>
+                    </Pressable>
                     <View className="items-center">
                         <Text className="text-white/70 text-[10px] font-black uppercase tracking-[4px]">Vedic Insights</Text>
                         <Text className="text-white text-xl font-black">{params.name}</Text>
                     </View>
-                    <TouchableOpacity 
+                    <Pressable 
                         onPress={() => toggle(true)}
-                        className="bg-white/20 w-10 h-10 items-center justify-center rounded-full border border-white/20"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
                     >
                         <Menu color="white" size={20} />
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
 
                 {/* Tab Bar Refined */}
-                <View className="flex-row bg-black/10 rounded-[28px] p-1.5 border border-white/10">
+                <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 28, padding: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
                     {tabs.map((tab) => (
                         <TouchableOpacity
                             key={tab.id}
+                            activeOpacity={0.7}
                             onPress={() => setActiveTab(tab.id)}
-                            className={`flex-1 py-3.5 items-center rounded-2xl flex-row justify-center ${activeTab === tab.id ? 'bg-white shadow-xl' : ''}`}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            style={{ 
+                                flex: 1, 
+                                paddingVertical: 14, 
+                                alignItems: 'center', 
+                                borderRadius: 16, 
+                                flexDirection: 'row', 
+                                justifyContent: 'center',
+                                backgroundColor: activeTab === tab.id ? 'white' : 'transparent',
+                                ...(activeTab === tab.id ? { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 } : {})
+                            }}
                         >
                             <tab.icon size={16} color={activeTab === tab.id ? '#FF4D00' : 'rgba(255,255,255,0.7)'} strokeWidth={activeTab === tab.id ? 3 : 2} />
-                            {activeTab === tab.id && <Text className="ml-2 font-black text-[10px] text-primary uppercase tracking-wider">{tab.label}</Text>}
+                            {activeTab === tab.id && <Text style={{ marginLeft: 8, fontWeight: '900', fontSize: 10, color: '#FF4D00', textTransform: 'uppercase', letterSpacing: 1 }}>{tab.label}</Text>}
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -169,10 +185,10 @@ function DashboardView({ data }: { data: any }) {
             </View>
             
             <View className="flex-row flex-wrap justify-between gap-y-4">
-                <InfoCard label="Tithi" value={p.tithi} color="bg-orange-50" icon="🌙" />
-                <InfoCard label="Nakshatra" value={p.nakshatra} color="bg-blue-50" icon="✨" />
-                <InfoCard label="Yog" value={p.yog} color="bg-purple-50" icon="🌀" />
-                <InfoCard label="Karan" value={p.karan} color="bg-green-50" icon="⚙️" />
+                <InfoCard label="Tithi" value={p.tithi?.details?.tithi_name || p.tithi} color="bg-orange-50" icon="🌙" />
+                <InfoCard label="Nakshatra" value={p.nakshatra?.details?.nakshatra_name || p.nakshatra} color="bg-blue-50" icon="✨" />
+                <InfoCard label="Yog" value={p.yog?.details?.yog_name || p.yog} color="bg-purple-50" icon="🌀" />
+                <InfoCard label="Karan" value={p.karan?.details?.karan_name || p.karan} color="bg-green-50" icon="⚙️" />
                 <InfoCard label="Rashi" value={core.sign} color="bg-red-50" icon="🦁" />
                 <InfoCard label="Ascendant" value={core.ascendant} color="bg-teal-50" icon="⬆️" />
             </View>
@@ -182,11 +198,11 @@ function DashboardView({ data }: { data: any }) {
                     <View className="bg-primary w-2 h-6 rounded-full mr-4" />
                     <Text className="text-gray-900 font-black text-xl">Astro Core</Text>
                 </View>
-                <TableRow label="Varna (Phile)" value={core.varna} />
-                <TableRow label="Vashya (Control)" value={core.vashya} />
-                <TableRow label="Yoni (Instinct)" value={core.yoni} />
-                <TableRow label="Gan (Temper)" value={core.gan} />
-                <TableRow label="Nadi (Energy)" value={core.nadi} />
+                <TableRow label="Varna (Phile)" value={core.varna || core.Varna} />
+                <TableRow label="Vashya (Control)" value={core.vashya || core.Vashya} />
+                <TableRow label="Yoni (Instinct)" value={core.yoni || core.Yoni} />
+                <TableRow label="Gan (Temper)" value={core.gan || core.Gan} />
+                <TableRow label="Nadi (Energy)" value={core.nadi || core.Nadi} />
             </View>
         </View>
     );
@@ -276,10 +292,10 @@ function DashaView({ data }: { data: any }) {
 function PredictionsView({ data }: { data: any }) {
     return (
         <View>
-             <ReportItem 
+            <ReportItem 
                 title="Character Prediction" 
                 icon="🧘"
-                content={data.character?.report?.[0] || "Your personality is deeply influenced by the alignment of your ascendant..."} 
+                content={(Array.isArray(data.character?.report) ? data.character.report[0] : (data.character?.report || data.character?.character_report)) || "Your personality is deeply influenced by the alignment of your ascendant..."} 
             />
             <ReportItem 
                 title="Gemstone Guidance" 

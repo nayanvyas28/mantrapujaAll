@@ -1,3 +1,4 @@
+import { supabase } from './supabase';
 const ADMIN_URL = process.env.EXPO_PUBLIC_ADMIN_URL || "http://lk8ogw0kkok0sso484swc0wc.34.93.68.183.sslip.io";
 
 const fetchWithTimeout = async (url: string, options: any = {}, timeout = 8000) => {

@@ -7,12 +7,12 @@ export default function KundliLayout() {
   const { isOpen, toggle } = useSidebar();
 
   return (
-    <View style={{ flex: 1 }}>
+    <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="new" options={{ title: 'New Kundli' }} />
         <Stack.Screen name="report" options={{ title: 'Kundli Report' }} />
       </Stack>
       <Sidebar isOpen={isOpen} onClose={() => toggle(false)} />
-    </View>
+    </>
   );
 }
