@@ -17,7 +17,8 @@ import {
   ArrowDownLeft,
   History,
   Sparkles,
-  Info
+  Info,
+  Coins
 } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -55,11 +56,18 @@ export default function WalletScreen() {
         await supabase.from('wallets').upsert({ user_id: user.id, balance: 0 });
       }
 
-      // Fetch sample transactions
-      setHistory([
-        { id: '1', type: 'credit', amount: 500, title: 'Welcome Bonus', date: '12 Apr 2026', status: 'Completed' },
-        { id: '2', type: 'debit', amount: 101, title: 'Ganpati Puja Booking', date: '10 Apr 2026', status: 'Completed' },
-      ]);
+      // Fetch real transactions from wallet_transactions
+      const { data: transData, error: transError } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('wallet_id', walletData?.id)
+        .order('created_at', { ascending: false });
+
+      if (transError) {
+        console.error('Transaction Fetch Error:', transError);
+      } else if (transData) {
+        setHistory(transData);
+      }
     } catch (error) {
        console.error('Wallet Error:', error);
     } finally {
@@ -77,7 +85,7 @@ export default function WalletScreen() {
         <Text className="text-gray-400 text-[10px] mt-0.5">{item.date} • {item.status}</Text>
       </View>
       <Text className={`font-black text-base ${item.type === 'credit' ? 'text-green-600' : 'text-gray-900'}`}>
-        {item.type === 'credit' ? '+' : '-'} ₹{item.amount}
+        {item.type === 'credit' ? '+' : '-'} {item.amount} PC
       </Text>
     </View>
   );
@@ -104,9 +112,10 @@ export default function WalletScreen() {
             {loading ? (
                 <ActivityIndicator color="white" />
             ) : (
-                <View className="flex-row items-start">
-                    <Text className="text-white text-2xl font-black mt-2 mr-1">₹</Text>
+                <View className="flex-row items-center">
+                    <Coins size={48} color="white" className="mr-3" />
                     <Text className="text-white text-6xl font-black">{balance.toLocaleString()}</Text>
+                    <Text className="text-white/60 text-lg font-bold ml-2 mt-4">PC</Text>
                 </View>
             )}
             
@@ -125,7 +134,7 @@ export default function WalletScreen() {
         </TouchableOpacity>
         <TouchableOpacity className="flex-1 bg-white h-20 rounded-3xl items-center justify-center shadow-xl shadow-black/5 border border-gray-50">
             <ArrowUpRight size={24} color="#FF4600" />
-            <Text className="text-gray-900 font-bold text-[10px] mt-1 uppercase">Withdraw</Text>
+            <Text className="text-gray-900 font-bold text-[10px] mt-1 uppercase">Use Coins</Text>
         </TouchableOpacity>
       </View>
 
@@ -153,8 +162,11 @@ export default function WalletScreen() {
 
         <View className="bg-orange-50 p-6 rounded-[32px] mb-10 border border-orange-100">
             <Text className="text-gray-900 font-bold text-base mb-2">Invite and Earn!</Text>
-            <Text className="text-gray-500 text-xs leading-5">Share your divine referral code with friends and earn upto ₹500 in your Divine Wallet for every puja they book.</Text>
-            <TouchableOpacity className="mt-4 bg-primary px-6 py-3 rounded-2xl self-start">
+            <Text className="text-gray-500 text-xs leading-5">Share your divine referral code with friends and earn upto 500 Puja Coins in your Divine Wallet for every puja they book.</Text>
+            <TouchableOpacity 
+                onPress={() => router.push('/profile/referral')}
+                className="mt-4 bg-primary px-6 py-3 rounded-2xl self-start"
+            >
                 <Text className="text-white font-bold text-xs uppercase">Refer Now</Text>
             </TouchableOpacity>
         </View>

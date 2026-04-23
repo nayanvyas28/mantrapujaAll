@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { Link, useRouter } from 'expo-router';
-import { UserPlus, Mail, Lock, User, Loader2 } from 'lucide-react-native';
+import { UserPlus, Mail, Lock, User, Loader2, Gift } from 'lucide-react-native';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -22,6 +23,7 @@ export default function SignupScreen() {
       options: {
         data: {
           full_name: fullName,
+          referral_code: referralCode,
         },
       },
     });
@@ -85,6 +87,20 @@ export default function SignupScreen() {
                   value={password}
                   placeholder="••••••••"
                   secureTextEntry={true}
+                />
+              </View>
+            </View>
+
+            <View className="mt-4">
+              <Text className="text-sm font-medium text-gray-700 mb-2">Referral Code (Optional)</Text>
+              <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-1 h-14">
+                <Gift size={20} color="#9CA3AF" />
+                <TextInput
+                  className="flex-1 ml-3 text-gray-900"
+                  onChangeText={setReferralCode}
+                  value={referralCode}
+                  placeholder="e.g. MANTRAPUJA123"
+                  autoCapitalize="characters"
                 />
               </View>
             </View>

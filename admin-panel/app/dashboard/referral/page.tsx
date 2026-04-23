@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Share2, Save, ArrowLeft, Loader2, Info, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Share2, Save, ArrowLeft, Loader2, Info, CheckCircle2, AlertCircle, Coins } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ReferralSettingsPage() {
@@ -10,6 +10,8 @@ export default function ReferralSettingsPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [updatedAt, setUpdatedAt] = useState<string | null>(null);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [referralBonusReferrer, setReferralBonusReferrer] = useState(500);
+    const [referralBonusReferred, setReferralBonusReferred] = useState(100);
 
     const sampleReferralCode = 'MANTRA-EXAMP';
 
@@ -23,6 +25,8 @@ export default function ReferralSettingsPage() {
             const data = await res.json();
             if (res.ok) {
                 setReferralMessage(data.referralMessage || '');
+                setReferralBonusReferrer(data.referralBonusReferrer || 500);
+                setReferralBonusReferred(data.referralBonusReferred || 100);
                 setUpdatedAt(data.updatedAt);
             }
         } catch (error) {
@@ -41,7 +45,11 @@ export default function ReferralSettingsPage() {
             const res = await fetch('/api/config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ referral_message: referralMessage }),
+                body: JSON.stringify({ 
+                    referral_message: referralMessage,
+                    referral_bonus_referrer: referralBonusReferrer,
+                    referral_bonus_referred: referralBonusReferred
+                }),
             });
 
             const data = await res.json();
@@ -101,22 +109,43 @@ export default function ReferralSettingsPage() {
                             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
 
                             <form onSubmit={handleSave} className="space-y-6 relative z-10">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-400 mb-2 uppercase tracking-wider">
-                                        Referral Message Template
-                                    </label>
-                                    <textarea
-                                        value={referralMessage}
-                                        onChange={(e) => setReferralMessage(e.target.value)}
-                                        placeholder="Enter message template..."
-                                        rows={8}
-                                        className="w-full px-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500 transition-all text-white placeholder:text-gray-600 focus:ring-4 focus:ring-orange-500/10 resize-y"
-                                    />
-                                    <div className="flex items-start gap-2 mt-3 p-3 rounded-xl bg-blue-500/5 border border-blue-500/10">
-                                        <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                                        <p className="text-xs text-blue-400/80">
-                                            Use <code className="bg-blue-400/20 px-1.5 py-0.5 rounded text-blue-300 font-mono">${`{referralCode}`}</code> to insert the user&apos;s unique code.
-                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest pl-1">
+                                            Referrer Reward (Puja Coins)
+                                        </label>
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg border border-white/10 group-focus-within:border-orange-500/30 transition-all">
+                                                <Coins className="w-4 h-4 text-orange-400" />
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={referralBonusReferrer}
+                                                onChange={(e) => setReferralBonusReferrer(parseInt(e.target.value) || 0)}
+                                                className="w-full pl-14 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500 transition-all text-white font-bold"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 mt-2 px-1">Amount given to the user who shared their code.</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest pl-1">
+                                            New User Reward (Puja Coins)
+                                        </label>
+                                        <div className="relative group">
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg border border-white/10 group-focus-within:border-orange-500/30 transition-all">
+                                                <Coins className="w-4 h-4 text-orange-400" />
+                                            </div>
+                                            <input
+                                                type="number"
+                                                value={referralBonusReferred}
+                                                onChange={(e) => setReferralBonusReferred(parseInt(e.target.value) || 0)}
+                                                className="w-full pl-14 pr-4 py-4 bg-black/40 border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500 transition-all text-white font-bold"
+                                            />
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 mt-2 px-1">Amount given to the friend who joins using the code.</p>
                                     </div>
                                 </div>
 

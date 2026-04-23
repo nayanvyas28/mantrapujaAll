@@ -21,7 +21,8 @@ import {
   Info, 
   X,
   CreditCard,
-  ChevronRight
+  ChevronRight,
+  Gift
 } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { fetchAppSettings, AppSettings } from '../lib/settings';
@@ -207,6 +208,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   icon={CreditCard} 
                   title="Transactions" 
                   onPress={() => handleNavigate('/profile/wallet')} 
+                />
+                <SidebarItem 
+                  icon={Gift} 
+                  title="Refer & Earn" 
+                  color="#FF4D00"
+                  onPress={() => handleNavigate('/profile/referral')} 
                 />
                 
                 <View className="h-px bg-gray-50 my-4" />

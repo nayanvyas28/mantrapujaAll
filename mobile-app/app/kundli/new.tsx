@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { TouchableOpacity } from 'react-native';
 import { 
   ArrowLeft, 
   User, 
@@ -53,7 +54,7 @@ const CustomInput = ({ label, icon: Icon, value, onChangeText, placeholder, keyb
 );
 
 export default function NewKundaliScreen() {
-    // static router used for better stability
+    const router = useRouter();
     const { toggle } = useSidebar();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -296,16 +297,32 @@ export default function NewKundaliScreen() {
                         <Text className="text-gray-400 text-[10px] font-black uppercase tracking-[3px] mb-4 ml-1">Sacred Gender</Text>
                         <View className="flex-row gap-4">
                             {['male', 'female'].map((g) => (
-                                <Pressable 
+                                <TouchableOpacity 
                                     key={g}
                                     onPress={() => setForm(prev => ({ ...prev, gender: g }))}
-                                    className={`flex-1 h-14 rounded-2xl border items-center justify-center flex-row ${form.gender === g ? 'bg-primary/5 border-primary shadow-sm shadow-primary/20' : 'bg-gray-50 border-gray-100'}`}
+                                    style={{ 
+                                        flex: 1, 
+                                        height: 56, 
+                                        borderRadius: 16, 
+                                        borderWidth: 1, 
+                                        flexDirection: 'row',
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        backgroundColor: form.gender === g ? 'rgba(255, 77, 0, 0.05)' : '#F9FAFB',
+                                        borderColor: form.gender === g ? '#FF4D00' : '#F1F5F9'
+                                    }}
                                 >
                                     <View className={`w-4 h-4 rounded-full border mr-3 items-center justify-center ${form.gender === g ? 'border-primary' : 'border-gray-300'}`}>
                                         {form.gender === g && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
                                     </View>
-                                    <Text className={`capitalize font-black text-xs tracking-widest ${form.gender === g ? 'text-primary' : 'text-gray-400'}`}>{g}</Text>
-                                </Pressable>
+                                    <Text style={{ 
+                                        textTransform: 'capitalize', 
+                                        fontWeight: '900', 
+                                        fontSize: 12, 
+                                        letterSpacing: 1.2,
+                                        color: form.gender === g ? '#FF4D00' : '#94A3B8'
+                                    }}>{g}</Text>
+                                </TouchableOpacity>
                             ))}
                         </View>
                     </View>

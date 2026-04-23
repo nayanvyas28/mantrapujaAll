@@ -33,4 +33,21 @@ router.get('/categories', async (req, res) => {
     }
 });
 
+// Get single puja by slug
+router.get('/detail/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        console.log(`[Pujas] Fetching ritual for slug: ${slug}`);
+        const { data, error } = await supabase
+            .from('poojas')
+            .select('*')
+            .eq('slug', slug)
+            .single();
+        if (error) throw error;
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
