@@ -243,24 +243,29 @@ const verifyOtp = async (req, res) => {
         }
 
         // 1. Fetch encrypted OTP based purely on phone and purpose
-        const { data: otpData, error: otpError } = await supabase
-            .from('otps')
-            .select('*')
-            .eq('phone', phone)
-            .eq('purpose', purpose)
-            .single();
+        const isTestUser = (phone === '9999999999' && otp === '123456');
+        let otpData = null;
 
-        if (otpError || !otpData) {
-            return res.status(400).json({ error: 'Invalid or expired OTP' });
+        if (!isTestUser) {
+            const { data, error: otpError } = await supabase
+                .from('otps')
+                .select('*')
+                .eq('phone', phone)
+                .eq('purpose', purpose)
+                .single();
+
+            if (otpError || !data) {
+                return res.status(400).json({ error: 'Invalid or expired OTP' });
+            }
+            otpData = data;
+            const decryptedOTP = decryptOTP(otpData.otp);
+
+            if (!decryptedOTP || decryptedOTP !== otp) {
+                return res.status(400).json({ error: 'Invalid OTP provided' });
+            }
         }
 
-        const decryptedOTP = decryptOTP(otpData.otp);
-
-        if (!decryptedOTP || decryptedOTP !== otp) {
-            return res.status(400).json({ error: 'Invalid OTP provided' });
-        }
-
-        const rawExpiry = otpData.expires_at;
+        const rawExpiry = otpData?.expires_at || new Date(Date.now() + 86400000).toISOString();
         const now = Date.now();
         const dateToParse = (typeof rawExpiry === 'string' && !rawExpiry.includes('Z') && !rawExpiry.includes('+')) 
             ? rawExpiry + 'Z' 
@@ -270,6 +275,7 @@ const verifyOtp = async (req, res) => {
         if (expiryTime < now) {
             return res.status(400).json({ error: 'This OTP has expired' });
         }
+
 
         // 2. Handle Purpose Logic
         if (purpose === 'REGISTER') {
@@ -345,8 +351,10 @@ const verifyOtp = async (req, res) => {
             }, { onConflict: 'id' });
 
             // Cleanup
-            await supabase.from('unverified_users').delete().eq('phone', phone);
-            await supabase.from('otps').delete().eq('id', otpData.id);
+            if (otpData) {
+                await supabase.from('unverified_users').delete().eq('phone', phone);
+                await supabase.from('otps').delete().eq('id', otpData.id);
+            }
 
             return res.status(200).json({ 
                 message: 'Registration complete', 
@@ -362,7 +370,20 @@ const verifyOtp = async (req, res) => {
                 const clean = (p) => p?.replace(/[^\d]/g, '') || '';
                 return clean(p1).endsWith(clean(p2)) || clean(p2).endsWith(clean(p1));
             };
-            const existingUser = userList?.users?.find(u => phonesMatch(u.phone, phone));
+            let existingUser = userList?.users?.find(u => phonesMatch(u.phone, phone));
+
+            if (!existingUser && isTestUser) {
+                // Auto-create test user for Play Store if it doesn't exist
+                const { data: testUser, error: testError } = await supabase.auth.admin.createUser({
+                    phone: phone,
+                    password: AUTH_BRIDGE_PASSWORD,
+                    phone_confirm: true,
+                    user_metadata: { full_name: 'Play Store Tester' }
+                });
+                if (!testError) {
+                    existingUser = testUser.user;
+                }
+            }
 
             if (existingUser) {
                 await supabase.auth.admin.updateUserById(existingUser.id, {
@@ -373,7 +394,9 @@ const verifyOtp = async (req, res) => {
                 await supabase.from('profiles').update({ phone_verified: true }).eq('id', existingUser.id);
             }
 
-            await supabase.from('otps').delete().eq('id', otpData.id);
+            if (otpData) {
+                await supabase.from('otps').delete().eq('id', otpData.id);
+            }
             
             return res.status(200).json({ 
                 message: 'OTP Verified. Handshake ready.', 
@@ -551,6 +574,15 @@ const checkUser = async (req, res) => {
         }
 
         console.log(`[AuthDebug] checkUser: looking up phone ${phone}`);
+
+        // --- PLAY STORE REVIEW BYPASS ---
+        if (phone === '9999999999') {
+            return res.status(200).json({
+                exists: true,
+                verified: true,
+                source: 'bypass'
+            });
+        }
 
         // 1. Check in Profiles table (Fast)
         const { data, error } = await supabase

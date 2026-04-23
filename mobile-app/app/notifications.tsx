@@ -1,58 +1,86 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Bell, Sparkles, ShoppingBag, Gift, Clock, Trash2 } from 'lucide-react-native';
-
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: '1',
-    type: 'divine',
-    title: 'Daily Darshan is Live!',
-    message: 'Start your day with the divine blessing of Lord Shiva. Watch now.',
-    time: '2 mins ago',
-    read: false,
-    icon: <Sparkles size={20} color="#FF4D00" />
-  },
-  {
-    id: '2',
-    type: 'offer',
-    title: 'Special Shanti Puja Offer',
-    message: 'Get 40% off on your first personalized Shanti Puja booking.',
-    time: '1 hour ago',
-    read: false,
-    icon: <Gift size={20} color="#10B981" />
-  },
-  {
-    id: '3',
-    type: 'order',
-    title: 'Ritual Confirmed',
-    message: 'Your Rudrabhishek Puja has been confirmed for tomorrow at 8:00 AM.',
-    time: '3 hours ago',
-    read: true,
-    icon: <ShoppingBag size={20} color="#4F46E5" />
-  },
-  {
-    id: '4',
-    type: 'divine',
-    title: 'Guru AI Insight',
-    message: 'Your stars are aligning for a prosperous week. Check your report.',
-    time: '1 day ago',
-    read: true,
-    icon: <Clock size={20} color="#F59E0B" />
-  }
-];
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  useEffect(() => {
+    fetchNotifications();
+  }, [user]);
+
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Fetch Notifications Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const clearNotifications = () => {
-    setNotifications([]);
+  const markAllRead = async () => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id);
+      
+      if (!error) {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      }
+    } catch (error) {
+      console.error('Mark Read Error:', error);
+    }
   };
+
+  const clearNotifications = async () => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id);
+      
+      if (!error) {
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error('Clear Notifications Error:', error);
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'divine': return <Sparkles size={20} color="#FF4D00" />;
+      case 'offer': return <Gift size={20} color="#10B981" />;
+      case 'order': return <ShoppingBag size={20} color="#4F46E5" />;
+      default: return <Clock size={20} color="#F59E0B" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 bg-[#FFFDFB] items-center justify-center">
+        <ActivityIndicator size="large" color="#FF4D00" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-[#FFFDFB]">
@@ -91,7 +119,7 @@ export default function NotificationsScreen() {
               >
                 <View className="flex-row">
                   <View className={`w-12 h-12 rounded-2xl items-center justify-center mr-4 ${item.read ? 'bg-gray-50' : 'bg-white shadow-sm'}`}>
-                    {item.icon}
+                    {getIcon(item.type)}
                   </View>
                   <View className="flex-1">
                     <View className="flex-row justify-between items-start mb-1">
@@ -99,7 +127,9 @@ export default function NotificationsScreen() {
                       {!item.read && <View className="w-2 h-2 rounded-full bg-primary mt-1.5" />}
                     </View>
                     <Text className="text-gray-500 text-xs leading-5" numberOfLines={2}>{item.message}</Text>
-                    <Text className="text-gray-400 text-[9px] font-bold uppercase mt-3 tracking-tighter">{item.time}</Text>
+                    <Text className="text-gray-400 text-[9px] font-bold uppercase mt-3 tracking-tighter">
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </Text>
                   </View>
                 </View>
               </TouchableOpacity>
