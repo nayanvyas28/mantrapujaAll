@@ -497,7 +497,7 @@ export default function HomeClient() {
                                         className="absolute inset-0"
                                     >
                                         <Image
-                                            src={banners[activeBanner].image_url || ''}
+                                            src={banners[activeBanner].image_url || '/logo.png'}
                                             alt={banners[activeBanner].title}
                                             fill
                                             unoptimized
@@ -1359,7 +1359,7 @@ export default function HomeClient() {
                                 {/* Background Image with Zoom Effect */}
                                 <div className="absolute inset-0 bg-slate-900">
                                     <img
-                                        src={loc.image || ''}
+                                        src={loc.image || undefined}
                                         alt={loc.name}
                                         className="w-full h-full object-cover opacity-80 group-hover:opacity-60 group-hover:scale-110 transition-transform duration-[1.5s]"
                                     />
