@@ -17,10 +17,6 @@ const executeNodeRequest = async (node, endpoint, body, lang) => {
 
     if (provider === 'astrologyapi') {
         headers['x-astrologyapi-key'] = node.api_key;
-        if (node.user_id) {
-            const auth = Buffer.from(`${node.user_id}:${node.api_key}`).toString('base64');
-            headers['Authorization'] = `Basic ${auth}`;
-        }
     } else {
         throw new Error(`Provider ${provider} not supported.`);
     }
@@ -46,7 +42,7 @@ const proxyAstroRequest = async (req, res) => {
 
     try {
         const { data: settings } = await supabase.from('kundli_settings').select('setting_value').eq('setting_key', 'api_config').single();
-        const config = settings?.setting_value || { apis: [{ name: 'Default', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0' }], failover_enabled: true };
+        const config = settings?.setting_value || { apis: [{ name: 'Default', user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true }], failover_enabled: true };
 
         const nodes = config.apis.filter(api => api.is_enabled);
         let lastError = null;
@@ -79,8 +75,11 @@ const getKundliData = async (req, res) => {
         const { birthData, language } = req.body;
         const lang = language || 'en';
 
+        console.log(`[AstroBundler] Incoming Request for ${birthData?.day}/${birthData?.month}/${birthData?.year} | Gender: ${birthData?.gender}`);
+        console.log(`[AstroBundler] Payload:`, JSON.stringify(birthData));
+
         const { data: settings } = await supabase.from('kundli_settings').select('setting_value').eq('setting_key', 'api_config').single();
-        const config = settings?.setting_value || { apis: [{ name: 'Default', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0' }] };
+        const config = settings?.setting_value || { apis: [{ name: 'Default', user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true }] };
         const nodes = config.apis.filter(api => api.is_enabled);
 
         const endpoints = [
@@ -99,27 +98,49 @@ const getKundliData = async (req, res) => {
         ];
 
         const results = {};
+        const startTime = Date.now();
         
-        // Execute sequentially to avoid rate limiting on trial keys, but use failover nodes
+        // Sequential with increased delay and retry for 429 Rate Limits
         for (const ep of endpoints) {
             let epSuccess = false;
             for (const node of nodes) {
                 try {
-                    const result = await executeNodeRequest(node, ep.url, birthData, lang);
+                    // Increased gap to 800ms to be safer with rate limits
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    let result = await executeNodeRequest(node, ep.url, birthData, lang);
+                    
+                    // Robust Retry for 429 (Rate Limit)
+                    let retryCount = 0;
+                    while (result.status === 429 && retryCount < 2) {
+                        retryCount++;
+                        const waitTime = retryCount * 3000; // 3s, then 6s
+                        console.log(`[AstroBundler] Rate limited (429) for ${ep.key}. Retry ${retryCount}/2 after ${waitTime}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        result = await executeNodeRequest(node, ep.url, birthData, lang);
+                    }
+
                     const isLimit = result.data.msg?.toLowerCase().includes('limit') || result.data.msg?.toLowerCase().includes('expired');
                     
                     if (result.ok && !isLimit) {
                         results[ep.key] = ep.url.includes('chart') ? (result.data.svg || null) : result.data;
                         epSuccess = true;
                         break;
+                    } else {
+                        const errorMsg = result.data.msg || result.data.error || "Unknown Error";
+                        console.warn(`[AstroBundler] Node ${node.name} failed for ${ep.key} | Status: ${result.status} | Msg: ${errorMsg}`);
                     }
                 } catch (err) {
-                    console.error(`[AstroBundler] Node ${node.name} failed for ${ep.key}`);
+                    console.error(`[AstroBundler] Node ${node.name} exception for ${ep.key}:`, err.message);
                 }
             }
-            if (!epSuccess) results[ep.key] = { error: true, msg: "FETCH_FAILED" };
+            if (!epSuccess) {
+                console.error(`[AstroBundler] ❌ ALL nodes failed for ${ep.key}`);
+                results[ep.key] = { error: true, msg: "FETCH_FAILED" };
+            }
         }
 
+        console.log(`[AstroBundler] Mega Route completed in ${Date.now() - startTime}ms`);
         return res.json({ success: true, data: results });
 
     } catch (error) {

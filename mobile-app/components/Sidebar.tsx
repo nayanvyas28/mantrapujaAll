@@ -24,6 +24,7 @@ import {
   ChevronRight
 } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { fetchAppSettings, AppSettings } from '../lib/settings';
 
 const { width } = Dimensions.get('window');
 
@@ -35,12 +36,17 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [settings, setSettings] = useState<AppSettings>({});
   
   const translateX = useRef(new Animated.Value(-width)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
 
   // Local state to handle mounted vs visible
   const [shouldRender, setShouldRender] = useState(isOpen);
+
+  useEffect(() => {
+    fetchAppSettings().then(setSettings);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -207,7 +213,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </>
             )}
 
-            <Text className="text-gray-400 text-[10px] font-black uppercase tracking-[2px] mb-4">App Guide</Text>
+            <Text className="text-gray-400 text-[10px] font-black uppercase tracking-[2px] mb-4">Ashirwad & Support</Text>
             <SidebarItem 
               icon={Info} 
               title="About Mantra Puja" 
@@ -220,9 +226,31 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             />
             <SidebarItem 
               icon={Settings} 
-              title="Settings" 
+              title="App Settings" 
               onPress={() => handleNavigate('/(tabs)/profile')} 
             />
+            
+            {/* Dynamic Support Button */}
+            <TouchableOpacity 
+              onPress={() => {
+                const whatsapp = settings.whatsapp_number_99 || '919424660300';
+                const url = `whatsapp://send?phone=${whatsapp}&text=Namaste! Mujhe help chahiye.`;
+                require('react-native').Linking.openURL(url);
+              }}
+              className="mt-4 flex-row items-center bg-green-50 p-4 rounded-3xl border border-green-100"
+            >
+              <View className="w-10 h-10 bg-white rounded-2xl items-center justify-center mr-3 border border-green-200">
+                <Image 
+                  source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3670/3670051.png' }} 
+                  className="w-6 h-6" 
+                />
+              </View>
+              <View className="flex-1">
+                <Text className="text-green-700 font-bold text-sm">WhatsApp Sahayata</Text>
+                <Text className="text-green-600 text-[10px]">Chat with our expert Pandit</Text>
+              </View>
+              <ChevronRight size={16} color="#22C55E" />
+            </TouchableOpacity>
             
             {user && (
               <TouchableOpacity 

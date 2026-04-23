@@ -60,11 +60,11 @@ export default function HomeScreen() {
         { data: destinationData },
         { data: categoryData }
       ] = await Promise.all([
-        supabase.from('poojas').select('*').eq('is_active', true).eq('show_on_home', true).order('sort_order', { ascending: false }),
+        supabase.from('poojas').select('*').eq('show_on_home', true).order('sort_order', { ascending: false }),
         supabase.from('home_banners').select('*').eq('is_active', true).order('display_order'),
         supabase.from('products_99').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order'),
         supabase.from('destinations').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order'),
-        supabase.from('categories').select('*').eq('is_active', true).order('sort_order')
+        supabase.from('categories').select('*').order('order')
       ]);
         
       if (pujaData) setUpcomingPujas(pujaData);

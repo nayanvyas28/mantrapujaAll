@@ -12,7 +12,8 @@ import {
   Shield, 
   Zap,
   Clock,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react-native';
 import { api } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
@@ -58,6 +59,29 @@ export default function AstroScreen() {
     const onRefresh = () => {
         setRefreshing(true);
         fetchData();
+    };
+
+    const handleDelete = async (id: string, name: string) => {
+        Alert.alert(
+            "Delete Chart",
+            `Are you sure you want to remove ${name}'s sacred chart from your archive?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete", 
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.astrology.deleteKundali(id);
+                            fetchData();
+                        } catch (error) {
+                            console.error('Delete Error:', error);
+                            Alert.alert("Error", "Could not remove the chart at this time.");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     if (loading) {
@@ -178,6 +202,12 @@ export default function AstroScreen() {
                                     <Text className="text-gray-900 font-bold">{item.full_name}</Text>
                                     <Text className="text-gray-400 text-xs mt-0.5">{item.date_of_birth} • {item.place_of_birth}</Text>
                                 </View>
+                                <TouchableOpacity 
+                                    onPress={() => handleDelete(item.id, item.full_name)}
+                                    className="p-2 mr-1"
+                                >
+                                    <Trash2 color="#FDA4AF" size={18} />
+                                </TouchableOpacity>
                                 <ChevronRight color="#CBD5E1" size={18} />
                             </TouchableOpacity>
                         ))}

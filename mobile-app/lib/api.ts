@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
-const ADMIN_URL = process.env.EXPO_PUBLIC_ADMIN_URL || "http://lk8ogw0kkok0sso484swc0wc.34.93.68.183.sslip.io";
+const ADMIN_URL = process.env.EXPO_PUBLIC_ADMIN_URL;
+console.log(`[API] Initialized with ADMIN_URL: ${ADMIN_URL}`);
 
-const fetchWithTimeout = async (url: string, options: any = {}, timeout = 8000) => {
+const fetchWithTimeout = async (url: string, options: any = {}, timeout = 60000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
@@ -10,6 +11,18 @@ const fetchWithTimeout = async (url: string, options: any = {}, timeout = 8000) 
       ...options,
       signal: controller.signal,
     });
+    
+    // Log response status and body for debugging if it failed
+    if (!response.ok) {
+      const errorClone = response.clone();
+      try {
+        const errorText = await errorClone.text();
+        console.warn(`[API] Error Response (${response.status}):`, errorText);
+      } catch (e) {
+        console.warn(`[API] Error Response (${response.status}) - body unreadable`);
+      }
+    }
+    
     clearTimeout(id);
     return response;
   } catch (error: any) {
@@ -115,7 +128,7 @@ export const api = {
   astrology: {
     getKundliData: async (birthData: any, language: string = 'en') => {
       try {
-        const response = await fetch(`${ADMIN_URL}/api/astrology/kundli`, {
+        const response = await fetchWithTimeout(`${ADMIN_URL}/api/astrology/kundli`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ birthData, language }),
@@ -146,7 +159,7 @@ export const api = {
       try {
         const { data, error } = await supabase
           .from('user_kundalis')
-          .upsert(kundaliData, { onConflict: 'user_id,full_name' })
+          .upsert(kundaliData)
           .select()
           .single();
         if (error) throw error;

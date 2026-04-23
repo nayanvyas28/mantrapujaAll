@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { SidebarProvider, useSidebar } from '../context/SidebarContext';
 import { View, ActivityIndicator, Animated, Image } from 'react-native';
 import Sidebar from '../components/Sidebar';
+import { useNotifications } from '../hooks/useNotifications';
 
 export {
   ErrorBoundary,
@@ -51,6 +52,9 @@ function RootLayoutNav() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  
+  // Register for notifications
+  const { expoPushToken } = useNotifications(user?.id);
 
   useEffect(() => {
     if (loading) return;

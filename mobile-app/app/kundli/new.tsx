@@ -4,7 +4,11 @@ import {
   Text, 
   TextInput, 
   ScrollView, 
-  Pressable 
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { 

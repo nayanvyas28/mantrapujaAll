@@ -44,8 +44,8 @@ app.get('/health', (req, res) => {
 
 // Server Initialization
 const PORT = process.env.PORT || 4000;
-const server = app.listen(PORT, () => {
-    console.log(`🚀 Mantra Puja Backend running on http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Mantra Puja Backend running on http://10.210.37.64:${PORT}`);
     
     // Start the notification scheduler
     try {
