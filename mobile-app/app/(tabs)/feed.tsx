@@ -1,13 +1,24 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Share, ActivityIndicator, RefreshControl } from 'react-native';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Sparkles, Play } from 'lucide-react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, Share, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Sparkles, Play, Pause } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
+import YoutubePlayer from "react-native-youtube-iframe";
 import { supabase } from '../../lib/supabase';
+
+const { width } = Dimensions.get('window');
 
 export default function FeedScreen() {
   const [reels, setReels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const getYoutubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
   const fetchReels = useCallback(async () => {
     try {
@@ -106,26 +117,58 @@ export default function FeedScreen() {
                 </View>
 
                 {/* Video/Image Container */}
-                <TouchableOpacity 
-                   activeOpacity={0.9}
-                   className="w-full aspect-[4/5] bg-gray-900 relative"
-                >
-                   <Image 
-                      source={{ uri: post.thumbnail_url || 'https://via.placeholder.com/1080x1350?text=Spiritual+Content' }} 
-                      className="w-full h-full" 
-                      resizeMode="cover" 
-                   />
-                   <View className="absolute inset-0 items-center justify-center bg-black/10">
-                      <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center border border-white/30 backdrop-blur-md">
-                         <Play size={32} color="white" fill="white" />
-                      </View>
-                   </View>
-                   
-                   {/* Reel Badge */}
-                   <View className="absolute bottom-4 left-4 bg-black/40 px-3 py-1.5 rounded-full border border-white/20">
-                      <Text className="text-white text-[10px] font-black uppercase tracking-widest">Spiritual Reel</Text>
-                   </View>
-                </TouchableOpacity>
+                {(() => {
+                  const isShort = post.video_url?.includes('shorts');
+                  const aspectRatio = isShort ? 1.77 : 0.5625;
+                  const containerHeight = (width - 32) * aspectRatio;
+
+                  return (
+                    <View style={{ width: width - 32, height: containerHeight, backgroundColor: '#000', borderRadius: 24, overflow: 'hidden' }}>
+                       {playingId === post.id && getYoutubeId(post.video_url) ? (
+                          <YoutubePlayer
+                            width={width - 32}
+                            height={containerHeight}
+                            play={true}
+                            mute={true}
+                            videoId={getYoutubeId(post.video_url)!}
+                            initialPlayerParams={{
+                              origin: 'https://www.youtube.com',
+                              preventFullScreen: true,
+                              rel: false,
+                              modestbranding: true
+                            }}
+                            onChangeState={(state) => {
+                              if (state === "ended") setPlayingId(null);
+                            }}
+                          />
+                       ) : (
+                          <TouchableOpacity 
+                            activeOpacity={0.9}
+                            onPress={() => setPlayingId(post.id)}
+                            style={{ width: '100%', height: '100%' }}
+                          >
+                             <Image 
+                                source={{ uri: post.thumbnail_url || `https://img.youtube.com/vi/${getYoutubeId(post.video_url)}/hqdefault.jpg` }} 
+                                style={{ width: '100%', height: '100%' }}
+                                resizeMode="cover" 
+                             />
+                             <View className="absolute inset-0 items-center justify-center bg-black/10">
+                                <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center border border-white/30 backdrop-blur-md">
+                                   <Play size={32} color="white" fill="white" />
+                                </View>
+                             </View>
+                             
+                             {/* Reel Badge */}
+                             <View className="absolute bottom-4 left-4 bg-black/40 px-3 py-1.5 rounded-full border border-white/20">
+                                <Text className="text-white text-[10px] font-black uppercase tracking-widest">
+                                   {isShort ? 'Spiritual Reel' : 'Divine Video'}
+                                </Text>
+                             </View>
+                          </TouchableOpacity>
+                       )}
+                    </View>
+                  );
+                })()}
 
                 {/* Actions */}
                 <View className="p-5 flex-row items-center justify-between bg-white">

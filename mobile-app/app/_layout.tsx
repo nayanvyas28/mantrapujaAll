@@ -5,8 +5,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState } from 'react';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { SidebarProvider, useSidebar } from '../context/SidebarContext';
-import { View, ActivityIndicator, Animated, Image } from 'react-native';
+import { LanguageProvider } from '../context/LanguageContext';
+import { SidebarProvider } from '../context/SidebarContext';
+import { View, ActivityIndicator, Image } from 'react-native';
 import Sidebar from '../components/Sidebar';
 import { useNotifications } from '../hooks/useNotifications';
 
@@ -40,11 +41,13 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <SidebarProvider>
-        <RootLayoutNav />
-      </SidebarProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <SidebarProvider>
+          <RootLayoutNav />
+        </SidebarProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 
@@ -52,7 +55,7 @@ function RootLayoutNav() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  
+
   // Register for notifications
   const { expoPushToken } = useNotifications(user?.id);
 
@@ -60,7 +63,7 @@ function RootLayoutNav() {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
-    
+
     // Only redirect logged-in users away from auth screens (home is public)
     if (user && inAuthGroup) {
       const timer = setTimeout(() => {
@@ -73,9 +76,9 @@ function RootLayoutNav() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
-        <Image 
-          source={require('../assets/images/logo.png')} 
-          style={{ width: 120, height: 120, marginBottom: 20 }} 
+        <Image
+          source={require('../assets/images/logo.png')}
+          style={{ width: 120, height: 120, marginBottom: 20 }}
           resizeMode="contain"
         />
         <ActivityIndicator size="large" color="#FF4D00" />

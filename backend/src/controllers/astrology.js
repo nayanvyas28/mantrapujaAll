@@ -8,23 +8,38 @@ const ASTROLOGY_API_BASE_URL = "https://json.astrologyapi.com/v1";
 const executeNodeRequest = async (node, endpoint, body, lang) => {
     let provider = node.provider || (node.api_key ? 'astrologyapi' : null);
     
+    // 🔗 Basic Auth for AstrologyAPI (Match Website)
+    const userId = node.user_id || '629910'; // Fallback to premium if missing
+    const apiKey = node.api_key;
+    const auth = `Basic ${Buffer.from(`${userId}:${apiKey}`).toString('base64')}`;
+
     let headers = {
         'Content-Type': 'application/json',
-        'Accept-Language': lang
+        'Authorization': auth,
+        'x-astrologyapi-key': apiKey,
+        'x-astrologyapi-language': lang || 'en'
+    };
+
+    // ✨ Sync: Strict Validation and Precision (Match Website)
+    const payload = {
+        ...body,
+        lat: Number(parseFloat(body.lat).toFixed(4)),
+        lon: Number(parseFloat(body.lon).toFixed(4)),
+        ayanamsa: 1,
+        lan: lang || 'en'
     };
 
     let url = `${ASTROLOGY_API_BASE_URL}/${endpoint}`;
+    console.log(`[VedaNexus] Node ${node.name} calling ${endpoint} for User: ${userId}`);
 
-    if (provider === 'astrologyapi') {
-        headers['x-astrologyapi-key'] = node.api_key;
-    } else {
+    if (provider !== 'astrologyapi') {
         throw new Error(`Provider ${provider} not supported.`);
     }
 
     const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify(body),
+        body: JSON.stringify(payload),
         signal: AbortSignal.timeout(15000)
     });
 
@@ -74,12 +89,14 @@ const getKundliData = async (req, res) => {
     try {
         const { birthData, language } = req.body;
         const lang = language || 'en';
+        // 🛡️ Robustness: Handle potential double-nesting from different frontend versions
+        const bData = birthData?.birthData || birthData;
 
-        console.log(`[AstroBundler] Incoming Request for ${birthData?.day}/${birthData?.month}/${birthData?.year} | Gender: ${birthData?.gender}`);
-        console.log(`[AstroBundler] Payload:`, JSON.stringify(birthData));
+        console.log(`[AstroBundler] Incoming Request for ${bData?.day}/${bData?.month}/${bData?.year} | Gender: ${bData?.gender}`);
+        console.log(`[AstroBundler] Payload:`, JSON.stringify(bData));
 
         const { data: settings } = await supabase.from('kundli_settings').select('setting_value').eq('setting_key', 'api_config').single();
-        const config = settings?.setting_value || { apis: [{ name: 'Default', user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true }] };
+        const config = settings?.setting_value || { apis: [{ name: 'Premium', user_id: '629910', api_key: 'd33e9d8924b10499e15df332f99580b0', is_enabled: true }] };
         const nodes = config.apis.filter(api => api.is_enabled);
 
         const endpoints = [
@@ -88,13 +105,30 @@ const getKundliData = async (req, res) => {
             { key: 'dasha', url: 'major_vdasha' },
             { key: 'current_dasha', url: 'current_vdasha' },
             { key: 'gemstone', url: 'basic_gem_suggestion' },
+            { key: 'rudraksha', url: 'rudraksha_suggestion' },
             { key: 'character', url: 'personal_characteristics' },
+            { key: 'career', url: 'career_report' },
+            { key: 'health', url: 'health_report' },
+            { key: 'love', url: 'love_report' },
+            { key: 'physical', url: 'physique_report' },
+            { key: 'numero_table', url: 'numero_table' },
+            { key: 'numero_report', url: 'numero_report' },
+            { key: 'numero_time', url: 'numero_time' },
+            { key: 'numero_place_vastu', url: 'numero_place_vastu' },
             { key: 'planets', url: 'planets' },
             { key: 'yoga_report', url: 'yoga_report' },
             { key: 'manglik', url: 'manglik' },
             { key: 'sadhesati', url: 'sadhesati_current_status' },
+            { key: 'kp_planets', url: 'kp_planets' },
+            { key: 'kp_house_cusps', url: 'kp_house_cusps' },
+            { key: 'sarvashtak', url: 'sarvashtak' },
             { key: 'chart_d1', url: 'horo_chart_image/D1' },
-            { key: 'chart_d9', url: 'horo_chart_image/D9' }
+            { key: 'chart_d9', url: 'horo_chart_image/D9' },
+            { key: 'chart_sun', url: 'horo_chart_image/SUN' },
+            { key: 'chart_moon', url: 'horo_chart_image/MOON' },
+            { key: 'chart_d2', url: 'horo_chart_image/D2' },
+            { key: 'chart_d3', url: 'horo_chart_image/D3' },
+            { key: 'chart_d10', url: 'horo_chart_image/D10' }
         ];
 
         const results = {};
@@ -105,65 +139,43 @@ const getKundliData = async (req, res) => {
             return res.status(500).json({ error: true, msg: "API Configuration Missing" });
         }
 
-        console.log(`[AstroBundler] Using ${nodes.length} API nodes.`);
+        console.log(`[AstroNexus] 🚀 Fast-track sync for 29 endpoints starting...`);
         
-        // Split endpoints into smaller chunks to avoid 429 Rate Limits
         const chunks = [];
-        const chunkSize = 2; // Reduced to 2 for even more safety
+        const chunkSize = 15; 
         for (let i = 0; i < endpoints.length; i += chunkSize) {
             chunks.push(endpoints.slice(i, i + chunkSize));
         }
 
         for (let i = 0; i < chunks.length; i++) {
             const chunk = chunks[i];
-            console.log(`[AstroBundler] Batch ${i+1}/${chunks.length} starting...`);
-            
-            const chunkPromises = chunk.map(async (ep) => {
+            await Promise.all(chunk.map(async (ep) => {
                 let lastError = null;
-                const retryDelays = [4000, 8000]; 
-
-                for (let attempt = 0; attempt <= 2; attempt++) {
+                for (let attempt = 0; attempt <= 1; attempt++) {
                     const node = nodes[attempt % nodes.length];
                     try {
-                        const result = await executeNodeRequest(node, ep.url, birthData, lang);
-                        
+                        const result = await executeNodeRequest(node, ep.url, bData, lang);
                         if (result.ok) {
-                            const data = result.data;
-                            const isLimit = data.msg?.toLowerCase().includes('limit') || data.msg?.toLowerCase().includes('expired');
-                            
-                            if (isLimit) {
-                                console.warn(`[AstroBundler] ⚠️ Node ${node.name} reported limit for ${ep.key}`);
-                                lastError = data.msg;
-                                continue;
+                            const resData = result.data;
+                            if (ep.url.includes('horo_chart_image')) {
+                                results[ep.key] = resData.svg || resData.svg_code || null;
+                            } else if (ep.key === 'planets' || ep.key === 'kp_planets') {
+                                results[ep.key] = Array.isArray(resData) ? resData : (resData.planets || resData);
+                            } else {
+                                results[ep.key] = resData;
                             }
-
-                            results[ep.key] = ep.url.includes('chart') ? (data.svg || null) : data;
-                            console.log(`[AstroBundler] ✅ ${ep.key} (Node: ${node.name})`);
                             return; 
                         }
-
                         lastError = result.data?.msg || `HTTP ${result.status}`;
-                        console.warn(`[AstroBundler] ❌ ${ep.key} failed on ${node.name}: ${lastError}`);
-
-                        if (result.status === 405) break; 
-
-                        if (result.status === 429 && attempt < 2) {
-                            console.log(`[AstroBundler] ⏳ 429 for ${ep.key}, waiting ${retryDelays[attempt]}ms...`);
-                            await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
-                            continue;
-                        }
                     } catch (error) {
                         lastError = error.message;
-                        console.error(`[AstroBundler] 💥 Exception for ${ep.key}:`, error.message);
                     }
                 }
                 results[ep.key] = { error: true, msg: 'FETCH_FAILED', detail: lastError };
-            });
-
-            await Promise.all(chunkPromises);
+            }));
             
             if (i < chunks.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
         
