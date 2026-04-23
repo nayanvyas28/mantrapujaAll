@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
   Sparkles, 
@@ -12,7 +12,8 @@ import {
   Shield, 
   Zap,
   Clock,
-  MapPin
+  MapPin,
+  Trash2
 } from 'lucide-react-native';
 import { api } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
@@ -58,6 +59,29 @@ export default function AstroScreen() {
     const onRefresh = () => {
         setRefreshing(true);
         fetchData();
+    };
+
+    const handleDelete = async (id: string, name: string) => {
+        Alert.alert(
+            "Delete Chart",
+            `Are you sure you want to remove ${name}'s sacred chart from your archive?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                { 
+                    text: "Delete", 
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await api.astrology.deleteKundali(id);
+                            fetchData();
+                        } catch (error) {
+                            console.error('Delete Error:', error);
+                            Alert.alert("Error", "Could not remove the chart at this time.");
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     if (loading) {
@@ -147,7 +171,7 @@ export default function AstroScreen() {
             <View className="mt-8 px-6">
                 <View className="flex-row justify-between items-center mb-4">
                     <Text className="text-lg font-black text-gray-900">Saved Kundalis</Text>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => Alert.alert("Cosmic Archive", "The full library of your charts is being synchronized. Coming soon!")}>
                         <Text className="text-primary font-bold text-sm">View All</Text>
                     </TouchableOpacity>
                 </View>
@@ -178,6 +202,12 @@ export default function AstroScreen() {
                                     <Text className="text-gray-900 font-bold">{item.full_name}</Text>
                                     <Text className="text-gray-400 text-xs mt-0.5">{item.date_of_birth} • {item.place_of_birth}</Text>
                                 </View>
+                                <TouchableOpacity 
+                                    onPress={() => handleDelete(item.id, item.full_name)}
+                                    className="p-2 mr-1"
+                                >
+                                    <Trash2 color="#FDA4AF" size={18} />
+                                </TouchableOpacity>
                                 <ChevronRight color="#CBD5E1" size={18} />
                             </TouchableOpacity>
                         ))}
@@ -195,39 +225,47 @@ export default function AstroScreen() {
                 <Text className="text-lg font-black text-gray-900 mb-4">Cosmic Services</Text>
                 
                 <View className="flex-row flex-wrap gap-4">
-                   <ServiceCard 
-                    title="Panchang" 
-                    desc="Daily Muhurat" 
-                    icon={<Clock size={24} color="#FFD700" />} 
-                    color="bg-yellow-50"
-                   />
-                   <ServiceCard 
-                    title="Gemstone" 
-                    desc="Lucky Stones" 
-                    icon={<Shield size={24} color="#00C853" />} 
-                    color="bg-green-50"
-                   />
-                   <ServiceCard 
-                    title="Numerology" 
-                    desc="Number Power" 
-                    icon={<Star size={24} color="#6200EA" />} 
-                    color="bg-purple-50"
-                   />
-                   <ServiceCard 
-                    title="Yoga/Remedy" 
-                    desc="Divine Fixes" 
-                    icon={<Zap size={24} color="#FF1744" />} 
-                    color="bg-red-50"
-                   />
+                    <ServiceCard 
+                     title="Panchang" 
+                     desc="Daily Muhurat" 
+                     icon={<Clock size={24} color="#FFD700" />} 
+                     color="bg-yellow-50"
+                     onPress={() => Alert.alert("Daily Panchang", "Aligning with today's stars... This feature will be live in the next spiritual update.")}
+                    />
+                    <ServiceCard 
+                     title="Gemstone" 
+                     desc="Lucky Stones" 
+                     icon={<Shield size={24} color="#00C853" />} 
+                     color="bg-green-50"
+                     onPress={() => Alert.alert("Gemstone Guide", "Calculating your life stone energy... Coming soon.")}
+                    />
+                    <ServiceCard 
+                     title="Numerology" 
+                     desc="Number Power" 
+                     icon={<Star size={24} color="#6200EA" />} 
+                     color="bg-purple-50"
+                     onPress={() => Alert.alert("Numerology", "Decoding your birth numbers... Coming soon.")}
+                    />
+                    <ServiceCard 
+                     title="Yoga/Remedy" 
+                     desc="Divine Fixes" 
+                     icon={<Zap size={24} color="#FF1744" />} 
+                     color="bg-red-50"
+                     onPress={() => Alert.alert("Divine Remedies", "Prescribing celestial fixes for your chart... Coming soon.")}
+                    />
                 </View>
             </View>
         </ScrollView>
     );
 }
 
-function ServiceCard({ title, desc, icon, color }: { title: string, desc: string, icon: any, color: string }) {
+function ServiceCard({ title, desc, icon, color, onPress }: { title: string, desc: string, icon: any, color: string, onPress?: () => void }) {
     return (
-        <TouchableOpacity className={`w-[47%] ${color} p-5 rounded-3xl border border-black/5`}>
+        <TouchableOpacity 
+            onPress={onPress}
+            activeOpacity={0.7}
+            className={`w-[47%] ${color} p-5 rounded-3xl border border-black/5 shadow-sm`}
+        >
             <View className="mb-3">{icon}</View>
             <Text className="text-gray-900 font-black text-base">{title}</Text>
             <Text className="text-gray-500 text-xs mt-1">{desc}</Text>

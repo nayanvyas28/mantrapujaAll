@@ -4,13 +4,13 @@ import {
   Text, 
   TextInput, 
   ScrollView, 
-  TouchableOpacity, 
-  KeyboardAvoidingView, 
-  Platform, 
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { router } from 'expo-router';
 import { 
   ArrowLeft, 
   User, 
@@ -23,15 +23,19 @@ import {
 } from 'lucide-react-native';
 import { api } from '../../lib/api';
 import { supabase } from '../../lib/supabase';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
 
 
-const CustomInput = ({ label, icon: Icon, value, onChangeText, placeholder, keyboardType = 'default' }: any) => (
+const CustomInput = ({ label, icon: Icon, value, onChangeText, placeholder, keyboardType = 'default', onPress, editable = true }: any) => (
     <View className="mb-6">
         <Text className="text-gray-400 text-[10px] font-black uppercase tracking-[3px] mb-2 ml-1">{label}</Text>
-        <View className="bg-gray-50 border border-gray-100 rounded-2xl flex-row items-center px-4 h-14">
+        <Pressable 
+            onPress={onPress}
+            className="bg-gray-50 border border-gray-100 rounded-2xl flex-row items-center px-4 h-14"
+        >
             <Icon size={18} color="#FF4D00" opacity={0.5} />
             <TextInput 
                 className="flex-1 ml-3 text-gray-900 font-bold text-sm"
@@ -40,14 +44,16 @@ const CustomInput = ({ label, icon: Icon, value, onChangeText, placeholder, keyb
                 value={value}
                 onChangeText={onChangeText}
                 keyboardType={keyboardType}
+                editable={editable && !onPress}
+                pointerEvents={onPress ? 'none' : 'auto'}
             />
             {value.length > 2 && <Check size={16} color="#22C55E" />}
-        </View>
+        </Pressable>
     </View>
 );
 
 export default function NewKundaliScreen() {
-    const router = useRouter();
+    // static router used for better stability
     const { toggle } = useSidebar();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -60,6 +66,9 @@ export default function NewKundaliScreen() {
         lon: '72.8777',
         gender: 'male'
     });
+
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -81,6 +90,22 @@ export default function NewKundaliScreen() {
             }
         } catch (err) {
             console.error('Search failed:', err);
+        }
+    };
+
+    const onDateChange = (event: any, selectedDate?: Date) => {
+        setShowDatePicker(false);
+        if (selectedDate) {
+            const dateStr = selectedDate.toISOString().split('T')[0];
+            setForm(prev => ({ ...prev, birthDate: dateStr }));
+        }
+    };
+
+    const onTimeChange = (event: any, selectedTime?: Date) => {
+        setShowTimePicker(false);
+        if (selectedTime) {
+            const timeStr = selectedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            setForm(prev => ({ ...prev, birthTime: timeStr }));
         }
     };
 
@@ -154,21 +179,24 @@ export default function NewKundaliScreen() {
         >
             <View className="flex-1">
                 {/* Premium Header */}
-                <LinearGradient colors={['#FF4D00', '#FF8C00']} className="px-6 pt-16 pb-12 rounded-b-[50px] shadow-2xl">
+                <LinearGradient 
+                    colors={['#FF4D00', '#FF8C00']} 
+                    style={{ paddingTop: 64, paddingBottom: 48, paddingHorizontal: 24, borderBottomLeftRadius: 50, borderBottomRightRadius: 50, elevation: 12 }}
+                >
                     <View className="flex-row items-center justify-between">
-                        <TouchableOpacity 
+                        <Pressable 
                             onPress={() => router.back()}
-                            className="w-10 h-10 bg-white/20 rounded-full items-center justify-center border border-white/20"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
                         >
                             <ArrowLeft color="white" size={24} />
-                        </TouchableOpacity>
+                        </Pressable>
                         <Text className="text-xl font-black text-white">New Kundali</Text>
-                        <TouchableOpacity 
+                        <Pressable 
                             onPress={() => toggle(true)}
-                            className="w-10 h-10 bg-white/20 rounded-full items-center justify-center border border-white/20"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
                         >
                             <Menu color="white" size={20} />
-                        </TouchableOpacity>
+                        </Pressable>
                     </View>
                     <View className="mt-8 items-center">
                         <Text className="text-white/60 text-[10px] font-black uppercase tracking-[4px]">Birth Chart Generation</Text>
@@ -195,7 +223,7 @@ export default function NewKundaliScreen() {
                                 label="Birth Date" 
                                 icon={Calendar} 
                                 value={form.birthDate}
-                                onChangeText={(val: string) => setForm(prev => ({ ...prev, birthDate: val }))}
+                                onPress={() => setShowDatePicker(true)}
                                 placeholder="YYYY-MM-DD"
                             />
                         </View>
@@ -204,11 +232,30 @@ export default function NewKundaliScreen() {
                                 label="Birth Time" 
                                 icon={Clock} 
                                 value={form.birthTime}
-                                onChangeText={(val: string) => setForm(prev => ({ ...prev, birthTime: val }))}
+                                onPress={() => setShowTimePicker(true)}
                                 placeholder="HH:MM (24h)"
                             />
                         </View>
                     </View>
+
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={new Date(form.birthDate)}
+                            mode="date"
+                            display="default"
+                            onChange={onDateChange}
+                        />
+                    )}
+
+                    {showTimePicker && (
+                        <DateTimePicker
+                            value={new Date(`1970-01-01T${form.birthTime}:00`)}
+                            mode="time"
+                            is24Hour={true}
+                            display="default"
+                            onChange={onTimeChange}
+                        />
+                    )}
 
                     {/* Birth Place with Autocomplete */}
                     <View className="mb-6 relative z-50">
@@ -229,7 +276,7 @@ export default function NewKundaliScreen() {
                         {showSuggestions && suggestions.length > 0 && (
                             <View className="absolute top-24 left-0 right-0 bg-white border border-gray-100 rounded-3xl shadow-2xl z-50 overflow-hidden">
                                 {suggestions.map((item, index) => (
-                                    <TouchableOpacity 
+                                    <Pressable 
                                         key={index}
                                         onPress={() => selectSuggestion(item)}
                                         className="p-4 border-b border-gray-50 flex-row items-center"
@@ -238,7 +285,7 @@ export default function NewKundaliScreen() {
                                         <Text className="text-gray-700 text-sm flex-1 font-medium" numberOfLines={1}>
                                             {item.properties.name}, {item.properties.city || item.properties.state}, {item.properties.country}
                                         </Text>
-                                    </TouchableOpacity>
+                                    </Pressable>
                                 ))}
                             </View>
                         )}
@@ -249,7 +296,7 @@ export default function NewKundaliScreen() {
                         <Text className="text-gray-400 text-[10px] font-black uppercase tracking-[3px] mb-4 ml-1">Sacred Gender</Text>
                         <View className="flex-row gap-4">
                             {['male', 'female'].map((g) => (
-                                <TouchableOpacity 
+                                <Pressable 
                                     key={g}
                                     onPress={() => setForm(prev => ({ ...prev, gender: g }))}
                                     className={`flex-1 h-14 rounded-2xl border items-center justify-center flex-row ${form.gender === g ? 'bg-primary/5 border-primary shadow-sm shadow-primary/20' : 'bg-gray-50 border-gray-100'}`}
@@ -258,13 +305,13 @@ export default function NewKundaliScreen() {
                                         {form.gender === g && <View className="w-2.5 h-2.5 rounded-full bg-primary" />}
                                     </View>
                                     <Text className={`capitalize font-black text-xs tracking-widest ${form.gender === g ? 'text-primary' : 'text-gray-400'}`}>{g}</Text>
-                                </TouchableOpacity>
+                                </Pressable>
                             ))}
                         </View>
                     </View>
 
                     {/* Generate Button */}
-                    <TouchableOpacity 
+                    <Pressable 
                         onPress={handleGenerate}
                         disabled={loading}
                         className="bg-primary h-16 rounded-[24px] items-center justify-center shadow-2xl shadow-primary/40"
@@ -277,7 +324,7 @@ export default function NewKundaliScreen() {
                                 <ChevronRight color="white" size={20} />
                             </View>
                         )}
-                    </TouchableOpacity>
+                    </Pressable>
                 </ScrollView>
             </View>
         </KeyboardAvoidingView>

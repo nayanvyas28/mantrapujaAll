@@ -62,6 +62,18 @@ export default function ChatScreen() {
         language: 'hi' // Defaulting to Hindi as per user preference
       });
 
+      if (response.error && response.error.includes('quota')) {
+        const aiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          text: 'Namaste! Abhi Guruji dhyan (meditation) mein hain aur unki divya urja simit hai. Kripya thodi der baad punah prayas karein. (Guru is currently resting due to high demand. Please try again in few minutes.)',
+          sender: 'pandit',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          role: 'model'
+        };
+        setChat(prev => [...prev, aiMsg]);
+        return;
+      }
+
       if (response.text) {
         const aiMsg: Message = {
           id: (Date.now() + 1).toString(),
@@ -75,7 +87,7 @@ export default function ChatScreen() {
       }
     } catch (error: any) {
       console.error('Chat Error:', error);
-      Alert.alert('Guruji is resting', error.message || 'Could not connect to the divine service.');
+      Alert.alert('Guruji is resting', 'Kripya thodi der baad prayas karein. Guruji abhi kisi mahatvapurna puja mein vyast hain. (Guru is busy in a puja, please try again later.)');
     } finally {
       setLoading(false);
     }

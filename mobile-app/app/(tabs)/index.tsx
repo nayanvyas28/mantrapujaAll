@@ -6,6 +6,7 @@ import { Heart, Wallet, Bell, Sparkles, Calendar, ChevronRight, Star, ShoppingBa
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
@@ -59,11 +60,11 @@ export default function HomeScreen() {
         { data: destinationData },
         { data: categoryData }
       ] = await Promise.all([
-        supabase.from('poojas').select('*').eq('is_active', true).eq('show_on_home', true).order('sort_order', { ascending: false }),
+        supabase.from('poojas').select('*').eq('show_on_home', true).order('sort_order', { ascending: false }),
         supabase.from('home_banners').select('*').eq('is_active', true).order('display_order'),
         supabase.from('products_99').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order'),
         supabase.from('destinations').select('*').eq('is_active', true).eq('show_on_home', true).order('home_order'),
-        supabase.from('categories').select('*').eq('is_active', true).order('sort_order')
+        supabase.from('categories').select('*').order('order')
       ]);
         
       if (pujaData) setUpcomingPujas(pujaData);
@@ -83,7 +84,7 @@ export default function HomeScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#FF4D00" />
       
       {/* Premium Navbar */}
-      <View className="bg-primary pt-12 pb-6 px-6 rounded-b-[40px] shadow-2xl shadow-primary/40">
+      <View className="bg-primary pt-10 pb-4 px-6 rounded-b-[40px] shadow-2xl shadow-primary/40">
         <View className="flex-row justify-between items-center">
           <TouchableOpacity 
             onPress={() => toggle(true)}
@@ -118,7 +119,7 @@ export default function HomeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
         {/* Main Banner Slider - Live Data */}
-        <View className="mt-6">
+        <View className="mt-4"> 
           {loading ? (
             <View className="items-center justify-center h-44 mx-6 bg-gray-50 rounded-[40px] border border-gray-100">
                <Image 
@@ -182,30 +183,64 @@ export default function HomeScreen() {
         </View>
 
         {/* Action Grid */}
-        <View className="px-6 mt-8">
-           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
-              {categories.map((cat) => (
-                <TouchableOpacity 
-                   key={cat.id} 
-                   onPress={() => router.push(cat.route as any)}
-                   className="mr-6 items-center"
-                >
-                  <View className="w-16 h-16 bg-orange-50 rounded-[24px] items-center justify-center mb-1 border border-orange-100 shadow-sm shadow-orange-200/50">
-                    <Text className="text-2xl">{cat.icon}</Text>
-                    {cat.free && (
-                      <View className="absolute -top-2 -right-2 bg-green-500 px-1.5 py-0.5 rounded-md">
-                        <Text className="text-white text-[8px] font-bold uppercase">Free</Text>
-                      </View>
-                    )}
+        {categories.length > 0 && (
+          <View className="px-6 mt-4">
+             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
+                {categories.map((cat) => (
+                  <TouchableOpacity 
+                     key={cat.id} 
+                     onPress={() => router.push(cat.route as any)}
+                     className="mr-6 items-center"
+                  >
+                    <View className="w-16 h-16 bg-orange-50 rounded-[24px] items-center justify-center mb-1 border border-orange-100 shadow-sm shadow-orange-200/50">
+                      <Text className="text-2xl">{cat.icon}</Text>
+                      {cat.free && (
+                        <View className="absolute -top-2 -right-2 bg-green-500 px-1.5 py-0.5 rounded-md">
+                          <Text className="text-white text-[8px] font-bold uppercase">Free</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text className="text-gray-700 text-[10px] font-bold uppercase tracking-tight">{cat.name}</Text>
+                  </TouchableOpacity>
+                ))}
+             </ScrollView>
+          </View>
+        )}
+  
+         {/* Astro Guidance Section - Compact Version */}
+         <View className="px-6 mt-4">
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/astro')}
+              className="bg-white rounded-[32px] p-6 border border-saffron-100 shadow-lg shadow-saffron-200/10 overflow-hidden"
+            >
+              <LinearGradient 
+                colors={['#FFF8F0', 'white']} 
+                start={{x: 0, y: 0}} 
+                end={{x: 1, y: 1}} 
+                style={StyleSheet.absoluteFill} 
+              />
+              <View className="flex-row items-center justify-between">
+                <View className="flex-1 pr-3">
+                  <View className="bg-primary/10 self-start px-2 py-0.5 rounded-full mb-2">
+                    <Text className="text-primary font-black text-[8px] uppercase tracking-widest">Vedic Insight</Text>
                   </View>
-                  <Text className="text-gray-700 text-[10px] font-bold uppercase tracking-tight">{cat.name}</Text>
-                </TouchableOpacity>
-              ))}
-           </ScrollView>
-        </View>
+                  <Text className="text-gray-900 font-extrabold text-lg leading-tight">Reveal Your Cosmic Path</Text>
+                  <Text className="text-gray-500 text-[10px] mt-1 leading-4" numberOfLines={2}>Get detailed Kundli analysis and daily guidance from Guru AI.</Text>
+                </View>
+                <View className="w-14 h-14 bg-primary/10 rounded-2xl items-center justify-center">
+                  <Sparkles size={28} color="#FF4D00" />
+                </View>
+              </View>
+              
+              <View className="mt-4 flex-row items-center">
+                <Text className="text-primary font-bold uppercase text-[9px] tracking-widest mr-1">Check Astrology</Text>
+                <ChevronRight size={12} color="#FF4D00" />
+              </View>
+            </TouchableOpacity>
+         </View>
 
         {/* Promo Bar */}
-        <View className="px-6 mt-10">
+        <View className="px-6 mt-4">
            <TouchableOpacity className="bg-primary/5 rounded-[32px] p-6 border border-primary/10 flex-row items-center justify-between">
               <View>
                  <Text className="text-primary text-lg font-bold">All for Rupees ₹1 only</Text>
