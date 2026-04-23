@@ -138,13 +138,18 @@ const initiateRegister = async (req, res) => {
             throw profileError;
         }
 
-        if (profileCheck && profileCheck.phone_verified) {
+        if (profileCheck && profileCheck.phone_verified && phone !== '9999999999') {
             console.log(`[Register] Verified profile already exists for ${phone}/${email}. Redirecting to login.`);
             return res.status(400).json({ 
                 error: 'An account with this phone or email already exists. Please log in.',
                 exists: true,
                 verified: true
             });
+        }
+        
+        // --- PLAY STORE REVIEW BYPASS ---
+        if (phone === '9999999999') {
+            return res.status(200).json({ message: 'OTP Sent successfully', purpose: 'REGISTER' });
         }
 
         // 2. Proactive Supabase Auth Check (Search by phone and email)
@@ -372,27 +377,79 @@ const verifyOtp = async (req, res) => {
             };
             let existingUser = userList?.users?.find(u => phonesMatch(u.phone, phone));
 
-            if (!existingUser && isTestUser) {
-                // Auto-create test user for Play Store if it doesn't exist
-                const { data: testUser, error: testError } = await supabase.auth.admin.createUser({
-                    phone: phone,
+            if (isTestUser) {
+                console.log(`[Bypass] Force resetting test user: +91${phone}`);
+                
+                // 1. Try to find and delete existing test user to ensure a clean state
+                try {
+                    const { data: userList } = await supabase.auth.admin.listUsers();
+                    const testUser = userList?.users?.find(u => u.phone === `+91${phone}` || u.phone === phone);
+                    if (testUser) {
+                        console.log(`[Bypass] Found old test user ${testUser.id}, deleting...`);
+                        await supabase.auth.admin.deleteUser(testUser.id);
+                        await supabase.from('profiles').delete().eq('id', testUser.id);
+                    }
+                } catch (e) {
+                    console.warn(`[Bypass] Delete old user failed (non-critical):`, e.message);
+                }
+
+                // 2. Create fresh test user
+                console.log(`[Bypass] Creating fresh test user for: +91${phone}`);
+                const { data: freshUser, error: testError } = await supabase.auth.admin.createUser({
+                    phone: `+91${phone}`,
                     password: AUTH_BRIDGE_PASSWORD,
                     phone_confirm: true,
                     user_metadata: { full_name: 'Play Store Tester' }
                 });
-                if (!testError) {
-                    existingUser = testUser.user;
-                }
-            }
 
-            if (existingUser) {
-                await supabase.auth.admin.updateUserById(existingUser.id, {
+                if (testError) {
+                    if (testError.message.includes('already registered')) {
+                        console.log(`[Bypass] User already exists, finding and updating...`);
+                        const { data: uList } = await supabase.auth.admin.listUsers();
+                        const tUser = uList?.users?.find(u => u.phone?.includes(phone));
+                        if (tUser) {
+                            await supabase.auth.admin.updateUserById(tUser.id, {
+                                password: AUTH_BRIDGE_PASSWORD,
+                                phone_confirm: true
+                            });
+                            existingUser = tUser;
+                        } else {
+                            return res.status(500).json({ error: 'Bypass failed: User registered but not found in list.' });
+                        }
+                    } else {
+                        console.error(`[Bypass] Error creating test user:`, testError.message);
+                        return res.status(500).json({ error: 'Bypass failed: ' + testError.message });
+                    }
+                } else {
+                    console.log(`[Bypass] Fresh test user created:`, freshUser.user.id);
+                    existingUser = freshUser.user;
+                }
+
+
+                // 3. Create profile
+                await supabase.from('profiles').upsert({
+                    id: existingUser.id,
+                    phone: phone,
+                    phone_verified: true,
+                    full_name: 'Play Store Tester'
+                }, { onConflict: 'id' });
+            } else if (existingUser) {
+                console.log(`[Bypass] Updating existing user password for: ${existingUser.id}`);
+                const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
                     password: AUTH_BRIDGE_PASSWORD,
                     phone_confirm: true
                 });
-
-                await supabase.from('profiles').update({ phone_verified: true }).eq('id', existingUser.id);
+                
+                if (updateError) {
+                    console.error(`[Bypass] Error updating user:`, updateError.message);
+                } else {
+                    console.log(`[Bypass] User updated successfully.`);
+                    await supabase.from('profiles').update({ phone_verified: true }).eq('id', existingUser.id);
+                }
             }
+
+
+
 
             if (otpData) {
                 await supabase.from('otps').delete().eq('id', otpData.id);
@@ -403,8 +460,9 @@ const verifyOtp = async (req, res) => {
                 otp_verified: true, 
                 verified: true,
                 bridgePassword: AUTH_BRIDGE_PASSWORD,
-                finalAuthPhone: existingUser?.phone || phone
+                finalAuthPhone: isTestUser ? `+91${phone}` : (existingUser?.phone || phone)
             });
+
         }
 
     } catch (err) {
@@ -429,8 +487,13 @@ const initiateForgotPassword = async (req, res) => {
             .eq('phone', phone)
             .single();
 
-        if (!profileCheck) {
+        if (!profileCheck && phone !== '9999999999') {
             return res.status(404).json({ error: 'No account found with this phone number' });
+        }
+
+        // --- PLAY STORE REVIEW BYPASS ---
+        if (phone === '9999999999') {
+            return res.status(200).json({ message: 'Reset OTP Sent successfully', purpose: 'RESET_PASSWORD' });
         }
 
         // Optional: Block reset if phone is not verified
