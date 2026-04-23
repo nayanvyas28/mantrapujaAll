@@ -1,6 +1,9 @@
 # Stage 1: Build the website
 FROM node:20-alpine AS builder
 
+# Add build dependencies for native modules (like lightningcss)
+RUN apk add --no-cache libc6-compat python3 make g++
+
 WORKDIR /app
 
 # Copy root manifest and lockfile
@@ -13,6 +16,7 @@ COPY packages ./packages
 COPY website ./website
 
 # Install dependencies from the root to correctly handle workspaces and protocols (workspace:*)
+# We use --legacy-peer-deps to avoid conflicts and force install of native modules
 RUN npm install --legacy-peer-deps
 
 # Build the website using the workspace command
@@ -28,6 +32,7 @@ ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # Security best practice: don't run as root
+RUN apk add --no-cache libc6-compat
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
