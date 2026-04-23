@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Plus, Music, User, Search, Filter, Trash2, Edit2, Upload, X, Check, Loader2, Music2 } from 'lucide-react';
+import { deleteFileFromStorage } from '@/lib/storage-utils';
 
 interface Deity {
     id: string;
@@ -83,27 +84,48 @@ export default function MusicManagementPage() {
     }
 
     const handleFileUpload = async (file: File, bucketName: string, path: string) => {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `${path}/${fileName}`;
+        try {
+            const isImage = file.type.startsWith('image/');
+            let uploadContent: Blob | File = file;
+            let fileName = `${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
+            let contentType = file.type;
 
-        console.log(`Uploading to bucket: ${bucketName}, path: ${filePath}`);
+            if (isImage) {
+                // 1. Optimize image through our Sharp-powered API
+                const optimizeFormData = new FormData();
+                optimizeFormData.append('file', file);
 
-        const { error: uploadError, data: uploadData } = await supabase.storage
-            .from(bucketName)
-            .upload(filePath, file, {
-                cacheControl: '3600',
-                upsert: false
-            });
+                const optimizeResponse = await fetch('/api/optimize', {
+                    method: 'POST',
+                    body: optimizeFormData
+                });
 
-        if (uploadError) {
-            console.error('Storage Upload Error Detail:', uploadError);
-            throw uploadError;
+                if (optimizeResponse.ok) {
+                    uploadContent = await optimizeResponse.blob();
+                    fileName = `${Math.random().toString(36).substring(2)}.webp`;
+                    contentType = 'image/webp';
+                } else {
+                    console.warn('Optimization failed, uploading original image');
+                }
+            }
+
+            const filePath = `${path}/${fileName}`;
+            const { error: uploadError } = await supabase.storage
+                .from(bucketName)
+                .upload(filePath, uploadContent, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType
+                });
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+            return data.publicUrl;
+        } catch (error: any) {
+            console.error('Upload & Optimization error:', error);
+            throw new Error(`Failed to process asset: ${error.message}`);
         }
-
-        const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
-        console.log('Public URL generated:', data.publicUrl);
-        return data.publicUrl;
     };
 
     const handleAddDeity = async (e: React.FormEvent) => {
@@ -112,7 +134,7 @@ export default function MusicManagementPage() {
 
         setIsSaving(true);
         try {
-            const imageUrl = await handleFileUpload(deityForm.imageFile, 'music_assets', 'god_images');
+            const imageUrl = await handleFileUpload(deityForm.imageFile, 'music', 'deities');
 
             const { error } = await supabase.from('music_gods').insert({
                 name: deityForm.name,
@@ -144,6 +166,9 @@ export default function MusicManagementPage() {
         setIsSaving(true);
         try {
             let audioUrl = ytId || '';
+            if (!audioUrl && songForm.audioFile) {
+                audioUrl = await handleFileUpload(songForm.audioFile, 'music', 'audio');
+            }
             let imageUrl = '';
 
             if (songForm.audioFile) {
@@ -151,7 +176,7 @@ export default function MusicManagementPage() {
             }
 
             if (songForm.imageFile) {
-                imageUrl = await handleFileUpload(songForm.imageFile, 'music_assets', 'song_covers');
+                imageUrl = await handleFileUpload(songForm.imageFile, 'music', 'covers');
             }
 
             const { error } = await supabase.from('music_songs').insert({
@@ -191,27 +216,49 @@ export default function MusicManagementPage() {
     };
 
     const handleDeleteDeity = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this deity? This will also delete all associated songs.')) return;
+        const deityToDelete = deities.find(d => d.id === id);
+        if (!confirm(`Are you sure you want to delete deity "${deityToDelete?.name}"? This will also delete all associated songs.`)) return;
 
-        const { error } = await supabase.from('music_gods').delete().eq('id', id);
-        if (error) {
-            console.error('Error deleting deity:', error);
-            alert('Failed to delete deity');
-        } else {
+        try {
+            // 1. Fetch all songs for this deity to delete their files
+            const { data: songsToDelete } = await supabase.from('music_songs').select('audio_url, image_url').eq('god_id', id);
+            
+            // 2. Delete record (Cascade will handle DB)
+            const { error } = await supabase.from('music_gods').delete().eq('id', id);
+            if (error) throw error;
+
+            // 3. Delete files for the deity
+            if (deityToDelete?.image_url) await deleteFileFromStorage(deityToDelete.image_url);
+
+            // 4. Delete files for all songs of this deity
+            if (songsToDelete) {
+                for (const song of songsToDelete) {
+                    if (song.audio_url) await deleteFileFromStorage(song.audio_url);
+                    if (song.image_url) await deleteFileFromStorage(song.image_url);
+                }
+            }
+
             setDeities(deities.filter(d => d.id !== id));
             setSongs(songs.filter(s => s.god_id !== id));
+        } catch (error: any) {
+            alert('Error deleting deity and assets: ' + error.message);
         }
     };
 
     const handleDeleteSong = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this song?')) return;
+        const songToDelete = songs.find(s => s.id === id);
+        if (!confirm(`Are you sure you want to delete song "${songToDelete?.title}"?`)) return;
 
-        const { error } = await supabase.from('music_songs').delete().eq('id', id);
-        if (error) {
-            console.error('Error deleting song:', error);
-            alert('Failed to delete song');
-        } else {
+        try {
+            const { error } = await supabase.from('music_songs').delete().eq('id', id);
+            if (error) throw error;
+
+            if (songToDelete?.audio_url) await deleteFileFromStorage(songToDelete.audio_url);
+            if (songToDelete?.image_url) await deleteFileFromStorage(songToDelete.image_url);
+
             setSongs(songs.filter(s => s.id !== id));
+        } catch (error: any) {
+            alert('Error deleting song and assets: ' + error.message);
         }
     };
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Clock, ArrowRight, ChevronDown, CheckCircle, Sun, Star, Flame, User, MessageCircle, Phone, IndianRupee, Flower, Heart, Scroll, ShieldCheck, BadgeCheck } from "lucide-react";
 import Link from "next/link";
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import { Festival } from "@/lib/festivalData";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import FireParticles from "@/components/FireParticles";
@@ -31,10 +31,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
     useEffect(() => {
         const fetchRelatedBlogs = async () => {
             try {
-                const supabase = createClient(
-                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-                );
+                // Using imported supabase singleton
 
                 // Fetch blogs where title or tags contain the festival name
                 const { data } = await supabase

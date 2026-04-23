@@ -6,7 +6,7 @@ import { FestivalCalendar } from '@/components/festivals/FestivalCalendar';
 import { festivals, getUpcomingFestivals } from '@/lib/festivalData';
 import EnhancedBackground from '@/components/EnhancedBackground';
 import { ArrowRight, Calendar, Info } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
 
 // Fallback constants for blog styles if dynamic data is missing
@@ -31,10 +31,7 @@ export default function FestivalPage() {
         setMounted(true);
         const fetchData = async () => {
             try {
-                const supabase = createClient(
-                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-                );
+                // Using imported supabase singleton
 
                 // 1. Fetch Festivals
                 const { data: festivalData, error: festivalError } = await supabase

@@ -18,7 +18,8 @@
     "website",
     "admin-panel",
     "backend",
-    "packages/shared"
+    "packages/shared",
+    "packages/image-optimizer"
   ],
   "repository": {
     "type": "git",

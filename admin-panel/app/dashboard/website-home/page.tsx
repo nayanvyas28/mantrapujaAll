@@ -55,7 +55,7 @@ export default async function WebsiteHomeSettingsPage() {
                                 <h2 className="text-xl font-bold text-white">Home Page Banners</h2>
                             </div>
                             <p className="text-sm text-gray-300 mb-2 mt-2">Manage sliding banners for the top section. Note: Changing this also affects the Mobile App.</p>
-                            <p className="text-[11px] font-bold text-orange-400 bg-orange-500/10 px-3 py-1 rounded w-fit mb-4">Recommended Ratio: 6:1 (e.g., 2400x400px)</p>
+                            <p className="text-[11px] font-bold text-orange-400 bg-orange-500/10 px-3 py-1 rounded w-fit mb-4">Recommended Ratio: 4:1 (e.g., 1600x400px)</p>
                         </div>
                         <a
                             href="/dashboard/banners"

@@ -10,7 +10,9 @@ import {
   Search,
   Activity,
   TrendingUp,
-  ChevronRight
+  ChevronRight,
+  Globe,
+  Smartphone
 } from 'lucide-react';
 
 export default async function DashboardPage() {
@@ -21,59 +23,96 @@ export default async function DashboardPage() {
         redirect('/login');
     }
 
-    // 1. Fetch Total Users
-    const { count: totalUsers } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+    // Parallel Fetch for all Dashboard Stats
+    const [
+        { count: totalUsers },
+        { count: activeBookings },
+        { data: revenueData },
+        { data: recentBookings }
+    ] = await Promise.all([
+        // 1. Fetch Total Users
+        supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true }),
 
-    // 2. Fetch Active Bookings (Puja Bookings via Wallet)
-    const { count: activeBookings } = await supabase
-        .from('wallet_transactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('category', 'puja_booking')
-        .eq('status', 'success');
+        // 2. Fetch Active Bookings (Puja Bookings via Wallet)
+        supabase
+            .from('wallet_transactions')
+            .select('*', { count: 'exact', head: true })
+            .eq('category', 'puja_booking')
+            .eq('status', 'success'),
 
-    // 3. Calculate Revenue (Sum of Puaj Bookings)
-    const { data: revenueData } = await supabase
-        .from('wallet_transactions')
-        .select('amount')
-        .eq('category', 'puja_booking')
-        .eq('status', 'success');
-    
+        // 3. Fetch Revenue Data (Selective Column)
+        supabase
+            .from('wallet_transactions')
+            .select('amount')
+            .eq('category', 'puja_booking')
+            .eq('status', 'success'),
+
+        // 4. Fetch Recent Bookings for the "Live Feed"
+        supabase
+            .from('wallet_transactions')
+            .select('*, profiles(full_name, email)')
+            .eq('category', 'puja_booking')
+            .order('created_at', { ascending: false })
+            .limit(5)
+    ]);
+
     const revenue = revenueData?.reduce((sum, item) => sum + (item.amount || 0), 0) || 0;
-
-    // 4. Fetch Recent Bookings for the "Live Feed"
-    const { data: recentBookings } = await supabase
-        .from('wallet_transactions')
-        .select('*, profiles(full_name, email)')
-        .eq('category', 'puja_booking')
-        .order('created_at', { ascending: false })
-        .limit(5);
 
     return (
         <div className="space-y-10 animate-in fade-in duration-700">
             {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-white/5">
                 <div>
                     <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent mb-2">
-                        Platform Overview
+                        Website Management Hub
                     </h1>
                     <p className="text-gray-400 text-sm max-w-xl leading-relaxed font-medium">
-                        Real-time analytics and performance metrics for the Mantra Puja ecosystem. 
-                        Monitoring <span className="text-purple-400 uppercase text-[10px] font-black tracking-widest px-2 py-0.5 bg-purple-500/10 rounded-md border border-purple-500/20 ml-1">Live Database</span>
+                        Central console for Mantra Puja Website operations. 
+                        Monitoring <span className="text-orange-400 uppercase text-[10px] font-black tracking-widest px-2 py-0.5 bg-orange-500/10 rounded-md border border-orange-500/20 ml-1">Universal Database</span>
                     </p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <div className="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 group hover:border-purple-500/30 transition-all cursor-default">
+                    <div className="px-5 py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3 group hover:border-orange-500/30 transition-all cursor-default text-decoration-none">
                         <div className="p-2 bg-green-500/10 rounded-lg group-hover:bg-green-500/20 transition-all">
                             <Activity size={16} className="text-green-400" />
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">System Status</span>
-                            <span className="text-xs font-bold text-white">All Systems Operational</span>
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Admin Sync</span>
+                            <span className="text-xs font-bold text-white">Live Connection Active</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Management Universe Quick Select */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 rounded-[2rem] bg-gradient-to-br from-orange-600/10 to-transparent border border-orange-500/20 flex items-center justify-between group hover:border-orange-500/40 transition-all cursor-pointer">
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-orange-500/20 flex items-center justify-center border border-orange-500/20 group-hover:scale-110 transition-transform">
+                            <Globe size={24} className="text-orange-400" />
+                        </div>
+                        <div>
+                            <h4 className="text-lg font-bold text-white">Website Universe</h4>
+                            <p className="text-xs text-gray-500">Catalog, Orders & SEO</p>
+                        </div>
+                    </div>
+                    <ChevronRight size={20} className="text-gray-700 group-hover:text-orange-400 transition-all group-hover:translate-x-1" />
+                </div>
+
+                <div className="p-6 rounded-[2rem] bg-gradient-to-br from-purple-600/10 to-transparent border border-white/5 flex items-center justify-between group hover:border-purple-500/20 transition-all cursor-pointer opacity-60">
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform">
+                            <Smartphone size={24} className="text-purple-400" />
+                        </div>
+                        <div>
+                            <h4 className="text-lg font-bold text-white">App Legacy</h4>
+                            <p className="text-xs text-gray-500">Music, Reels & Alerts</p>
+                        </div>
+                    </div>
+                    <ChevronRight size={20} className="text-gray-700 group-hover:text-purple-400 transition-all group-hover:translate-x-1" />
                 </div>
             </div>
 

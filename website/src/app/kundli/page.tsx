@@ -50,16 +50,19 @@ const NorthIndianChart = ({ planets }: { planets: any[] }) => {
     safePlanets.forEach(p => {
         const house = parseInt(p.house);
         if (!housePlanets[house]) housePlanets[house] = [];
-        const name = p.name || '';
-        const shortName = (name === 'Sun' || name === 'सूर्य') ? 'सू' :
-            (name === 'Moon' || name === 'चंद्र') ? 'चं' :
-                (name === 'Mars' || name === 'मंगल') ? 'मं' :
-                    (name === 'Mercury' || name === 'बुध') ? 'बु' :
-                        (name === 'Jupiter' || name === 'गुरु') ? 'गु' :
-                            (name === 'Venus' || name === 'शुक्र') ? 'शु' :
-                                (name === 'Saturn' || name === 'शनि') ? 'श' :
-                                    (name === 'Rahu' || name === 'राहु') ? 'रा' :
-                                        (name === 'Ketu' || name === 'केतु') ? 'के' : name.substring(0, 1);
+        const rawName = p.name || p.planet || '';
+        const n = rawName.toLowerCase();
+        const shortName = (n.includes('sun') || n.includes('सूर्य')) ? 'सू' :
+            (n.includes('moon') || n.includes('चंद्र')) ? 'चं' :
+            (n.includes('mar') || n.includes('मंगल')) ? 'मं' :
+            (n.includes('merc') || n.includes('बुध')) ? 'बु' :
+            (n.includes('jup') || n.includes('गुरु')) ? 'गु' :
+            (n.includes('ven') || n.includes('शुक्र')) ? 'शु' :
+            (n.includes('sat') || n.includes('शनि')) ? 'श' :
+            (n.includes('rah') || n.includes('राहु')) ? 'रा' :
+            (n.includes('ket') || n.includes('केतु')) ? 'के' :
+            (n.includes('asc') || n.includes('lag') || n.includes('लग्न')) ? 'ल' :
+            rawName.substring(0, 1).toUpperCase();
         housePlanets[house].push(shortName);
     });
 
@@ -71,24 +74,24 @@ const NorthIndianChart = ({ planets }: { planets: any[] }) => {
                 <path d="M200 0 L400 200 L200 400 L0 200 Z" />
             </svg>
             {[
-                { h: 1, pos: 'top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2' },
-                { h: 2, pos: 'top-[12%] left-1/4 -translate-x-1/2' },
-                { h: 3, pos: 'top-[12%] left-3/4 -translate-x-1/2' },
-                { h: 4, pos: 'top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2' },
-                { h: 5, pos: 'bottom-[12%] left-1/4 -translate-x-1/2' },
-                { h: 6, pos: 'bottom-[12%] left-3/4 -translate-x-1/2' },
-                { h: 7, pos: 'bottom-1/4 left-1/2 -translate-x-1/2 translate-y-1/2' },
-                { h: 8, pos: 'bottom-[12%] right-[12%] -translate-x-1/2' },
-                { h: 9, pos: 'top-[12%] right-[12%] -translate-x-1/2' },
-                { h: 10, pos: 'top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2' },
-                { h: 11, pos: 'bottom-[12%] left-[12%] translate-x-1/2' },
-                { h: 12, pos: 'top-[12%] left-[12%] translate-x-1/2' }
+                { h: 1, pos: 'top-[18%] left-1/2 -translate-x-1/2 -translate-y-1/2', mw: '120px' },
+                { h: 2, pos: 'top-[8%] left-[24%] -translate-x-1/2', mw: '80px' },
+                { h: 3, pos: 'top-[24%] left-[8%] -translate-y-1/2', mw: '80px' },
+                { h: 4, pos: 'top-1/2 left-[18%] -translate-x-1/2 -translate-y-1/2', mw: '120px' },
+                { h: 5, pos: 'bottom-[24%] left-[8%] -translate-y-1/2', mw: '80px' },
+                { h: 6, pos: 'bottom-[8%] left-[24%] -translate-x-1/2', mw: '80px' },
+                { h: 7, pos: 'bottom-[18%] left-1/2 -translate-x-1/2 translate-y-1/2', mw: '120px' },
+                { h: 8, pos: 'bottom-[8%] right-[24%] translate-x-1/2', mw: '80px' },
+                { h: 9, pos: 'bottom-[24%] right-[8%] -translate-y-1/2', mw: '80px' },
+                { h: 10, pos: 'top-1/2 right-[18%] translate-x-1/2 -translate-y-1/2', mw: '120px' },
+                { h: 11, pos: 'top-[24%] right-[8%] -translate-y-1/2', mw: '80px' },
+                { h: 12, pos: 'top-[8%] right-[24%] translate-x-1/2', mw: '80px' }
             ].map((house) => (
-                <div key={house.h} className={`absolute ${house.pos} text-center`}>
-                    <p className="text-[10px] opacity-30 font-bold mb-1">{house.h}</p>
-                    <div className="flex flex-wrap justify-center gap-1">
+                <div key={house.h} className={`absolute ${house.pos} text-center flex flex-col items-center`} style={{ maxWidth: house.mw }}>
+                    <p className="text-[9px] opacity-30 font-bold mb-0.5">{house.h}</p>
+                    <div className="flex flex-wrap justify-center gap-1.5 px-1">
                         {housePlanets[house.h]?.map((p, idx) => (
-                            <span key={idx} className="text-xs md:text-sm font-black text-saffron bg-saffron/5 px-1 rounded">{p}</span>
+                            <span key={idx} className="text-[10px] md:text-xs font-black text-saffron bg-saffron/10 px-1 py-0.5 rounded shadow-sm whitespace-nowrap">{p}</span>
                         ))}
                     </div>
                 </div>
@@ -513,14 +516,14 @@ export default function KundliPage() {
         }
 
         try {
-            const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5`);
+            const res = await fetch(`/api/places?q=${encodeURIComponent(query)}`);
             const data = await res.json();
             if (data.features) {
                 setSuggestions(data.features);
                 setShowSuggestions(true);
             }
         } catch (err) {
-            console.error('Photon search failed:', err);
+            console.error('Local places search failed:', err);
         }
     };
 

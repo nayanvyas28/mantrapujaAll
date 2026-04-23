@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
 import { motion, Variants } from "framer-motion";
 import Link from "next/link";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
@@ -19,10 +19,7 @@ export default function AboutPage() {
 
     useEffect(() => {
         const fetchPage = async () => {
-            const supabase = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
+            // Using imported supabase singleton
             const { data } = await supabase
                 .from('pages')
                 .select('*')

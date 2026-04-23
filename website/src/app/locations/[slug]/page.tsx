@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import {
     MapPin,
     Calendar,
@@ -49,10 +49,7 @@ export default function DestinationDetailPage() {
     useEffect(() => {
         const fetchDetail = async () => {
             try {
-                const supabase = createClient(
-                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-                );
+                // Using imported supabase singleton
 
                 const { data, error } = await supabase
                     .from('destinations')

@@ -19,12 +19,15 @@
     "@types/papaparse": "^5.5.2",
     "axios": "^1.14.0",
     "bcryptjs": "^3.0.3",
+    "browserslist": "^4.28.2",
+    "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "csv-writer": "^1.6.0",
     "dotenv": "^17.2.4",
     "framer-motion": "^12.34.0",
     "lucide-react": "^0.563.0",
+    "magic-string": "^0.30.21",
     "next": "^16.2.2",
     "next-themes": "^0.4.6",
     "node-fetch": "^2.7.0",
@@ -34,7 +37,8 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "@mantrapuja/image-optimizer": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

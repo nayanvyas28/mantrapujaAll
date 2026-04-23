@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
     Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, 
-    Info, ArrowLeft, Image as ImageIcon, Eye, EyeOff, Layout
+    Info, ArrowLeft, ImageIcon, Eye, EyeOff, Layout
 } from 'lucide-react';
+import { deleteFileFromStorage } from '@/lib/storage-utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -66,18 +67,31 @@ export default function FeaturesManagementPage() {
 
     const handleFileUpload = async (file: File) => {
         try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
+            // 1. Optimize image
+            const optimizeFormData = new FormData();
+            optimizeFormData.append('file', file);
+            const optimizeResponse = await fetch('/api/optimize', { method: 'POST', body: optimizeFormData });
+            
+            let uploadContent: Blob | File = file;
+            let fileName = `${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`;
+            let contentType = file.type;
+
+            if (optimizeResponse.ok) {
+                uploadContent = await optimizeResponse.blob();
+                fileName = `${Math.random().toString(36).substring(2)}.webp`;
+                contentType = 'image/webp';
+            }
+
             const filePath = `features/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
-                .from('pujas') // Reusing the 'pujas' bucket for simplicity if it exists, or common bucket
-                .upload(filePath, file);
+                .from('website')
+                .upload(filePath, uploadContent, { contentType });
 
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabase.storage
-                .from('pujas')
+                .from('website')
                 .getPublicUrl(filePath);
 
             return publicUrl;
@@ -94,6 +108,10 @@ export default function FeaturesManagementPage() {
         try {
             let finalImageUrl = form.image_url;
             if (form.imageFile) {
+                // If replacing, clean up old one
+                if (editingFeature?.image_url) {
+                    await deleteFileFromStorage(editingFeature.image_url);
+                }
                 finalImageUrl = await handleFileUpload(form.imageFile);
             }
 
@@ -140,10 +158,16 @@ export default function FeaturesManagementPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this feature?')) return;
+        const featureToDelete = features.find(f => f.id === id);
+        if (!confirm(`Are you sure you want to delete feature "${featureToDelete?.title}"?`)) return;
         try {
             const { error } = await supabase.from('home_features').delete().eq('id', id);
             if (error) throw error;
+            
+            if (featureToDelete?.image_url) {
+                await deleteFileFromStorage(featureToDelete.image_url);
+            }
+            
             fetchFeatures();
         } catch (error: any) {
             alert('Error deleting feature: ' + error.message);

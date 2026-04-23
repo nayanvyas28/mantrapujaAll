@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { HoroscopeService } from '@/lib/horoscopeService';
+import { PanchangService } from '@/lib/panchangService';
 
 // Setup Supabase Admin (Bypass RLS to get settings)
 const supabaseAdmin = createClient(
@@ -11,7 +13,7 @@ const supabaseAdmin = createClient(
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { message, chatHistory, userId, sessionId: incomingSessionId, skipHistory, language } = body;
+        const { message, chatHistory, userId, sessionId: incomingSessionId, skipHistory, language, templateInstruction } = body;
 
         const langInst = language === 'hi'
             ? "CRITICAL: The user has selected HINDI as the sacred language for this session. Regardless of the language the user speaks (English, Hinglish, etc.), you MUST respond EXCLUSIVELY in Hindi (Devanagari script) with a polite and divine tone. If the user asks in English, you must translate your guidance into pure Hindi."
@@ -20,10 +22,9 @@ export async function POST(req: Request) {
         const identifier = userId || incomingSessionId || 'anonymous';
         let sessionId = incomingSessionId;
 
-        // 0. Fetch User Vedic Profile (Memory / Fallback)
+        // 0. Fetch User Vedic Profile & FULL Kundali Analysis Data
         let profileContext = "";
         if (identifier !== 'anonymous') {
-            // First get the guaranteed basic profile
             const { data: basicProfile } = await supabaseAdmin
                 .from('profiles')
                 .select('full_name')
@@ -32,71 +33,59 @@ export async function POST(req: Request) {
                 
             const uName = basicProfile?.full_name || 'Anonymous';
 
-            const { data: profile } = await supabaseAdmin
-                .from('user_vedic_profiles')
+            // Get the MOST RECENT and COMPLETE Kundali data for deep analysis
+            const { data: latestKundali } = await supabaseAdmin
+                .from('user_kundalis')
                 .select('*')
                 .eq('user_id', identifier)
+                .order('created_at', { ascending: false })
+                .limit(1)
                 .single();
 
-            if (profile) {
+            if (latestKundali) {
+                // Ensure we update the Vedic Profile for consistency
+                await supabaseAdmin.from('user_vedic_profiles').upsert({
+                    user_id: identifier,
+                    full_name: latestKundali.full_name,
+                    date_of_birth: latestKundali.date_of_birth,
+                    time_of_birth: latestKundali.time_of_birth,
+                    place_of_birth: latestKundali.place_of_birth,
+                    gender: latestKundali.gender,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id' });
+
                 profileContext = `
---- USER VEDIC PROFILE (MEMORY) ---
-The user is ${profile.full_name || uName}.
-Birth Details: ${profile.date_of_birth || 'Unknown DOB'}, ${profile.time_of_birth || 'Unknown Time'}, ${profile.place_of_birth || 'Unknown Place'}.
-Gender: ${profile.gender || 'Unknown'}.
-Zodiac/Rashi: ${profile.rashi || 'Unknown'}.
-Numerology Number: ${profile.numerology_number || 'Unknown'}.
-Guru AI Knowledge: You already know this user. Use this data to provide deeply personalized astrological and spiritual guidance. Do not ask for these details again unless they want to update them.
-----------------------------------
+--- USER VEDIC PROFILE & FULL KUNDALI ANALYSIS ---
+User Name: ${latestKundali.full_name || uName}
+Birth Details: ${latestKundali.date_of_birth}, ${latestKundali.time_of_birth}, ${latestKundali.place_of_birth}
+Gender: ${latestKundali.gender || 'Unknown'}
+
+KUNDALI DATA (RAW ANALYSIS FROM VEDALUNA):
+${JSON.stringify(latestKundali.full_data || {}, null, 2)}
+
+STRICT MISSION:
+1. Deeply analyze the "KUNDALI DATA" block above (Planet positions, Lagna, Houses, etc.) before answering.
+2. DO NOT echo the user's input or intent as a title (Avoid: "Priya [Input]"). 
+3. Start directly with a divine planetary insight.
+4. Your analysis must be based on the RAW JSON above, not generic knowledge.
+--------------------------------------------------
                 `;
             } else {
-                // Fallback to latest Kundali if profile is missing
-                const { data: latestKundali } = await supabaseAdmin
-                    .from('user_kundalis')
-                    .select('*')
-                    .eq('user_id', identifier)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .single();
-
-                if (latestKundali) {
-                    profileContext = `
---- USER VEDIC PROFILE (DETECTED) ---
-The user is ${latestKundali.full_name || uName}.
-Birth Details: ${latestKundali.date_of_birth || 'Unknown DOB'}, ${latestKundali.time_of_birth || 'Unknown Time'}, ${latestKundali.place_of_birth || 'Unknown Place'}.
-Gender: ${latestKundali.gender || 'Unknown'}.
-Guru AI Knowledge: You have detected an existing Kundali for this user. Use these birth details for analysis.
-----------------------------------
-                    `;
-                    
-                    // Optional Sync: Proactively update profile for next time
-                    await supabaseAdmin.from('user_vedic_profiles').upsert({
-                        user_id: identifier,
-                        full_name: latestKundali.full_name,
-                        date_of_birth: latestKundali.date_of_birth,
-                        time_of_birth: latestKundali.time_of_birth,
-                        place_of_birth: latestKundali.place_of_birth,
-                        gender: latestKundali.gender,
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'user_id' });
-                } else {
-                    profileContext = `
---- USER VEDIC PROFILE ---
-The user's birth details are NOT yet known. 
-MISSION: When the user asks for Kundali analysis, you MUST politely ask for these 5 keys: Full Name, Date of Birth, Time of Birth, Place of Birth, and Gender.
---------------------------
-                    `;
-                }
+                profileContext = `
+--- USER VEDIC PROFILE (MISSING) ---
+The user is ${uName}, but their birth chart is NOT in our sacred records.
+STRICT MISSION: You are NOT allowed to give any specific astrological predictions. 
+You MUST politely explain that you need their birth details to provide accurate divine guidance. 
+TAG REQUIRED: ALWAYS append [[START_KUNDLI_FLOW]] after asking for their details.
+------------------------------------
+                `;
             }
         } else {
             profileContext = `
 --- GUEST MODE (RESTRICTED) ---
-The user is a GUEST (Anonymous).
-KUNDALI RESTRICTION: If the user asks for Kundali analysis, Horoscope, or deep Personal Astrology, you MUST politely refuse. Tell them: "Jab aap LOGIN karenge, tabhi hum aapki Kundali ke gehre rahasya bata payenge."
-ALTERNATIVE SUGGESTIONS: Instead, suggest they ask about:
-1. Recommendation for any specific Puja (like Shiv Puja, Shani Puja).
-2. Guidance for mental peace or family harmony.
-3. Meaning of sacred mantras.
+The user is a GUEST.
+STRICT MISSION: Tell them "Jab aap LOGIN karenge, tabhi hum aapki Kundali ke gehre rahasya bata payenge." 
+Focus ON guest-friendly topics like general Puja or Mantras.
 --------------------------
             `;
         }
@@ -109,11 +98,103 @@ ALTERNATIVE SUGGESTIONS: Instead, suggest they ask about:
 
         const pujaCatalog = allPujas?.map(p => `- ${p.name} (Link: /pooja-services/${p.slug})`).join('\n') || "Catalog updating...";
 
+        // 0.2 Check for Horoscope Intent & Fetch Data
+        let horoscopeContext = "";
+        const lowerMsg = message.toLowerCase();
+        const horoscopeKeywords = ['rashifal', 'horoscope', 'rashi phal', 'aaj ka din', 'weekly forecast', 'monthly forecast', 'yearly forecast'];
+        const matchesHoroscope = horoscopeKeywords.some(key => lowerMsg.includes(key));
+
+        if (matchesHoroscope) {
+            // Determine sign: 1. From message, 2. From profile rashi
+            const signs = ['aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'];
+            const hindiSigns: Record<string, string> = {
+                'mesh': 'aries', 'vrishabh': 'taurus', 'mithun': 'gemini', 'kark': 'cancer', 'singh': 'leo', 'kanya': 'virgo',
+                'tula': 'libra', 'vrischika': 'scorpio', 'vrischick': 'scorpio', 'dhanu': 'sagittarius', 'makar': 'capricorn', 'kumbh': 'aquarius', 'meen': 'pisces'
+            };
+
+            let targetSign = signs.find(s => lowerMsg.includes(s));
+            if (!targetSign) {
+                const hindiMatch = Object.keys(hindiSigns).find(h => lowerMsg.includes(h));
+                if (hindiMatch) targetSign = hindiSigns[hindiMatch];
+            }
+
+            // Fallback to profile moon sign (rashi) if logged in
+            if (!targetSign && identifier !== 'anonymous') {
+                const { data: kundali } = await supabaseAdmin
+                    .from('user_kundalis')
+                    .select('full_data')
+                    .eq('user_id', identifier)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+                
+                const rashi = (kundali?.full_data as any)?.rashi?.toLowerCase() || (kundali?.full_data as any)?.moon_sign?.toLowerCase();
+                if (rashi && signs.includes(rashi)) targetSign = rashi;
+            }
+
+            // Determine period
+            let period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'daily';
+            if (lowerMsg.includes('week')) period = 'weekly';
+            else if (lowerMsg.includes('month')) period = 'monthly';
+            else if (lowerMsg.includes('year')) period = 'yearly';
+
+            if (targetSign) {
+                try {
+                    const hData = await HoroscopeService.getHoroscope(targetSign, period);
+                    horoscopeContext = `
+--- REAL-TIME HOROSCOPE DATA (ASTROSAGE) ---
+Sign: ${targetSign}
+Period: ${period}
+Date/Label: ${hData.date_label || 'Current'}
+Main Prediction: ${hData.content}
+${hData.lucky_number ? `Lucky Number: ${hData.lucky_number}` : ''}
+${hData.lucky_color ? `Lucky Color: ${hData.lucky_color}` : ''}
+${hData.remedy ? `Remedy: ${hData.remedy}` : ''}
+${hData.sections?.map(s => `Section [${s.heading}]: ${s.body}`).join('\n') || ''}
+${hData.ratings?.map(r => `Rating - ${r.label}: ${r.score}/5`).join('\n') || ''}
+--------------------------------------------
+                    `;
+                } catch (hErr) {
+                    console.error("Chat API: Horoscope fetch failed:", hErr);
+                }
+            }
+        }
+
+        // 0.3 Fetch Panchang Data (ALWAYS for real-time context)
+        let panchangContext = "";
+        try {
+            const pData = await PanchangService.getTodayPanchang();
+            panchangContext = `
+--- REAL-TIME VEDIC PANCHANG (MANDATORY CONTEXT) ---
+Current Date: ${pData.reference_date}
+Daily Pillars: Tithi: ${pData.panchang_for_today?.tithi || 'Analyze'}, Nakshatra: ${pData.panchang_for_today?.nakshatra || 'Analyze'}, Yog: ${pData.panchang_for_today?.yog || 'Analyze'}
+Sun/Moon Status: ${JSON.stringify(pData.sun_moon_calculations)}
+Auspicious Muhurats: ${JSON.stringify(pData.auspicious_timings)}
+Inauspicious Rahu Kaal: ${JSON.stringify(pData.inauspicious_timings?.rahu_kaal || 'Standard')}
+-------------------------------------------
+            `;
+        } catch (pErr) {
+            console.error("Chat API: Panchang fetch failed:", pErr);
+        }
+
         // 1. Fetch encrypted Gemini Key, Selected Model & Prompts
         const { data: settings, error } = await supabaseAdmin
             .from('settings')
             .select('key, value')
-            .in('key', ['gemini_api_key', 'gemini_selected_model', 'core_prompt', 'rulebook', 'free_query_limit', 'guest_query_limit', 'chat_reset_hours', 'premium_upsell_message', 'chat_start_instruction', 'chat_end_instruction']);
+            .in('key', [
+                'gemini_api_key', 
+                'gemini_api_keys',
+                'gemini_selected_model', 
+                'core_prompt', 
+                'rulebook', 
+                'free_query_limit', 
+                'guest_query_limit', 
+                'chat_reset_hours', 
+                'premium_upsell_message', 
+                'chat_start_instruction', 
+                'chat_end_instruction', 
+                'guru_ai_instruction'
+            ]);
 
         if (error) {
             console.error("Website Chat API: Failed to fetch settings:", error);
@@ -121,6 +202,7 @@ ALTERNATIVE SUGGESTIONS: Instead, suggest they ask about:
         }
 
         const apiKeyEncrypted = settings?.find(s => s.key === 'gemini_api_key')?.value;
+        const apiKeysEncrypted = settings?.find(s => s.key === 'gemini_api_keys')?.value;
         const selectedModel = settings?.find(s => s.key === 'gemini_selected_model')?.value || 'gemini-1.5-flash';
 
         const defaultCorePrompt = "You are a spiritual guide.";
@@ -139,6 +221,7 @@ ALTERNATIVE SUGGESTIONS: Instead, suggest they ask about:
 
         const startInstruction = settings?.find(s => s.key === 'chat_start_instruction')?.value || "Begin EVERY response by analyzing the current planetary positions (Grahas) and Houses in the user's birth chart (2-3 lines). Example: 'Aapki kundali mein Shani ka prabhav abhi prabal hai...'";
         const endInstruction = settings?.find(s => s.key === 'chat_end_instruction')?.value || "Always end your message with a short, topic-related mystery or curiosity question (e.g., 'Kya aap janna chahenge aapka Career kaisa rahega?').";
+        const guruAiInstruction = settings?.find(s => s.key === 'guru_ai_instruction')?.value || "";
 
         // --- Usage Check with Time-Based Reset ---
         const limit = userId ? freeQueryLimit : guestQueryLimit;
@@ -199,9 +282,25 @@ ALTERNATIVE SUGGESTIONS: Instead, suggest they ask about:
         const combinedSystemPrompt = `
 ${corePrompt}
 
+${guruAiInstruction}
+
+${templateInstruction ? `--- SPECIFIC TEMPLATE INSTRUCTION ---
+${templateInstruction}
+` : ''}
 ${langInst}
 
 ${profileContext}
+
+--- MANDATORY 3-STEP INTERNAL ANALYSIS (SILENT CHECK) ---
+Before you generate even a single word of your response, you MUST silently perform this internal check:
+1. PANCHANG CHECK: Analyze the 'REAL-TIME VEDIC PANCHANG' block above. Is today's Tithi or Nakshatra auspicious for the user's intent? Identify current Rahu Kaal.
+2. KUNDALI CHECK: Deeply analyze the 'USER VEDIC PROFILE' (Planet positions, Lagna, Current Dasha). How do the user's natal planets react to today's cosmic energies?
+3. RASHIFAL CHECK: If Rashifal data is present, evaluate how the daily transit specifically impacts the user's sign.
+ONLY AFTER this silent synthesis should you begin your response. Your final answer must be a distilled conclusion of this 3-step analysis, providing guidance that feels like a divine realization.
+
+${horoscopeContext}
+
+${panchangContext}
 
 --- SACRED RITUAL CATALOG (OFFERINGS) ---
 You must recommend these authentic rituals when users seek specific solutions:
@@ -210,99 +309,109 @@ ${pujaCatalog}
 --- STRICT RULEBOOK & RESTRICTIONS ---
 ${rulebook}
 
-CRITICAL INSTRUCTIONS:
-1. You are Guru AI, the supreme spiritual guide for Mantra Puja.
-2. RESPONSE START (DYNAMIC): ${startInstruction}
-3. RESPONSE END (DYNAMIC): ${endInstruction}
-4. PERSONALIZATION & MEMORY: 
-   - ALWAYS address the user by their full name if it exists in the 'USER VEDIC PROFILE' section above. 
-   - BASE all your future predictions, analysis, and spiritual advice strictly on the birth details (DOB, Time, Place) provided in the Vedic profile.
-   - Refer to their specific birth data to explain your guidance.
-5. FORMATTING (STRICT REQUIREMENT): 
-   - You MUST ALWAYS rely on a well-structured format for your answers.
-   - Start with a clear Heading (using ### H3).
-   - Use Subheadings (#### H4) where appropriate.
-   - Use Bullet Points (- ) for listing remedies, insights, or planetary effects.
-   - Example Structure:
-     ### [Main Topic/Greeting]
-     [Introductory text]
-     #### [Subtopic like 'Planetary Impact']
-     - Point 1
-     - Point 2
-6. LANGUAGE: Use simple, everyday Hindi (Normal Hindi/Hinglish) as spoken by common people. Do NOT use overly advanced or heavy Sanskrit words unless necessary for a mantra.
-7. MISSION: Answer the query directly. 
-   - FOR LOGGED-IN USERS: If they ask for Kundali, Horoscope, or Analysis and data is missing, you MUST provide a very brief polite blessing and append the tag [[START_KUNDLI_FLOW]]. CRITICAL: Do NOT list the required details (Name, DOB, etc.) in your text response, as the questionnaire will handle this.
-   - FOR GUESTS: Refuse Kundali analysis politely ("Login karoge tabhi...") and suggest other topics.
-8. Expertise: Vedic Astrology, Numerology, Vastu, and spiritual healing.
-9. CONTEXTUAL RECOMMENDATIONS (CRITICAL): 
-   - You MUST recommend a relevant puja ONLY when a pivotal moment occurs in the conversation (e.g., discovering a Dosha, a severe planet affliction, or a major life worry like job loss or illness).
-   - In such moments, explain why this ritual is necessary and append the special button tag.
-   - Mention that they can "Secure their spot for just ₹1" as a symbolic token.
-   - Format: [[PUJA_LINK: Puja Name | slug]]
-   (Example: [[PUJA_LINK: Shiv Puja | shiv-puja]])
-10. NO OTHER LINKS: Do not provide any other standard URLs or links.
-11. DISALLOWED TOPICS: Technology, AI, Backend Systems, Mathematics, Science, Current Events, or any non-spiritual logic.
-12. AUTOMATED MEMORY & KUNDALI GENERATION: Once all details are synced, the system updates the profile. You will be notified.
-13. NEVER break character.
-
-ADDITIONAL INSTRUCTIONS FOR TITLING:
-If this is the start of a conversation, please generate a very short title (max 4-5 words) that summarizes the user's intent.
+--- REQUIRED TECHNICAL FORMATS (SYSTEM INTEGRATION) ---
+The following are mandatory guidelines for your output:
+- OPENING: ${startInstruction}
+- CLOSING: ${endInstruction}
+- LINE-BY-LINE FORMATTING: You MUST provide your answers in a line-by-line structured format. Use very short, concise sentences. Use a double newline (\n\n) between every distinct thought or point. Never write more than 2 sentences without a line break.
+3. KUNDALI REQUESTS: If profile data is missing, ALWAYS append [[START_KUNDLI_FLOW]] after asking for details.
+4. RITUAL RECOMMENDATIONS: When recommending a puja from the catalog, you MUST output a button using this exact format: [[PUJA_LINK: Puja Name | slug]] (Example: [[PUJA_LINK: Shiv Puja | shiv-puja]])
+5. PROFILE UPDATES: When the user provides their birth details (Name, DOB, POB, TOB), you MUST generate a hidden tag at the end of your message in this exact format: [[VEDIC_UPDATE: {"full_name": "NAME_AS_PROVIDED_BY_USER", "dob": "YYYY-MM-DD", "pob": "...", "tob": "HH:MM", "gender": "..."}]]. You MUST use the exact name the user provided as 'full_name'.
+6. MEMORY: Always base your advice on the user's birth data provided in the USER VEDIC PROFILE above.
 ------------------------
         `.trim();
 
-        if (!apiKeyEncrypted) return NextResponse.json({ error: 'AI Not Configured' }, { status: 500 });
 
-        // 2. Decrypt API Key
+        // 2. Decrypt API Key(s)
         const encryptionKey = process.env.ENCRYPTION_STRING_KEY || '';
         if (encryptionKey.length !== 16) {
             throw new Error('Server misconfiguration: Encryption key must be 16 characters');
         }
 
-        const [ivHex, encryptedText] = apiKeyEncrypted.split(':');
-        if (!ivHex || !encryptedText) {
-            throw new Error('Invalid encrypted key format');
+        const decrypt = (encrypted: string) => {
+            try {
+                const [ivHex, encryptedText] = encrypted.split(':');
+                if (!ivHex || !encryptedText) return null;
+                const decipher = crypto.createDecipheriv('aes-128-cbc', Buffer.from(encryptionKey), Buffer.from(ivHex, 'hex'));
+                let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+                decrypted += decipher.final('utf8');
+                return decrypted;
+            } catch (e) {
+                console.error("Decryption failed for a key:", e);
+                return null;
+            }
+        };
+
+        let keys: string[] = [];
+        if (apiKeysEncrypted) {
+            try {
+                const encryptedList = JSON.parse(apiKeysEncrypted);
+                if (Array.isArray(encryptedList)) {
+                    keys = encryptedList.map(decrypt).filter((k): k is string => k !== null);
+                }
+            } catch (e) {
+                console.error("Failed to parse gemini_api_keys JSON:", e);
+            }
+        }
+        
+        // Fallback to single legacy key if no multiple keys found
+        if (keys.length === 0 && apiKeyEncrypted) {
+            const singleKey = decrypt(apiKeyEncrypted);
+            if (singleKey) keys.push(singleKey);
         }
 
-        const decipher = crypto.createDecipheriv('aes-128-cbc', Buffer.from(encryptionKey), Buffer.from(ivHex, 'hex'));
-        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
+        if (keys.length === 0) {
+            return NextResponse.json({ error: 'AI Not Configured (API Keys missing)' }, { status: 500 });
+        }
 
-        // 3. Call Gemini API (with Retry Logic for 503/429)
+        // 3. Call Gemini API with Automatic Failover & Shuffle (Rotation)
         let response: any = null;
         let data: any;
-        const maxRetries = 2;
-        let attempt = 0;
+        let lastError: any = null;
 
-        while (attempt <= maxRetries) {
-            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${decrypted}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: { parts: [{ text: combinedSystemPrompt }] },
-                    contents: [...chatHistory || [], { parts: [{ text: message }] }]
-                }),
-            });
+        // Shuffle keys to distribute traffic better (Load Balancing)
+        const shuffledKeys = [...keys].sort(() => Math.random() - 0.5);
 
-            data = await response.json();
+        for (let keyIndex = 0; keyIndex < shuffledKeys.length; keyIndex++) {
+            const currentKey = shuffledKeys[keyIndex];
+            try {
+                response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${currentKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        system_instruction: { parts: [{ text: combinedSystemPrompt }] },
+                        contents: [...chatHistory || [], { parts: [{ text: message }] }]
+                    }),
+                });
 
-            if (response.ok) break;
+                data = await response.json();
 
-            // If it's a transient error (503/429), wait and retry
-            if ((response.status === 503 || response.status === 429) && attempt < maxRetries) {
-                console.log(`Gemini API Busy (${response.status}). Retrying attempt ${attempt + 1}...`);
-                await new Promise(resolve => setTimeout(resolve, 1500 * (attempt + 1))); // Exponential backoff
-                attempt++;
+                if (response.ok) {
+                    // Success!
+                    break;
+                }
+
+                // If failing (Demand spikes, Quotas, etc.), we move to the next key immediately
+                console.warn(`Gemini Key ${keyIndex + 1} failed with ${response.status}: ${data.error?.message || 'Unknown'}`);
+                lastError = data.error?.message || `Error ${response.status}`;
+                
+                // If it's a 429 or 503, just move to the next key without retrying this specific key
+                if (response.status === 429 || response.status === 503) {
+                    continue; 
+                } else {
+                    // For other errors, we might still try other keys but it's likely a terminal model/prompt issue
+                    continue; 
+                }
+            } catch (fetchErr: any) {
+                console.error(`Fetch error with key ${keyIndex + 1}:`, fetchErr);
+                lastError = fetchErr.message;
                 continue;
             }
-
-            // Otherwise, break and throw error
-            console.error("Gemini API Error:", data);
-            throw new Error(data.error?.message || 'Failed to generate content from AI');
         }
 
         if (!response || !response.ok) {
-            console.error("Gemini API Error:", data);
-            throw new Error(data?.error?.message || 'Failed to generate content from AI');
+            console.error("Gemini Multi-Key API Error: All keys exhausted.", lastError);
+            throw new Error(lastError || 'Failed to generate content from AI after trying all available keys');
         }
 
         let aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Guruji is meditating. Try again.";

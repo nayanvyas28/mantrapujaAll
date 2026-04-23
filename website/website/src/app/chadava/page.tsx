@@ -1,0 +1,1 @@
+export default function ChadavaPage() { return <div>Coming Soon</div>; }

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import {
@@ -9,17 +10,20 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from '@supabase/supabase-js';
-import FireParticles from "@/components/FireParticles";
-import EmberParticles from "@/components/EmberParticles";
-import StarsGalaxyBackground from "@/components/ui/StarsGalaxyBackground";
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
 import { getUiConfig, UiConfig, getBlogCategoryStyle } from '@/lib/uiMapping';
-import CollapsibleText from "@/components/ui/CollapsibleText";
-import { FloatingSocialButtons } from "@/components/ui/FloatingSocialButtons";
-import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
-import FeedSection from "@/components/home/FeedSection";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
+// Lazy Load heavy/non-critical components
+const FireParticles = dynamic(() => import("@/components/FireParticles"), { ssr: false });
+const EmberParticles = dynamic(() => import("@/components/EmberParticles"), { ssr: false });
+const StarsGalaxyBackground = dynamic(() => import("@/components/ui/StarsGalaxyBackground"), { ssr: false });
+const FloatingSocialButtons = dynamic(() => import("@/components/ui/FloatingSocialButtons").then(mod => mod.FloatingSocialButtons), { ssr: false });
+const SpiritualFamilySection = dynamic(() => import("@/components/home/SpiritualFamilySection"), { ssr: false });
+const FeedSection = dynamic(() => import("@/components/home/FeedSection"), { ssr: false });
+const CollapsibleText = dynamic(() => import("@/components/ui/CollapsibleText"), { ssr: false });
+const PanchangSection = dynamic(() => import("@/components/home/PanchangSection"), { ssr: false });
 
 interface Puja extends UiConfig {
     id: string;
@@ -226,143 +230,150 @@ export default function HomeClient() {
     }, []);
 
     useEffect(() => {
+        // Failsafe: Ensure the loading screen is hidden after a maximum of 3 seconds
+        const loadingTimeout = setTimeout(() => {
+            if (loading) {
+                console.info("[HomeClient] Loading timeout reached. Force clearing.");
+                setLoading(false);
+            }
+        }, 2000); // Reduced to 2s for snappier feel
+
+        // 1. Load Initial State from Cache (SWR Pattern)
+        const CACHE_KEY = 'mantrapuja_home_cache_v2'; // bump version to bust stale is_featured cache
+        const loadCache = () => {
+            try {
+                // Remove old cache version to prevent stale popular pujas from showing
+                localStorage.removeItem('mantrapuja_home_cache');
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    console.log("[HomeClient] Using cached data for instant load.");
+                    if (data.pageData) setPageData(data.pageData);
+                    if (data.blogs) setBlogs(data.blogs);
+                    if (data.locations) setLocations(data.locations);
+                    if (data.popularPujas) setPopularPujas(data.popularPujas);
+                    if (data.heroPujas) setHeroPujas(data.heroPujas);
+                    if (data.banners) setBanners(data.banners);
+                    if (data.features) setFeatures(data.features);
+                    setLoadingPujas(false);
+                    setLoading(false);
+                }
+            } catch (e) { console.warn("[HomeClient] Cache load failed", e); }
+        };
+        loadCache();
+
         const fetchData = async () => {
             try {
-                // 1. Fetch Dynamic Page Override
-                const { data: page } = await supabase
-                    .from('pages')
-                    .select('*')
-                    .or('slug.eq./,slug.eq.home')
-                    .maybeSingle();
+                console.log("[HomeClient] Starting resilient parallel data fetch...");
+                
+                // Unified Parallel Fetch for all homepage requirements
+                const [
+                    pDataResponse,
+                    fBlogsResponse,
+                    lDataResponse,
+                    pujasDataResponse,
+                    fDataResponse,
+                    bannersResponse
+                ] = await Promise.all([
+                    supabase.from('pages').select('id, slug, title').or('slug.eq./,slug.eq.home').maybeSingle(),
+                    supabase.from('blogs').select('id, title, slug, image, category, excerpt, tags, created_at').eq('published', true).order('created_at', { ascending: false }).limit(3),
+                    supabase.from('destinations').select('id, name, type, state_id, description, images, slug').eq('is_featured', true).limit(4),
+                    supabase.from('poojas').select('id, name, slug, images, description, benefits, price, is_featured, is_hero, tags').eq('is_active', true).limit(500),
+                    supabase.from('home_features').select('id, title, description, image_url, display_order').eq('is_active', true).order('display_order', { ascending: true }),
+                    supabase.from('home_banners').select('*, show_text_overlay').eq('is_active', true).or('target.eq.web,target.eq.both').order('display_order', { ascending: true })
+                ]);
 
-                if (page) setPageData(page);
+                console.log("[HomeClient] Data fetch completed. Processing results...");
 
-                // 2. Fetch Featured Blogs
-                const { data: bData } = await supabase
-                    .from('blogs')
-                    .select('*')
-                    .eq('published', true)
-                    .eq('is_featured', true)
-                    .order('created_at', { ascending: false })
-                    .limit(3);
+                // 1. Process Page Data
+                if (pDataResponse.data) setPageData(pDataResponse.data);
 
-                if (bData && bData.length > 0) {
-                    setBlogs(bData);
-                } else {
-                    // Fallback to latest 3 blogs if none featured
-                    const { data: fallbackBlogs } = await supabase
-                        .from('blogs')
-                        .select('*')
-                        .eq('published', true)
-                        .order('created_at', { ascending: false })
-                        .limit(3);
-                    setBlogs(fallbackBlogs || []);
+                // 2. Process Blogs with Fallback
+                let blogsData = fBlogsResponse.data;
+                if (fBlogsResponse.error && fBlogsResponse.error.code === '42703') {
+                    const fb = await supabase.from('blogs').select('*').eq('published', true).order('created_at', { ascending: false }).limit(3);
+                    blogsData = fb.data;
                 }
+                if (blogsData) setBlogs(blogsData);
 
-                // 2.5 Fetch Featured Destinations (Sacred Locations)
-                const { data: lData } = await supabase
-                    .from('destinations')
-                    .select('*')
-                    .eq('is_featured', true)
-                    .limit(4);
-
-                if (lData && lData.length > 0) {
-                    const mappedLocations: PoojaLocation[] = (lData as unknown as DatabaseLocation[]).map((l, idx) => ({
+                // 3. Process Locations with Fallback
+                let locData = lDataResponse.data;
+                if (lDataResponse.error && lDataResponse.error.code === '42703') {
+                    const fl = await supabase.from('destinations').select('*').eq('is_featured', true).limit(4);
+                    locData = fl.data;
+                }
+                if (locData) {
+                    const mappedLocations: PoojaLocation[] = (locData as unknown as DatabaseLocation[]).map((l, idx) => ({
                         id: l.id,
                         name: l.name,
                         title: l.type || "Sacred Site",
                         location: l.state_id || "India",
                         desc: l.description || "",
-                        image: (l.images && l.images.length > 0) ? l.images[0] : "/logo.png",
+                        image: (l.images && l.images.length > 0 && l.images[0]) ? l.images[0] : "/logo.png",
                         slug: l.slug,
                         delay: (idx * 100).toString()
                     }));
                     setLocations(mappedLocations);
                 }
 
-                // 3. Fetch Popular Pujas
-                try {
-                    const { data: pData, error } = await supabase
-                        .from('poojas')
-                        .select('*')
-                        .eq('is_active', true);
-
-                    if (pData) {
-                        const mappedPujas: Puja[] = (pData as unknown as DatabasePooja[]).map((item) => {
-                            const uiConfig = getUiConfig(item.slug);
-                            return {
-                                ...uiConfig,
-                                id: item.id,
-                                name: item.name,
-                                slug: item.slug,
-                                image: (item.images && item.images.length > 0) ? item.images[0] : '/logo.png',
-                                desc: item.description,
-                                benefits: item.benefits || [],
-                                price: item.price,
-                                is_featured: item.is_featured,
-                                is_hero: item.is_hero,
-                                tags: item.tags || []
-                            };
-                        });
-
-                        // 1. Filter for Hero Pujas
-                        const hero = mappedPujas.filter(p => p.is_hero).slice(0, 3);
-                        setHeroPujas(hero);
-
-                        // 2. Filter for Popular/Featured ones - prioritize featured, then others up to 6
-                        const featured = mappedPujas.filter(p => p.is_featured);
-                        const nonFeaturedOthers = mappedPujas.filter(p => !p.is_featured && !p.is_hero);
-
-                        // Combine and take first 6
-                        const displayPujas = [...featured, ...nonFeaturedOthers].slice(0, 6);
-
-                        setPopularPujas(displayPujas);
-                    }
-                } catch (e) {
-                    console.error("Error loading pujas", e);
-                } finally {
+                // 4. Process Poojas with Fallback
+                let pData = pujasDataResponse.data;
+                if (pujasDataResponse.error && pujasDataResponse.error.code === '42703') {
+                    const fp = await supabase.from('poojas').select('*').eq('is_active', true).limit(500);
+                    pData = fp.data;
+                }
+                if (pData) {
+                    const mappedPujas: Puja[] = (pData as unknown as DatabasePooja[]).map((item) => ({
+                        ...getUiConfig(item.slug),
+                        id: item.id,
+                        name: item.name,
+                        slug: item.slug,
+                        image: (item.images && item.images.length > 0 && item.images[0]) ? item.images[0] : '/logo.png',
+                        desc: item.description,
+                        benefits: item.benefits || [],
+                        price: item.price,
+                        is_featured: item.is_featured,
+                        is_hero: item.is_hero,
+                        tags: item.tags || []
+                    }));
+                    setHeroPujas(mappedPujas.filter(p => p.is_hero).slice(0, 3));
+                    const featuredPujas = mappedPujas.filter(p => p.is_featured);
+                    // Show featured pujas chosen in admin; fall back to non-hero if none set yet
+                    setPopularPujas(featuredPujas.length > 0 ? featuredPujas.slice(0, 6) : mappedPujas.filter(p => !p.is_hero).slice(0, 6));
                     setLoadingPujas(false);
+                } else {
+                    setLoadingPujas(false); // Clear loader even if empty
                 }
 
-                // 4. Fetch Dynamic Banners
-                let { data: homeBannersData, error: bannerError } = await supabase
-                    .from('home_banners')
-                    .select('*, show_text_overlay')
-                    .eq('is_active', true)
-                    .or('target.eq.web,target.eq.both')
-                    .order('display_order', { ascending: true });
+                // 5. Process Features
+                if (fDataResponse.data) setFeatures(fDataResponse.data as HomeFeature[]);
 
-                if (bannerError && bannerError.code === '42703') {
-                    console.warn('[HomeClient] show_text_overlay column missing, falling back...');
-                    const result = await supabase
-                        .from('home_banners')
-                        .select('*')
-                        .eq('is_active', true)
-                        .or('target.eq.web,target.eq.both')
-                        .order('display_order', { ascending: true });
-                    homeBannersData = result.data;
+                // 6. Process Banners with Fallback
+                let bData = bannersResponse.data;
+                if (bannersResponse.error && bannersResponse.error.code === '42703') {
+                    const fallback = await supabase.from('home_banners').select('*').eq('is_active', true).or('target.eq.web,target.eq.both').order('display_order', { ascending: true });
+                    bData = fallback.data;
                 }
-                if (homeBannersData) setBanners(homeBannersData);
-
-                // 5. Fetch "Why Choose Us" Features
-                try {
-                    const { data: fData } = await supabase
-                        .from('home_features')
-                        .select('*')
-                        .eq('is_active', true)
-                        .order('display_order', { ascending: true });
-                    
-                    if (fData && fData.length > 0) {
-                        setFeatures(fData as HomeFeature[]);
-                    }
-                } catch (e) {
-                    console.error("Error loading features", e);
+                
+                if (bData || pData || blogsData) {
+                    if (bData) setBanners(bData);
+                    localStorage.setItem(CACHE_KEY, JSON.stringify({
+                        pageData: pDataResponse.data,
+                        blogs: blogsData,
+                        locations: locData, // We'll save the mapped ones if preferred but locData is enough
+                        popularPujas: pData ? (pData as any).filter((p:any) => p.is_featured).slice(0, 6) : [],
+                        heroPujas: pData ? (pData as any).filter((p:any) => p.is_hero).slice(0,3) : [],
+                        banners: bData,
+                        features: fDataResponse.data
+                    }));
                 }
 
             } catch (error) {
                 console.error("Failed to fetch data:", error);
             } finally {
+                clearTimeout(loadingTimeout);
                 setLoading(false);
+                setLoadingPujas(false);
             }
         };
 
@@ -427,21 +438,30 @@ export default function HomeClient() {
 
     const icons = ["☀️", "🕉️", "🪔"];
 
-    if (loading) {
+    if (loading && !pageData && !popularPujas.length) {
         return <LoadingScreen />;
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground overflow-x-hidden relative transition-colors duration-300">
-
-
-            {/* Global Dark Mode Background Animation */}
-            <StarsGalaxyBackground />
+        <div className={`min-h-screen bg-background text-foreground overflow-x-hidden relative transition-colors duration-500 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+            {/* Smooth Loading Overlay - Only visible during background fetch when cache exists */}
+            <AnimatePresence>
+                {loading && (
+                    <motion.div
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8 }}
+                        className="fixed inset-0 z-[110] pointer-events-none"
+                    >
+                        <LoadingScreen />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Hero Section */}
-            <section className="relative bg-background">
-                <div className="w-full">
-                    <div className={`relative w-full aspect-[5/1] overflow-hidden group ${isDarkTheme ? 'bg-slate-900' : 'bg-white'}`}>
+            <section className="relative pt-4 md:pt-6 pb-2 px-4 md:px-8 lg:px-12 bg-white dark:bg-slate-950">
+                <div className="max-w-[1600px] mx-auto">
+                    <div className={`relative w-full aspect-[4/1] overflow-hidden rounded-[1.2rem] md:rounded-[2.2rem] group ${isDarkTheme ? 'bg-slate-900' : 'bg-white'}`}>
                         {/* Premium Shimmer Sweep Effect */}
                         <motion.div 
                             initial={{ x: '-100%' }}
@@ -452,24 +472,37 @@ export default function HomeClient() {
 
                         <AnimatePresence mode="wait" initial={false}>
                             {(banners.length > 0 && banners[activeBanner]) ? (
-                                <motion.div
-                                    key={banners[activeBanner].id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 1 }}
-                                    className="absolute inset-0"
-                                >
+                                    <motion.div
+                                        key={banners[activeBanner].id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ duration: 1 }}
+                                        className="absolute inset-0 cursor-pointer"
+                                        onClick={() => {
+                                            const route = banners[activeBanner].route?.startsWith('puja:')
+                                                ? `/pooja-services/${banners[activeBanner].route.split(':')[1]}`
+                                                : (banners[activeBanner].route || '/pooja-services');
+                                            window.location.href = route;
+                                        }}
+                                    >
                                     {/* Background Image with Ken Burns Effect */}
-                                    <motion.img
-                                        key={`img-${banners[activeBanner].id}`}
-                                        src={banners[activeBanner].image_url}
-                                        alt={banners[activeBanner].title}
+                                    <motion.div
+                                        key={`img-wrap-${banners[activeBanner].id}`}
                                         initial={{ scale: 1.15, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
                                         transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className="absolute inset-0 w-full h-full object-cover"
-                                    />
+                                        className="absolute inset-0"
+                                    >
+                                        <Image
+                                            src={banners[activeBanner].image_url || null}
+                                            alt={banners[activeBanner].title}
+                                            fill
+                                            unoptimized
+                                            priority={activeBanner === 0}
+                                            className="object-cover"
+                                        />
+                                    </motion.div>
                                     {/* Ultra-subtle gradient only at the very bottom for text readability */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
 
@@ -489,7 +522,7 @@ export default function HomeClient() {
                                                         className="absolute -inset-4 bg-yellow-400 rounded-full blur-2xl"
                                                     />
                                                     
-                                                    <div className="relative flex items-center gap-3 px-8 py-2.5 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 rounded-full border border-white/50 shadow-[0_0_20px_rgba(253,224,71,0.5)]">
+                                                    <div className="relative flex items-center gap-3 px-8 py-2.5 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 rounded-full border border-white/50 shadow-none">
                                                         <Gift className="w-5 h-5 text-black" />
                                                         <span className="text-base font-black text-black uppercase tracking-wider">
                                                             {currentLang === 'hi' ? (banners[activeBanner].offer_tag_hi || banners[activeBanner].offer_tag) : banners[activeBanner].offer_tag}
@@ -506,7 +539,7 @@ export default function HomeClient() {
                                                     initial={{ y: 20, opacity: 0 }}
                                                     animate={{ y: 0, opacity: 1 }}
                                                     transition={{ delay: 0.2 }}
-                                                    className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-4 drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] tracking-widest leading-tight uppercase"
+                                                    className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-4 tracking-widest leading-tight uppercase"
                                                     style={{ fontFamily: 'Georgia, serif' }}
                                                 >
                                                     {currentLang === 'hi' ? (banners[activeBanner].title_hi || banners[activeBanner].title) : banners[activeBanner].title}
@@ -516,7 +549,7 @@ export default function HomeClient() {
                                                     initial={{ y: 15, opacity: 0 }}
                                                     animate={{ y: 0, opacity: 1 }}
                                                     transition={{ delay: 0.4 }}
-                                                    className="text-base md:text-xl text-white/90 drop-shadow-md mb-8 max-w-2xl font-light leading-relaxed"
+                                                    className="text-base md:text-xl text-white/90 mb-8 max-w-2xl font-light leading-relaxed"
                                                 >
                                                     {currentLang === 'hi' ? (banners[activeBanner].subtitle_hi || banners[activeBanner].subtitle) : banners[activeBanner].subtitle}
                                                 </motion.p>
@@ -533,7 +566,7 @@ export default function HomeClient() {
                                                             : (banners[activeBanner].route || '/pooja-services')}
                                                         animate={{ scale: [1, 1.05, 1] }}
                                                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                                        className="group/btn relative inline-flex items-center justify-center h-12 px-10 font-bold text-base text-white rounded-full bg-gradient-to-r from-orange-500 to-red-600 shadow-2xl hover:scale-110 active:scale-95 transition-all"
+                                                        className="group/btn relative inline-flex items-center justify-center h-12 px-10 font-bold text-base text-white rounded-full bg-gradient-to-r from-orange-500 to-red-600 shadow-none hover:scale-110 active:scale-95 transition-all"
                                                     >
                                                         <div className="absolute inset-0 rounded-full overflow-hidden">
                                                             <FireParticles />
@@ -563,19 +596,75 @@ export default function HomeClient() {
                             )}
                         </AnimatePresence>
 
-                        {/* Navigation Dots - Now Inside Card */}
-                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-40">
-                            {banners.map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setActiveBanner(i)}
-                                    className={`w-2 h-2 rounded-full transition-all duration-300 ${activeBanner === i ? 'bg-orange-500 w-8' : 'bg-white/20 hover:bg-white/40'}`}
-                                />
-                            ))}
-                        </div>
                     </div>
                 </div>
             </section>
+
+            {/* Spiritual Services Quick Access */}
+            <section className="pt-0 pb-2 md:pb-6 bg-zinc-50/50 dark:bg-black/40 relative z-30 overflow-visible">
+                <div className="max-w-[1440px] mx-auto px-1 sm:px-4 overflow-visible">
+                    <div className="grid grid-cols-3 lg:grid-cols-6 gap-x-1 sm:gap-x-6 gap-y-10 sm:gap-y-16 py-3 md:py-6 justify-items-center justify-center items-center overflow-y-visible">
+                        {[
+                            { name: "Kundali", img: "/features/kundali.png", link: "/kundli", color: "from-orange-500/10 to-red-500/10", border: "#f97316" },
+                            { name: "Rashifal", img: "/features/rashifal.png", link: "/horoscope", color: "from-amber-500/10 to-orange-500/10", border: "#f59e0b" },
+                            { name: "Panchang", img: "/features/panchang.png", link: "/panchang", color: "from-yellow-500/10 to-amber-500/10", border: "#eab308" },
+                            { name: "Calculator", img: "/features/calculator.png", link: "/calculators", color: "from-red-500/10 to-pink-500/10", border: "#ef4444" },
+                            { name: "Chadava", img: "/features/chadava.png", link: "/chadava", color: "from-purple-500/10 to-indigo-500/10", border: "#a855f7" },
+                            { name: "Guru Ji AI", img: "/features/guru-ai.png", link: "/chat", color: "from-cyan-500/10 to-blue-500/10", border: "#06b6d4" }
+                        ].map((item, j) => (
+                            <Link 
+                                href={item.link} 
+                                key={j} 
+                                onClick={(e) => {
+                                    if (item.name === "Guru Ji AI") {
+                                        e.preventDefault();
+                                        window.dispatchEvent(new CustomEvent('open-guru-chat'));
+                                    }
+                                }}
+                                className="flex flex-col items-center gap-4 group relative z-10"
+                            >
+                                <div className="w-28 h-28 xs:w-32 xs:h-32 md:w-40 md:h-40 rounded-[2rem] md:rounded-[2.5rem] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 shadow-[0_15px_40px_-5px_rgba(0,0,0,0.05)] transition-all duration-500 flex items-center justify-center relative overflow-hidden group-hover:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.2)] group-hover:-translate-y-2">
+                                    
+                                    {/* SVG Snake Border Effect - Exactly like Puja Cards */}
+                                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-30">
+                                        <rect
+                                            x="2"
+                                            y="2"
+                                            width="calc(100% - 4px)"
+                                            height="calc(100% - 4px)"
+                                            rx="30"
+                                            ry="30"
+                                            fill="none"
+                                            stroke={item.border}
+                                            strokeWidth="4"
+                                            strokeDasharray="30 15"
+                                            className="animate-snake-border"
+                                        />
+                                    </svg>
+
+                                    {/* Image Container - Full bleed */}
+                                    <div className="relative z-10 w-full h-full overflow-hidden rounded-[2rem] md:rounded-[2.5rem]">
+                                        <img 
+                                            src={item.img} 
+                                            alt={item.name} 
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                                            onError={(e) => { e.currentTarget.src = item.name === 'Guru Ji AI' ? '/logo.png' : '/om.png' }} 
+                                        />
+                                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-40 transition-opacity`}></div>
+                                    </div>
+
+                                    {/* Subtle Glow Effect */}
+                                    <div className={`absolute -inset-1 bg-[${item.border}] rounded-[2rem] md:rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-20 transition-opacity z-0`}></div>
+                                </div>
+                                <span className="text-[11px] md:text-base font-black text-center text-zinc-800 dark:text-zinc-100 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-all tracking-tighter md:tracking-widest uppercase">
+                                    {item.name}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
 
             {/* Featured Poojas Section */}
             <section className="pt-16 pb-10 md:pt-24 md:pb-12 relative bg-background z-10 overflow-hidden">
@@ -1119,7 +1208,7 @@ export default function HomeClient() {
 
 
             {/* CTA Section - Divine Om Redesign (Dual Theme - Explicitly Managed) */}
-            <section className={`pt-20 pb-16 md:pt-28 md:pb-24 relative overflow-hidden z-10 transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950 border-t border-white/5' : 'bg-white'}`}>
+            <section className={`pt-20 pb-16 md:pt-28 md:pb-24 relative overflow-hidden z-10 transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950' : 'bg-white'}`}>
                 {/* Large Central Om Icon with Aura */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] pointer-events-none opacity-40">
                     {/* Aura layers */}
@@ -1241,7 +1330,7 @@ export default function HomeClient() {
             </section>
 
             {/* Sacred Locations Section - Window to the Divine */}
-            <section className={`pt-20 pb-12 md:pt-28 md:pb-16 relative overflow-hidden z-10 border-t transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950/40 border-white/5 backdrop-blur-[2px]' : 'bg-[#fffcf9] border-orange-100/50'}`}>
+            <section className={`pt-20 pb-12 md:pt-28 md:pb-16 relative overflow-hidden z-10 transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950/40 backdrop-blur-[2px]' : 'bg-[#fffcf9]'}`}>
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-4">
                         <div className="flex items-center justify-center gap-3 mb-3">
@@ -1268,7 +1357,7 @@ export default function HomeClient() {
                                 {/* Background Image with Zoom Effect */}
                                 <div className="absolute inset-0 bg-slate-900">
                                     <img
-                                        src={loc.image || ""}
+                                        src={loc.image || null}
                                         alt={loc.name}
                                         className="w-full h-full object-cover opacity-80 group-hover:opacity-60 group-hover:scale-110 transition-transform duration-[1.5s]"
                                     />
