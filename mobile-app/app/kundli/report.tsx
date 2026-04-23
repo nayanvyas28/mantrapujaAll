@@ -22,17 +22,17 @@ import {
   ChevronRight,
   Info,
   Menu,
-  Check
+  Check,
+  Calendar
 } from 'lucide-react-native';
 import { SvgXml } from 'react-native-svg';
 import { api } from '../../lib/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSidebar } from '../../context/SidebarContext';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function KundliReportScreen() {
-// static router used for better stability
     const { toggle } = useSidebar();
     const params = useLocalSearchParams();
     const [loading, setLoading] = useState(true);
@@ -41,6 +41,7 @@ export default function KundliReportScreen() {
     const [error, setError] = useState<string | null>(null);
 
     const fetchKundli = async () => {
+        console.log('[Report] fetchKundli started');
         setLoading(true);
         setError(null);
         try {
@@ -56,30 +57,18 @@ export default function KundliReportScreen() {
                 gender: params.gender as string || 'male'
             };
 
-            // Safety check for NaN values
-            if (isNaN(apiPayload.day) || isNaN(apiPayload.lat)) {
-                console.error('[Report] Invalid birth data detected:', params);
-                setError('Invalid birth details. Please go back and try again.');
-                setLoading(false);
-                return;
-            }
-
-            console.log('[Report] Fetching Kundli with payload:', JSON.stringify(apiPayload, null, 2));
-
+            console.log('[Report] Calling API with:', JSON.stringify(apiPayload));
             const result = await api.astrology.getKundliData(apiPayload);
-            console.log('[Report] API Result success:', result.success);
+            console.log('[Report] API Response Success:', result?.success);
 
-            if (result.success) {
+            if (result && result.success) {
                 setReportData(result.data);
-                // Check if key data is missing
-                if (result.data.core?.error) {
-                    console.warn('[Report] Core data failed to load from all nodes');
-                }
+                console.log('[Report] Data keys received:', Object.keys(result.data));
             } else {
                 setError('Vedic server returned an error. Please try again.');
             }
         } catch (err: any) {
-            console.error('[Report] Critical fetch error:', err);
+            console.error('[Report] Fetch Error:', err);
             setError(err.message || 'Celestial sync failed. Check connection.');
         } finally {
             setLoading(false);
@@ -87,38 +76,30 @@ export default function KundliReportScreen() {
     };
 
     useEffect(() => {
-        fetchKundli();
-    }, [params]);
+        if (params.dob && params.tob && !reportData && !error) {
+            fetchKundli();
+        }
+    }, [params.dob, params.tob]);
 
     if (loading) {
         return (
-            <View className="flex-1 bg-white items-center justify-center">
-                <View className="mb-6">
-                    <ActivityIndicator size="large" color="#FF4D00" />
-                </View>
-                <Text className="text-gray-900 font-black text-xl mb-2">Calculating Karma...</Text>
-                <Text className="text-gray-400 font-bold tracking-[3px] uppercase text-[10px] italic">Syncing with Celestial Planes</Text>
-                <Text className="text-gray-300 text-[9px] mt-4">Usually takes 15-20 seconds</Text>
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color="#FF4D00" />
+                <Text style={styles.loadingText}>Calculating Karma...</Text>
+                <Text style={styles.loadingSub}>Syncing with Celestial Planes</Text>
             </View>
         );
     }
 
     if (error) {
         return (
-            <View className="flex-1 bg-white items-center justify-center px-10">
-                <View className="w-20 h-20 bg-red-50 rounded-full items-center justify-center mb-6">
-                    <Info size={40} color="#EF4444" />
-                </View>
-                <Text className="text-gray-900 font-black text-xl mb-2">Grah Dosh Detected</Text>
-                <Text className="text-gray-500 font-medium text-center mb-8 leading-5">{error}</Text>
-                
-                <Pressable onPress={fetchKundli} className="bg-primary w-full h-14 rounded-2xl items-center justify-center shadow-lg shadow-primary/20 mb-4">
-                    <Text className="text-white font-black uppercase tracking-widest text-base">Retry Sync</Text>
-                </Pressable>
-
-                <Pressable onPress={() => router.back()}>
-                    <Text className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Go Back</Text>
-                </Pressable>
+            <View style={styles.center}>
+                <Info size={48} color="#EF4444" />
+                <Text style={styles.errorText}>Grah Dosh Detected</Text>
+                <Text style={styles.errorSub}>{error}</Text>
+                <TouchableOpacity onPress={fetchKundli} style={styles.retryBtn}>
+                    <Text style={styles.retryText}>Retry Sync</Text>
+                </TouchableOpacity>
             </View>
         );
     }
@@ -131,52 +112,33 @@ export default function KundliReportScreen() {
     ];
 
     return (
-        <View className="flex-1 bg-white">
-            {/* Premium Header */}
+        <View style={{ flex: 1, backgroundColor: 'white' }}>
             <LinearGradient 
                 colors={['#FF4D00', '#FF8C00']} 
-                style={{ paddingTop: 64, paddingBottom: 32, paddingHorizontal: 24, borderBottomLeftRadius: 50, borderBottomRightRadius: 50, elevation: 10 }}
+                style={styles.header}
             >
-                <View className="flex-row justify-between items-center mb-8">
-                    <TouchableOpacity 
-                        onPress={() => router.back()} 
-                        style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
-                    >
+                <View style={styles.headerTop}>
+                    <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
                         <ArrowLeft color="white" size={24} />
                     </TouchableOpacity>
-                    <View className="items-center">
-                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 4 }}>Vedic Insights</Text>
-                        <Text style={{ color: 'white', fontSize: 22, fontWeight: '900' }}>{params.name || 'Your Chart'}</Text>
+                    <View style={{ alignItems: 'center' }}>
+                        <Text style={styles.headerSubtitle}>Vedic Insights</Text>
+                        <Text style={styles.headerTitle}>{params.name || 'Your Chart'}</Text>
                     </View>
-                    <TouchableOpacity 
-                        onPress={() => toggle(true)}
-                        style={{ backgroundColor: 'rgba(255,255,255,0.2)', width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
-                    >
+                    <TouchableOpacity onPress={() => toggle(true)} style={styles.iconBtn}>
                         <Menu color="white" size={20} />
                     </TouchableOpacity>
                 </View>
 
-                {/* Tab Bar Refined */}
-                <View style={{ flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 28, padding: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                <View style={styles.tabContainer}>
                     {tabs.map((tab) => (
                         <TouchableOpacity
                             key={tab.id}
-                            activeOpacity={0.7}
                             onPress={() => setActiveTab(tab.id)}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            style={{ 
-                                flex: 1, 
-                                paddingVertical: 14, 
-                                alignItems: 'center', 
-                                borderRadius: 20, 
-                                flexDirection: 'row', 
-                                justifyContent: 'center',
-                                backgroundColor: activeTab === tab.id ? 'white' : 'transparent',
-                                ...(activeTab === tab.id ? { shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 } : {})
-                            }}
+                            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
                         >
-                            <tab.icon size={16} color={activeTab === tab.id ? '#FF4D00' : 'rgba(255,255,255,0.7)'} strokeWidth={activeTab === tab.id ? 3 : 2} />
-                            {activeTab === tab.id && <Text style={{ marginLeft: 8, fontWeight: '900', fontSize: 10, color: '#FF4D00', textTransform: 'uppercase', letterSpacing: 1 }}>{tab.label}</Text>}
+                            <tab.icon size={16} color={activeTab === tab.id ? '#FF4D00' : 'rgba(255,255,255,0.7)'} />
+                            {activeTab === tab.id && <Text style={styles.activeTabText}>{tab.label}</Text>}
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -187,25 +149,14 @@ export default function KundliReportScreen() {
                 contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Subtle warning for partial failures only if main sections missing */}
-                {(reportData && (!reportData.core || reportData.core.error)) && (
-                    <View style={{ marginBottom: 20, padding: 16, backgroundColor: '#FEF2F2', borderRadius: 24, borderLeftWidth: 4, borderLeftColor: '#EF4444' }}>
-                        <Text style={{ color: '#991B1B', fontSize: 14, fontWeight: '800', marginBottom: 2 }}>Cosmic Insights Delayed</Text>
-                        <Text style={{ color: '#B91C1C', fontSize: 12, fontWeight: '500' }}>
-                            Some essential data is still aligning. Please check your connection.
-                        </Text>
-                    </View>
-                )}
-                
                 {reportData && activeTab === 'dashboard' && <DashboardView data={reportData} />}
                 {reportData && activeTab === 'charts' && <ChartsView data={reportData} />}
                 {reportData && activeTab === 'dasha' && <DashaView data={reportData} />}
                 {reportData && activeTab === 'predictions' && <PredictionsView data={reportData} />}
                 
-                {!reportData && !loading && (
-                    <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 40 }}>
-                        <Text style={{ color: '#9CA3AF', fontStyle: 'italic' }}>Celestial data not received...</Text>
-                    </View>
+                {/* Fallback if no data keys found */}
+                {reportData && Object.keys(reportData).length === 0 && (
+                    <Text style={{ textAlign: 'center', color: '#9CA3AF', marginTop: 40 }}>No celestial data found in response.</Text>
                 )}
             </ScrollView>
         </View>
@@ -214,43 +165,45 @@ export default function KundliReportScreen() {
 
 function DashboardView({ data }: { data: any }) {
     if (!data) return null;
-    const p = data?.panchang || {};
-    const core = data?.core || {};
+    const p = data.panchang || {};
+    const core = data.core || {};
     
-    const getVal = (field: any) => {
-        if (!field) return "Not Available";
-        if (typeof field === 'string') return field;
-        return field.details?.value || field.details?.tithi_name || field.details?.nakshatra_name || field.name || "N/A";
+    const getVal = (obj: any, key: string) => {
+        if (!obj) return "N/A";
+        if (obj.error) return "Error";
+        
+        const val = obj[key] || obj[key.charAt(0).toUpperCase() + key.slice(1)] || obj[key.toUpperCase()];
+        if (val === undefined || val === null) return "N/A";
+        
+        if (typeof val === 'string') return val;
+        if (typeof val === 'number') return val.toString();
+        
+        return val.details?.value || val.name || val.value || "N/A";
     };
 
     return (
         <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-                <View style={{ backgroundColor: 'rgba(255, 77, 0, 0.1)', width: 32, height: 32, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                    <Info size={16} color="#FF4D00" />
-                </View>
-                <Text style={{ color: '#111827', fontWeight: '900', fontSize: 20 }}>Birth Panchang</Text>
-            </View>
-            
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-                <InfoCard label="Tithi" value={getVal(p.tithi)} color="#FFF7ED" icon="🌙" />
-                <InfoCard label="Nakshatra" value={getVal(p.nakshatra)} color="#EFF6FF" icon="✨" />
-                <InfoCard label="Yog" value={getVal(p.yog)} color="#FAF5FF" icon="🌀" />
-                <InfoCard label="Karan" value={getVal(p.karan)} color="#F0FDF4" icon="⚙️" />
-                <InfoCard label="Rashi" value={core.sign || "N/A"} color="#FEF2F2" icon="🦁" />
-                <InfoCard label="Lagna" value={core.ascendant || "N/A"} color="#F0FDFA" icon="⬆️" />
+            <View style={styles.quickStats}>
+                <StatCard emoji="🏹" label="Ascendant" value={getVal(core, 'ascendant')} />
+                <StatCard emoji="🦁" label="Moon Sign" value={getVal(core, 'sign')} />
+                <StatCard emoji="✨" label="Star Lord" value={getVal(p, 'nakshatra_lord')} />
             </View>
 
-            <View style={{ marginTop: 40, backgroundColor: 'white', borderRadius: 40, padding: 32, borderWidth: 1, borderColor: '#F3F4F6', elevation: 2 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-                    <View style={{ backgroundColor: '#FF4D00', width: 8, height: 24, borderRadius: 4, marginRight: 16 }} />
-                    <Text style={{ color: '#111827', fontWeight: '900', fontSize: 20 }}>Astro Core</Text>
-                </View>
-                <TableRow label="Varna (Phile)" value={core.varna || core.Varna || "N/A"} />
-                <TableRow label="Vashya (Control)" value={core.vashya || core.Vashya || "N/A"} />
-                <TableRow label="Yoni (Instinct)" value={core.yoni || core.Yoni || "N/A"} />
-                <TableRow label="Gan (Temper)" value={core.gan || core.Gan || "N/A"} />
-                <TableRow label="Nadi (Energy)" value={core.nadi || core.Nadi || "N/A"} />
+            <SectionTitle title="Birth Panchang" />
+            <View style={styles.grid}>
+                <InfoCard label="Tithi" value={getVal(p, 'tithi')} color="#FFF7ED" icon="🌑" />
+                <InfoCard label="Nakshatra" value={getVal(p, 'nakshatra')} color="#EFF6FF" icon="⭐" />
+                <InfoCard label="Yog" value={getVal(p, 'yoga')} color="#FAF5FF" icon="🧘" />
+                <InfoCard label="Karan" value={getVal(p, 'karan')} color="#F0FDF4" icon="🌀" />
+            </View>
+
+            <View style={styles.coreCard}>
+                <SectionTitle title="Astro Core Metrics" />
+                <TableRow label="Varna" value={getVal(core, 'varna')} />
+                <TableRow label="Vashya" value={getVal(core, 'vashya')} />
+                <TableRow label="Yoni" value={getVal(core, 'yoni')} />
+                <TableRow label="Gan" value={getVal(core, 'gan')} />
+                <TableRow label="Nadi" value={getVal(core, 'nadi')} />
             </View>
         </View>
     );
@@ -260,251 +213,204 @@ function ChartsView({ data }: { data: any }) {
     if (!data) return null;
     return (
         <View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 32, justifyContent: 'center' }}>
-                <Grid3X3 size={24} color="#FF4D00" />
-                <Text style={{ color: '#111827', fontWeight: '900', fontSize: 20, marginLeft: 12 }}>Planetary Alignments</Text>
-            </View>
-            
-            <View style={{ marginBottom: 48 }}>
-                <View style={{ backgroundColor: '#FF4D00', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, alignSelf: 'center', marginBottom: 24 }}>
-                    <Text style={{ color: 'white', fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Lagna Chart (D1)</Text>
-                </View>
-                <View style={{ backgroundColor: 'white', padding: 12, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5, borderWidth: 1, borderColor: '#F3F4F6', width: '100%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-                    {data.chart_d1 && typeof data.chart_d1 === 'string' ? (
-                        <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                             <SvgXml xml={data.chart_d1} width="95%" height="95%" /> 
-                        </View>
-                    ) : <Text style={{ color: '#9CA3AF', fontStyle: 'italic' }}>D1 Chart Unavailable</Text>}
-                </View>
-            </View>
-
-            <View>
-                <View style={{ backgroundColor: '#FF4D00', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, alignSelf: 'center', marginBottom: 24 }}>
-                    <Text style={{ color: 'white', fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }}>Navamsa Chart (D9)</Text>
-                </View>
-                <View style={{ backgroundColor: 'white', padding: 12, borderRadius: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5, borderWidth: 1, borderColor: '#F3F4F6', width: '100%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-                    {data.chart_d9 && typeof data.chart_d9 === 'string' ? (
-                        <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' }}>
-                             <SvgXml xml={data.chart_d9} width="95%" height="95%" /> 
-                        </View>
-                    ) : <Text style={{ color: '#9CA3AF', fontStyle: 'italic' }}>D9 Chart Unavailable</Text>}
-                </View>
-            </View>
+            <ChartFrame title="Birth Chart (Lagna - D1)" svg={data.chart_d1} />
+            <ChartFrame title="Navamsa Chart (D9)" svg={data.chart_d9} />
         </View>
     );
 }
 
 function DashaView({ data }: { data: any }) {
     if (!data) return null;
-    const current = data?.current_dasha || {};
-    const major = data?.dasha || [];
-
-    // Flexible extraction helper
-    const getPlanetName = (obj: any, type: 'maha' | 'antar') => {
+    const current = data.current_dasha || {};
+    const major = data.dasha || [];
+    
+    const getPlanet = (obj: any) => {
         if (!obj) return 'N/A';
-        if (type === 'maha') {
-            return obj.mahadasha || obj.major?.planet || obj.planet || 'N/A';
-        }
-        return obj.antardasha || obj.minor?.planet || 'N/A';
+        const target = obj.major || obj.minor || obj;
+        return target.planet || target.mahadasha || target.antardasha || target.name || 'N/A';
     };
 
-    const mahaName = getPlanetName(current, 'maha');
-    const antarName = getPlanetName(current, 'antar');
+    const mahaName = getPlanet(current.major || current);
+    const antarName = getPlanet(current.minor || current);
 
     return (
         <View>
-            <View style={{ backgroundColor: '#FFF5E0', borderRadius: 40, padding: 32, borderWidth: 1, borderColor: '#FFEDD5', marginBottom: 40, elevation: 2 }}>
-                <Text style={{ color: '#FF4D00', fontWeight: '900', fontSize: 10, textTransform: 'uppercase', letterSpacing: 3, marginBottom: 24 }}>Current Active Dasha</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={styles.activeDashaCard}>
+                <Text style={styles.cardTag}>Active Dasha</Text>
+                <View style={styles.dashaContent}>
                     <View>
-                        <Text style={{ color: '#111827', fontWeight: '900', fontSize: 30, textTransform: 'uppercase', letterSpacing: -1 }}>{mahaName}</Text>
-                        <Text style={{ color: '#EA580C', fontWeight: '900', fontSize: 10, textTransform: 'uppercase', marginTop: 4 }}>Major Lord</Text>
+                        <Text style={styles.dashaMain}>{mahaName}</Text>
+                        <Text style={styles.dashaSub}>Major Lord</Text>
                     </View>
-                    <View style={{ width: 48, height: 48, backgroundColor: 'white', borderRadius: 24, alignItems: 'center', justifyContent: 'center', elevation: 2 }}>
-                        <Zap color="#FF4D00" size={24} />
-                    </View>
+                    <Zap color="#FF4D00" size={24} />
                     <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={{ color: '#111827', fontWeight: '900', fontSize: 24, textTransform: 'uppercase', letterSpacing: -1 }}>{antarName}</Text>
-                        <Text style={{ color: '#EA580C', fontWeight: '900', fontSize: 10, textTransform: 'uppercase', marginTop: 4 }}>Minor Lord</Text>
+                        <Text style={styles.dashaMain}>{antarName}</Text>
+                        <Text style={styles.dashaSub}>Minor Lord</Text>
                     </View>
                 </View>
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 28, marginTop: 12 }}>
-                <View style={{ backgroundColor: '#FF4D00', width: 4, height: 20, borderRadius: 2, marginRight: 12 }} />
-                <Text style={{ color: '#111827', fontWeight: '900', fontSize: 20, letterSpacing: -0.5 }}>Vimshottari Timeline</Text>
-            </View>
-
-            <View style={{ paddingLeft: 4 }}>
-                {Array.isArray(major) ? major.slice(0, 10).map((d: any, i: number) => {
-                    const dName = d.mahadasha || d.planet || 'N/A';
-                    const isActive = i === 0; // Assuming first one is current or based on date
-                    
-                    const getPlanetInfo = (name: string) => {
-                        const n = name.toLowerCase();
-                        if (n.includes('sun') || n.includes('surya')) return { icon: '☀️', color: '#F59E0B' };
-                        if (n.includes('moon') || n.includes('chandra')) return { icon: '🌙', color: '#94A3B8' };
-                        if (n.includes('mars') || n.includes('mangal')) return { icon: '🔴', color: '#EF4444' };
-                        if (n.includes('merc') || n.includes('budh')) return { icon: '🟢', color: '#10B981' };
-                        if (n.includes('jup') || n.includes('guru')) return { icon: '🟡', color: '#EAB308' };
-                        if (n.includes('ven') || n.includes('shukra')) return { icon: '💎', color: '#EC4899' };
-                        if (n.includes('sat') || n.includes('shani')) return { icon: '🪐', color: '#475569' };
-                        if (n.includes('rah')) return { icon: '🌑', color: '#1E293B' };
-                        if (n.includes('ket')) return { icon: '☄️', color: '#78350F' };
-                        return { icon: '✨', color: '#FF4D00' };
-                    };
-
-                    const info = getPlanetInfo(dName);
-
-                    return (
-                        <View key={i} style={{ flexDirection: 'row', position: 'relative' }}>
-                            {/* Vertical Stepper Line */}
-                            <View style={{ alignItems: 'center', width: 40 }}>
-                                <View style={{ 
-                                    width: 32, 
-                                    height: 32, 
-                                    borderRadius: 12, 
-                                    backgroundColor: isActive ? '#FF4D00' : 'white', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    zIndex: 2,
-                                    borderWidth: 2,
-                                    borderColor: isActive ? '#FF4D00' : '#F1F5F9',
-                                    shadowColor: isActive ? '#FF4D00' : '#000',
-                                    shadowOffset: { width: 0, height: 4 },
-                                    shadowOpacity: isActive ? 0.3 : 0.05,
-                                    shadowRadius: 8,
-                                    elevation: isActive ? 8 : 2
-                                }}>
-                                    <Text style={{ fontSize: 14 }}>{info.icon}</Text>
-                                </View>
-                                {i < (major.length - 1) && i < 9 && (
-                                    <View style={{ 
-                                        width: 2, 
-                                        flex: 1, 
-                                        backgroundColor: isActive ? '#FF4D00' : '#F1F5F9',
-                                        opacity: isActive ? 0.5 : 1,
-                                        marginVertical: 4,
-                                        borderRadius: 1
-                                    }} />
-                                )}
-                            </View>
-
-                            {/* Content Card */}
-                            <View style={{ 
-                                flex: 1, 
-                                marginLeft: 16, 
-                                marginBottom: 24, 
-                                backgroundColor: isActive ? '#FFF' : '#FFF', 
-                                padding: 20, 
-                                borderRadius: 28,
-                                borderWidth: 1,
-                                borderColor: isActive ? '#FFEDD5' : '#F8FAFC',
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 4 },
-                                shadowOpacity: 0.03,
-                                shadowRadius: 10,
-                                elevation: 1
-                            }}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                    <Text style={{ fontWeight: '900', fontSize: 18, color: isActive ? '#FF4D00' : '#111827', letterSpacing: -0.5 }}>{dName}</Text>
-                                    {isActive && (
-                                        <View style={{ backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#DCFCE7' }}>
-                                            <Text style={{ color: '#16A34A', fontSize: 8, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 }}>Active Now</Text>
-                                        </View>
-                                    )}
-                                </View>
-                                
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Calendar size={12} color="#94A3B8" />
-                                    <Text style={{ color: '#64748B', fontWeight: '700', fontSize: 12, marginLeft: 6 }}>{d.start} — {d.end}</Text>
-                                </View>
-
-                                {isActive && (
-                                    <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F8FAFC' }}>
-                                        <Text style={{ color: '#94A3B8', fontSize: 10, fontWeight: '600', fontStyle: 'italic' }}>This planetary period governs your current celestial path.</Text>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                    );
-                }) : (
-                    <View style={{ padding: 40, alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 32, borderStyle: 'dashed', borderWidth: 2, borderColor: '#E2E8F0' }}>
-                        <Zap size={32} color="#CBD5E1" strokeWidth={1.5} />
-                        <Text style={{ color: '#94A3B8', textAlign: 'center', marginTop: 12, fontWeight: '700', fontSize: 13 }}>
-                            Timeline data is currently aligning...
-                        </Text>
-                    </View>
-                )}
-            </View>
+            <SectionTitle title="Vimshottari Timeline" />
+            {major && Array.isArray(major) && major.slice(0, 10).map((d: any, i: number) => {
+                 const dName = d.mahadasha || d.planet || d.name || 'N/A';
+                 return <TimelineItem key={i} data={d} dName={dName} isActive={i === 0} isLast={i === 9} />;
+            })}
         </View>
     );
 }
 
 function PredictionsView({ data }: { data: any }) {
     if (!data) return null;
-    const formatReport = (report: any) => {
-        if (!report) return null;
-        if (Array.isArray(report)) return report.join(' ');
-        if (typeof report === 'string') return report;
-        if (report.report && Array.isArray(report.report)) return report.report.join(' ');
-        if (report.report) return report.report;
-        return null;
+    
+    const format = (r: any) => {
+        if (!r) return null;
+        if (r.error) return `Feature Unavailable: ${r.detail || 'Access Restricted'}`;
+        return r.report || r.manglik_report || r.toString();
     };
+
+    const lifeGem = data.gemstone?.LIFE || data.gemstone?.life_gem || {};
+    const gemContent = lifeGem.name ? `${lifeGem.name}: ${lifeGem.gem_report}` : "Wear gemstones for divine protection.";
 
     return (
         <View>
             <ReportItem 
-                title="Character Prediction" 
-                icon="🧘"
-                content={formatReport(data.character) || "Your personality is deeply influenced by the alignment of your ascendant and planetary positions at birth, shaping a unique spiritual and mental aura."} 
+                title="Character" 
+                icon="🧘" 
+                content={format(data.character) || "Your personality is uniquely shaped by celestial alignments."} 
             />
             <ReportItem 
-                title="Gemstone Guidance" 
-                icon="💎"
-                content={data.gemstone?.life_gem ? `Life Gem: ${data.gemstone.life_gem.name} - ${data.gemstone.life_gem.gem_report}` : 'Analyzing your celestial minerals... Wear for overall vitality and divine protection.'} 
+                title="Gemstone" 
+                icon="💎" 
+                content={gemContent} 
             />
             <ReportItem 
-                title="Manglik Analysis" 
-                icon="🔥"
-                content={data.manglik?.report || "Neutral alignment profile detected. No significant Manglik dosha affects your celestial path."} 
+                title="Manglik" 
+                icon="🔥" 
+                content={format(data.manglik) || "Neutral Manglik profile."} 
+            />
+            <ReportItem 
+                title="Yoga Report" 
+                icon="🧘‍♀️" 
+                content={format(data.yoga_report) || "Special planetary combinations in your chart."} 
             />
         </View>
     );
 }
 
-function InfoCard({ label, value, color, icon }: { label: string, value: string, color: string, icon: string }) {
-    return (
-        <View style={{ backgroundColor: color, borderRadius: 24, padding: 16, width: '48%', marginBottom: 16, borderWidth: 1, borderColor: 'white', elevation: 1 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <Text style={{ fontSize: 20 }}>{icon}</Text>
-                <Check size={14} color="rgba(0,0,0,0.1)" />
-            </View>
-            <Text style={{ color: '#9CA3AF', fontSize: 9, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>{label}</Text>
-            <Text style={{ color: '#111827', fontWeight: '900', fontSize: 13 }} numberOfLines={1}>{value}</Text>
-        </View>
-    );
-}
+// Reusable Components
+const StatCard = ({ emoji, label, value }: any) => (
+    <View style={styles.statCard}>
+        <Text style={{ fontSize: 24 }}>{emoji}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+        <Text style={styles.statValue}>{value || 'N/A'}</Text>
+    </View>
+);
 
-function TableRow({ label, value }: { label: string, value: string }) {
-    return (
-        <View className="flex-row justify-between py-4 border-b border-gray-50 last:border-0">
-            <Text className="text-gray-400 font-black text-[10px] uppercase tracking-widest">{label}</Text>
-            <Text className="text-gray-900 font-black text-sm uppercase">{value}</Text>
-        </View>
-    );
-}
+const InfoCard = ({ label, value, color, icon }: any) => (
+    <View style={[styles.infoCard, { backgroundColor: color }]}>
+        <Text style={{ fontSize: 20, marginBottom: 8 }}>{icon}</Text>
+        <Text style={styles.infoLabel}>{label}</Text>
+        <Text style={styles.infoValue}>{value}</Text>
+    </View>
+);
 
-function ReportItem({ title, content, icon }: { title: string, content: string, icon: string }) {
+const TableRow = ({ label, value }: any) => (
+    <View style={styles.tableRow}>
+        <Text style={styles.tableLabel}>{label}</Text>
+        <Text style={styles.tableValue}>{value}</Text>
+    </View>
+);
+
+const ChartFrame = ({ title, svg }: any) => (
+    <View style={{ marginBottom: 32 }}>
+        <SectionTitle title={title} />
+        <View style={styles.chartContainer}>
+            {svg ? <SvgXml xml={svg} width={width - 80} height={width - 80} /> : <Text style={{ color: '#9CA3AF' }}>Loading Chart...</Text>}
+        </View>
+    </View>
+);
+
+const TimelineItem = ({ data, dName, isActive, isLast }: any) => {
     return (
-        <View style={{ marginBottom: 32, backgroundColor: 'white', borderWidth: 1, borderColor: '#F3F4F6', padding: 32, borderRadius: 40, elevation: 2 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
-                <View style={{ backgroundColor: '#FFF7ED', width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-                    <Text style={{ fontSize: 24 }}>{icon}</Text>
+        <View style={{ flexDirection: 'row' }}>
+            <View style={{ alignItems: 'center', width: 40 }}>
+                <View style={[styles.timelineDot, isActive && styles.activeDot]}>
+                    <Text style={{ fontSize: 12 }}>{isActive ? '✨' : '💫'}</Text>
                 </View>
-                <Text style={{ color: '#111827', fontWeight: '900', fontSize: 20 }}>{title}</Text>
+                {!isLast && <View style={[styles.timelineLine, isActive && { backgroundColor: '#FF4D00' }]} />}
             </View>
-            <Text style={{ color: '#4B5563', lineHeight: 28, fontSize: 14, fontStyle: 'italic' }}>"{content}"</Text>
+            <View style={[styles.timelineCard, isActive && styles.activeTimelineCard]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={[styles.timelineTitle, isActive && { color: '#FF4D00' }]}>{dName}</Text>
+                    {isActive && <Text style={styles.activeLabel}>Active</Text>}
+                </View>
+                <Text style={styles.timelineDate}>{data.start} — {data.end}</Text>
+            </View>
         </View>
     );
-}
+};
+
+const ReportItem = ({ title, content, icon }: any) => (
+    <View style={styles.reportItem}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ fontSize: 20, marginRight: 12 }}>{icon}</Text>
+            <Text style={styles.reportTitle}>{title}</Text>
+        </View>
+        <Text style={styles.reportContent}>{content}</Text>
+    </View>
+);
+
+const SectionTitle = ({ title }: { title: string }) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        <View style={{ width: 4, height: 16, backgroundColor: '#FF4D00', borderRadius: 2, marginRight: 8 }} />
+        <Text style={{ color: '#111827', fontWeight: '900', fontSize: 16 }}>{title}</Text>
+    </View>
+);
+
+const styles = StyleSheet.create({
+    center: { flex: 1, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', padding: 40 },
+    loadingText: { color: '#111827', fontSize: 18, fontWeight: '900', marginTop: 20 },
+    loadingSub: { color: '#9CA3AF', fontSize: 10, fontWeight: '900', textTransform: 'uppercase', marginTop: 8, letterSpacing: 2 },
+    errorText: { color: '#111827', fontSize: 18, fontWeight: '900', marginTop: 20 },
+    errorSub: { color: '#6B7280', textAlign: 'center', marginTop: 8, marginBottom: 24 },
+    retryBtn: { backgroundColor: '#FF4D00', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 16 },
+    retryText: { color: 'white', fontWeight: '900', textTransform: 'uppercase' },
+    header: { paddingTop: 60, paddingBottom: 30, paddingHorizontal: 20, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, elevation: 10 },
+    headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
+    headerTitle: { color: 'white', fontSize: 20, fontWeight: '900' },
+    headerSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2 },
+    iconBtn: { backgroundColor: 'rgba(255,255,255,0.2)', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    tabContainer: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 20, padding: 4 },
+    tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 16 },
+    activeTab: { backgroundColor: 'white' },
+    activeTabText: { marginLeft: 8, color: '#FF4D00', fontWeight: '900', fontSize: 10, textTransform: 'uppercase' },
+    quickStats: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
+    statCard: { flex: 1, backgroundColor: 'white', padding: 15, borderRadius: 20, alignItems: 'center', marginHorizontal: 4, elevation: 3 },
+    statLabel: { color: '#94A3B8', fontSize: 8, fontWeight: '900', textTransform: 'uppercase', marginTop: 4 },
+    statValue: { color: '#111827', fontSize: 12, fontWeight: '900' },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    infoCard: { width: '48%', padding: 16, borderRadius: 20, marginBottom: 15, elevation: 2 },
+    infoLabel: { color: '#9CA3AF', fontSize: 8, fontWeight: '900', textTransform: 'uppercase' },
+    infoValue: { color: '#111827', fontSize: 13, fontWeight: '900' },
+    coreCard: { backgroundColor: 'white', padding: 20, borderRadius: 25, marginTop: 10, elevation: 2 },
+    tableRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+    tableLabel: { color: '#94A3B8', fontSize: 9, fontWeight: '900', textTransform: 'uppercase' },
+    tableValue: { color: '#111827', fontSize: 12, fontWeight: '900' },
+    chartContainer: { backgroundColor: 'white', padding: 15, borderRadius: 25, elevation: 5, alignItems: 'center' },
+    activeDashaCard: { backgroundColor: '#FFF7ED', padding: 20, borderRadius: 25, marginBottom: 30, borderWidth: 1, borderColor: '#FFEDD5' },
+    cardTag: { color: '#FF4D00', fontWeight: '900', fontSize: 8, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 12 },
+    dashaContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    dashaMain: { color: '#111827', fontSize: 22, fontWeight: '900' },
+    dashaSub: { color: '#94A3B8', fontSize: 8, fontWeight: '900', textTransform: 'uppercase' },
+    timelineDot: { width: 30, height: 30, borderRadius: 10, backgroundColor: 'white', alignItems: 'center', justifyContent: 'center', zIndex: 2, elevation: 2 },
+    activeDot: { backgroundColor: '#FF4D00' },
+    timelineLine: { width: 2, flex: 1, backgroundColor: '#F1F5F9' },
+    timelineCard: { flex: 1, marginLeft: 15, marginBottom: 20, backgroundColor: 'white', padding: 15, borderRadius: 20, elevation: 1 },
+    activeTimelineCard: { borderColor: '#FFEDD5', borderWidth: 1 },
+    timelineTitle: { color: '#111827', fontWeight: '900', fontSize: 15 },
+    timelineDate: { color: '#94A3B8', fontSize: 10, fontWeight: '600' },
+    activeLabel: { backgroundColor: '#F0FDF4', color: '#16A34A', fontSize: 8, fontWeight: '900', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+    reportItem: { backgroundColor: 'white', padding: 20, borderRadius: 25, marginBottom: 15, elevation: 2 },
+    reportTitle: { color: '#111827', fontSize: 16, fontWeight: '900' },
+    reportContent: { color: '#64748B', fontSize: 13, lineHeight: 20 }
+});

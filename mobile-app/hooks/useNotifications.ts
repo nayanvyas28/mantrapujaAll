@@ -97,11 +97,19 @@ async function registerForPushNotificationsAsync() {
     }
     
     try {
-        const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
+        const projectId = 
+            Constants?.expoConfig?.extra?.eas?.projectId ?? 
+            Constants?.easConfig?.projectId;
+
+        if (!projectId) {
+            console.warn('[Notifications] No projectId found. Push notifications will not work until you run "npx eas project:init" or add it to app.json.');
+            return;
+        }
+
         token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
         console.log('[Notifications] Push Token:', token);
-    } catch (e) {
-        console.error('[Notifications] Token fetch error:', e);
+    } catch (e: any) {
+        console.warn('[Notifications] Could not fetch push token:', e.message);
     }
   } else {
     console.log('[Notifications] Must use physical device for Push Notifications');
