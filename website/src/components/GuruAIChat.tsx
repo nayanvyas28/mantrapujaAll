@@ -47,6 +47,8 @@ interface ChatTemplate {
     label_hi: string;
     prompt_en: string;
     prompt_hi: string;
+    instruction_en?: string;
+    instruction_hi?: string;
 }
 
 interface Message {

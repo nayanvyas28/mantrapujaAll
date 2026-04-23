@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
         });
 
         // Set the filename and return the optimized buffer
-        return new NextResponse(optimizedBuffer, {
+        return new NextResponse(new Uint8Array(optimizedBuffer), {
             headers: {
                 'Content-Type': 'image/webp',
                 'Content-Disposition': `attachment; filename="optimized.webp"`,

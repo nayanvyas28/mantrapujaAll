@@ -109,6 +109,20 @@ export default function ReferralSettingsPage() {
                             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
 
                             <form onSubmit={handleSave} className="space-y-6 relative z-10">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-widest pl-1">
+                                        Referral Invitation Message
+                                    </label>
+                                    <textarea
+                                        rows={8}
+                                        value={referralMessage}
+                                        onChange={(e) => setReferralMessage(e.target.value)}
+                                        placeholder="Enter message here. Use ${referralCode} where you want the user's code to appear."
+                                        className="w-full px-6 py-5 bg-black/40 border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500 transition-all text-sm text-gray-200 leading-relaxed resize-none h-[220px]"
+                                    />
+                                    <div className="mt-3 flex items-start gap-2 text-[10px] text-gray-500 bg-white/5 p-3 rounded-xl border border-white/5">
+                                        <Info className="w-3.5 h-3.5 text-orange-400 shrink-0 mt-0.5" />
+                                        <p>PRO TIP: Always use <span className="text-orange-400 font-bold">${"{referralCode}"}</span> in your message. This will be replaced by the user's unique code automatically.</p>
                                     </div>
                                 </div>
 

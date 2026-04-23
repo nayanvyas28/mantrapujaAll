@@ -6,9 +6,9 @@ const supabaseAdmin = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function PATCH(request: Request, context: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const id = context.params.id;
+        const { id } = await params;
         const body = await request.json();
         const { status, scheduled_date } = body;
 

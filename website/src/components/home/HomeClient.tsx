@@ -80,13 +80,15 @@ interface Blog {
     title: string;
     excerpt: string;
     slug: string;
-    image_url: string;
+    image_url?: string;
+    image?: string;
     category?: string;
     readTime?: string;
     gradient?: string;
     tags?: string[];
     content?: string;
     icon?: string;
+    created_at?: string;
 }
 
 interface HomeFeature {
@@ -495,7 +497,7 @@ export default function HomeClient() {
                                         className="absolute inset-0"
                                     >
                                         <Image
-                                            src={banners[activeBanner].image_url || null}
+                                            src={banners[activeBanner].image_url || ''}
                                             alt={banners[activeBanner].title}
                                             fill
                                             unoptimized
@@ -1357,7 +1359,7 @@ export default function HomeClient() {
                                 {/* Background Image with Zoom Effect */}
                                 <div className="absolute inset-0 bg-slate-900">
                                     <img
-                                        src={loc.image || null}
+                                        src={loc.image || ''}
                                         alt={loc.name}
                                         className="w-full h-full object-cover opacity-80 group-hover:opacity-60 group-hover:scale-110 transition-transform duration-[1.5s]"
                                     />
