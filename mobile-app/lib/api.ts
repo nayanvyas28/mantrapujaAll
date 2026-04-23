@@ -240,6 +240,10 @@ export const api = {
       const response = await fetch(`${ADMIN_URL}/api/pujas?${query.toString()}`);
       return await handleResponse(response);
     },
+    getBySlug: async (slug: string) => {
+      const response = await fetch(`${ADMIN_URL}/api/pujas/detail/${slug}`);
+      return await handleResponse(response);
+    },
     getCategories: async () => {
       const response = await fetch(`${ADMIN_URL}/api/pujas/categories`);
       return await handleResponse(response);

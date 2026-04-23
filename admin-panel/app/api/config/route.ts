@@ -21,6 +21,8 @@ export async function POST(request: Request) {
             chat_reset_hours,
             premium_upsell_message,
             referral_message,
+            referral_bonus_referrer,
+            referral_bonus_referred,
             chat_start_instruction,
             chat_end_instruction
         } = await request.json();
@@ -35,6 +37,8 @@ export async function POST(request: Request) {
             chat_reset_hours === undefined &&
             premium_upsell_message === undefined &&
             referral_message === undefined &&
+            referral_bonus_referrer === undefined &&
+            referral_bonus_referred === undefined &&
             chat_start_instruction === undefined &&
             chat_end_instruction === undefined) {
             return NextResponse.json({ error: 'No configuration provided' }, { status: 400 });
@@ -115,6 +119,22 @@ export async function POST(request: Request) {
             });
         }
 
+        if (referral_bonus_referrer !== undefined) {
+            updates.push({
+                key: 'referral_bonus_referrer',
+                value: referral_bonus_referrer.toString(),
+                updated_at: timestamp
+            });
+        }
+
+        if (referral_bonus_referred !== undefined) {
+            updates.push({
+                key: 'referral_bonus_referred',
+                value: referral_bonus_referred.toString(),
+                updated_at: timestamp
+            });
+        }
+
         if (chat_start_instruction !== undefined) {
             updates.push({
                 key: 'chat_start_instruction',
@@ -170,6 +190,8 @@ export async function GET() {
                 'chat_reset_hours',
                 'premium_upsell_message',
                 'referral_message',
+                'referral_bonus_referrer',
+                'referral_bonus_referred',
                 'chat_start_instruction',
                 'chat_end_instruction'
             ]);
@@ -187,6 +209,8 @@ export async function GET() {
         const resetHoursSetting = data?.find(s => s.key === 'chat_reset_hours');
         const upsellSetting = data?.find(s => s.key === 'premium_upsell_message');
         const referralSetting = data?.find(s => s.key === 'referral_message');
+        const refBonusReferrerSetting = data?.find(s => s.key === 'referral_bonus_referrer');
+        const refBonusReferredSetting = data?.find(s => s.key === 'referral_bonus_referred');
         const startInstSetting = data?.find(s => s.key === 'chat_start_instruction');
         const endInstSetting = data?.find(s => s.key === 'chat_end_instruction');
 
@@ -200,6 +224,8 @@ export async function GET() {
             chatResetHours: resetHoursSetting ? parseInt(resetHoursSetting.value, 10) : 3,
             premiumUpsellMessage: upsellSetting?.value || 'Guruji says you have reached your free query limit. Please upgrade to Pro to unlock unlimited spiritual guidance.',
             referralMessage: referralSetting?.value || 'Join me on Mantra Puja and unlock your spiritual journey! Use my referral code ${referralCode} to join.\n\nDownload now: https://mantrapuja.com/app',
+            referralBonusReferrer: refBonusReferrerSetting ? parseInt(refBonusReferrerSetting.value, 10) : 500,
+            referralBonusReferred: refBonusReferredSetting ? parseInt(refBonusReferredSetting.value, 10) : 100,
             chatStartInstruction: startInstSetting?.value || '',
             chatEndInstruction: endInstSetting?.value || '',
             updatedAt: apiKeySetting?.updated_at || null

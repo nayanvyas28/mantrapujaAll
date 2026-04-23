@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, Tag, Info, ArrowLeft, Image as ImageIcon, Briefcase, IndianRupee, ChevronDown } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, Tag, Info, ArrowLeft, Image as ImageIcon, Briefcase, IndianRupee, ChevronDown, MapPin, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -34,6 +34,8 @@ interface Puja {
     about_description_hi?: string;
     display_price?: number;
     packages?: any[];
+    date?: string;
+    location?: string;
 }
 
 export default function PujaManagementPage() {
@@ -69,6 +71,8 @@ export default function PujaManagementPage() {
         offer_999_tax: 0,
         offer_999_dakshina: 0,
         display_price: 0,
+        date: '',
+        location: '',
         packages: [
             { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
             { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
@@ -271,6 +275,8 @@ export default function PujaManagementPage() {
                 about_description_hi: pujasForm.about_description_hi,
                 display_price: pujasForm.display_price,
                 packages: pujasForm.packages,
+                date: pujasForm.date || null,
+                location: pujasForm.location || null,
                 image_url: imageUrl,
                 images: imageUrl ? [imageUrl] : []
             };
@@ -333,6 +339,8 @@ export default function PujaManagementPage() {
             offer_999_tax: 0,
             offer_999_dakshina: 0,
             display_price: 0,
+            date: '',
+            location: '',
             packages: [
                 { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
                 { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
@@ -373,6 +381,8 @@ export default function PujaManagementPage() {
             offer_999_tax: summary?.offer_999_tax || 0,
             offer_999_dakshina: summary?.offer_999_dakshina || 0,
             display_price: puja.display_price || 0,
+            date: puja.date || '',
+            location: puja.location || '',
             packages: puja.packages || [
                 { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
                 { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
@@ -756,7 +766,49 @@ export default function PujaManagementPage() {
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <div className="flex items-center gap-3 pb-2 border-b border-white/5 pt-4">
+                                                <Calendar className="w-4 h-4 text-orange-500" />
+                                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Ritual Schedule & Venue</h4>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Ritual Date & Time</label>
+                                                    <div className="relative group">
+                                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg border border-white/10">
+                                                            <Calendar className="w-3.5 h-3.5 text-orange-400" />
+                                                        </div>
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={pujasForm.date}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, date: e.target.value })}
+                                                            className="w-full pl-16 pr-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm text-white"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Sacred Location</label>
+                                                    <div className="relative group">
+                                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/5 rounded-lg border border-white/10">
+                                                            <MapPin className="w-3.5 h-3.5 text-orange-400" />
+                                                        </div>
+                                                        <input
+                                                            type="text"
+                                                            value={pujasForm.location}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, location: e.target.value })}
+                                                            placeholder="e.g. Kashi Vishwanath, Varanasi"
+                                                            className="w-full pl-16 pr-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-medium text-sm text-white"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-6 pt-4">
+                                                <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                                                    <Tag className="w-4 h-4 text-orange-500" />
+                                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Identification & Branding</h4>
+                                                </div>
                                                     <label className="block text-[10px] font-bold text-brand-blue uppercase tracking-widest pl-1 flex items-center justify-between">
                                                         URL Slug
                                                         <button 

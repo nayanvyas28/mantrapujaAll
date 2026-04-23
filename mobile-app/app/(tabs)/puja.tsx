@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, Dimensions, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, Dimensions, StatusBar, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter } from 'expo-router';
 import { Sparkles, MapPin, Calendar, Heart, Search, Filter, Star, ChevronRight } from 'lucide-react-native';
@@ -68,6 +68,7 @@ export default function ServicesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <TouchableOpacity 
+              onPress={() => router.push(`/puja/${item.slug}`)}
               style={{ width: width * 0.8 }} 
               className="mr-5 bg-white rounded-[40px] shadow-xl shadow-black/5 border border-orange-50 overflow-hidden"
             >
@@ -108,10 +109,24 @@ export default function ServicesScreen() {
     );
   };
 
+  // Loading State UI
+  if (loading) {
+    return (
+      <View className="flex-1 bg-[#FFFDFB] items-center justify-center">
+        <View className="items-center">
+          <View className="w-20 h-20 bg-primary/10 rounded-[30px] items-center justify-center mb-6">
+             <Sparkles size={40} color="#FF4D00" className="animate-spin" />
+          </View>
+          <Text className="text-gray-400 font-bold uppercase tracking-[4px] text-[10px]">Loading Divine Wisdom</Text>
+          <ActivityIndicator size="small" color="#FF4D00" className="mt-4" />
+        </View>
+      </View>
+    );
+  }
+
   // Filter logic
   const filteredPujas = activeTab === 'All' ? pujas : pujas.filter(p => {
-    const catName = categories.find(c => c === activeTab);
-    return true; // Simplified for now, in real logic we'd map category_id
+    return true; 
   });
 
   return (

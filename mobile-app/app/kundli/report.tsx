@@ -202,10 +202,13 @@ export default function KundliReportScreen() {
                         <TouchableOpacity
                             key={tab.id}
                             onPress={() => setActiveTab(tab.id)}
-                            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+                            style={[
+                                styles.tab, 
+                                activeTab === tab.id ? { flex: 1.5, backgroundColor: 'white' } : { flex: 1 }
+                            ]}
                         >
                             <tab.icon size={16} color={activeTab === tab.id ? '#FF4D00' : 'rgba(255,255,255,0.7)'} />
-                            {activeTab === tab.id && <Text style={styles.activeTabText}>{tab.label}</Text>}
+                            {activeTab === tab.id && <Text style={styles.activeTabText} numberOfLines={1}>{tab.label}</Text>}
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -289,7 +292,7 @@ function DashboardView({ data }: { data: any }) {
                         <Text style={[styles.planetCell, { width: '30%' }]}>{getVal(pl, 'name')}</Text>
                         <Text style={[styles.planetCell, { width: '25%' }]}>{getVal(pl, 'sign')}</Text>
                         <Text style={[styles.planetCell, { width: '20%' }]}>{Math.floor(pl.fullDegree % 30)}°</Text>
-                        <Text style={[styles.planetCell, { width: '25%' }]}>{pl.sign_lord || pl.lord || pl.is_planet_setted_lord || 'N/A'}</Text>
+                        <Text style={[styles.planetCell, { width: '25%' }]}>{renderPlanet(pl.sign_lord || pl.lord || pl.is_planet_setted_lord)}</Text>
                     </View>
                 ))}
             </View>
@@ -337,6 +340,14 @@ function ChartsView({ data }: { data: any }) {
     );
 }
 
+// 🔮 Robust Planet/Dasha Name Extractor
+const renderPlanet = (p: any) => {
+    if (!p) return 'N/A';
+    if (typeof p === 'string') return translateValue(p);
+    if (typeof p === 'object') return translateValue(p.planet || p.name || p.mahadasha || p.antardasha || 'N/A');
+    return 'N/A';
+};
+
 function DashaView({ data }: { data: any }) {
     const { language } = useLanguage();
     if (!data) return null;
@@ -349,12 +360,12 @@ function DashaView({ data }: { data: any }) {
                 <Text style={styles.cardTag}>{language === 'hi' ? 'वर्तमान महादशा' : 'Current Mahadasha'}</Text>
                 <View style={styles.dashaContent}>
                     <View>
-                        <Text style={styles.dashaMain}>{current.major || current.mahadasha || 'N/A'}</Text>
+                        <Text style={styles.dashaMain}>{renderPlanet(current.major || current.mahadasha)}</Text>
                         <Text style={styles.dashaSub}>{language === 'hi' ? 'मुख्य स्वामी' : 'Major Lord'}</Text>
                     </View>
                     <Zap color="#FF4D00" size={24} />
                     <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={styles.dashaMain}>{current.minor || current.antardasha || 'N/A'}</Text>
+                        <Text style={styles.dashaMain}>{renderPlanet(current.minor || current.antardasha)}</Text>
                         <Text style={styles.dashaSub}>{language === 'hi' ? 'उप स्वामी' : 'Minor Lord'}</Text>
                     </View>
                 </View>
@@ -377,7 +388,8 @@ function DashaView({ data }: { data: any }) {
             <SectionTitle title={language === 'hi' ? '120-वर्षीय महादशा समयरेखा' : '120-Year Mahadasha Timeline'} />
             {major && Array.isArray(major) && major.map((d: any, i: number) => {
                  const dName = d.mahadasha || d.planet || d.name || 'N/A';
-                 const isActive = (getVal(current.major || current, 'mahadasha') === dName);
+                 const currentName = renderPlanet(current.major || current.mahadasha);
+                 const isActive = (renderPlanet(dName) === currentName);
                  return <TimelineItem key={i} data={d} dName={translateValue(dName)} isActive={isActive} isLast={i === major.length - 1} />;
             })}
         </View>
@@ -459,18 +471,35 @@ const TableRow = ({ label, value }: any) => (
 );
 
 const ChartFrame = ({ title, svg }: any) => {
-    // 🛠️ Super-safe SVG cleaning: Only remove width/height attributes, NOT stroke-width
-    const cleanSvg = svg ? svg.replace(/\s(width|height)=["'][^"']+["']/g, '') : null;
+    const cleanSvg = (raw: string) => {
+        if (!raw) return null;
+        
+        // 🛠️ Robust SVG Cleaning: Extract dims and add viewBox for scaling
+        const wMatch = raw.match(/width=["'](\d+)["']/);
+        const hMatch = raw.match(/height=["'](\d+)["']/);
+        const w = wMatch ? wMatch[1] : "350";
+        const h = hMatch ? hMatch[1] : "350";
+
+        let cleaned = raw;
+        if (!cleaned.includes('viewBox')) {
+            cleaned = cleaned.replace('<svg', `<svg viewBox="0 0 ${w} ${h}"`);
+        }
+        // Remove fixed width/height so it can scale
+        cleaned = cleaned.replace(/\s(width|height)=["'][^"']+["']/g, '');
+        return cleaned;
+    };
+
+    const cleaned = cleanSvg(svg);
     const chartSize = width - 70; 
 
     return (
         <View style={{ marginBottom: 32 }}>
             <SectionTitle title={title} />
             <View style={styles.chartContainer}>
-                {cleanSvg ? (
+                {cleaned ? (
                     <View style={{ width: chartSize - 30, height: chartSize - 30 }}>
                         <SvgXml 
-                            xml={cleanSvg} 
+                            xml={cleaned} 
                             width={chartSize - 30} 
                             height={chartSize - 30}
                             preserveAspectRatio="xMidYMid meet"
@@ -533,15 +562,15 @@ const styles = StyleSheet.create({
     errorSub: { color: '#6B7280', textAlign: 'center', marginTop: 8, marginBottom: 24 },
     retryBtn: { backgroundColor: '#FF4D00', paddingHorizontal: 32, paddingVertical: 12, borderRadius: 16 },
     retryText: { color: 'white', fontWeight: '900', textTransform: 'uppercase' },
-    header: { paddingTop: 60, paddingBottom: 30, paddingHorizontal: 20, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, elevation: 10 },
+    header: { paddingTop: 60, paddingBottom: 30, paddingHorizontal: 15, borderBottomLeftRadius: 40, borderBottomRightRadius: 40, elevation: 10 },
     headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
     headerTitle: { color: 'white', fontSize: 20, fontWeight: '900' },
     headerSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 2 },
     iconBtn: { backgroundColor: 'rgba(255,255,255,0.2)', width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     tabContainer: { flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 20, padding: 4 },
-    tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 16 },
+    tab: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 16, paddingHorizontal: 4 },
     activeTab: { backgroundColor: 'white' },
-    activeTabText: { marginLeft: 8, color: '#FF4D00', fontWeight: '900', fontSize: 10, textTransform: 'uppercase' },
+    activeTabText: { marginLeft: 6, color: '#FF4D00', fontWeight: '900', fontSize: 9, textTransform: 'uppercase' },
     quickStats: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
     statCard: { flex: 1, backgroundColor: 'white', padding: 15, borderRadius: 20, alignItems: 'center', marginHorizontal: 4, elevation: 3 },
     statLabel: { color: '#94A3B8', fontSize: 8, fontWeight: '900', textTransform: 'uppercase', marginTop: 4 },

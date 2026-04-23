@@ -26,7 +26,9 @@ const executeNodeRequest = async (node, endpoint, body, lang) => {
         lat: Number(parseFloat(body.lat).toFixed(4)),
         lon: Number(parseFloat(body.lon).toFixed(4)),
         ayanamsa: 1,
-        lan: lang || 'en'
+        lan: lang || 'en',
+        language: lang || 'en',
+        name: body.name || 'User'
     };
 
     let url = `${ASTROLOGY_API_BASE_URL}/${endpoint}`;
@@ -139,43 +141,47 @@ const getKundliData = async (req, res) => {
             return res.status(500).json({ error: true, msg: "API Configuration Missing" });
         }
 
-        console.log(`[AstroNexus] 🚀 Fast-track sync for 29 endpoints starting...`);
+        console.log(`[AstroNexus] 🚀 Sequential sync for ${endpoints.length} endpoints starting...`);
         
-        const chunks = [];
-        const chunkSize = 15; 
-        for (let i = 0; i < endpoints.length; i += chunkSize) {
-            chunks.push(endpoints.slice(i, i + chunkSize));
-        }
+        for (const ep of endpoints) {
+            let success = false;
+            let lastError = null;
 
-        for (let i = 0; i < chunks.length; i++) {
-            const chunk = chunks[i];
-            await Promise.all(chunk.map(async (ep) => {
-                let lastError = null;
-                for (let attempt = 0; attempt <= 1; attempt++) {
-                    const node = nodes[attempt % nodes.length];
-                    try {
-                        const result = await executeNodeRequest(node, ep.url, bData, lang);
-                        if (result.ok) {
-                            const resData = result.data;
-                            if (ep.url.includes('horo_chart_image')) {
-                                results[ep.key] = resData.svg || resData.svg_code || null;
-                            } else if (ep.key === 'planets' || ep.key === 'kp_planets') {
-                                results[ep.key] = Array.isArray(resData) ? resData : (resData.planets || resData);
-                            } else {
-                                results[ep.key] = resData;
-                            }
-                            return; 
+            for (const node of nodes) {
+                try {
+                    const result = await executeNodeRequest(node, ep.url, bData, lang);
+                    if (result.ok) {
+                        const resData = result.data;
+                        
+                        // Check for plan/authorization errors in the response body even if status is 200
+                        const bodyMsg = resData.msg || resData.message || "";
+                        if (bodyMsg.toLowerCase().includes('plan') || bodyMsg.toLowerCase().includes('authorized')) {
+                            lastError = bodyMsg;
+                            console.warn(`[AstroBundler] ⚠️ ${ep.key} unauthorized on ${node.name}: ${lastError}. Retrying next node...`);
+                            continue; 
                         }
-                        lastError = result.data?.msg || `HTTP ${result.status}`;
-                    } catch (error) {
-                        lastError = error.message;
+
+                        if (ep.url.includes('horo_chart_image')) {
+                            results[ep.key] = resData.svg || resData.svg_code || null;
+                        } else if (ep.key === 'planets' || ep.key === 'kp_planets') {
+                            results[ep.key] = Array.isArray(resData) ? resData : (resData.planets || resData);
+                        } else {
+                            results[ep.key] = resData;
+                        }
+                        success = true;
+                        break; 
                     }
+                    
+                    lastError = result.data?.msg || result.data?.message || `HTTP ${result.status}`;
+                    console.error(`[AstroBundler] ❌ ${ep.key} failed on ${node.name}: ${lastError}`);
+                } catch (error) {
+                    lastError = error.message;
+                    console.error(`[AstroBundler] ❌ ${ep.key} exception on ${node.name}: ${lastError}`);
                 }
+            }
+
+            if (!success) {
                 results[ep.key] = { error: true, msg: 'FETCH_FAILED', detail: lastError };
-            }));
-            
-            if (i < chunks.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 500));
             }
         }
         
