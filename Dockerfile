@@ -1,24 +1,22 @@
 # Stage 1: Build the website
 FROM node:20-slim AS builder
 
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 # Copy root manifest and lockfile
 COPY package.json package-lock.json* ./
 
-# Copy necessary workspaces for dependency resolution
-COPY website ./website
-# Create dummy folders for other workspaces so npm install doesn't fail
-RUN mkdir -p admin-panel backend
+# Copy all workspace manifests for dependency resolution
+COPY website/package.json ./website/
+COPY admin-panel/package.json ./admin-panel/
+COPY backend/package.json ./backend/
+COPY website/packages ./website/packages
 
 # Install dependencies from the root
 RUN npm install --legacy-peer-deps
+
+# Now copy the rest of the source
+COPY website ./website
 
 # Build the website
 WORKDIR /app/website

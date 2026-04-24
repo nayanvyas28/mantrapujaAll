@@ -1,29 +1,15 @@
 # Stage 1: Build the website
-# Using node:20-slim for best compatibility with native modules (lightningcss)
 FROM node:20-slim AS builder
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# IMPORTANT: This Dockerfile is designed for a build context set to /website
-# Copy website manifest
+# Copy website manifest and packages
 COPY package.json ./
-
-# Copy local packages (now moved inside website/packages)
 COPY packages ./packages
-
-# Copy the rest of the website source code
 COPY . .
 
-# Install dependencies specifically for the website
-# Since packages is now internal, the relative path file:./packages/... will resolve
-RUN npm install --legacy-peer-deps
+# Clean install dependencies
+RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
 # Build the website
 ENV NEXT_TELEMETRY_DISABLED 1
