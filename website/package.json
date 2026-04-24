@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mantrapuja/image-optimizer": "file:./packages/image-optimizer",
     "@supabase/supabase-js": "^2.95.3",
     "@svg-maps/india": "^2.0.0",
+    "@tailwindcss/oxide": "^4.1.18",
     "@tiptap/extension-image": "^3.19.0",
     "@tiptap/extension-placeholder": "^3.19.0",
     "@tiptap/extension-typography": "^3.19.0",
@@ -37,8 +39,7 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7",
-    "@mantrapuja/image-optimizer": "file:./packages/image-optimizer"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

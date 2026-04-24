@@ -316,7 +316,7 @@ export default function BookingPackagesPopup({
                 
                 {/* Style adjustments for snake border */}
             
-                <style jsx global>{`
+                <style dangerouslySetInnerHTML={{ __html: `
                     @keyframes snake-border {
                         0% { stroke-dashoffset: 1000; }
                         100% { stroke-dashoffset: 0; }
@@ -324,7 +324,7 @@ export default function BookingPackagesPopup({
                     .animate-snake-border {
                         animation: snake-border 20s linear infinite;
                     }
-                `}</style>
+                ` }} />
             </div>
         </AnimatePresence>
     );

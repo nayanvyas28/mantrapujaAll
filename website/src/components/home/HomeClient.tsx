@@ -617,7 +617,7 @@ export default function HomeClient() {
                             <Link 
                                 href={item.link} 
                                 key={j} 
-                                onClick={(e) => {
+                                onClick={(e: React.MouseEvent) => {
                                     if (item.name === "Guru Ji AI") {
                                         e.preventDefault();
                                         window.dispatchEvent(new CustomEvent('open-guru-chat'));
@@ -650,7 +650,7 @@ export default function HomeClient() {
                                             src={item.img} 
                                             alt={item.name} 
                                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                                            onError={(e) => { e.currentTarget.src = item.name === 'Guru Ji AI' ? '/logo.png' : '/om.png' }} 
+                                            onError={(e: any) => { e.currentTarget.src = item.name === 'Guru Ji AI' ? '/logo.png' : '/om.png' }} 
                                         />
                                         <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-40 transition-opacity`}></div>
                                     </div>

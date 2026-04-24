@@ -187,7 +187,7 @@ export default function AboutPage() {
             </div>
 
 
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{ __html: `
                 .glass-morphism {
                     background: rgba(255, 255, 255, 0.03);
                     backdrop-filter: blur(20px);
@@ -196,7 +196,7 @@ export default function AboutPage() {
                 .dark .glass-morphism {
                     background: rgba(0, 0, 0, 0.2);
                 }
-            `}</style>
+            ` }} />
         </div>
     );
 }
