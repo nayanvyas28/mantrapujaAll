@@ -309,7 +309,7 @@ export default function PujaDetailScreen() {
           <Text className="text-gray-900 text-2xl font-black">₹{puja.packages?.[selectedPackage]?.price || puja.price}</Text>
         </View>
         <TouchableOpacity 
-          onPress={() => router.push('/coming-soon')}
+          onPress={() => router.push({ pathname: '/puja/checkout', params: { slug: puja.slug, pkg: selectedPackage } } as any)}
           className="bg-primary px-10 py-4 rounded-[20px] shadow-xl shadow-primary/40 flex-row items-center"
         >
           <Text className="text-white font-bold text-base mr-2 uppercase tracking-tighter">Book Ritual</Text>

@@ -9,7 +9,9 @@ import {
   FlatList, 
   Dimensions, 
   Animated,
-  RefreshControl 
+  RefreshControl,
+  Alert,
+  Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
@@ -20,9 +22,16 @@ import {
   Heart, 
   X,
   ChevronDown,
-  Maximize2
+  Maximize2,
+  Volume2,
+  SkipBack,
+  SkipForward,
+  Repeat,
+  Shuffle,
+  Sparkles
 } from 'lucide-react-native';
 import YoutubePlayer from "react-native-youtube-iframe";
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { api } from '../../lib/api';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -41,6 +50,13 @@ export default function MusicScreen() {
     const [playing, setPlaying] = useState(false);
     const [activeSong, setActiveSong] = useState<any>(null);
     const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
+    const [useYoutubePlayer, setUseYoutubePlayer] = useState(false);
+    
+    // Native Audio State
+    const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const [playbackStatus, setPlaybackStatus] = useState<any>(null);
+    const [duration, setDuration] = useState(0);
+    const [position, setPosition] = useState(0);
 
     const fetchData = async () => {
         try {
@@ -60,6 +76,30 @@ export default function MusicScreen() {
 
     useEffect(() => {
         fetchData();
+        
+        // Setup Background Audio Mode
+        const setupAudio = async () => {
+            try {
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: false,
+                    staysActiveInBackground: true,
+                    interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+                    playsInSilentModeIOS: true,
+                    shouldDuckAndroid: true,
+                    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+                    playThroughEarpieceAndroid: false,
+                });
+            } catch (e) {
+                console.error("Error setting up audio mode:", e);
+            }
+        };
+        setupAudio();
+
+        return () => {
+            if (sound) {
+                sound.unloadAsync();
+            }
+        };
     }, []);
 
     const onRefresh = () => {
@@ -67,10 +107,95 @@ export default function MusicScreen() {
         fetchData();
     };
 
-    const handleSongPress = (song: any) => {
+    const isYoutube = (url: string) => {
+        if (!url) return false;
+        // Check if it's already a 11-char ID
+        if (url.length === 11 && !url.includes('/') && !url.includes('.')) return true;
+        // Check if it's a full YouTube URL
+        return url.includes('youtube.com') || url.includes('youtu.be');
+    };
+
+    const getYoutubeId = (url: string) => {
+        if (!url) return null;
+        if (url.length === 11 && !url.includes('/') && !url.includes('.')) return url;
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[7].length === 11) ? match[7] : null;
+    };
+
+    const playNativeAudio = async (url: string) => {
+        try {
+            if (sound) {
+                await sound.unloadAsync();
+            }
+
+            if (!url || url.startsWith('http') === false) {
+                throw new Error('Invalid audio URL');
+            }
+
+            const { sound: newSound } = await Audio.Sound.createAsync(
+                { uri: url },
+                { shouldPlay: true },
+                onPlaybackStatusUpdate
+            );
+            setSound(newSound);
+            setPlaying(true);
+        } catch (error) {
+            console.error('Error playing audio:', error);
+            // Don't show alert for 400 if we can fallback
+            if (!isPlayerExpanded) {
+                setActiveSong(null);
+            }
+        }
+    };
+
+    const onPlaybackStatusUpdate = (status: any) => {
+        setPlaybackStatus(status);
+        if (status.isLoaded) {
+            setPosition(status.positionMillis);
+            setDuration(status.durationMillis || 0);
+        }
+        if (status.didJustFinish) {
+            setPlaying(false);
+        }
+    };
+
+    const handleSongPress = async (song: any) => {
+        // If switching songs, stop previous native audio
+        if (sound) {
+            await sound.unloadAsync();
+            setSound(null);
+        }
+        
         setActiveSong(song);
+        setIsPlayerExpanded(true);
+        setDuration(0);
+        setPosition(0);
         setPlaying(true);
-        setIsPlayerExpanded(false);
+        
+        const audioUrl = song.audio_url;
+
+        if (isYoutube(audioUrl)) {
+            // YouTube link → directly use YouTube in-app player
+            setUseYoutubePlayer(true);
+        } else if (audioUrl && audioUrl.startsWith('http')) {
+            // Direct MP3/Audio URL → native background player
+            setUseYoutubePlayer(false);
+            await playNativeAudio(audioUrl);
+        }
+    };
+
+    const togglePlay = async () => {
+        if (isYoutube(activeSong?.audio_url)) {
+            setPlaying(!playing);
+        } else if (sound) {
+            if (playing) {
+                await sound.pauseAsync();
+            } else {
+                await sound.playAsync();
+            }
+            setPlaying(!playing);
+        }
     };
 
     const categories = ['Aarti', 'Chalisa', 'Bhajan', 'Mantra', 'Other'];
@@ -97,24 +222,24 @@ export default function MusicScreen() {
                 contentContainerStyle={{ paddingBottom: 150 }}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
-                {/* Header */}
+                {/* Header with Channel Link */}
                 <LinearGradient colors={['#FFF5F0', '#FFFFFF']} className="px-6 pt-16 pb-8">
                     <View className="flex-row justify-between items-end">
                         <View>
-                            <Text className="text-gray-400 font-bold tracking-widest text-xs mb-1 uppercase">Spiritual Melodies</Text>
-                            <Text className="text-3xl font-black text-gray-900">Divine <Text className="text-primary">Bhajans</Text></Text>
+                            <Text className="text-gray-400 font-bold tracking-widest text-[10px] mb-1 uppercase">Spiritual Melodies</Text>
+                            <Text className="text-3xl font-black text-gray-900">Divine <Text className="text-primary">Music</Text></Text>
                         </View>
                         <TouchableOpacity 
-                            onPress={() => router.push('https://music.youtube.com/search?q=mantrapujaoffical' as any)}
-                            className="bg-red-50 px-4 py-2 rounded-2xl flex-row items-center border border-red-100"
+                            onPress={() => router.push('https://www.youtube.com/@mantrapujaofficial' as any)}
+                            className="bg-red-600 px-4 py-2.5 rounded-2xl flex-row items-center shadow-lg shadow-red-200"
                         >
-                            <Play size={12} color="#EF4444" fill="#EF4444" strokeWidth={3} />
-                            <Text className="text-red-500 font-bold text-[10px] ml-2 uppercase">Official Channel</Text>
+                            <Play size={14} color="white" fill="white" />
+                            <Text className="text-white font-black text-[10px] ml-2 uppercase tracking-tighter">Official Channel</Text>
                         </TouchableOpacity>
                     </View>
                 </LinearGradient>
 
-                {/* Deities Scroll */}
+                {/* Gods Selection */}
                 <View className="mb-8">
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
                         <TouchableOpacity 
@@ -142,16 +267,16 @@ export default function MusicScreen() {
                     </ScrollView>
                 </View>
 
-                {/* Categories */}
+                {/* Category Chips */}
                 <View className="mb-6">
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
                         {categories.map((cat) => (
                             <TouchableOpacity 
                                 key={cat}
                                 onPress={() => setSelectedCategory(selectedCategory === cat ? null : cat)}
-                                className={`px-6 py-2.5 rounded-full mr-3 border ${selectedCategory === cat ? 'bg-primary border-primary' : 'bg-white border-gray-200'}`}
+                                className={`px-6 py-2.5 rounded-full mr-3 border ${selectedCategory === cat ? 'bg-primary border-primary' : 'bg-white border-gray-100 shadow-sm'}`}
                             >
-                                <Text className={`text-xs font-bold ${selectedCategory === cat ? 'text-white' : 'text-gray-500'}`}>{cat}</Text>
+                                <Text className={`text-[10px] font-black uppercase ${selectedCategory === cat ? 'text-white' : 'text-gray-500'}`}>{cat}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -159,27 +284,46 @@ export default function MusicScreen() {
 
                 {/* Song List */}
                 <View className="px-6">
-                    <Text className="text-lg font-black text-gray-900 mb-4">Recommended for You</Text>
+                    <View className="flex-row justify-between items-center mb-4">
+                        <Text className="text-lg font-black text-gray-900">Recommended for You</Text>
+                        <TouchableOpacity>
+                            <Text className="text-primary font-bold text-xs">Shuffle All</Text>
+                        </TouchableOpacity>
+                    </View>
+
                     {filteredSongs.length > 0 ? (
                         filteredSongs.map((song) => (
                             <TouchableOpacity 
                                 key={song.id}
                                 onPress={() => handleSongPress(song)}
-                                className="flex-row items-center mb-5 bg-white rounded-3xl p-3 shadow-sm border border-gray-50"
+                                className={`flex-row items-center mb-4 bg-white rounded-3xl p-3 border ${activeSong?.id === song.id ? 'border-primary bg-orange-50/30' : 'border-gray-50 shadow-sm'}`}
                             >
                                 <View className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 relative">
-                                    <Image source={{ uri: song.image_url || `https://img.youtube.com/vi/${song.audio_url}/0.jpg` }} className="w-full h-full" />
-                                    <View className="absolute inset-0 bg-black/20 items-center justify-center">
-                                        <Play color="white" size={20} fill="white" />
-                                    </View>
+                                    <Image 
+                                        source={{ uri: song.image_url || (isYoutube(song.audio_url) ? `https://img.youtube.com/vi/${song.audio_url}/0.jpg` : 'https://via.placeholder.com/200') }} 
+                                        className="w-full h-full" 
+                                    />
+                                    {activeSong?.id === song.id && playing && (
+                                        <View className="absolute inset-0 bg-black/30 items-center justify-center">
+                                            <Pause color="white" size={20} fill="white" />
+                                        </View>
+                                    )}
+                                    {!activeSong?.id === song.id || !playing && (
+                                        <View className="absolute inset-0 bg-black/10 items-center justify-center">
+                                            <Play color="white" size={20} fill="white" />
+                                        </View>
+                                    )}
                                 </View>
                                 <View className="flex-1 ml-4">
                                     <Text className="text-gray-900 font-bold text-sm" numberOfLines={1}>{song.title}</Text>
-                                    <Text className="text-gray-400 text-xs mt-1">{song.artist || 'Divine Artist'} • {song.category}</Text>
+                                    <Text className="text-gray-400 text-[10px] mt-1 font-bold uppercase">{song.artist || 'Mantra Puja Official'} • {song.category}</Text>
                                 </View>
-                                <TouchableOpacity className="p-2">
-                                    <Heart color="#CBD5E1" size={20} />
-                                </TouchableOpacity>
+                                <View className="flex-row items-center">
+                                    {isYoutube(song.audio_url) && <Play size={14} color="#EF4444" className="mr-3" />}
+                                    <TouchableOpacity className="p-2">
+                                        <Heart color="#CBD5E1" size={20} />
+                                    </TouchableOpacity>
+                                </View>
                             </TouchableOpacity>
                         ))
                     ) : (
@@ -189,55 +333,107 @@ export default function MusicScreen() {
                             </View>
                             <Text className="text-gray-900 font-bold text-lg">No Bhajans Found</Text>
                             <Text className="text-gray-400 text-sm text-center px-10 mt-2">
-                                Add YouTube Video IDs to your 'music_songs' table in Supabase to start the divine stream.
+                                We are updating our divine library. Check out our official channel for more.
                             </Text>
                             <TouchableOpacity 
-                                onPress={() => router.push('https://music.youtube.com/search?q=mantrapujaoffical' as any)}
-                                className="mt-6 bg-primary/10 px-6 py-3 rounded-2xl"
+                                onPress={() => router.push('https://www.youtube.com/@mantrapujaofficial' as any)}
+                                className="mt-6 bg-primary px-8 py-3 rounded-2xl shadow-lg shadow-primary/20"
                             >
-                                <Text className="text-primary font-bold">Search @mantrapujaoffical</Text>
+                                <Text className="text-white font-black uppercase text-xs">Visit Channel</Text>
                             </TouchableOpacity>
                         </View>
                     )}
                 </View>
             </ScrollView>
 
-            {/* Floating Mini Player */}
+            {/* Hybrid Floating Player */}
             {activeSong && (
-                <View className={`absolute bottom-20 inset-x-4 bg-white shadow-2xl rounded-[32px] border border-gray-100 overflow-hidden ${isPlayerExpanded ? 'h-[450px] bottom-4' : 'h-20'}`}>
+                <View className={`absolute bottom-20 inset-x-4 bg-white shadow-2xl rounded-[32px] border border-gray-100 overflow-hidden ${isPlayerExpanded ? 'h-[500px] bottom-4' : 'h-20'}`}>
                     {isPlayerExpanded ? (
                         <View className="flex-1">
-                            {/* Expanded Player Header */}
-                            <View className="flex-row justify-between items-center p-6 border-b border-gray-50">
+                            {/* Expanded Header */}
+                            <View className="flex-row justify-between items-center p-6">
                                 <TouchableOpacity onPress={() => setIsPlayerExpanded(false)}>
-                                    <ChevronDown color="#1E293B" size={24} />
+                                    <ChevronDown color="#1E293B" size={28} />
                                 </TouchableOpacity>
-                                <Text className="text-gray-900 font-black text-sm uppercase tracking-widest">Now Playing</Text>
-                                <TouchableOpacity onPress={() => setActiveSong(null)}>
-                                    <X color="#1E293B" size={20} />
+                                <View className="items-center">
+                                    <Text className="text-gray-400 font-black text-[10px] uppercase tracking-[3px]">Now Playing</Text>
+                                    <Text className="text-gray-900 font-bold text-xs mt-1">{activeSong.category}</Text>
+                                </View>
+                                <TouchableOpacity onPress={() => {
+                                    if (sound) sound.stopAsync();
+                                    setActiveSong(null);
+                                }}>
+                                    <X color="#1E293B" size={24} />
                                 </TouchableOpacity>
                             </View>
 
-                            {/* YouTube Player Container */}
-                            <View className="w-full aspect-video bg-black">
-                                <YoutubePlayer
-                                    height={width * 0.5625}
-                                    play={playing}
-                                    videoId={activeSong.audio_url.length === 11 ? activeSong.audio_url : 'dQw4w9WgXcQ'} // Simple validation
-                                    onChangeState={(state) => {
-                                        if (state === 'ended') setPlaying(false);
-                                    }}
-                                />
+                            {/* Main Content (YouTube Player or Cover Art) */}
+                            <View className="px-6 mb-6">
+                                {useYoutubePlayer && isYoutube(activeSong.audio_url) ? (
+                                    <View className="w-full aspect-video rounded-3xl overflow-hidden bg-black shadow-xl">
+                                        <YoutubePlayer
+                                            height={width * 0.56}
+                                            play={playing}
+                                            videoId={getYoutubeId(activeSong.audio_url) || ''}
+                                            onChangeState={(state) => {
+                                                if (state === 'ended') setPlaying(false);
+                                            }}
+                                        />
+                                    </View>
+                                ) : (
+                                    <View className="w-full aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white bg-gray-100">
+                                        <Image 
+                                            source={{ uri: activeSong.image_url || 'https://via.placeholder.com/400' }} 
+                                            className="w-full h-full"
+                                            resizeMode="cover"
+                                        />
+                                        {playing && (
+                                            <View className="absolute inset-0 bg-black/10 items-center justify-center">
+                                                <Sparkles size={100} color="rgba(255,255,255,0.2)" />
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
                             </View>
 
-                            {/* Song Info */}
-                            <View className="p-6">
-                                <Text className="text-gray-900 font-black text-xl mb-1">{activeSong.title}</Text>
-                                <Text className="text-gray-500 font-medium mb-6">{activeSong.artist || 'Divine Artist'}</Text>
-                                
+                            {/* Info & Controls */}
+                            <View className="px-10">
+                                <View className="items-center mb-8">
+                                    <Text className="text-gray-900 font-black text-2xl text-center" numberOfLines={1}>{activeSong.title}</Text>
+                                    <Text className="text-primary font-bold text-sm mt-1 uppercase tracking-widest">{activeSong.artist || 'Mantra Puja Official'}</Text>
+                                </View>
+
+                                {/* Progress Bar (For Native Audio) */}
+                                {!isYoutube(activeSong.audio_url) && playbackStatus && (
+                                    <View className="w-full h-1 bg-gray-100 rounded-full mb-8 relative">
+                                        <View 
+                                            className="h-full bg-primary rounded-full" 
+                                            style={{ width: `${(playbackStatus.positionMillis / playbackStatus.durationMillis) * 100}%` }}
+                                        />
+                                        <View className="flex-row justify-between mt-2">
+                                            <Text className="text-[10px] text-gray-400 font-bold">
+                                                {Math.floor(playbackStatus.positionMillis / 60000)}:{String(Math.floor((playbackStatus.positionMillis % 60000) / 1000)).padStart(2, '0')}
+                                            </Text>
+                                            <Text className="text-[10px] text-gray-400 font-bold">
+                                                {Math.floor(playbackStatus.durationMillis / 60000)}:{String(Math.floor((playbackStatus.durationMillis % 60000) / 1000)).padStart(2, '0')}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                )}
+
                                 <View className="flex-row justify-center items-center gap-10">
-                                    <TouchableOpacity onPress={() => setPlaying(!playing)} className="w-16 h-16 bg-primary rounded-full items-center justify-center shadow-lg shadow-primary/30">
-                                        {playing ? <Pause color="white" size={32} fill="white" /> : <Play color="white" size={32} fill="white" />}
+                                    <TouchableOpacity>
+                                        <SkipBack size={32} color="#CBD5E1" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        onPress={togglePlay}
+                                        className="w-20 h-20 bg-primary rounded-full items-center justify-center shadow-xl shadow-primary/40"
+                                    >
+                                        {playing ? <Pause color="white" size={40} fill="white" /> : <Play color="white" size={40} fill="white" />}
+                                    </TouchableOpacity>
+                                    <TouchableOpacity>
+                                        <SkipForward size={32} color="#CBD5E1" />
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -245,22 +441,28 @@ export default function MusicScreen() {
                     ) : (
                         <TouchableOpacity 
                             onPress={() => setIsPlayerExpanded(true)}
+                            activeOpacity={0.9}
                             className="flex-1 flex-row items-center px-4"
                         >
                             <Image 
-                                source={{ uri: activeSong.image_url || `https://img.youtube.com/vi/${activeSong.audio_url}/0.jpg` }} 
-                                className="w-12 h-12 rounded-xl" 
+                                source={{ uri: activeSong.image_url || (isYoutube(activeSong.audio_url) ? `https://img.youtube.com/vi/${activeSong.audio_url}/0.jpg` : 'https://via.placeholder.com/200') }} 
+                                className="w-12 h-12 rounded-2xl" 
                             />
-                            <View className="flex-1 ml-3">
-                                <Text className="text-gray-900 font-bold text-sm" numberOfLines={1}>{activeSong.title}</Text>
-                                <Text className="text-gray-400 text-xs">{activeSong.artist || 'Divine Artist'}</Text>
+                            <View className="flex-1 ml-4">
+                                <Text className="text-gray-900 font-black text-[13px]" numberOfLines={1}>{activeSong.title}</Text>
+                                <Text className="text-gray-400 font-bold text-[10px] uppercase tracking-tighter">
+                                    {isYoutube(activeSong.audio_url) ? 'Streaming from YouTube' : 'Playing Divine Audio'}
+                                </Text>
                             </View>
                             <View className="flex-row items-center gap-2">
-                                <TouchableOpacity onPress={() => setPlaying(!playing)} className="p-2">
-                                    {playing ? <Pause color="#FF4D00" size={24} fill="#FF4D00" /> : <Play color="#FF4D00" size={24} fill="#FF4D00" />}
+                                <TouchableOpacity onPress={togglePlay} className="p-2">
+                                    {playing ? <Pause color="#FF4D00" size={28} fill="#FF4D00" /> : <Play color="#FF4D00" size={28} fill="#FF4D00" />}
                                 </TouchableOpacity>
-                                <TouchableOpacity onPress={() => setActiveSong(null)} className="p-2">
-                                    <X color="#94A3B8" size={20} />
+                                <TouchableOpacity onPress={() => {
+                                    if (sound) sound.stopAsync();
+                                    setActiveSong(null);
+                                }} className="p-2">
+                                    <X color="#94A3B8" size={24} />
                                 </TouchableOpacity>
                             </View>
                         </TouchableOpacity>

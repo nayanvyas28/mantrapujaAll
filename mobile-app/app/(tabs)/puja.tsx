@@ -1,21 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, Dimensions, StatusBar, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Sparkles, MapPin, Calendar, Heart, Search, Filter, Star, ChevronRight } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
+import Skeleton from '../../components/Skeleton';
 
 const { width } = Dimensions.get('window');
 
 export default function ServicesScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { category_id } = params;
+
   const [activeTab, setActiveTab] = useState('All');
   const [pujas, setPujas] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>(['All']);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchInitialData();
   }, []);
 
@@ -30,7 +34,17 @@ export default function ServicesScreen() {
       if (catError) throw catError;
 
       if (pujaData) setPujas(pujaData);
-      if (catData) setCategories(['All', ...catData.map((c: any) => c.name)]);
+      
+      const allCats = [{ id: 'all', name: 'All' }, ...(catData || [])];
+      setCategories(allCats);
+
+      // If category_id is passed from home, set it as active
+      if (category_id) {
+        const selectedCat = allCats.find(c => c.id === category_id);
+        if (selectedCat) {
+          setActiveTab(selectedCat.name);
+        }
+      }
     } catch (error) {
       console.error('[Puja] Fetch Error:', error);
     } finally {
@@ -112,21 +126,35 @@ export default function ServicesScreen() {
   // Loading State UI
   if (loading) {
     return (
-      <View className="flex-1 bg-[#FFFDFB] items-center justify-center">
-        <View className="items-center">
-          <View className="w-20 h-20 bg-primary/10 rounded-[30px] items-center justify-center mb-6">
-             <Sparkles size={40} color="#FF4D00" className="animate-spin" />
-          </View>
-          <Text className="text-gray-400 font-bold uppercase tracking-[4px] text-[10px]">Loading Divine Wisdom</Text>
-          <ActivityIndicator size="small" color="#FF4D00" className="mt-4" />
+      <View className="flex-1 bg-[#FFFDFB]">
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFDFB" />
+        <View className="pt-16 pb-6 px-6 bg-white border-b border-gray-50">
+            <Skeleton width={150} height={32} borderRadius={8} className="mb-6" />
+            <View className="flex-row items-center space-x-3">
+                <Skeleton width="80%" height={56} borderRadius={16} />
+                <Skeleton width={56} height={56} borderRadius={16} />
+            </View>
         </View>
+        <ScrollView className="flex-1 px-6 pt-6">
+            <View className="flex-row mb-8">
+                {[1, 2, 3].map(i => (
+                    <Skeleton key={i} width={100} height={44} borderRadius={16} className="mr-3" />
+                ))}
+            </View>
+            <Skeleton width={200} height={20} borderRadius={6} className="mb-4" />
+            <View className="flex-row mb-10">
+                <Skeleton width={width * 0.8} height={200} borderRadius={40} className="mr-5" />
+                <Skeleton width={width * 0.8} height={200} borderRadius={40} />
+            </View>
+            <Skeleton width="100%" height={120} borderRadius={40} className="mb-10" />
+        </ScrollView>
       </View>
     );
   }
 
   // Filter logic
   const filteredPujas = activeTab === 'All' ? pujas : pujas.filter(p => {
-    return true; 
+    return p.category === activeTab;
   });
 
   return (
@@ -153,40 +181,75 @@ export default function ServicesScreen() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="max-h-16 px-6 mt-6 mb-4">
           {categories.map((cat) => (
             <TouchableOpacity 
-              key={cat} 
-              onPress={() => setActiveTab(cat)}
-              className={`px-6 py-3 mr-3 rounded-2xl border ${activeTab === cat ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'bg-white border-gray-100'}`}
+              key={cat.id} 
+              onPress={() => setActiveTab(cat.name)}
+              className={`px-6 py-3 mr-3 rounded-2xl border ${activeTab === cat.name ? 'bg-primary border-primary shadow-lg shadow-primary/20' : 'bg-white border-gray-100'}`}
             >
-              <Text className={`${activeTab === cat ? 'text-white font-bold' : 'text-gray-600 font-medium'}`}>{cat}</Text>
+              <Text className={`${activeTab === cat.name ? 'text-white font-bold' : 'text-gray-600 font-medium'}`}>{cat.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* Featured Horizontal Sections */}
-        <View className="mt-4">
-           <PujaHorizontalSection title="Popular Pujas" data={pujas.slice(0, 4)} />
-           
-           {/* Divine Offer Banner */}
-           <TouchableOpacity className="mx-6 mb-10 bg-indigo-600 rounded-[40px] p-8 flex-row items-center justify-between overflow-hidden">
-              <View className="absolute -right-10 -top-10 opacity-10">
-                 <Sparkles size={160} color="white" />
-              </View>
-              <View className="flex-1 pr-4">
-                 <View className="bg-white/20 self-start px-2 py-0.5 rounded-md mb-2">
-                    <Text className="text-white text-[9px] font-bold uppercase">Limited Offer</Text>
-                 </View>
-                 <Text className="text-white text-xl font-bold leading-tight">Personalized Shanti Puja</Text>
-                 <Text className="text-white/80 text-xs mt-1">Get 40% off on your first booking</Text>
-              </View>
-              <View className="w-12 h-12 bg-white rounded-2xl items-center justify-center shadow-lg">
-                 <ChevronRight size={24} color="#4F46E5" />
-              </View>
-           </TouchableOpacity>
+        {/* Conditional Rendering: Featured Sections vs Filtered Grid */}
+        {activeTab === 'All' ? (
+          <View className="mt-4">
+            <PujaHorizontalSection title="Popular Pujas" data={pujas.slice(0, 4)} />
+            
+            {/* Divine Offer Banner */}
+            <TouchableOpacity className="mx-6 mb-10 bg-indigo-600 rounded-[40px] p-8 flex-row items-center justify-between overflow-hidden">
+               <View className="absolute -right-10 -top-10 opacity-10">
+                  <Sparkles size={160} color="white" />
+               </View>
+               <View className="flex-1 pr-4">
+                  <View className="bg-white/20 self-start px-2 py-0.5 rounded-md mb-2">
+                     <Text className="text-white text-[9px] font-bold uppercase">Limited Offer</Text>
+                  </View>
+                  <Text className="text-white text-xl font-bold leading-tight">Personalized Shanti Puja</Text>
+                  <Text className="text-white/80 text-xs mt-1">Get 40% off on your first booking</Text>
+               </View>
+               <View className="w-12 h-12 bg-white rounded-2xl items-center justify-center shadow-lg">
+                  <ChevronRight size={24} color="#4F46E5" />
+               </View>
+            </TouchableOpacity>
 
-           <PujaHorizontalSection title="Festival Special" data={pujas.slice(2, 6)} />
-           
-           <PujaHorizontalSection title="Upcoming Vrat" data={pujas.slice(4, 8)} />
-        </View>
+            <PujaHorizontalSection title="Festival Special" data={pujas.slice(2, 6)} />
+            
+            <PujaHorizontalSection title="Upcoming Vrat" data={pujas.slice(4, 8)} />
+          </View>
+        ) : (
+          <View className="px-6 mt-4">
+            <Text className="text-gray-900 text-xl font-bold mb-6">{activeTab} Services</Text>
+            <View className="flex-row flex-wrap justify-between">
+              {filteredPujas.map((item) => (
+                <TouchableOpacity 
+                  key={item.id}
+                  onPress={() => router.push(`/puja/${item.slug}`)}
+                  className="w-[47%] bg-white rounded-[32px] border border-gray-100 shadow-sm mb-6 overflow-hidden"
+                >
+                  <Image source={{ uri: item.image_url }} className="w-full h-32" resizeMode="cover" />
+                  <View className="p-4">
+                    <Text className="text-gray-900 font-bold text-xs" numberOfLines={1}>{item.name}</Text>
+                    <View className="flex-row items-center mt-1">
+                      <MapPin size={10} color="#94A3B8" />
+                      <Text className="text-gray-400 text-[10px] ml-1">{item.location?.split(',')[0] || 'Varanasi'}</Text>
+                    </View>
+                    <View className="flex-row justify-between items-center mt-3 pt-3 border-t border-gray-50">
+                      <Text className="text-primary font-black text-sm">₹{item.price}</Text>
+                      <ChevronRight size={14} color="#FF4D00" />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {filteredPujas.length === 0 && (
+              <View className="py-20 items-center justify-center">
+                <Sparkles size={48} color="#FF4D00" opacity={0.2} />
+                <Text className="text-gray-400 mt-4 font-bold">No services found in this category</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Trust Banner */}
         <View className="px-6 mb-32">

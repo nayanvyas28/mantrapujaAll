@@ -47,26 +47,39 @@ export default function WalletScreen() {
         .eq('user_id', user.id)
         .single();
 
+      let currentWalletId = walletData?.id;
+
       if (walletError && walletError.code !== 'PGRST116') {
         console.error('Wallet Fetch Error:', walletError);
       } else if (walletData) {
         setBalance(walletData.balance);
       } else {
-        // First time user? Might need to create wallet row if missing
-        await supabase.from('wallets').upsert({ user_id: user.id, balance: 0 });
+        // First time user? Create wallet row
+        const { data: newWallet, error: createError } = await supabase
+          .from('wallets')
+          .upsert({ user_id: user.id, balance: 0 })
+          .select()
+          .single();
+        
+        if (!createError && newWallet) {
+          currentWalletId = newWallet.id;
+          setBalance(0);
+        }
       }
 
-      // Fetch real transactions from wallet_transactions
-      const { data: transData, error: transError } = await supabase
-        .from('wallet_transactions')
-        .select('*')
-        .eq('wallet_id', walletData?.id)
-        .order('created_at', { ascending: false });
+      // Fetch real transactions from wallet_transactions only if we have a valid wallet ID
+      if (currentWalletId) {
+        const { data: transData, error: transError } = await supabase
+          .from('wallet_transactions')
+          .select('*')
+          .eq('wallet_id', currentWalletId)
+          .order('created_at', { ascending: false });
 
-      if (transError) {
-        console.error('Transaction Fetch Error:', transError);
-      } else if (transData) {
-        setHistory(transData);
+        if (transError) {
+          console.error('Transaction Fetch Error:', transError);
+        } else if (transData) {
+          setHistory(transData);
+        }
       }
     } catch (error) {
        console.error('Wallet Error:', error);
