@@ -21,6 +21,8 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync();
 
+import { CartProvider } from '../context/CartContext';
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     ...FontAwesome.font,
@@ -44,7 +46,9 @@ export default function RootLayout() {
     <LanguageProvider>
       <AuthProvider>
         <SidebarProvider>
-          <RootLayoutNav />
+          <CartProvider>
+            <RootLayoutNav />
+          </CartProvider>
         </SidebarProvider>
       </AuthProvider>
     </LanguageProvider>
