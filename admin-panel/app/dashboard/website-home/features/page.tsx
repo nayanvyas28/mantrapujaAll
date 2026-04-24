@@ -482,7 +482,7 @@ export default function FeaturesManagementPage() {
             </AnimatePresence>
 
 
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{ __html: `
                 .custom-scrollbar::-webkit-scrollbar {
                     width: 6px;
                 }
@@ -496,7 +496,7 @@ export default function FeaturesManagementPage() {
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
                     background: rgba(255, 255, 255, 0.2);
                 }
-            `}</style>
+            ` }} />
         </div>
     );
 }

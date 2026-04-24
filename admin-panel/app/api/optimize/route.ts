@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { optimizeImage } from '../../../../packages/image-optimizer/index';
+import { optimizeImage } from '@mantrapuja/image-optimizer';
 
 export async function POST(req: NextRequest) {
     try {

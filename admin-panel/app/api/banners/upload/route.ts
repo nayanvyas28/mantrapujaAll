@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { optimizeImage } from '../../../../../packages/image-optimizer/index';
+import { optimizeImage } from '@mantrapuja/image-optimizer';
 
 // Service role client — bypasses RLS for storage uploads
 function getAdminClient() {
