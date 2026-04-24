@@ -59,7 +59,7 @@ export const FestivalGallery = ({ images }: FestivalGalleryProps) => {
                             onClick={() => setSelectedImage(img)}
                         >
                             <img
-                                src={img.url}
+                                src={img.url || undefined}
                                 alt={img.alt}
                                 className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
                             />
@@ -98,7 +98,7 @@ export const FestivalGallery = ({ images }: FestivalGalleryProps) => {
                             initial={{ scale: 0.8 }}
                             animate={{ scale: 1 }}
                             exit={{ scale: 0.8 }}
-                            src={selectedImage.url}
+                            src={selectedImage.url || undefined}
                             alt={selectedImage.alt}
                             className="max-w-full max-h-[90vh] rounded-xl shadow-2xl"
                             onClick={(e) => e.stopPropagation()}

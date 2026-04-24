@@ -7,7 +7,7 @@ const supabase = createClient(
 
 async function check() {
     const { data, error } = await supabase
-        .from('profiles')
+        .from('reviews')
         .select('*')
         .limit(1);
 

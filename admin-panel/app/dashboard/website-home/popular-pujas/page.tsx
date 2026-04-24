@@ -71,24 +71,17 @@ export default function PopularPujasManager() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            // First, set all to false
-            await supabase.from('poojas').update({ is_featured: false }).eq('is_featured', true);
-            
-            // Then, set selected to true
-            if (selectedIds.size > 0) {
-                const selectedArray = Array.from(selectedIds);
-                // Supabase doesn't have an easy "where in" update in all clients reliably, 
-                // so we can loop or use basic in filter
-                const { error } = await supabase
-                    .from('poojas')
-                    .update({ is_featured: true })
-                    .in('id', selectedArray);
+            const res = await fetch('/api/popular-pujas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selectedIds: Array.from(selectedIds) }),
+            });
 
-                if (error) throw error;
-            }
-            
-            alert('Successfully updated Popular Pujas for the Homepage!');
-            fetchPujas(); // Refresh data
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Save failed');
+
+            alert(`Successfully saved ${result.count} Popular Pujas for the Homepage!`);
+            fetchPujas(); // Refresh to confirm
         } catch (error: any) {
             alert('Error saving: ' + error.message);
             console.error(error);

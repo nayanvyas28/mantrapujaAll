@@ -8,6 +8,7 @@ import {
     Calendar, Clock, Layout, MapPin, Sparkles, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { deleteFileFromStorage } from '@/lib/storage-utils';
 import Link from 'next/link';
 
 interface MarketingPopup {
@@ -95,17 +96,42 @@ export default function PopupManagementPage() {
     };
 
     const handleFileUpload = async (file: File, type: 'mobile' | 'web') => {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${type}_popup_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `marketing/${fileName}`;
+        try {
+            // 1. Optimize image through our Sharp-powered API
+            const optimizeFormData = new FormData();
+            optimizeFormData.append('file', file);
 
-        const { error: uploadError } = await supabase.storage
-            .from('music_assets')
-            .upload(filePath, file);
+            const optimizeResponse = await fetch('/api/optimize', {
+                method: 'POST',
+                body: optimizeFormData
+            });
 
-        if (uploadError) throw uploadError;
-        const { data } = supabase.storage.from('music_assets').getPublicUrl(filePath);
-        return data.publicUrl;
+            if (!optimizeResponse.ok) {
+                const error = await optimizeResponse.json();
+                throw new Error(error.error || 'Optimization failed');
+            }
+
+            const optimizedBlob = await optimizeResponse.blob();
+            
+            // 2. Upload the optimized WebP image to Supabase
+            const fileName = `${type}_popup_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
+            const filePath = `${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('popups')
+                .upload(filePath, optimizedBlob, {
+                    contentType: 'image/webp',
+                    upsert: true
+                });
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('popups').getPublicUrl(filePath);
+            return data.publicUrl;
+        } catch (error: any) {
+            console.error('Upload & Optimization error:', error);
+            throw new Error(`Failed to process image: ${error.message}`);
+        }
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -115,8 +141,14 @@ export default function PopupManagementPage() {
             let mobileUrl = form.image_mobile;
             let webUrl = form.image_web;
 
-            if (form.mobileImageFile) mobileUrl = await handleFileUpload(form.mobileImageFile, 'mobile');
-            if (form.webImageFile) webUrl = await handleFileUpload(form.webImageFile, 'web');
+            if (form.mobileImageFile) {
+                if (editingPopup?.image_mobile) await deleteFileFromStorage(editingPopup.image_mobile);
+                mobileUrl = await handleFileUpload(form.mobileImageFile, 'mobile');
+            }
+            if (form.webImageFile) {
+                if (editingPopup?.image_web) await deleteFileFromStorage(editingPopup.image_web);
+                webUrl = await handleFileUpload(form.webImageFile, 'web');
+            }
 
             const popupData: any = {
                 name: form.name,
@@ -156,10 +188,18 @@ export default function PopupManagementPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this campaign?')) return;
+        const popupToDelete = popups.find(p => p.id === id);
+        if (!confirm(`Are you sure you want to delete campaign "${popupToDelete?.name}"?`)) return;
+        
         try {
+            // Delete record
             const { error } = await supabase.from('marketing_popups').delete().eq('id', id);
             if (error) throw error;
+
+            // Delete storage files (both mobile and web)
+            if (popupToDelete?.image_mobile) await deleteFileFromStorage(popupToDelete.image_mobile);
+            if (popupToDelete?.image_web) await deleteFileFromStorage(popupToDelete.image_web);
+
             fetchPopups();
         } catch (error: any) {
             alert('Error deleting: ' + error.message);

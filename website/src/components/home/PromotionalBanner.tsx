@@ -70,7 +70,7 @@ export default function PromotionalBanner() {
                         {/* Price Circle — size relative to banner height (10vw) */}
                         <motion.div
                             whileHover={{ scale: 1.08, rotate: 5 }}
-                            className="flex-shrink-0 flex flex-col items-center justify-center bg-yellow-400 rounded-full shadow-xl border-[0.3vw] border-white -rotate-3"
+                            className="flex-shrink-0 flex flex-col items-center justify-center bg-yellow-400 rounded-full border-[0.3vw] border-white -rotate-3"
                             style={{
                                 width: 'clamp(24px, 7vw, 85px)',
                                 height: 'clamp(24px, 7vw, 85px)',
@@ -153,7 +153,7 @@ export default function PromotionalBanner() {
                         {/* CTA Button */}
                         <Link
                             href="/pooja-services/akshaya-tritiya-puja"
-                            className="group relative flex items-center justify-center bg-white text-orange-700 rounded-xl font-black shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-200 overflow-hidden whitespace-nowrap"
+                            className="group relative flex items-center justify-center bg-white text-orange-700 rounded-xl font-black hover:-translate-y-0.5 transition-all duration-200 overflow-hidden whitespace-nowrap"
                             style={{
                                 fontSize: 'clamp(7px, 1.2vw, 16px)',
                                 padding: 'clamp(4px, 0.8%, 14px) clamp(8px, 2%, 28px)',

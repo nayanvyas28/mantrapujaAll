@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Map as MapIcon, Grid, List, Sun, ChevronDown, ArrowRight, Filter, IndianRupee, MapPin, Compass } from 'lucide-react';
 import IndiaMap from '../../components/IndiaMap';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import { locations as staticLocations, Location, LocationType } from '../../data/spiritual-locations';
 import { MOCK_BLOGS } from '../../data/blog-data';
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
@@ -43,10 +43,7 @@ export default function LocationsPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const supabase = createClient(
-                    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-                );
+                // Using imported supabase singleton
 
                 // 1. Fetch Destinations - From new destinations table
                 const { data: destData, error: destError } = await supabase

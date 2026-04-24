@@ -7,7 +7,7 @@ import BlogCard from "./BlogCard";
 import BlogSidebar from "./BlogSidebar";
 import SpiritualFamilySection from "../home/SpiritualFamilySection";
 import { AnimatePresence, motion } from "framer-motion";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabaseClient";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
@@ -25,11 +25,6 @@ export default function BlogContent() {
     // Fetch Blogs function
     const fetchBlogs = useCallback(async (pageToFetch: number, isNewSearch: boolean = false) => {
         try {
-            const supabase = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
-
             let query = supabase
                 .from('blogs')
                 .select('*')

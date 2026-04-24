@@ -22,7 +22,7 @@ const normalizePhone = (phone: string) => {
 
 export async function POST(req: Request) {
     try {
-        const { phone } = await req.json();
+        const { phone, purpose = 'REGISTER' } = await req.json();
         
         if (!phone) {
             return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
@@ -35,12 +35,16 @@ export async function POST(req: Request) {
         const expiresAt = new Date(Date.now() + 10 * 60000).toISOString(); // 10 minutes
 
         // 2. Store in Suapbase 'otps' table
+        // NOTE: We use 'REGISTER' for all purposes because the database 'otps_purpose_check' 
+        // constraint only allows 'REGISTER' currently.
+        const effectivePurpose = 'REGISTER'; 
+        
         const { error: otpError } = await supabaseAdmin
             .from('otps')
             .upsert({
                 phone: cleanPhone,
-                otp: otp, // In a production app, this should be encrypted, but we'll follow previous pattern for now
-                purpose: 'REGISTER',
+                otp: otp, 
+                purpose: effectivePurpose,
                 expires_at: expiresAt
             }, { onConflict: 'phone,purpose' });
 

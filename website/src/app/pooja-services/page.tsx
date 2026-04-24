@@ -79,14 +79,8 @@ const prefixGradient = (gradient: string, prefix: string) => {
 
 // --- VISUAL ASSETS & DATA ---
 // --- DYNAMIC DATA FETCHING ---
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabaseClient';
 import { getUiConfig, UiConfig } from '@/lib/uiMapping';
-
-// Supabase Client (safe for client-side)
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface Puja extends UiConfig {
     id: string;

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { Phone, AlertCircle, ArrowRight, MessageSquare, ShieldCheck, Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LoginPage() {
@@ -14,6 +15,13 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const router = useRouter();
+    const { user, loading: authLoading } = useAuth();
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            router.replace('/');
+        }
+    }, [user, authLoading, router]);
 
     const handleSendOtp = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,7 +46,23 @@ export default function LoginPage() {
                     const bhashUrl = `http://bhashsms.com/api/sendmsg.php?user=${user}&pass=${pass}&sender=${sender}&phone=${data.phone}&text=${template}&priority=wa&stype=normal&Params=${data.otp},OTP`;
                     
                     // Call the API (using no-cors as these legacy APIs rarely have CORS headers)
-                    fetch(bhashUrl, { mode: 'no-cors' }).catch(e => console.error("BhashSMS Browser Error:", e));
+                    // We also include no-referrer to avoid blocking by security extensions
+                    fetch(bhashUrl, { 
+                        mode: 'no-cors',
+                        referrerPolicy: 'no-referrer',
+                        cache: 'no-cache'
+                    }).catch(e => {
+                        console.error("BhashSMS Fetch Error:", e);
+                        // Fallback: Image pixel trick (often bypasses extension-based fetch blocking)
+                        const img = new Image();
+                        img.src = bhashUrl;
+                    });
+
+                    // Proactive Fallback: Trigger through Image pixel as well for maximum reliability
+                    try {
+                        const img = new Image();
+                        img.src = bhashUrl;
+                    } catch (e) {}
                 }
                 setStep('otp');
             }

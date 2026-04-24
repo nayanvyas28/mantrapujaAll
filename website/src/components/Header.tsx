@@ -3,25 +3,33 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { LogOut, User as UserIcon, LogIn, ChevronDown } from "lucide-react";
-import TopBar from "./TopBar";
+import { LogOut, User as UserIcon, LogIn, ChevronDown, Calendar, Settings, MapPin, Search, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { TranslationDropdown } from "./ui/TranslationDropdown";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Header = () => {
-    const { user, signOut } = useAuth();
+    const { user, profile, signOut } = useAuth();
     const { language } = useLanguage();
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
 
     const handleLogout = async () => {
-        await signOut();
-        setIsMenuOpen(false);
-        router.push('/');
+        try {
+            await signOut();
+            setIsProfileDropdownOpen(false);
+            setIsMenuOpen(false);
+            router.push('/');
+            router.refresh();
+        } catch (error) {
+            console.error("Logout Error:", error);
+        }
     };
 
     // Handle scroll effect
@@ -69,7 +77,7 @@ const Header = () => {
                             <img
                                 src="/logo.png"
                                 alt="MantraPuja - Admin Dashboard Logo"
-                                className="h-12 w-auto group-hover:opacity-80 transition-opacity"
+                                className="h-14 w-auto group-hover:opacity-80 transition-opacity"
                             />
                         </Link>
                         <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 border border-border overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-none">
@@ -126,13 +134,13 @@ const Header = () => {
                     : "bg-white dark:bg-transparent"
                 }`}
         >
-            <div className="container mx-auto px-4 flex items-center justify-between py-3">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12 flex items-center justify-between py-3">
                 {/* Logo */}
                 <Link href="/" className="flex items-center space-x-2 group relative z-50">
                     <img
                         src="/logo.png"
                         alt="MantraPuja - Vedic Services Logo"
-                        className="h-10 xs:h-11 md:h-14 w-auto group-hover:scale-105 transition-all duration-300"
+                        className="h-12 xs:h-14 md:h-18 w-auto group-hover:scale-105 transition-all duration-300"
                     />
                 </Link>
 
@@ -159,23 +167,93 @@ const Header = () => {
                         Book Puja
                     </Link>
 
+                    {/* Language and Theme Switchers */}
+                    <div className="flex items-center gap-2 sm:gap-3 px-1 sm:px-2">
+                        <TranslationDropdown />
+                        <ThemeToggle />
+                    </div>
+
                     {/* Auth Section */}
-                    <div className="flex items-center gap-2 pl-2 border-l border-zinc-200 dark:border-white/10">
+                    <div className="flex items-center pl-3 ml-1 border-l border-zinc-200 dark:border-white/10">
                         {user ? (
-                            <div className="flex items-center gap-3">
-                                <Link href="/profile" className="hidden border-r md:flex flex-col items-end pr-4 border-zinc-200 dark:border-white/10">
-                                    <span className="text-xs font-black text-zinc-900 dark:text-white capitalize truncate max-w-[120px]">
-                                        {user.email?.split('@')[0]}
-                                    </span>
-                                </Link>
-                                <button
-                                    onClick={handleLogout}
-                                    className="p-3 rounded-full bg-zinc-100 dark:bg-white/5 hover:bg-red-500 hover:text-white transition-all text-zinc-600 dark:text-zinc-400"
-                                    title={t.logout}
-                                >
-                                    <LogOut size={18} />
-                                </button>
-                            </div>
+                            <div className="relative">
+                                    <button 
+                                        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                                        className="flex items-center gap-2 p-1 rounded-full hover:bg-zinc-100 dark:hover:bg-white/5 transition-all"
+                                    >
+                                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-white font-bold shadow-md">
+                                            {user.user_metadata?.avatar_url ? (
+                                                <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                                            ) : (
+                                                <span>{(profile?.full_name?.charAt(0) || user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || user.phone?.slice(-10)?.charAt(0) || 'U').toUpperCase()}</span>
+                                            )}
+                                        </div>
+                                        <ChevronDown size={14} className={`text-zinc-400 transition-transform duration-300 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {isProfileDropdownOpen && (
+                                            <>
+                                                {/* Backdrop to close dropdown */}
+                                                <div 
+                                                    className="fixed inset-0 z-[190]" 
+                                                    onClick={() => setIsProfileDropdownOpen(false)}
+                                                />
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                    className="absolute right-0 mt-4 w-64 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-zinc-200/50 dark:border-white/10 rounded-3xl shadow-2xl z-[200] overflow-hidden"
+                                                >
+                                                    <div className="p-5 border-b border-zinc-100 dark:border-white/5">
+                                                        <div className="font-black text-zinc-900 dark:text-white truncate">{profile?.full_name || user.user_metadata?.full_name || 'User'}</div>
+                                                        <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate">{user.email || profile?.phone || user.phone || 'Welcome'}</div>
+                                                    </div>
+                                                    
+                                                    <div className="p-3">
+                                                        <Link 
+                                                            href="/profile?tab=overview" 
+                                                            onClick={() => setIsProfileDropdownOpen(false)}
+                                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-500/10 text-zinc-600 dark:text-zinc-300 hover:text-orange-600 transition-all font-bold text-sm"
+                                                        >
+                                                            <UserIcon size={18} /> Profile Overview
+                                                        </Link>
+                                                        <Link 
+                                                            href="/profile?tab=bookings" 
+                                                            onClick={() => setIsProfileDropdownOpen(false)}
+                                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-500/10 text-zinc-600 dark:text-zinc-300 hover:text-orange-600 transition-all font-bold text-sm"
+                                                        >
+                                                            <Calendar size={18} /> My Bookings
+                                                        </Link>
+                                                        <Link 
+                                                            href="/profile?tab=address" 
+                                                            onClick={() => setIsProfileDropdownOpen(false)}
+                                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-500/10 text-zinc-600 dark:text-zinc-300 hover:text-orange-600 transition-all font-bold text-sm"
+                                                        >
+                                                            <MapPin size={18} /> Saved Address
+                                                        </Link>
+                                                        <Link 
+                                                            href="/profile?tab=preferences" 
+                                                            onClick={() => setIsProfileDropdownOpen(false)}
+                                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-orange-50 dark:hover:bg-orange-500/10 text-zinc-600 dark:text-zinc-300 hover:text-orange-600 transition-all font-bold text-sm"
+                                                        >
+                                                            <Settings size={18} /> Preferences
+                                                        </Link>
+                                                    </div>
+
+                                                    <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50">
+                                                        <button
+                                                            onClick={handleLogout}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-red-500 hover:text-white text-red-500 transition-all font-black text-sm"
+                                                        >
+                                                            <LogOut size={18} /> {t.logout}
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            </>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                         ) : (
                             <Link
                                 href="/login"
@@ -198,13 +276,11 @@ const Header = () => {
                         className="lg:hidden p-2 text-zinc-600 dark:text-zinc-300"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                     >
-                        {isMenuOpen ? <LogOut size={24} /> : <div className="flex flex-col gap-1.5"><div className="w-6 h-0.5 bg-current" /><div className="w-6 h-0.5 bg-current" /></div>}
+                        {isMenuOpen ? <X size={24} /> : <div className="flex flex-col gap-1.5"><div className="w-6 h-0.5 bg-current" /><div className="w-6 h-0.5 bg-current" /><div className="w-6 h-0.5 bg-current" /></div>}
                     </button>
                 </div>
             </div>
 
-            {/* TopBar moved below the main header content */}
-            <TopBar />
 
             {/* Mobile Menu Overlay */}
             <AnimatePresence>

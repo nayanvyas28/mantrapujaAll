@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, Tag, Info, ArrowLeft, Image as ImageIcon, Briefcase, IndianRupee, ChevronDown, MapPin, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { deleteFileFromStorage } from '@/lib/storage-utils';
 import Link from 'next/link';
 
 interface Category {
@@ -232,18 +233,54 @@ export default function PujaManagementPage() {
     };
 
     const handleFileUpload = async (file: File) => {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `puja_images/${fileName}`;
+        try {
+            // 1. Optimize image through our Sharp-powered API
+            const optimizeFormData = new FormData();
+            optimizeFormData.append('file', file);
 
-        const { error: uploadError } = await supabase.storage
-            .from('music_assets')
-            .upload(filePath, file);
+            const optimizeResponse = await fetch('/api/optimize', {
+                method: 'POST',
+                body: optimizeFormData
+            });
 
-        if (uploadError) throw uploadError;
+            if (!optimizeResponse.ok) {
+                const error = await optimizeResponse.json();
+                throw new Error(error.error || 'Optimization failed');
+            }
 
-        const { data } = supabase.storage.from('music_assets').getPublicUrl(filePath);
-        return data.publicUrl;
+            const optimizedBlob = await optimizeResponse.blob();
+            
+            // 2. Upload the optimized WebP image via our secure proxy API (Fixes RLS Error)
+            const fileName = `puja_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
+            
+            const uploadFormData = new FormData();
+            uploadFormData.append('file', optimizedBlob, fileName);
+            uploadFormData.append('path', fileName);
+            uploadFormData.append('bucket', 'pujas');
+
+            const uploadResponse = await fetch('/api/upload', {
+                method: 'POST',
+                body: uploadFormData
+            });
+
+            if (!uploadResponse.ok) {
+                const error = await uploadResponse.json();
+                throw new Error(error.error || 'Secure upload failed');
+            }
+
+            const uploadResult = await uploadResponse.json();
+
+            // If updating and new file uploaded, delete old one
+            if (editingPuja?.image_url) {
+                console.log("[Pujas] Deleting old image:", editingPuja.image_url);
+                await deleteFileFromStorage(editingPuja.image_url);
+            }
+
+            return uploadResult.url;
+        } catch (error: any) {
+            console.error('Upload & Optimization error:', error);
+            throw new Error(`Failed to process image: ${error.message}`);
+        }
     };
 
     const handleSavePuja = async (e: React.FormEvent) => {
@@ -281,28 +318,29 @@ export default function PujaManagementPage() {
                 images: imageUrl ? [imageUrl] : []
             };
 
-            let pujaId = editingPuja?.id;
+            const summaryData = {
+                pooja_name: pujasForm.name,
+                base_price: pujasForm.price,
+                total_payable: pujasForm.price,
+                offer_999_tax: pujasForm.offer_999_tax,
+                offer_999_dakshina: pujasForm.offer_999_dakshina
+            };
 
-            if (editingPuja) {
-                const { error } = await supabase.from('poojas').update(pujaData).eq('id', editingPuja.id);
-                if (error) throw error;
-            } else {
-                const { data, error } = await supabase.from('poojas').insert(pujaData).select().single();
-                if (error) throw error;
-                pujaId = data.id;
-            }
+            // 3. Save to database via secure proxy
+            const dbRes = await fetch('/api/pujas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'save',
+                    id: editingPuja?.id,
+                    pujaData,
+                    summaryData
+                })
+            });
 
-            if (pujaId) {
-                await supabase
-                    .from('pooja_payment_summaries')
-                    .upsert({
-                        pooja_id: pujaId,
-                        pooja_name: pujasForm.name,
-                        base_price: pujasForm.price,
-                        total_payable: pujasForm.price,
-                        offer_999_tax: pujasForm.offer_999_tax,
-                        offer_999_dakshina: pujasForm.offer_999_dakshina
-                    }, { onConflict: 'pooja_id' });
+            if (!dbRes.ok) {
+                const errData = await dbRes.json();
+                throw new Error(errData.error || 'Server-side save failed');
             }
 
             setIsPujaModalOpen(false);
@@ -446,10 +484,31 @@ export default function PujaManagementPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this Puja?')) return;
-        const { error } = await supabase.from('poojas').delete().eq('id', id);
-        if (error) alert(error.message);
-        else fetchData(true);
+        const pujaToDelete = pujas.find(p => p.id === id);
+        if (!confirm(`Are you sure you want to delete Puja "${pujaToDelete?.name}"?`)) return;
+        
+        try {
+            // Delete via secure proxy
+            const delRes = await fetch('/api/pujas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'delete', id })
+            });
+
+            if (!delRes.ok) {
+                const delErr = await delRes.json();
+                throw new Error(delErr.error || 'Server-side delete failed');
+            }
+
+            // Delete storage file
+            if (pujaToDelete?.image_url) {
+                await deleteFileFromStorage(pujaToDelete.image_url);
+            }
+
+            fetchData(true);
+        } catch (error: any) {
+            alert('Error deleting puja: ' + error.message);
+        }
     };
 
     const filteredPujas = pujas;
