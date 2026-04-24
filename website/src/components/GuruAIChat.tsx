@@ -95,6 +95,8 @@ const formatDivineMessage = (text: string) => {
     // Remove tags that we parse separately later
     safeText = safeText.replace(/\[\[PUJA_LINK:.*?\]\]/g, '');
     safeText = safeText.replace(/\[\[START_KUNDLI_FLOW\]\]/g, '');
+    safeText = safeText.replace(/\[\[VIEW_KUNDALI_BTN\]\]/g, '');
+    safeText = safeText.replace(/\[\[CHAT_RESET_BTN\]\]/g, '');
     
     // Format Headings
     safeText = safeText.replace(/^### (.*?)$/gm, '<h3 class="text-[17px] font-black text-saffron mt-4 mb-2 leading-tight">$1</h3>');
@@ -139,12 +141,19 @@ export default function GuruAIChat() {
     // Queue Processor Effect with Self-Correction
     useEffect(() => {
         const checkQueue = () => {
-            // Safety: If there is a message marked as streaming for more than 30 seconds, force clear it
-            const streamingMsg = messages.find(m => m.isStreaming);
-            if (streamingMsg && !isLoading && queuedMessages.length > 0) {
-                // If we are stuck streaming but not loading and have queue, maybe something failed
-                // We'll let it be for now, but the standard check below is the main logic
-            }
+            // Safety: If there is a message marked as streaming for more than 20 seconds, force clear it
+            setMessages(prev => {
+                const streamingMsgs = prev.filter(m => m.isStreaming);
+                if (streamingMsgs.length > 0 && !isLoading) {
+                    // Check if they have been streaming too long or if we are idle
+                    // For now, we'll just ensure if we are idle and nothing is happening, we clear it
+                    // This is a bit aggressive but solves the 'stuck' input issue
+                    if (queuedMessages.length === 0) {
+                        return prev.map(m => ({ ...m, isStreaming: false }));
+                    }
+                }
+                return prev;
+            });
 
             if (queuedMessages.length > 0 && !messages.some(m => m.isStreaming)) {
                 const nextMessage = queuedMessages[0];
@@ -911,9 +920,16 @@ export default function GuruAIChat() {
                                             )}
                                         </div>
                                         <div className={`p-4 rounded-[1.5rem] text-[14px] md:text-[15px] leading-relaxed shadow-sm transition-all ${m.role === 'model' ? 'bg-white dark:bg-zinc-900 border border-orange-100/50 dark:border-white/10 text-slate-800 dark:text-slate-200 rounded-tl-none' : 'bg-gradient-to-tr from-saffron to-orange-600 text-white rounded-tr-none font-bold'}`}>
-                                            {m.content.includes('[[VIEW_KUNDALI_BTN]]') ? (
+                                            {m.isStreaming ? (
+                                                <Typewriter 
+                                                    text={m.content} 
+                                                    onComplete={() => {
+                                                        setMessages(prev => prev.map((msg, i) => i === idx ? { ...msg, isStreaming: false } : msg));
+                                                    }}
+                                                />
+                                            ) : m.content.includes('[[VIEW_KUNDALI_BTN]]') ? (
                                                 <div className="space-y-4">
-                                                    <div dangerouslySetInnerHTML={{ __html: formatDivineMessage(m.content.replace('[[VIEW_KUNDALI_BTN]]', '')) }} className="space-y-1.5" />
+                                                    <div dangerouslySetInnerHTML={{ __html: formatDivineMessage(m.content) }} className="space-y-1.5" />
                                                     <Link 
                                                         href="/kundli" 
                                                         target="_blank"
@@ -925,7 +941,7 @@ export default function GuruAIChat() {
                                                 </div>
                                             ) : m.content.includes('[[CHAT_RESET_BTN]]') ? (
                                                 <div className="space-y-4">
-                                                    <div dangerouslySetInnerHTML={{ __html: formatDivineMessage(m.content.replace('[[CHAT_RESET_BTN]]', '')) }} className="space-y-1.5" />
+                                                    <div dangerouslySetInnerHTML={{ __html: formatDivineMessage(m.content) }} className="space-y-1.5" />
                                                     <button 
                                                         onClick={() => {
                                                             setMessages([]);
@@ -943,7 +959,7 @@ export default function GuruAIChat() {
                                                 const match = m.content.match(/\[\[PUJA_LINK: (.*?) \| (.*?)\]\]/);
                                                 const pujaName = match ? match[1] : '';
                                                 const pujaSlug = match ? match[2] : '';
-                                                const cleanText = m.content.replace(/\[\[PUJA_LINK:.*?\|.*?\]\]/g, '').trim();
+                                                const cleanText = m.content;
                                                 
                                                 return (
                                                     <div className="space-y-4">
@@ -969,14 +985,7 @@ export default function GuruAIChat() {
                                                         )}
                                                     </div>
                                                 );
-                                            })() : m.isStreaming ? (
-                                                <Typewriter 
-                                                    text={m.content} 
-                                                    onComplete={() => {
-                                                        setMessages(prev => prev.map((msg, i) => i === idx ? { ...msg, isStreaming: false } : msg));
-                                                    }}
-                                                />
-                                            ) : (
+                                            })() : (
                                                 <div dangerouslySetInnerHTML={{ __html: formatDivineMessage(m.content) }} className="space-y-1.5" />
                                             )}
                                         </div>
