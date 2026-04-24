@@ -93,16 +93,47 @@ export class HoroscopeService {
         } else if (period === 'weekly') {
             // ── Weekly: uses .ui-sign-heading + .ui-sign-content-box pattern ──
             const sections: { heading: string; body: string }[] = [];
+            const headings = $('.ui-sign-heading').toArray();
 
-            $('.ui-sign-heading').each(function () {
-                const heading = $(this).text().replace(/»/g, '').trim();
+            for (const hElement of headings) {
+                const $h = $(hElement);
+                const heading = $h.text().replace(/»/g, '').trim();
                 const headingLower = heading.toLowerCase();
 
-                if (!headingLower.includes('weekly')) return;
-                if (headingLower.match(/select|compatibility|facts|characteristics/i)) return;
+                if (!headingLower.includes('weekly')) continue;
+                if (headingLower.match(/select|compatibility|facts|characteristics/i)) continue;
 
-                const rawBody = $(this).next('.ui-sign-content-box').text().trim();
-                
+                let contentBox = $h.next('.ui-sign-content-box');
+                if (contentBox.length === 0) {
+                    contentBox = $h.nextAll('.ui-sign-content-box').first();
+                }
+
+                if (contentBox.length === 0) continue;
+
+                let rawBody = contentBox.text().trim();
+                const moreLink = contentBox.find('a[href*="weekly-"]').attr('href');
+
+                // If it's a teaser with a "More" link, fetch the full content
+                if (moreLink && (rawBody.includes('...') || rawBody.length < 300)) {
+                    try {
+                        const subUrl = moreLink.startsWith('http') ? moreLink : `https://www.astrosage.com${moreLink}`;
+                        const { data: subHtml } = await axios.get(subUrl, { 
+                            headers: { 'User-Agent': 'Mozilla/5.0' },
+                            timeout: 5000 
+                        });
+                        const $sub = cheerio.load(subHtml);
+                        // Try to find the content div first, then fall back to the main content box
+                        const fullBody = $sub('.ui-sign-content-box .content').first().text().trim() || 
+                                       $sub('.ui-sign-content-box').first().text().trim();
+                        
+                        if (fullBody && fullBody.length > 100) {
+                            rawBody = fullBody;
+                        }
+                    } catch (e: any) {
+                        console.warn(`Failed to fetch sub-content for ${heading}:`, e.message);
+                    }
+                }
+
                 // Extract date prefix. It typically looks like: "Monday, April 20, 2026 - Sunday, April 26, 2026"
                 const dateMatch = rawBody.match(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)[^.]{0,80}\d{4}\s*/i);
                 if (dateMatch && !result.date_label) {
@@ -112,11 +143,12 @@ export class HoroscopeService {
                 const body = rawBody
                     .replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)[^.]{0,80}\d{4}\s*/i, '')
                     .replace(/\.\.\.More\s*$/i, '')
+                    .replace(/Read More$/i, '')
                     .replace(/\s+/g, ' ')
                     .trim();
 
-                if (body.length > 80) sections.push({ heading, body });
-            });
+                if (body.length > 40) sections.push({ heading, body });
+            }
 
             if (sections.length > 0) {
                 result.content = sections[0].body;
