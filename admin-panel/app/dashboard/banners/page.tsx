@@ -539,7 +539,7 @@ export default function BannerManagementPage() {
             </AnimatePresence>
 
 
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{ __html: `
                 @keyframes shine {
                     from { transform: translateX(-100%) skewX(-20deg); }
                     to { transform: translateX(200%) skewX(-20deg); }
@@ -547,7 +547,7 @@ export default function BannerManagementPage() {
                 .animate-shine {
                     animation: shine 3s infinite;
                 }
-            `}</style>
+            ` }} />
         </div>
     );
 }

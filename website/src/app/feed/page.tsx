@@ -6,8 +6,6 @@ import FeedPlayer from "@/components/feed/FeedPlayer";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Sun, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 interface Reel {
     id: string;
@@ -41,7 +39,6 @@ export default function FeedPage() {
 
     return (
         <main className="min-h-screen bg-black">
-            <Header />
             
             <section className="py-20 container mx-auto px-4">
                 <div className="max-w-4xl mx-auto space-y-12">
@@ -114,8 +111,6 @@ export default function FeedPage() {
                     )}
                 </div>
             </section>
-
-            <Footer />
         </main>
     );
 }

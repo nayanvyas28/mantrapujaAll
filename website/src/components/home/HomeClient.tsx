@@ -1384,8 +1384,8 @@ export default function HomeClient() {
                                                 <p className="text-white/90 text-[10px] md:text-xs leading-relaxed mb-6 border-l-2 border-saffron pl-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 drop-shadow-sm font-medium">
                                                     {loc.desc || ""}
                                                 </p>
-                                                <span className="inline-flex items-center gap-2 text-white text-xs font-bold uppercase tracking-wider group/link opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200 drop-shadow-md">
-                                                    {loc.id ? "Book Ritual Now" : "Explore Rituals"}
+                                                <span className="inline-flex items-center gap-2 text-white text-[10px] font-black uppercase tracking-[0.2em] group/link opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200 drop-shadow-md">
+                                                    Explore Rituals
                                                 </span>
                                             </div>
                                         </div>
