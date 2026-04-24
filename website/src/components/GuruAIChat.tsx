@@ -97,6 +97,7 @@ const formatDivineMessage = (text: string) => {
     safeText = safeText.replace(/\[\[START_KUNDLI_FLOW\]\]/g, '');
     safeText = safeText.replace(/\[\[VIEW_KUNDALI_BTN\]\]/g, '');
     safeText = safeText.replace(/\[\[CHAT_RESET_BTN\]\]/g, '');
+    safeText = safeText.replace(/\[\[SIGN_OUT_BTN\]\]/g, '');
     
     // Format Headings
     safeText = safeText.replace(/^### (.*?)$/gm, '<h3 class="text-[17px] font-black text-saffron mt-4 mb-2 leading-tight">$1</h3>');
@@ -939,6 +940,24 @@ export default function GuruAIChat() {
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                         {chatLanguage === 'hi' ? 'चैट रिसेट करें' : 'Reset Divine Chat'}
+                                                    </button>
+                                                </div>
+                                            ) : m.content.includes('[[SIGN_OUT_BTN]]') ? (
+                                                <div className="space-y-4">
+                                                    <div dangerouslySetInnerHTML={{ __html: formatDivineMessage(m.content) }} className="space-y-1.5" />
+                                                    <button 
+                                                        onClick={async () => {
+                                                            await supabase.auth.signOut();
+                                                            setMessages([]);
+                                                            setAuthStep(null);
+                                                            setCollectionStep(null);
+                                                            setSessionId(null);
+                                                            window.location.reload(); // Hard reload to clear all auth states
+                                                        }}
+                                                        className="flex items-center justify-center gap-2 w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-lg transition-all active:scale-95 text-[10px] uppercase tracking-widest px-4"
+                                                    >
+                                                        <LogOut className="w-4 h-4" />
+                                                        {chatLanguage === 'hi' ? 'साइन आउट करें' : 'Sign Out Now'}
                                                     </button>
                                                 </div>
                                             ) : m.content.match(/\[\[PUJA_LINK:.*?\|.*?\]\]/) ? (() => {

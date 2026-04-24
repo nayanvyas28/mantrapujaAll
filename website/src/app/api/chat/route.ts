@@ -178,6 +178,10 @@ Inauspicious Rahu Kaal: ${JSON.stringify(pData.inauspicious_timings?.rahu_kaal |
         }
 
         // 1. Fetch encrypted Gemini Key, Selected Model & Prompts
+        const loginContext = identifier !== 'anonymous'
+            ? `USER STATUS: Logged In (Identity: ${identifier}). You can see their Vedic Profile above. DO NOT ask them to login again as they are already authenticated.`
+            : `USER STATUS: Guest (Not Logged In). You MUST encourage them to login for personalized insights.`;
+
         const { data: settings, error } = await supabaseAdmin
             .from('settings')
             .select('key, value')
@@ -284,6 +288,8 @@ ${corePrompt}
 
 ${guruAiInstruction}
 
+${loginContext}
+
 ${templateInstruction ? `--- SPECIFIC TEMPLATE INSTRUCTION ---
 ${templateInstruction}
 ` : ''}
@@ -317,7 +323,9 @@ The following are mandatory guidelines for your output:
 3. KUNDALI REQUESTS: If profile data is missing, ALWAYS append [[START_KUNDLI_FLOW]] after asking for details.
 4. RITUAL RECOMMENDATIONS: When recommending a puja from the catalog, you MUST output a button using this exact format: [[PUJA_LINK: Puja Name | slug]] (Example: [[PUJA_LINK: Shiv Puja | shiv-puja]])
 5. PROFILE UPDATES: When the user provides their birth details (Name, DOB, POB, TOB), you MUST generate a hidden tag at the end of your message in this exact format: [[VEDIC_UPDATE: {"full_name": "NAME_AS_PROVIDED_BY_USER", "dob": "YYYY-MM-DD", "pob": "...", "tob": "HH:MM", "gender": "..."}]]. You MUST use the exact name the user provided as 'full_name'.
-6. MEMORY: Always base your advice on the user's birth data provided in the USER VEDIC PROFILE above.
+6. SIGN OUT: If the user wants to logout, sign out, or exit, you MUST append the tag [[SIGN_OUT_BTN]] to your response. Tell them "Main aapko sign out kar raha hoon...".
+7. LOGIN STATUS: If the user asks if they are logged in, check 'USER STATUS' above and confirm. If they are already logged in, DO NOT ask them to login again.
+8. MEMORY: Always base your advice on the user's birth data provided in the USER VEDIC PROFILE above.
 ------------------------
         `.trim();
 
