@@ -17,7 +17,7 @@ export default function BookingsScreen() {
     if (!user) return;
     try {
       const { data, error } = await supabase
-        .from('bookings')
+        .from('puja_bookings')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -102,14 +102,8 @@ export default function BookingsScreen() {
                   <View className="space-y-3 mb-6">
                     <View className="flex-row items-center">
                       <Calendar size={14} color="#FF4D00" />
-                      <Text className="text-gray-600 text-xs ml-2 font-medium">Anusthan Date: {new Date(item.booking_date).toLocaleDateString()}</Text>
+                      <Text className="text-gray-600 text-xs ml-2 font-medium">Anusthan Date: {new Date(item.scheduled_date || item.created_at).toLocaleDateString()}</Text>
                     </View>
-                    {item.location && (
-                      <View className="flex-row items-center">
-                        <MapPin size={14} color="#FF4D00" />
-                        <Text className="text-gray-600 text-xs ml-2 font-medium">{item.location}</Text>
-                      </View>
-                    )}
                     <View className="flex-row items-center">
                       <Clock size={14} color="#FF4D00" />
                       <Text className="text-gray-600 text-xs ml-2 font-medium text-nowrap">
@@ -121,7 +115,7 @@ export default function BookingsScreen() {
                   <View className="flex-row justify-between items-center bg-gray-50 p-4 rounded-2xl border border-gray-100">
                     <View>
                       <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Amount Paid</Text>
-                      <Text className="text-primary font-black text-lg">₹{item.amount_paid}</Text>
+                      <Text className="text-primary font-black text-lg">₹{item.price}</Text>
                     </View>
                     <TouchableOpacity 
                        className="bg-white px-4 py-2 rounded-xl border border-gray-200"

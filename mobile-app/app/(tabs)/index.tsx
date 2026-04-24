@@ -1,8 +1,10 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, FlatList, Dimensions, Animated, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, FlatList, Dimensions, Animated, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
-import { Heart, Wallet, Bell, Sparkles, Calendar, ChevronRight, Star, ShoppingBag, MapPin, Users, Coins } from 'lucide-react-native';
+import { useCart } from '../../context/CartContext';
+import Skeleton from '../../components/Skeleton';
+import { Heart, Wallet, Bell, Sparkles, Calendar, ChevronRight, Star, ShoppingBag, MapPin, Users, Coins, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
@@ -21,6 +23,7 @@ export default function HomeScreen() {
   const { user, signOut } = useAuth();
   const { toggle } = useSidebar();
   const { language, setLanguage } = useLanguage();
+  const { addToCart } = useCart();
   const router = useRouter();
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] || (language === 'hi' ? 'भक्त' : 'Bhakt');
 
@@ -161,14 +164,10 @@ export default function HomeScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
         {/* Main Banner Slider - Live Data */}
-        <View className="mt-4">
+        <View className="mt-2">
           {loading ? (
-            <View className="items-center justify-center h-44 mx-6 bg-gray-50 rounded-[40px] border border-gray-100">
-              <Image
-                source={require('../../assets/images/logo.png')}
-                style={{ width: 60, height: 60, opacity: 0.3 }}
-                resizeMode="contain"
-              />
+            <View className="px-6">
+              <Skeleton width="100%" height={150} borderRadius={32} />
             </View>
           ) : banners.length > 0 ? (
             <FlatList
@@ -189,8 +188,8 @@ export default function HomeScreen() {
                 <View style={{ width: width }} className="items-center">
                   <TouchableOpacity
                     onPress={() => item.route && item.route !== "#" ? router.push(item.route) : router.push("/coming-soon")}
-                    style={{ width: width - 40 }}
-                    className="h-44 rounded-[40px] overflow-hidden bg-gray-100"
+                    style={{ width: width - 48 }}
+                    className="h-36 rounded-[32px] overflow-hidden bg-gray-100"
                   >
                     <Image
                       source={{ uri: item.image_url || 'https://via.placeholder.com/1200x600' }}
@@ -214,24 +213,28 @@ export default function HomeScreen() {
         </View>
 
         {/* Action Grid */}
-        {categories && categories.length > 0 ? (
-          <View className="px-6 mt-4">
+        {loading ? (
+          <View className="px-6 mt-3 flex-row">
+            {[1, 2, 4, 5].map(i => (
+              <View key={i} className="mr-5 items-center">
+                <Skeleton width={56} height={56} borderRadius={20} />
+                <Skeleton width={32} height={8} borderRadius={4} className="mt-1.5" />
+              </View>
+            ))}
+          </View>
+        ) : categories && categories.length > 0 ? (
+          <View className="px-6 mt-3">
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
               {categories.map((cat) => (
                 <TouchableOpacity
                   key={cat.id}
                   onPress={() => router.push({ pathname: '/puja', params: { category_id: cat.id } } as any)}
-                  className="mr-6 items-center"
+                  className="mr-5 items-center"
                 >
-                  <View className="w-16 h-16 bg-orange-50 rounded-[24px] items-center justify-center mb-1 border border-orange-100 shadow-sm shadow-orange-200/50">
-                    <Text className="text-2xl">{cat.icon || '🕉️'}</Text>
-                    {cat.free && (
-                      <View className="absolute -top-2 -right-2 bg-green-500 px-1.5 py-0.5 rounded-md">
-                        <Text className="text-white text-[8px] font-bold uppercase">Free</Text>
-                      </View>
-                    )}
+                  <View className="w-14 h-14 bg-orange-50 rounded-[20px] items-center justify-center mb-1 border border-orange-100 shadow-sm">
+                    <Text className="text-xl">{cat.icon || '🕉️'}</Text>
                   </View>
-                  <Text className="text-gray-700 text-[10px] font-bold uppercase tracking-tight">{cat.name}</Text>
+                  <Text className="text-gray-700 text-[9px] font-bold uppercase tracking-tight">{cat.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -299,18 +302,27 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            {upcomingPujas.length > 0 ? (
+            {loading ? (
+              <View className="px-6 flex-row">
+                {[1, 2].map(i => (
+                  <View key={i} style={{ width: width * 0.6 }} className="mr-4">
+                    <Skeleton width="100%" height={140} borderRadius={24} />
+                    <Skeleton width="90%" height={12} borderRadius={4} className="mt-3" />
+                  </View>
+                ))}
+              </View>
+            ) : upcomingPujas.length > 0 ? (
               <FlatList
                 data={upcomingPujas}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 20 }}
+                contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 10 }}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     onPress={() => router.push(`/puja/${item.slug}` as any)}
-                    style={{ width: width * 0.8 }}
-                    className="mr-5 bg-white rounded-[40px] shadow-xl shadow-black/5 border border-orange-50 overflow-hidden"
+                    style={{ width: width * 0.6 }}
+                    className="mr-4 bg-white rounded-[24px] shadow-sm border border-orange-50 overflow-hidden"
                   >
                     <View style={{ width: '100%', aspectRatio: 5 / 3 }} className="relative bg-gray-100">
                       <Image
@@ -326,7 +338,7 @@ export default function HomeScreen() {
                       </TouchableOpacity>
                     </View>
 
-                    <View className="p-6">
+                    <View className="p-4">
                       <Text className="text-[#1A1A1A] text-xl font-bold leading-tight" numberOfLines={1}>{item.name}</Text>
                       <Text className="text-gray-500 text-[10px] mt-1 font-medium italic" numberOfLines={1}>{item.tagline || 'Experience sacred traditions'}</Text>
 
@@ -386,29 +398,77 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Divine Shop Section - Live Products */}
-        {products.length > 0 && (
-          <View className="mt-10 mb-10">
-            <View className="px-6 flex-row justify-between items-center mb-5">
-              <Text className="text-gray-900 text-2xl font-bold">{language === 'hi' ? 'दिव्य दुकान' : 'Divine Shop'}</Text>
-              <TouchableOpacity onPress={() => router.push('/coming-soon')} className="flex-row items-center">
-                <ShoppingBag size={14} color="#FF4D00" />
-                <Text className="text-primary text-xs font-bold ml-2">{language === 'hi' ? 'सभी उत्पाद' : 'All Products'}</Text>
+        {/* Divine Shop Section - Premium Live Products */}
+        {loading ? (
+          <View className="mt-6 mb-6">
+            <View className="px-6 flex-row justify-between items-center mb-6">
+                <View>
+                    <Skeleton width={80} height={10} borderRadius={4} className="mb-2" />
+                    <Skeleton width={120} height={20} borderRadius={6} />
+                </View>
+            </View>
+            <View className="px-6 flex-row">
+                {[1, 2, 3].map(i => (
+                    <View key={i} className="mr-4 w-32">
+                        <Skeleton width="100%" height={120} borderRadius={24} />
+                        <Skeleton width="80%" height={10} borderRadius={4} className="mt-2" />
+                    </View>
+                ))}
+            </View>
+          </View>
+        ) : products.length > 0 && (
+          <View className="mt-6 mb-6">
+            <View className="px-6 flex-row justify-between items-center mb-4">
+              <View>
+                <Text className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">{language === 'hi' ? 'शुद्ध सामग्री' : 'Pure Samagri'}</Text>
+                <Text className="text-gray-900 text-xl font-bold">{language === 'hi' ? 'दिव्य दुकान' : 'Divine Shop'}</Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => router.push('/shop')} 
+                className="bg-orange-50 px-3 py-1.5 rounded-xl flex-row items-center border border-orange-100"
+              >
+                <ShoppingBag size={12} color="#FF4D00" />
+                <Text className="text-primary text-[10px] font-black ml-1.5 uppercase tracking-tighter">{language === 'hi' ? 'सभी देखें' : 'View All'}</Text>
               </TouchableOpacity>
             </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 5 }}
+            >
               {products.map((item) => (
                 <TouchableOpacity 
                    key={item.id} 
-                   onPress={() => router.push('/coming-soon')}
-                   className="mr-4 bg-white p-5 rounded-[32px] border border-orange-50 shadow-sm items-center w-36"
+                   onPress={() => router.push(`/shop/${item.id}`)}
+                   activeOpacity={0.9}
+                   className="mr-4 bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden w-32"
                 >
-                  <View className="w-16 h-16 bg-gray-50 rounded-2xl items-center justify-center mb-3 overflow-hidden">
-                    <Image source={{ uri: item.image_url || 'https://via.placeholder.com/200' }} className="w-full h-full" resizeMode="contain" />
+                  <View className="p-2.5">
+                    <View className="w-full aspect-square bg-gray-50 rounded-[18px] items-center justify-center overflow-hidden relative">
+                      <Image 
+                        source={{ uri: item.image_url || 'https://via.placeholder.com/400' }} 
+                        className="w-full h-full" 
+                        resizeMode="cover" 
+                      />
+                    </View>
+                    
+                    <View className="mt-3 px-1 pb-0.5">
+                      <Text className="text-gray-900 font-bold text-[10px]" numberOfLines={1}>{item.name}</Text>
+                      <View className="flex-row justify-between items-center mt-1.5">
+                        <Text className="text-primary font-black text-[12px]">₹{item.price}</Text>
+                        <TouchableOpacity 
+                          onPress={() => {
+                            addToCart(item);
+                            Alert.alert('Success', 'Item added to basket.');
+                          }}
+                          className="w-6 h-6 bg-primary rounded-lg items-center justify-center"
+                        >
+                          <Plus size={14} color="white" strokeWidth={3} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   </View>
-                  <Text className="text-gray-700 font-bold text-[10px] text-center" numberOfLines={1}>{item.name}</Text>
-                  <Text className="text-primary text-[10px] font-extrabold mt-1">₹{item.price || item.mrp}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -416,26 +476,56 @@ export default function HomeScreen() {
         )}
 
         {/* Live Spiritual Locations Section - Yatra */}
-        {destinations.length > 0 && (
+        {loading ? (
           <View className="mt-6 mb-16 px-6">
             <View className="flex-row justify-between items-center mb-6">
+                <View>
+                    <Skeleton width={80} height={10} borderRadius={4} className="mb-2" />
+                    <Skeleton width={140} height={15} borderRadius={6} />
+                </View>
+            </View>
+            <View className="flex-row">
+                <View className="mr-4 w-48">
+                    <Skeleton width="100%" height={180} borderRadius={32} />
+                </View>
+                <View className="w-48">
+                    <Skeleton width="100%" height={180} borderRadius={32} />
+                </View>
+            </View>
+          </View>
+        ) : destinations.length > 0 && (
+          <View className="mt-6 mb-16 px-6">
+            <View className="flex-row justify-between items-center mb-4">
                <View>
                   <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-1">Explore Tirth</Text>
-                  <Text className="text-gray-900 text-2xl font-bold">Spiritual Yatra</Text>
+                  <Text className="text-gray-900 text-xl font-bold">Spiritual Yatra</Text>
                </View>
-              <MapPin size={24} color="#FF4D00" />
+               <TouchableOpacity onPress={() => router.push('/yatra')}>
+                  <Text className="text-primary font-bold text-[10px] uppercase">View All</Text>
+               </TouchableOpacity>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {destinations.map((dest) => (
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-6 px-6">
+              {destinations.map((item) => (
                 <TouchableOpacity 
-                   key={dest.id} 
-                   onPress={() => router.push('/explore')}
-                   className="mr-6 items-center"
+                  key={item.id} 
+                  onPress={() => router.push(`/yatra/${item.id}`)}
+                  className="mr-4 w-48 bg-white rounded-[32px] shadow-sm border border-gray-50 overflow-hidden"
                 >
-                  <View className="w-20 h-20 rounded-full border-2 border-primary/20 p-1">
-                    <Image source={{ uri: dest.image_url }} className="w-full h-full rounded-full" />
+                  <View className="h-44 relative">
+                    <Image 
+                      source={{ uri: item.image_url || 'https://via.placeholder.com/600x600' }} 
+                      className="w-full h-full" 
+                      resizeMode="cover" 
+                    />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.6)']}
+                      className="absolute inset-0"
+                    />
+                    <View className="absolute bottom-4 left-4 right-4">
+                      <Text className="text-white font-bold text-sm leading-tight">{item.name}</Text>
+                    </View>
                   </View>
-                  <Text className="text-gray-900 text-[10px] font-bold mt-2 uppercase tracking-tighter">{dest.name}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -489,14 +579,30 @@ export default function HomeScreen() {
         className="absolute inset-x-0 bottom-0 h-64"
       >
 
-        {/* Floating Calendar Widget */}
+        {/* Floating Calendar Widget (Panchang) */}
         <TouchableOpacity
-          onPress={() => router.push('/coming-soon')}
-          className="absolute left-0 bottom-44 w-12 h-14 bg-white border-y border-r border-primary/20 rounded-r-2xl items-center justify-center shadow-xl shadow-black/10"
-          style={{ elevation: 25, zIndex: 100 }}
+          onPress={() => router.push('/calendar')}
+          activeOpacity={0.9}
+          className="absolute left-0 bottom-44 w-14 h-16 bg-white border-y border-r border-saffron-200/50 rounded-r-[20px] items-center justify-center shadow-2xl shadow-saffron-500/20"
+          style={{ 
+            elevation: 25, 
+            zIndex: 100,
+            shadowColor: '#FF4D00',
+            shadowOffset: { width: 4, height: 4 },
+            shadowOpacity: 0.1,
+            shadowRadius: 10
+          }}
         >
-          <Calendar size={20} color="#FF4D00" />
-          <View className="w-1 h-3 bg-primary/20 rounded-full mt-1" />
+          <LinearGradient
+            colors={['#FFF8F0', 'white']}
+            className="absolute inset-0 rounded-r-[20px]"
+          />
+          <View className="items-center">
+            <Calendar size={22} color="#FF4D00" strokeWidth={2.5} />
+            <View className="w-6 h-1 bg-saffron-500/20 rounded-full mt-1.5" />
+          </View>
+          {/* Notification dot for upcoming festivals */}
+          <View className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border border-white" />
         </TouchableOpacity>
 
         {/* Floating AI Pandit Widget (Bottom Right) */}
