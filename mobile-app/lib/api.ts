@@ -206,6 +206,16 @@ export const api = {
         console.error('fetchSongs error:', error);
         throw error;
       }
+    },
+    
+    fetchStreamUrl: async (youtubeId: string) => {
+      try {
+        const response = await fetchWithTimeout(`${ADMIN_URL}/api/music/stream/${youtubeId}`);
+        return await handleResponse(response);
+      } catch (error) {
+        console.error('fetchStreamUrl error:', error);
+        throw error;
+      }
     }
   },
 

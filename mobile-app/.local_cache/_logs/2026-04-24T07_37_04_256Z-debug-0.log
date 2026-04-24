@@ -7,6 +7,8 @@
 6 silly config load:file:C:\nvm4w\nodejs\etc\npmrc
 7 verbose title npm exec expo start --clear
 8 verbose argv "exec" "--" "expo" "start" "--clear"
-9 verbose logfile logs-max:10 dir:E:\mantrapuja\mantrapujaAll\mobile-app\.local_cache\_logs\2026-04-17T14_02_03_738Z-
-10 verbose logfile E:\mantrapuja\mantrapujaAll\mobile-app\.local_cache\_logs\2026-04-17T14_02_03_738Z-debug-0.log
-11 silly logfile done cleaning log files
+9 verbose logfile logs-max:10 dir:E:\mantrapuja\mantrapujaAll\mobile-app\.local_cache\_logs\2026-04-24T07_37_04_256Z-
+10 verbose logfile E:\mantrapuja\mantrapujaAll\mobile-app\.local_cache\_logs\2026-04-24T07_37_04_256Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly logfile done cleaning log files
+13 http fetch GET 200 https://registry.npmjs.org/npm 689ms

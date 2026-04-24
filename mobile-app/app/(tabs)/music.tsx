@@ -27,10 +27,11 @@ import {
   SkipBack,
   SkipForward,
   Repeat,
-  Shuffle
+  Shuffle,
+  Sparkles
 } from 'lucide-react-native';
 import YoutubePlayer from "react-native-youtube-iframe";
-import { Audio } from 'expo-av';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { api } from '../../lib/api';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -49,10 +50,13 @@ export default function MusicScreen() {
     const [playing, setPlaying] = useState(false);
     const [activeSong, setActiveSong] = useState<any>(null);
     const [isPlayerExpanded, setIsPlayerExpanded] = useState(false);
+    const [useYoutubePlayer, setUseYoutubePlayer] = useState(false);
     
     // Native Audio State
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const [playbackStatus, setPlaybackStatus] = useState<any>(null);
+    const [duration, setDuration] = useState(0);
+    const [position, setPosition] = useState(0);
 
     const fetchData = async () => {
         try {
@@ -72,6 +76,25 @@ export default function MusicScreen() {
 
     useEffect(() => {
         fetchData();
+        
+        // Setup Background Audio Mode
+        const setupAudio = async () => {
+            try {
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: false,
+                    staysActiveInBackground: true,
+                    interruptionModeIOS: InterruptionModeIOS.DuckOthers,
+                    playsInSilentModeIOS: true,
+                    shouldDuckAndroid: true,
+                    interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
+                    playThroughEarpieceAndroid: false,
+                });
+            } catch (e) {
+                console.error("Error setting up audio mode:", e);
+            }
+        };
+        setupAudio();
+
         return () => {
             if (sound) {
                 sound.unloadAsync();
@@ -86,13 +109,28 @@ export default function MusicScreen() {
 
     const isYoutube = (url: string) => {
         if (!url) return false;
-        return url.length === 11 && !url.includes('/') && !url.includes('.');
+        // Check if it's already a 11-char ID
+        if (url.length === 11 && !url.includes('/') && !url.includes('.')) return true;
+        // Check if it's a full YouTube URL
+        return url.includes('youtube.com') || url.includes('youtu.be');
+    };
+
+    const getYoutubeId = (url: string) => {
+        if (!url) return null;
+        if (url.length === 11 && !url.includes('/') && !url.includes('.')) return url;
+        const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[7].length === 11) ? match[7] : null;
     };
 
     const playNativeAudio = async (url: string) => {
         try {
             if (sound) {
                 await sound.unloadAsync();
+            }
+
+            if (!url || url.startsWith('http') === false) {
+                throw new Error('Invalid audio URL');
             }
 
             const { sound: newSound } = await Audio.Sound.createAsync(
@@ -104,30 +142,46 @@ export default function MusicScreen() {
             setPlaying(true);
         } catch (error) {
             console.error('Error playing audio:', error);
-            Alert.alert('Playback Error', 'Could not play this divine melody.');
+            // Don't show alert for 400 if we can fallback
+            if (!isPlayerExpanded) {
+                setActiveSong(null);
+            }
         }
     };
 
     const onPlaybackStatusUpdate = (status: any) => {
         setPlaybackStatus(status);
+        if (status.isLoaded) {
+            setPosition(status.positionMillis);
+            setDuration(status.durationMillis || 0);
+        }
         if (status.didJustFinish) {
             setPlaying(false);
         }
     };
 
-    const handleSongPress = (song: any) => {
-        // If switching songs, stop previous
+    const handleSongPress = async (song: any) => {
+        // If switching songs, stop previous native audio
         if (sound) {
-            sound.unloadAsync();
+            await sound.unloadAsync();
             setSound(null);
         }
         
         setActiveSong(song);
+        setIsPlayerExpanded(true);
+        setDuration(0);
+        setPosition(0);
         setPlaying(true);
-        setIsPlayerExpanded(false);
+        
+        const audioUrl = song.audio_url;
 
-        if (!isYoutube(song.audio_url)) {
-            playNativeAudio(song.audio_url);
+        if (isYoutube(audioUrl)) {
+            // YouTube link → directly use YouTube in-app player
+            setUseYoutubePlayer(true);
+        } else if (audioUrl && audioUrl.startsWith('http')) {
+            // Direct MP3/Audio URL → native background player
+            setUseYoutubePlayer(false);
+            await playNativeAudio(audioUrl);
         }
     };
 
@@ -314,27 +368,31 @@ export default function MusicScreen() {
                                 </TouchableOpacity>
                             </View>
 
-                            {/* Main Content (YouTube or Cover) */}
-                            <View className="px-6 mb-8">
-                                {isYoutube(activeSong.audio_url) ? (
-                                    <View className="rounded-[32px] overflow-hidden bg-black shadow-xl">
+                            {/* Main Content (YouTube Player or Cover Art) */}
+                            <View className="px-6 mb-6">
+                                {useYoutubePlayer && isYoutube(activeSong.audio_url) ? (
+                                    <View className="w-full aspect-video rounded-3xl overflow-hidden bg-black shadow-xl">
                                         <YoutubePlayer
-                                            height={width * 0.52}
+                                            height={width * 0.56}
                                             play={playing}
-                                            videoId={activeSong.audio_url}
+                                            videoId={getYoutubeId(activeSong.audio_url) || ''}
                                             onChangeState={(state) => {
                                                 if (state === 'ended') setPlaying(false);
                                             }}
                                         />
                                     </View>
                                 ) : (
-                                    <View className="items-center">
-                                        <View className="w-full aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white">
-                                            <Image 
-                                                source={{ uri: activeSong.image_url || 'https://via.placeholder.com/400' }} 
-                                                className="w-full h-full" 
-                                            />
-                                        </View>
+                                    <View className="w-full aspect-square rounded-[40px] overflow-hidden shadow-2xl border-4 border-white bg-gray-100">
+                                        <Image 
+                                            source={{ uri: activeSong.image_url || 'https://via.placeholder.com/400' }} 
+                                            className="w-full h-full"
+                                            resizeMode="cover"
+                                        />
+                                        {playing && (
+                                            <View className="absolute inset-0 bg-black/10 items-center justify-center">
+                                                <Sparkles size={100} color="rgba(255,255,255,0.2)" />
+                                            </View>
+                                        )}
                                     </View>
                                 )}
                             </View>

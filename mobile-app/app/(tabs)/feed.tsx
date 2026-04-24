@@ -116,26 +116,33 @@ export default function FeedScreen() {
                   {post.title_hi && <Text className="text-gray-500 text-xs italic">{post.title}</Text>}
                 </View>
 
-                {/* Video/Image Container */}
+                {/* Video/Image Container - Always 16:9 */}
                 {(() => {
-                  const isShort = post.video_url?.includes('shorts');
-                  const aspectRatio = isShort ? 1.77 : 0.5625;
-                  const containerHeight = (width - 32) * aspectRatio;
+                  const videoId = getYoutubeId(post.video_url);
+                  const containerWidth = width - 32;
+                  const containerHeight = containerWidth * (9 / 16);
 
                   return (
-                    <View style={{ width: width - 32, height: containerHeight, backgroundColor: '#000', borderRadius: 24, overflow: 'hidden' }}>
-                       {playingId === post.id && getYoutubeId(post.video_url) ? (
+                    <View style={{ 
+                      width: containerWidth, 
+                      height: containerHeight, 
+                      backgroundColor: '#000', 
+                      borderRadius: 20, 
+                      overflow: 'hidden',
+                      marginHorizontal: 16,
+                    }}>
+                       {playingId === post.id && videoId ? (
                           <YoutubePlayer
-                            width={width - 32}
+                            width={containerWidth}
                             height={containerHeight}
                             play={true}
-                            mute={true}
-                            videoId={getYoutubeId(post.video_url)!}
+                            videoId={videoId}
                             initialPlayerParams={{
                               origin: 'https://www.youtube.com',
-                              preventFullScreen: true,
+                              preventFullScreen: false,
                               rel: false,
-                              modestbranding: true
+                              modestbranding: true,
+                              controls: true,
                             }}
                             onChangeState={(state) => {
                               if (state === "ended") setPlayingId(null);
@@ -148,20 +155,21 @@ export default function FeedScreen() {
                             style={{ width: '100%', height: '100%' }}
                           >
                              <Image 
-                                source={{ uri: post.thumbnail_url || `https://img.youtube.com/vi/${getYoutubeId(post.video_url)}/hqdefault.jpg` }} 
+                                source={{ uri: post.thumbnail_url || (videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : undefined) }} 
                                 style={{ width: '100%', height: '100%' }}
                                 resizeMode="cover" 
                              />
-                             <View className="absolute inset-0 items-center justify-center bg-black/10">
-                                <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center border border-white/30 backdrop-blur-md">
-                                   <Play size={32} color="white" fill="white" />
+                             {/* Dark overlay */}
+                             <View style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+                                <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)' }}>
+                                   <Play size={28} color="white" fill="white" />
                                 </View>
                              </View>
-                             
-                             {/* Reel Badge */}
-                             <View className="absolute bottom-4 left-4 bg-black/40 px-3 py-1.5 rounded-full border border-white/20">
-                                <Text className="text-white text-[10px] font-black uppercase tracking-widest">
-                                   {isShort ? 'Spiritual Reel' : 'Divine Video'}
+
+                             {/* Badge */}
+                             <View style={{ position: 'absolute', bottom: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.55)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 }}>
+                                <Text style={{ color: 'white', fontSize: 10, fontWeight: '900', letterSpacing: 1 }}>
+                                   {post.video_url?.includes('shorts') ? '🙏 REEL' : '▶ VIDEO'}
                                 </Text>
                              </View>
                           </TouchableOpacity>
