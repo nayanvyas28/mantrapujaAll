@@ -141,20 +141,6 @@ export default function GuruAIChat() {
     // Queue Processor Effect with Self-Correction
     useEffect(() => {
         const checkQueue = () => {
-            // Safety: If there is a message marked as streaming for more than 20 seconds, force clear it
-            setMessages(prev => {
-                const streamingMsgs = prev.filter(m => m.isStreaming);
-                if (streamingMsgs.length > 0 && !isLoading) {
-                    // Check if they have been streaming too long or if we are idle
-                    // For now, we'll just ensure if we are idle and nothing is happening, we clear it
-                    // This is a bit aggressive but solves the 'stuck' input issue
-                    if (queuedMessages.length === 0) {
-                        return prev.map(m => ({ ...m, isStreaming: false }));
-                    }
-                }
-                return prev;
-            });
-
             if (queuedMessages.length > 0 && !messages.some(m => m.isStreaming)) {
                 const nextMessage = queuedMessages[0];
                 setMessages(prev => [...prev, { ...nextMessage, isStreaming: true }]);
