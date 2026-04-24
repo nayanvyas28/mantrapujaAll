@@ -1,6 +1,5 @@
 # Stage 1: Build the website
-# We switch to node:20-slim (Debian) for the builder because it has better compatibility 
-# with native binaries like lightningcss than Alpine.
+# Using node:20-slim for best compatibility with native modules (lightningcss)
 FROM node:20-slim AS builder
 
 # Install build dependencies
@@ -12,27 +11,27 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy root manifest and lockfile
-COPY package.json package-lock.json* ./
+# IMPORTANT: This Dockerfile is designed for a build context set to /website
+# Copy website manifest
+COPY package.json ./
 
-# Copy local packages (MUST be copied for workspaces to resolve)
+# Copy local packages (now moved inside website/packages)
 COPY packages ./packages
 
-# Copy the target application
-COPY website ./website
+# Copy the rest of the website source code
+COPY . .
 
-# Install dependencies from the root
+# Install dependencies specifically for the website
+# Since packages is now internal, the relative path file:./packages/... will resolve
 RUN npm install --legacy-peer-deps
 
-# Build the website using the workspace command
-WORKDIR /app/website
+# Build the website
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
 # Stage 2: Production server
-# We can keep Alpine for the runner to keep the final image size small.
 FROM node:20-alpine AS runner
-WORKDIR /app/website
+WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
@@ -44,11 +43,11 @@ RUN apk add --no-cache libc6-compat
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy build artifacts AND required node_modules from the builder stage
-COPY --from=builder /app/website/public ./public
-COPY --from=builder /app/website/package.json ./package.json
-COPY --from=builder /app/website/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/website/.next ./.next
+# Copy build artifacts
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 
 USER nextjs
 

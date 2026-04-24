@@ -12,16 +12,13 @@ WORKDIR /app
 # Copy root manifest and lockfile
 COPY package.json package-lock.json* ./
 
-# Copy local packages (MUST be copied for workspaces to resolve)
-COPY packages ./packages
-
-# Copy the target application
+# Copy the whole website folder (which now contains packages/)
 COPY website ./website
 
 # Install dependencies from the root
 RUN npm install --legacy-peer-deps
 
-# Build the website using the workspace command
+# Build the website
 WORKDIR /app/website
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
@@ -33,14 +30,10 @@ WORKDIR /app/website
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Add compatibility layer for Alpine
 RUN apk add --no-cache libc6-compat
-
-# Security best practice: don't run as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy build artifacts AND required node_modules from the builder stage
 COPY --from=builder /app/website/public ./public
 COPY --from=builder /app/website/package.json ./package.json
 COPY --from=builder /app/website/node_modules ./node_modules
@@ -53,5 +46,4 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-# Start the website
 CMD ["npm", "start"]
