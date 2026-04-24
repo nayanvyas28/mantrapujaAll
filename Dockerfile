@@ -12,8 +12,10 @@ WORKDIR /app
 # Copy root manifest and lockfile
 COPY package.json package-lock.json* ./
 
-# Copy the whole website folder (which now contains packages/)
+# Copy necessary workspaces for dependency resolution
 COPY website ./website
+# Create dummy folders for other workspaces so npm install doesn't fail
+RUN mkdir -p admin-panel backend
 
 # Install dependencies from the root
 RUN npm install --legacy-peer-deps

@@ -8,3 +8,12 @@ build
 npm-debug.log*
 .DS_Store
 Thumbs.db
+
+# Exclude other workspaces from website build context
+mobile-app
+admin-panel
+backend
+.agents
+scratch
+artifacts
+.gemini

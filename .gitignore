@@ -38,3 +38,8 @@ Thumbs.db
 .planning/
 scratch/
 node_modules_old/
+# AI Agent files (large, not needed in deployment)
+.agents/
+website/.agents/
+# Mobile app build artifacts
+mobile-app/node_modules_old/
