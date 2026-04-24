@@ -917,7 +917,7 @@ export default function HomeClient() {
 
                                     {/* 3D Action Button */}
                                     <Link
-                                        href={`/pooja-services/${puja.slug}`}
+                                        href={`/pooja-services/${puja.slug}#packages`}
                                         className="group/btn relative inline-flex items-center justify-center h-10 px-6 font-black text-white rounded-xl transition-all duration-150 overflow-visible"
                                     >
                                         {/* 3D Shadow/Bottom Part */}

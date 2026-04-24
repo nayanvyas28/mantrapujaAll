@@ -80,8 +80,21 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             setIsScrolled(window.scrollY > 100);
         };
         window.addEventListener('scroll', handleScroll);
+
+        // Auto-open packages if hash is present
+        if (window.location.hash === '#packages') {
+            // Use a small timeout to ensure everything is mounted and user state is loaded
+            const timer = setTimeout(() => {
+                scrollToBooking();
+            }, 500);
+            return () => {
+                window.removeEventListener('scroll', handleScroll);
+                clearTimeout(timer);
+            };
+        }
+
         return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+    }, [user]); // Re-run when user state changes to ensure scrollToBooking has the right auth context
 
     const scrollToBooking = () => {
         if (!user) {
