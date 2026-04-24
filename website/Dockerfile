@@ -1,14 +1,18 @@
 # Stage 1: Build the website
-FROM node:20-alpine AS builder
+# We switch to node:20-slim (Debian) for the builder because it has better compatibility 
+# with native binaries like lightningcss than Alpine.
+FROM node:20-slim AS builder
 
-# Add build dependencies for native modules (like lightningcss)
-RUN apk add --no-cache libc6-compat python3 make g++
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy root manifest and lockfile
-# Note: These paths are relative to the Docker build context. 
-# We assume the build context is set to the REPO ROOT (.), not the /website folder.
 COPY package.json package-lock.json* ./
 
 # Copy local packages (MUST be copied for workspaces to resolve)
@@ -17,7 +21,7 @@ COPY packages ./packages
 # Copy the target application
 COPY website ./website
 
-# Install dependencies from the root to correctly handle workspaces and protocols
+# Install dependencies from the root
 RUN npm install --legacy-peer-deps
 
 # Build the website using the workspace command
@@ -26,14 +30,17 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
 # Stage 2: Production server
+# We can keep Alpine for the runner to keep the final image size small.
 FROM node:20-alpine AS runner
 WORKDIR /app/website
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Security best practice: don't run as root
+# Add compatibility layer for Alpine
 RUN apk add --no-cache libc6-compat
+
+# Security best practice: don't run as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 

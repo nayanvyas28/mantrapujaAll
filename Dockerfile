@@ -1,8 +1,11 @@
 # Stage 1: Build the website
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
-# Add build dependencies for native modules (like lightningcss)
-RUN apk add --no-cache libc6-compat python3 make g++
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -15,8 +18,7 @@ COPY packages ./packages
 # Copy the target application
 COPY website ./website
 
-# Install dependencies from the root to correctly handle workspaces and protocols (workspace:*)
-# We use --legacy-peer-deps to avoid conflicts and force install of native modules
+# Install dependencies from the root
 RUN npm install --legacy-peer-deps
 
 # Build the website using the workspace command
@@ -31,13 +33,14 @@ WORKDIR /app/website
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Security best practice: don't run as root
+# Add compatibility layer for Alpine
 RUN apk add --no-cache libc6-compat
+
+# Security best practice: don't run as root
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy build artifacts AND required node_modules from the builder stage
-# Note: We copy from /app/website/... to keep the runner image lean
 COPY --from=builder /app/website/public ./public
 COPY --from=builder /app/website/package.json ./package.json
 COPY --from=builder /app/website/node_modules ./node_modules
