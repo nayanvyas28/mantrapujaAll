@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { LogOut, ArrowLeft, Image as ImageIcon, Star, Sparkles } from 'lucide-react';
+import { LogOut, ArrowLeft, Image as ImageIcon, Star, Sparkles, Layout } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function WebsiteHomeSettingsPage() {
@@ -94,13 +94,33 @@ export default async function WebsiteHomeSettingsPage() {
                                 <h2 className="text-xl font-bold text-white">Why Choose Us?</h2>
                             </div>
                             <p className="text-sm text-gray-300 mb-2 mt-2">Manage the 6 feature cards (dynamic images, titles, and descriptions) for the "Why Choose Mantra Puja?" section.</p>
-                            <p className="text-[11px] font-bold text-purple-400 bg-purple-500/10 px-3 py-1 rounded w-fit mb-4">Recommended Ratio: 1:1 (Square)</p>
+                            <p className="text-[11px] font-bold text-purple-400 bg-purple-500/10 px-3 py-1 rounded w-fit mb-4">Recommended Ratio: 16:9</p>
                         </div>
                         <Link
                             href="/dashboard/website-home/features"
                             className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
                         >
                             Manage Features
+                        </Link>
+                    </div>
+
+                    {/* Quick Access Cards */}
+                    <div className="p-6 rounded-2xl bg-gradient-to-r from-cyan-900/40 to-blue-900/30 border border-cyan-500/20 flex flex-col justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-cyan-500/20 rounded-lg text-cyan-400">
+                                    <Layout className="w-6 h-6" />
+                                </div>
+                                <h2 className="text-xl font-bold text-white">Quick Access Cards</h2>
+                            </div>
+                            <p className="text-sm text-gray-300 mb-2 mt-2">Manage the 6 quick access cards (Kundali, Rashifal, etc.) below the main banner.</p>
+                            <p className="text-[11px] font-bold text-cyan-400 bg-cyan-500/10 px-3 py-1 rounded w-fit mb-4">Recommended Ratio: 1:1 (Square)</p>
+                        </div>
+                        <Link
+                            href="/dashboard/website-home/quick-access"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-100 transition-colors w-full justify-center shadow-lg"
+                        >
+                            Manage Quick Access
                         </Link>
                     </div>
                 </div>

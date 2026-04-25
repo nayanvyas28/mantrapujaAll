@@ -118,7 +118,7 @@ const Header = () => {
     // --- Standard Public Header ---
     const navLinks = [
         { name: "Home", href: "/" },
-        { name: "Feed", href: "/feed" },
+
         { name: "Puja", href: "/pooja-services" },
         { name: "Festivals", href: "/festivals" },
         { name: "Locations", href: "/locations" },
@@ -146,15 +146,22 @@ const Header = () => {
 
                 {/* Desktop Navigation */}
                 <nav className="hidden lg:flex items-center space-x-1 bg-zinc-50 dark:bg-white/5 px-2 py-1 rounded-full border border-zinc-200/50 dark:border-white/5">
-                    {navLinks.map((link) => (
-                        <Link
-                            key={link.name}
-                            href={link.href}
-                            className="px-5 py-2.5 text-sm font-black text-zinc-600 dark:text-zinc-300 hover:text-orange-600 transition-colors tracking-tight rounded-full hover:bg-white dark:hover:bg-white/10"
-                        >
-                            {link.name}
-                        </Link>
-                    ))}
+                    {navLinks.map((link) => {
+                        const isActive = pathname === link.href;
+                        return (
+                            <Link
+                                key={link.name}
+                                href={link.href}
+                                className={`px-5 py-2.5 text-sm font-black transition-all tracking-tight rounded-full ${
+                                    isActive 
+                                    ? "bg-white dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 shadow-sm border border-orange-500/10" 
+                                    : "text-zinc-600 dark:text-zinc-300 hover:text-orange-600 hover:bg-white dark:hover:bg-white/10"
+                                }`}
+                            >
+                                {link.name}
+                            </Link>
+                        );
+                    })}
                 </nav>
 
                 {/* Actions */}
@@ -292,16 +299,21 @@ const Header = () => {
                         className="absolute inset-x-0 top-full bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-white/5 p-6 lg:hidden"
                     >
                         <div className="flex flex-col space-y-4">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.name}
-                                    href={link.href}
-                                    className="text-lg font-black text-zinc-800 dark:text-zinc-100"
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    {link.name}
-                                </Link>
-                            ))}
+                            {navLinks.map((link) => {
+                                const isActive = pathname === link.href;
+                                return (
+                                    <Link
+                                        key={link.name}
+                                        href={link.href}
+                                        className={`text-lg font-black transition-all ${
+                                            isActive ? "text-orange-600 dark:text-orange-400 pl-2 border-l-4 border-orange-500" : "text-zinc-800 dark:text-zinc-100"
+                                        }`}
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        {link.name}
+                                    </Link>
+                                );
+                            })}
                             <Link
                                 href="/pooja-services"
                                 className="w-full py-4 bg-orange-500 text-white rounded-2xl text-center font-black"

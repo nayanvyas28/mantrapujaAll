@@ -727,20 +727,21 @@ export default function PujaManagementPage() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="bg-[#111] border border-white/10 w-full max-w-4xl rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col"
                         >
-                            <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#111]/80 backdrop-blur-md z-20">
+                            <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-[#111] z-30">
                                 <div>
                                     <h3 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                                         {editingPuja ? 'Refine Puja Details' : 'Initialize New Ritual'}
                                     </h3>
-                                    <p className="text-xs text-gray-500 font-medium mt-0.5">COMPLETE ALL NECESSARY FIELDS FOR APP CONSISTENCY</p>
+                                    <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase tracking-widest">Ritual Configuration Engine</p>
                                 </div>
-                                <button onClick={() => setIsPujaModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                                <button type="button" onClick={() => setIsPujaModalOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors border border-white/5">
                                     <X className="w-6 h-6 text-gray-400" />
                                 </button>
                             </div>
 
-                            <form onSubmit={handleSavePuja} className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-10">
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                            <form onSubmit={handleSavePuja} className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+                                <div className="p-8 space-y-12">
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                                     {/* Left Column: Essential Logic */}
                                     <div className="lg:col-span-7 space-y-8">
                                         <div className="space-y-6">
@@ -868,6 +869,8 @@ export default function PujaManagementPage() {
                                                     <Tag className="w-4 h-4 text-orange-500" />
                                                     <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Identification & Branding</h4>
                                                 </div>
+                                                
+                                                <div className="space-y-2">
                                                     <label className="block text-[10px] font-bold text-brand-blue uppercase tracking-widest pl-1 flex items-center justify-between">
                                                         URL Slug
                                                         <button 
@@ -889,6 +892,7 @@ export default function PujaManagementPage() {
                                                         className="w-full px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl focus:outline-none focus:border-orange-500/50 transition-all font-mono text-xs text-orange-200/60"
                                                     />
                                                 </div>
+                                            </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1214,17 +1218,19 @@ export default function PujaManagementPage() {
                                     </div>
                                 </div>
 
-                                <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row gap-4">
+                                </div>
+
+                                <div className="px-8 py-6 border-t border-white/10 bg-[#111] flex flex-col md:flex-row gap-4 z-30">
                                     <button
                                         type="button"
                                         onClick={() => setIsPujaModalOpen(false)}
-                                        className="flex-1 py-4 px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all uppercase text-xs tracking-widest"
+                                        className="flex-1 py-4 px-6 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all uppercase text-[10px] tracking-widest border border-white/5"
                                     >
                                         Discard Changes
                                     </button>
                                     <button
                                         disabled={isSaving}
-                                        className="flex-[2] py-4 px-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 disabled:opacity-50 flex items-center justify-center gap-3 uppercase text-xs tracking-widest group"
+                                        className="flex-[2] py-4 px-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 disabled:opacity-50 flex items-center justify-center gap-3 uppercase text-[10px] tracking-widest group"
                                     >
                                         {isSaving ? (
                                             <Loader2 className="w-6 h-6 animate-spin" />

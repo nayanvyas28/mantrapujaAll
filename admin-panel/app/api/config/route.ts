@@ -36,7 +36,8 @@ export async function POST(request: Request) {
             guru_ai_templates,
             guru_ai_instruction,
             guru_ai_greeting_en,
-            guru_ai_greeting_hi
+            guru_ai_greeting_hi,
+            home_quick_access
         } = await request.json();
 
         // Allow updating any of the configuration flags
@@ -57,7 +58,8 @@ export async function POST(request: Request) {
             guru_ai_templates === undefined &&
             guru_ai_instruction === undefined &&
             guru_ai_greeting_en === undefined &&
-            guru_ai_greeting_hi === undefined) {
+            guru_ai_greeting_hi === undefined &&
+            home_quick_access === undefined) {
             return NextResponse.json({ error: 'No configuration provided' }, { status: 400 });
         }
 
@@ -233,6 +235,14 @@ export async function POST(request: Request) {
             });
         }
 
+        if (home_quick_access !== undefined) {
+            updates.push({
+                key: 'home_quick_access',
+                value: typeof home_quick_access === 'string' ? home_quick_access : JSON.stringify(home_quick_access),
+                updated_at: timestamp
+            });
+        }
+
         // Store in Supabase using the admin client
         const { error } = await supabaseAdmin
             .from('settings')
@@ -289,7 +299,8 @@ export async function GET() {
                 'guru_ai_templates',
                 'guru_ai_instruction',
                 'guru_ai_greeting_en',
-                'guru_ai_greeting_hi'
+                'guru_ai_greeting_hi',
+                'home_quick_access'
             ]);
 
         if (error && error.code !== 'PGRST116') {
@@ -314,6 +325,7 @@ export async function GET() {
         const guruInstSetting = data?.find(s => s.key === 'guru_ai_instruction');
         const guruGreetingEnSetting = data?.find(s => s.key === 'guru_ai_greeting_en');
         const guruGreetingHiSetting = data?.find(s => s.key === 'guru_ai_greeting_hi');
+        const homeQuickAccessSetting = data?.find(s => s.key === 'home_quick_access');
 
         const apiKeys = apiKeysSetting 
             ? (JSON.parse(apiKeysSetting.value) as string[]).map((_, i) => `mask_key_${i}`) 
@@ -338,6 +350,7 @@ export async function GET() {
             guruAiInstruction: guruInstSetting?.value || '',
             guruAiGreetingEn: guruGreetingEnSetting?.value || '',
             guruAiGreetingHi: guruGreetingHiSetting?.value || '',
+            homeQuickAccess: homeQuickAccessSetting?.value || '[]',
             updatedAt: apiKeySetting?.updated_at || null
         });
     } catch (error) {

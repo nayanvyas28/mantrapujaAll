@@ -94,6 +94,7 @@ const formatDivineMessage = (text: string) => {
     
     // Remove tags that we parse separately later
     safeText = safeText.replace(/\[\[PUJA_LINK:.*?\]\]/g, '');
+    safeText = safeText.replace(/\[\[BLOG_LINK:.*?\]\]/g, '');
     safeText = safeText.replace(/\[\[START_KUNDLI_FLOW\]\]/g, '');
     safeText = safeText.replace(/\[\[VIEW_KUNDALI_BTN\]\]/g, '');
     safeText = safeText.replace(/\[\[CHAT_RESET_BTN\]\]/g, '');

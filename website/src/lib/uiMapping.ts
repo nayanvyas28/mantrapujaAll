@@ -231,14 +231,14 @@ export const getBlogCategoryStyle = (category: string) => {
     const cat = category || "Insight";
 
     // Check for keywords or exact matches
-    if (cat.includes("Astrology")) return "bg-purple-500/20 text-purple-100 border-purple-500/30";
-    if (cat.includes("Puja") || cat.includes("Ritual")) return "bg-orange-500/20 text-orange-100 border-orange-500/30";
-    if (cat.includes("Sacred") || cat.includes("Yatra") || cat.includes("Place")) return "bg-emerald-500/20 text-emerald-100 border-emerald-500/30";
-    if (cat.includes("Devta") || cat.includes("Divine") || cat.includes("Knowledge")) return "bg-yellow-500/20 text-yellow-100 border-yellow-500/30";
-    if (cat.includes("Scripture") || cat.includes("Wisdom") || cat.includes("Ancient")) return "bg-blue-500/20 text-blue-100 border-blue-500/30";
-    if (cat.includes("Life") || cat.includes("Guidance") || cat.includes("Problem")) return "bg-teal-500/20 text-teal-100 border-teal-500/30";
-    if (cat.includes("Devotion") || cat.includes("Culture") || cat.includes("Bhakti")) return "bg-pink-500/20 text-pink-100 border-pink-500/30";
+    if (cat.includes("Astrology")) return "bg-purple-600 text-white border-purple-400 shadow-lg shadow-purple-500/20";
+    if (cat.includes("Puja") || cat.includes("Ritual")) return "bg-orange-600 text-white border-orange-400 shadow-lg shadow-orange-500/20";
+    if (cat.includes("Sacred") || cat.includes("Yatra") || cat.includes("Place")) return "bg-emerald-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/20";
+    if (cat.includes("Devta") || cat.includes("Divine") || cat.includes("Knowledge")) return "bg-amber-500 text-zinc-950 border-amber-300 shadow-lg shadow-amber-500/20";
+    if (cat.includes("Scripture") || cat.includes("Wisdom") || cat.includes("Ancient")) return "bg-blue-600 text-white border-blue-400 shadow-lg shadow-blue-500/20";
+    if (cat.includes("Life") || cat.includes("Guidance") || cat.includes("Problem")) return "bg-teal-600 text-white border-teal-400 shadow-lg shadow-teal-500/20";
+    if (cat.includes("Devotion") || cat.includes("Culture") || cat.includes("Bhakti")) return "bg-pink-600 text-white border-pink-400 shadow-lg shadow-pink-500/20";
 
     // Default
-    return "bg-slate-500/20 text-slate-100 border-slate-500/30";
+    return "bg-zinc-800 text-white border-zinc-600";
 };

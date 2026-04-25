@@ -168,7 +168,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
 
                                 {/* WhatsApp Button */}
                                 <a
-                                    href="https://wa.me/919999999999"
+                                    href="https://wa.me/918989271245"
                                     className="group relative flex w-full sm:w-auto items-center justify-center gap-2 md:gap-3 h-16 md:h-20 px-8 sm:px-12 font-bold text-lg md:text-xl text-green-600 bg-white border-2 border-white rounded-full shadow-[0_6px_0_0_#d1d5db] hover:shadow-[0_3px_0_0_#d1d5db] hover:translate-y-[3px] active:translate-y-[6px] active:shadow-none transition-all duration-150 overflow-visible animate-pulse-ring"
                                 >
                                     <MessageCircle className="w-6 h-6 fill-current" />
@@ -355,7 +355,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
 
                             <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
                                 <a
-                                    href="https://wa.me/919999999999"
+                                    href="https://wa.me/918989271245"
                                     className="group relative px-12 py-6 rounded-full bg-emerald-500 text-white font-bold text-2xl shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-2 transition-all flex items-center gap-4 overflow-visible"
                                 >
                                     <div className="absolute inset-0 rounded-full overflow-hidden bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600">

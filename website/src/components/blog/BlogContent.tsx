@@ -11,7 +11,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 9;
 
 export default function BlogContent() {
     const [activeCategory, setActiveCategory] = useState<BlogCategory>("All");
@@ -21,34 +21,63 @@ export default function BlogContent() {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [sortBy, setSortBy] = useState("newest");
+    const [timeFilter, setTimeFilter] = useState("all");
+    const [fetchError, setFetchError] = useState<string | null>(null);
 
     // Fetch Blogs function
     const fetchBlogs = useCallback(async (pageToFetch: number, isNewSearch: boolean = false) => {
         try {
+            setFetchError(null);
+
+            // 1. Fetch Authors Safely
+            let authorsData: any[] = [];
+            try {
+                const { data: aData } = await supabase.from('blog_authors').select('*');
+                authorsData = aData || [];
+            } catch (aErr) {
+                console.warn("Authors fetch failed:", aErr);
+            }
+
+            const authorIdMap = new Map();
+            const authorNameMap = new Map();
+            authorsData.forEach(a => {
+                if (a && a.id) authorIdMap.set(a.id, a);
+                if (a && a.name) authorNameMap.set(a.name.trim().toLowerCase(), a);
+            });
+
+            // 2. Build Query
             let query = supabase
                 .from('blogs')
                 .select('*')
                 .eq('published', true)
-                .order('created_at', { ascending: false });
+                .neq('slug', 'cache-buster-' + Date.now()); // Safe string-based cache buster
 
-            // Apply Filters
-            if (activeCategory !== "All") {
-                query = query.eq('category', activeCategory); // Assuming category column exists or we need to map it? 
-                // Wait, existing code mapped category manually. 
-                // If category is not in DB, this might fail. 
-                // Let's check DB schema. 'tags' exists. 'category' might be a derived field in previous code.
-                // Reverting to client-side category filtering for now if simpler, but pagination breaks it.
-                // Let's assume for now we fetch, then filter? No, standard pagination needs DB filtering.
-                // Previous code: `category: (b.category as BlogCategory) || "Scriptures & Ancient Wisdom"`
-                // So 'category' field might NOT exist or be unreliable.
-                // Let's stick to raw fetch for now and handle category via client if mostly same, OR just ignore category filter on DB for now and fix later.
-                // Actually, let's look at `blogs` table schema from previous context... 
-                // `category` column does NOT exist in the migration I saw (id, title, slug, content...).
-                // So Category is simulated? 
-                // "Scriptures & Ancient Wisdom" seems to be default.
-                // Let's ignore category filter in DB query for now to be safe, or map it to tags if possible.
+            // Apply Sorting
+            if (sortBy === "popular") {
+                query = query.order('views', { ascending: false });
+            } else if (sortBy === "oldest") {
+                query = query.order('created_at', { ascending: true });
+            } else {
+                query = query.order('created_at', { ascending: false });
             }
 
+            // Apply Time Filter
+            if (timeFilter !== "all") {
+                const now = new Date();
+                let filterDate = new Date();
+                if (timeFilter === "today") filterDate.setHours(0, 0, 0, 0);
+                else if (timeFilter === "week") filterDate.setDate(now.getDate() - 7);
+                else if (timeFilter === "month") filterDate.setMonth(now.getMonth() - 1);
+                query = query.gte('created_at', filterDate.toISOString());
+            }
+
+            // Apply Category
+            if (activeCategory !== "All") {
+                query = query.eq('category', activeCategory);
+            }
+
+            // Apply Search
             if (searchTerm) {
                 query = query.or(`title.ilike.%${searchTerm}%,excerpt.ilike.%${searchTerm}%`);
             }
@@ -60,46 +89,54 @@ export default function BlogContent() {
 
             const { data, error } = await query;
 
-            if (error) throw error;
+            if (error) {
+                setFetchError(error.message);
+                throw error;
+            }
 
             if (data) {
-                const mappedBlogs: BlogPost[] = data.map((b: any) => ({
-                    id: b.id,
-                    title: b.title,
-                    excerpt: b.excerpt || b.meta_description || "Read this amazing article on MantraPuja.",
-                    slug: b.slug,
-                    image_url: b.image_url || "https://via.placeholder.com/600x400",
-                    created_at: b.created_at,
-                    category: (b.category as BlogCategory) || "Scriptures & Ancient Wisdom",
-                    tags: b.tags || [],
-                    views: b.views || 0,
-                    author: {
-                        name: b.author_name || "MantraPuja Team",
-                        avatar: b.author_avatar || "/logo.png",
-                        role: b.author_role || "Editor"
-                    }
-                }));
+                const totalMatched = data.filter((b: any) => b.author_id && authorIdMap.has(b.author_id)).length;
+                console.log(`Sync Status: ${totalMatched}/${data.length} blogs linked correctly.`);
+                const mappedBlogs: BlogPost[] = data.map((b: any) => {
+                    const latestAuthor = authorIdMap.get(b.author_id) || authorNameMap.get((b.author_name || "").trim().toLowerCase());
+                    
+                    return {
+                        id: b.id,
+                        title: b.title,
+                        excerpt: b.excerpt || b.meta_description || "Read this amazing article on MantraPuja.",
+                        slug: b.slug,
+                        image_url: b.image_url || "https://images.unsplash.com/photo-1605218453416-59e3c9c94494?q=80&w=1200",
+                        created_at: b.created_at,
+                        category: (b.category as BlogCategory) || "Scriptures & Ancient Wisdom",
+                        tags: b.tags || [],
+                        views: b.views || 0,
+                        author: {
+                            name: latestAuthor?.name || b.author_name || "MantraPuja Team",
+                            avatar: latestAuthor?.avatar || b.author_avatar || "/logo.png",
+                            role: latestAuthor?.role || b.author_role || "Editor"
+                        }
+                    };
+                });
 
                 setBlogs(prev => isNewSearch ? mappedBlogs : [...prev, ...mappedBlogs]);
                 setHasMore(data.length === PAGE_SIZE);
             }
-        } catch (err) {
-            console.error("Failed to fetch blogs:", err);
-            // Only fallback on initial load error
-            if (pageToFetch === 0 && blogs.length === 0) setBlogs(MOCK_BLOGS);
+        } catch (err: any) {
+            console.error("Critical: Failed to fetch blogs:", err);
+            setFetchError(err.message || "Unknown error occurred");
         } finally {
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [activeCategory, searchTerm]); // Depend on filters
+    }, [activeCategory, searchTerm, sortBy, timeFilter]);
 
     // Initial Load & Filter Changes
     useEffect(() => {
         setIsLoading(true);
         setPage(0);
-        setBlogs([]); // Clear existing
+        setBlogs([]); 
         fetchBlogs(0, true);
-    }, [activeCategory, searchTerm, fetchBlogs]);
+    }, [activeCategory, searchTerm, sortBy, timeFilter, fetchBlogs]);
 
     const handleLoadMore = () => {
         if (!hasMore || isLoadingMore) return;
@@ -113,7 +150,7 @@ export default function BlogContent() {
         <div className="min-h-screen bg-background transition-colors duration-500 relative">
             <UnifiedPujaBackground />
 
-            <BlogHero onSearch={setSearchTerm} />
+            <BlogHero onSearch={setSearchTerm} onSort={setSortBy} onFilter={setTimeFilter} />
 
             <div className="container mx-auto px-4 pb-24 -mt-10 relative z-20">
 
@@ -126,12 +163,22 @@ export default function BlogContent() {
 
                     {/* Main Content Grid */}
                     <div className="flex-1">
+                        {/* Debug Info (Visible only if empty and error exists) */}
+                        {!isLoading && blogs.length === 0 && (
+                            <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-xs font-mono">
+                                Debug: Blogs=0 | Category={activeCategory} | Search={searchTerm} | Status=Loaded
+                                {fetchError && <div className="mt-2 text-white bg-red-600 p-2 rounded">Error: {fetchError}</div>}
+                                <br />
+                                Check if 'published' column is true in DB.
+                            </div>
+                        )}
+
                         {isLoading && page === 0 ? (
                             <LoadingScreen />
                         ) : blogs.length > 0 ? (
                             <>
                                 <motion.div
-                                    className="grid grid-cols-1 md:grid-cols-2 gap-8"
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                                 >
                                     <AnimatePresence mode="popLayout">
                                         {blogs.map((blog, index) => (

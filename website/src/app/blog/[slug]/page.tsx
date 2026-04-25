@@ -17,7 +17,7 @@ async function getBlog(slug: string) {
     console.log(`[getBlog] 1. Searching for slug: "${slug}"`);
     let { data: blog, error } = await supabase
         .from('blogs')
-        .select('*')
+        .select('*, blog_authors(*)')
         .eq('slug', slug)
         .eq('published', true)
         .single();
@@ -47,7 +47,7 @@ async function getBlog(slug: string) {
                 console.log(`[getBlog] Trying candidate: "${candidate}"`);
                 const { data: foundBlog } = await supabase
                     .from('blogs')
-                    .select('*')
+                    .select('*, blog_authors(*)')
                     .eq('slug', candidate)
                     .eq('published', true)
                     .single();
@@ -66,12 +66,26 @@ async function getBlog(slug: string) {
     }
 
     if (!blog) {
-        // Only log error if we truly failed to find it after all attempts
         console.error(`[getBlog] Final failure: Blog not found for slug "${slug}"`);
         return null;
     }
 
-    return blog;
+    // Fetch full author info from blog_authors table
+    const { data: authorData } = await supabase
+        .from('blog_authors')
+        .select('*')
+        .eq('name', blog.author_name)
+        .single();
+
+    return {
+        ...blog,
+        author: {
+            name: authorData?.name || blog.author_name || "MantraPuja Team",
+            avatar: authorData?.avatar || blog.author_avatar || "/logo.png",
+            role: authorData?.role || blog.author_role || "Editor",
+            bio: authorData?.bio || ""
+        }
+    };
 }
 
 // Dynamic Metadata for SEO

@@ -57,10 +57,17 @@ const Footer = () => {
                             {[
                                 { Icon: Facebook, href: "https://www.facebook.com/mantrapujaa" },
                                 { Icon: Instagram, href: "https://www.instagram.com/mantrapujaa" },
-                                { Icon: Youtube, href: "https://www.youtube.com/@mantrapujaofficials" }
+                                { Icon: Youtube, href: "https://www.youtube.com/@mantrapujaofficials" },
+                                { Icon: Twitter, href: "https://t.me/+918989271245", isTelegram: true }
                             ].map((social, idx) => (
-                                <Link key={idx} href={social.href} className="w-12 h-12 rounded-full border border-saffron/20 flex items-center justify-center text-saffron hover:bg-saffron hover:text-white transition-all duration-300 hover:shadow-[0_0_15px_-3px_rgba(249,115,22,0.5)]">
-                                    <social.Icon size={24} strokeWidth={2.5} />
+                                <Link key={idx} href={social.href} target="_blank" className="w-12 h-12 rounded-full border border-saffron/20 flex items-center justify-center text-saffron hover:bg-saffron hover:text-white transition-all duration-300 hover:shadow-[0_0_15px_-3px_rgba(249,115,22,0.5)]">
+                                    {social.isTelegram ? (
+                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.62 4.49-.854 6.046-.1.663-.346 1.1-.588 1.123-.523.047-1.12-.234-1.624-.564l-2.483-1.547-1.2 1.156c-.132.127-.243.235-.49.235-.32 0-.256-.122-.256-.122l.526-2.5 1.543-1.4c.08-.073.18-.114.18-.114.004-.002-.123.018-.123.018l-3.328 2.094-2.42-.756s-.43-.134-.43-.46c0-.327.44-.457.44-.457l9.467-3.647c.18-.07.4-.085.553-.083z"/>
+                                        </svg>
+                                    ) : (
+                                        <social.Icon size={24} strokeWidth={2.5} />
+                                    )}
                                 </Link>
                             ))}
                         </div>
@@ -112,9 +119,13 @@ const Footer = () => {
                                 <span className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center text-saffron group-hover:bg-saffron group-hover:text-white transition-colors duration-300">✉️</span>
                                 <a href="mailto:info@mantrapuja.com" className="hover:text-saffron transition-colors cursor-pointer">info@mantrapuja.com</a>
                             </li>
+                            <li className="flex items-center gap-3 group">
+                                <span className="w-8 h-8 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-colors duration-300">💬</span>
+                                <a href="https://t.me/+918989271245" target="_blank" rel="noreferrer" className="hover:text-saffron transition-colors cursor-pointer">Telegram: +91 89892 71245</a>
+                            </li>
                             <li className="flex items-start gap-3 group">
                                 <span className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center text-saffron group-hover:bg-saffron group-hover:text-white transition-colors duration-300 mt-1">📍</span>
-                                <Link href="/locations/mahakaleshwar" className="hover:text-saffron transition-colors cursor-pointer leading-relaxed">Mahakal Marg, Ujjain,<br />Madhya Pradesh, India</Link>
+                                <Link href="#" className="hover:text-saffron transition-colors cursor-pointer leading-relaxed">501,502 Shagun Tower, Vijay Nagar,<br />Indore, Madhya Pradesh, India</Link>
                             </li>
                         </ul>
                     </div>

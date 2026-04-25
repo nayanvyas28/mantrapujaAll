@@ -457,3 +457,23 @@ export const updateLocation = async (id: string, updates: Partial<Location>): Pr
     if (error) throw error;
     return data;
 };
+export const getHomeQuickAccess = async (): Promise<any[]> => {
+    const supabase = getClient();
+    const { data, error } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'home_quick_access')
+        .single();
+
+    if (error) {
+        console.warn("home_quick_access not found in settings, using defaults");
+        return [];
+    }
+    
+    try {
+        return typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+    } catch (e) {
+        console.error("Failed to parse home_quick_access:", e);
+        return [];
+    }
+};

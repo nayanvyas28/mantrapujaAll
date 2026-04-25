@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabaseClient';
 import { getUiConfig, UiConfig, getBlogCategoryStyle } from '@/lib/uiMapping';
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { getHomeQuickAccess } from '@/lib/contentService';
 
 // Lazy Load heavy/non-critical components
 const FireParticles = dynamic(() => import("@/components/FireParticles"), { ssr: false });
@@ -21,7 +22,7 @@ const EmberParticles = dynamic(() => import("@/components/EmberParticles"), { ss
 const StarsGalaxyBackground = dynamic(() => import("@/components/ui/StarsGalaxyBackground"), { ssr: false });
 const FloatingSocialButtons = dynamic(() => import("@/components/ui/FloatingSocialButtons").then(mod => mod.FloatingSocialButtons), { ssr: false });
 const SpiritualFamilySection = dynamic(() => import("@/components/home/SpiritualFamilySection"), { ssr: false });
-const FeedSection = dynamic(() => import("@/components/home/FeedSection"), { ssr: false });
+
 const CollapsibleText = dynamic(() => import("@/components/ui/CollapsibleText"), { ssr: false });
 const PanchangSection = dynamic(() => import("@/components/home/PanchangSection"), { ssr: false });
 
@@ -212,6 +213,7 @@ export default function HomeClient() {
     const [pageData, setPageData] = useState<any>(null);
     const [banners, setBanners] = useState<any[]>([]);
     const [features, setFeatures] = useState<HomeFeature[]>([]);
+    const [quickAccessCards, setQuickAccessCards] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeBanner, setActiveBanner] = useState(0);
     const [currentLang, setCurrentLang] = useState("en");
@@ -257,6 +259,7 @@ export default function HomeClient() {
                     if (data.heroPujas) setHeroPujas(data.heroPujas);
                     if (data.banners) setBanners(data.banners);
                     if (data.features) setFeatures(data.features);
+                    if (data.quickAccessCards) setQuickAccessCards(data.quickAccessCards);
                     setLoadingPujas(false);
                     setLoading(false);
                 }
@@ -279,7 +282,7 @@ export default function HomeClient() {
                 ] = await Promise.all([
                     supabase.from('pages').select('id, slug, title').or('slug.eq./,slug.eq.home').maybeSingle(),
                     supabase.from('blogs').select('id, title, slug, image, category, excerpt, tags, created_at').eq('published', true).order('created_at', { ascending: false }).limit(3),
-                    supabase.from('destinations').select('id, name, type, state_id, description, images, slug').eq('is_featured', true).limit(4),
+                    supabase.from('destinations').select('id, name, type, state_id, description, images, slug, home_image_url, show_on_home, home_order').eq('show_on_home', true).order('home_order', { ascending: true }).limit(4),
                     supabase.from('poojas').select('id, name, slug, images, description, benefits, price, is_featured, is_hero, tags').eq('is_active', true).limit(500),
                     supabase.from('home_features').select('id, title, description, image_url, display_order').eq('is_active', true).order('display_order', { ascending: true }),
                     supabase.from('home_banners').select('*, show_text_overlay').eq('is_active', true).or('target.eq.web,target.eq.both').order('display_order', { ascending: true })
@@ -301,17 +304,17 @@ export default function HomeClient() {
                 // 3. Process Locations with Fallback
                 let locData = lDataResponse.data;
                 if (lDataResponse.error && lDataResponse.error.code === '42703') {
-                    const fl = await supabase.from('destinations').select('*').eq('is_featured', true).limit(4);
+                    const fl = await supabase.from('destinations').select('*').eq('show_on_home', true).order('home_order', { ascending: true }).limit(4);
                     locData = fl.data;
                 }
                 if (locData) {
-                    const mappedLocations: PoojaLocation[] = (locData as unknown as DatabaseLocation[]).map((l, idx) => ({
+                    const mappedLocations: PoojaLocation[] = (locData as unknown as any[]).map((l, idx) => ({
                         id: l.id,
                         name: l.name,
                         title: l.type || "Sacred Site",
                         location: l.state_id || "India",
                         desc: l.description || "",
-                        image: (l.images && l.images.length > 0 && l.images[0]) ? l.images[0] : "/logo.png",
+                        image: l.home_image_url || (l.images && l.images.length > 0 ? l.images[0] : "/logo.png"),
                         slug: l.slug,
                         delay: (idx * 100).toString()
                     }));
@@ -357,16 +360,29 @@ export default function HomeClient() {
                     bData = fallback.data;
                 }
                 
+                // 7. Process Quick Access Cards
+                const quickAccess = await getHomeQuickAccess();
+                const finalQuickAccess = (quickAccess && quickAccess.length > 0) ? quickAccess : [
+                    { name: "Kundali", img: "/features/kundali.png", link: "/kundli", color: "from-orange-500/10 to-red-500/10", border: "#f97316" },
+                    { name: "Rashifal", img: "/features/rashifal.png", link: "/horoscope", color: "from-amber-500/10 to-orange-500/10", border: "#f59e0b" },
+                    { name: "Panchang", img: "/features/panchang.png", link: "/panchang", color: "from-yellow-500/10 to-amber-500/10", border: "#eab308" },
+                    { name: "Calculator", img: "/features/calculator.png", link: "/calculators", color: "from-red-500/10 to-pink-500/10", border: "#ef4444" },
+                    { name: "Chadava", img: "/features/chadava.png", link: "/chadava", color: "from-purple-500/10 to-indigo-500/10", border: "#a855f7" },
+                    { name: "Guru Ji AI", img: "/features/guru-ai.png", link: "/chat", color: "from-cyan-500/10 to-blue-500/10", border: "#06b6d4" }
+                ];
+                setQuickAccessCards(finalQuickAccess);
+
                 if (bData || pData || blogsData) {
                     if (bData) setBanners(bData);
                     localStorage.setItem(CACHE_KEY, JSON.stringify({
                         pageData: pDataResponse.data,
                         blogs: blogsData,
-                        locations: locData, // We'll save the mapped ones if preferred but locData is enough
+                        locations: locData, 
                         popularPujas: pData ? (pData as any).filter((p:any) => p.is_featured).slice(0, 6) : [],
                         heroPujas: pData ? (pData as any).filter((p:any) => p.is_hero).slice(0,3) : [],
                         banners: bData,
-                        features: fDataResponse.data
+                        features: fDataResponse.data,
+                        quickAccessCards: finalQuickAccess
                     }));
                 }
 
@@ -606,14 +622,7 @@ export default function HomeClient() {
             <section className="pt-0 pb-2 md:pb-6 bg-zinc-50/50 dark:bg-black/40 relative z-30 overflow-visible">
                 <div className="max-w-[1440px] mx-auto px-1 sm:px-4 overflow-visible">
                     <div className="grid grid-cols-3 lg:grid-cols-6 gap-x-1 sm:gap-x-6 gap-y-10 sm:gap-y-16 py-3 md:py-6 justify-items-center justify-center items-center overflow-y-visible">
-                        {[
-                            { name: "Kundali", img: "/features/kundali.png", link: "/kundli", color: "from-orange-500/10 to-red-500/10", border: "#f97316" },
-                            { name: "Rashifal", img: "/features/rashifal.png", link: "/horoscope", color: "from-amber-500/10 to-orange-500/10", border: "#f59e0b" },
-                            { name: "Panchang", img: "/features/panchang.png", link: "/panchang", color: "from-yellow-500/10 to-amber-500/10", border: "#eab308" },
-                            { name: "Calculator", img: "/features/calculator.png", link: "/calculators", color: "from-red-500/10 to-pink-500/10", border: "#ef4444" },
-                            { name: "Chadava", img: "/features/chadava.png", link: "/chadava", color: "from-purple-500/10 to-indigo-500/10", border: "#a855f7" },
-                            { name: "Guru Ji AI", img: "/features/guru-ai.png", link: "/chat", color: "from-cyan-500/10 to-blue-500/10", border: "#06b6d4" }
-                        ].map((item, j) => (
+                        {quickAccessCards.map((item, j) => (
                             <Link 
                                 href={item.link} 
                                 key={j} 
@@ -812,8 +821,8 @@ export default function HomeClient() {
                 </div>
 
                 <div className="container mx-auto px-4 relative z-10">
-                    <div className="text-center mb-10">
-                        <h2 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-saffron via-gold to-saffron bg-[length:200%_auto] animate-gradient mb-3 pb-1" style={{ fontFamily: 'Georgia, serif' }}>
+                    <div className="text-center mb-16">
+                        <h2 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-saffron via-gold to-saffron bg-[length:200%_auto] animate-gradient mb-6 pb-1" style={{ fontFamily: 'Georgia, serif' }}>
                             Popular Vedic Pujas
                         </h2>
                         <div className="flex items-center justify-center gap-3 mb-3">
@@ -821,7 +830,7 @@ export default function HomeClient() {
                             <span className="text-saffron-dark font-bold tracking-[0.2em] uppercase text-[10px] md:text-xs">Divine Rituals</span>
                             <div className="h-[1px] w-8 md:w-16 bg-gradient-to-l from-transparent to-saffron/40"></div>
                         </div>
-                        <p className="max-w-2xl mx-auto text-sm md:text-base text-muted-foreground font-light leading-relaxed">
+                        <p className="max-w-4xl mx-auto text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
                             Experience the power of authentic Vedic traditions performed by
                             <span className="text-saffron-dark font-medium"> verified acharyas</span> for your peace and prosperity.
                         </p>
@@ -903,14 +912,14 @@ export default function HomeClient() {
 
                                     {/* Text Content - Serif Title */}
                                     <Link href={`/pooja-services/${puja.slug}`} className="block">
-                                        <h3 className="text-base md:text-lg font-black text-slate-900 dark:text-white mb-2 leading-tight hover:text-orange-500 transition-colors duration-300 cursor-pointer" style={{ fontFamily: 'ui-serif, Georgia, serif' }}>
+                                        <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-4 leading-tight hover:text-orange-500 transition-colors duration-300 cursor-pointer" style={{ fontFamily: 'ui-serif, Georgia, serif' }}>
                                             {puja.name}
                                         </h3>
                                     </Link>
 
                                     {/* Description - Dynamic 2 lines with ellipsis */}
-                                    <div className="relative flex-grow mb-4">
-                                        <p className="text-slate-600 dark:text-white/70 font-medium leading-relaxed text-xs transition-colors duration-300 line-clamp-2" title={puja.desc}>
+                                    <div className="relative flex-grow mb-8">
+                                        <p className="text-slate-600 dark:text-white/70 font-medium leading-relaxed text-base transition-colors duration-300 line-clamp-2" title={puja.desc}>
                                             {puja.desc || "Invoke the divine energies for peace, prosperity, and spiritual growth."}
                                         </p>
                                     </div>
@@ -918,7 +927,7 @@ export default function HomeClient() {
                                     {/* 3D Action Button */}
                                     <Link
                                         href={`/pooja-services/${puja.slug}#packages`}
-                                        className="group/btn relative inline-flex items-center justify-center h-10 px-6 font-black text-white rounded-xl transition-all duration-150 overflow-visible"
+                                        className="group/btn relative inline-flex items-center justify-center h-14 px-10 font-black text-white rounded-xl transition-all duration-150 overflow-visible"
                                     >
                                         {/* 3D Shadow/Bottom Part */}
                                         <div className="absolute inset-0 top-1 bg-[#8B2000] rounded-xl"></div>
@@ -929,7 +938,7 @@ export default function HomeClient() {
                                             <div className="absolute inset-0 bg-white/5 opacity-0 group-hover/btn:opacity-100 transition-opacity rounded-xl"></div>
                                         </div>
 
-                                        <span className="relative z-10 text-xs uppercase tracking-[0.1em] transition-transform duration-100 group-hover/btn:translate-y-[1px] group-active/btn:translate-y-[3px]">
+                                        <span className="relative z-10 text-lg uppercase tracking-[0.1em] transition-transform duration-100 group-hover/btn:translate-y-[1px] group-active/btn:translate-y-[3px]">
                                             BOOK NOW
                                         </span>
                                     </Link>
@@ -942,9 +951,9 @@ export default function HomeClient() {
                     <div className="text-center mt-4">
                         <Link
                             href="/pooja-services"
-                            className="group relative inline-flex items-center gap-2 px-6 py-3 md:px-10 md:py-4 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden"
+                            className="group relative inline-flex items-center gap-3 px-10 py-5 md:px-14 md:py-6 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden"
                         >
-                            <span className="relative z-10 flex items-center gap-2 text-sm">
+                            <span className="relative z-10 flex items-center gap-3 text-lg">
                                 EXPLORE ALL POOJA SERVICES
                             </span>
                             {/* Wave Animation */}
@@ -961,7 +970,7 @@ export default function HomeClient() {
             </section >
 
             {/* Why Choose Us Section - Redesigned with Bento Grid & Sacred Glass */}
-            <section className="pt-20 pb-12 md:pt-28 md:pb-16 relative bg-background overflow-hidden z-10">
+            <section className="pt-28 pb-16 md:pt-36 md:pb-24 relative bg-background overflow-hidden z-10">
                 {/* Copied Background from Popular Vedic Pujas */}
                 <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
                     {/* Layer 1: Base Static Canvas */}
@@ -1107,10 +1116,10 @@ export default function HomeClient() {
                             <span className="text-saffron-dark font-bold tracking-[0.2em] uppercase text-[10px] md:text-xs">The Vedic Difference</span>
                             <div className="h-[1px] w-8 md:w-16 bg-gradient-to-l from-transparent to-saffron/40"></div>
                         </div>
-                        <h2 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-saffron via-gold to-saffron bg-[length:200%_auto] animate-gradient mb-3 pb-1" style={{ fontFamily: 'Georgia, serif' }}>
+                        <h2 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-saffron via-gold to-saffron bg-[length:200%_auto] animate-gradient mb-6 pb-1" style={{ fontFamily: 'Georgia, serif' }}>
                             Why Choose Mantra Puja?
                         </h2>
-                        <p className="max-w-2xl mx-auto text-sm md:text-base text-muted-foreground font-light leading-relaxed">
+                        <p className="max-w-4xl mx-auto text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
                             We preserve the sanctity of ancient traditions while embracing modern accessibility, offering you a spiritual experience that is both authentic and hassle-free.
                         </p>
                     </div>
@@ -1158,9 +1167,9 @@ export default function HomeClient() {
                                 key={feature.id || idx}
                                 className="group relative bg-white/80 dark:bg-card/40 dark:backdrop-blur-md rounded-[24px] flex flex-col transition-all duration-500 hover:-translate-y-2 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] hover:shadow-[0_30px_60px_-15px_rgba(249,115,22,0.2)] overflow-hidden border border-slate-200/50 dark:border-white/10"
                             >
-                                {/* Image Container (Top 50%) */}
-                                <div className="relative w-full h-48 sm:h-56 overflow-hidden">
-                                     <div className="absolute inset-0 bg-gradient-to-tr from-saffron/20 to-transparent z-10"></div>
+                                {/* Image Container - Now filling the container edge-to-edge */}
+                                <div className="relative w-full aspect-video overflow-hidden border-b border-slate-100 dark:border-white/5">
+                                     <div className="absolute inset-0 bg-gradient-to-tr from-saffron/15 to-transparent z-10"></div>
                                      <img 
                                         src={feature.image_url} 
                                         alt={feature.title} 
@@ -1171,12 +1180,11 @@ export default function HomeClient() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-saffron/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-saffron/20 to-gold/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-x-10 -translate-y-10"></div>
 
-                                <div className="relative p-6 h-full flex flex-col items-center text-center z-10 w-full">
-
-                                    <h3 className="text-base md:text-lg font-black text-slate-900 dark:text-white mb-2 leading-tight group-hover:text-saffron transition-colors duration-300" style={{ fontFamily: 'ui-serif, Georgia, serif' }}>
+                                <div className="relative p-8 flex-grow flex flex-col items-center text-center z-10 w-full">
+                                    <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-4 leading-tight group-hover:text-saffron transition-colors duration-300" style={{ fontFamily: 'ui-serif, Georgia, serif' }}>
                                         {feature.title}
                                     </h3>
-                                    <p className="text-slate-600 dark:text-white/70 font-medium leading-relaxed text-xs transition-colors duration-300">
+                                    <p className="text-slate-600 dark:text-white/70 font-medium leading-relaxed text-base transition-colors duration-300 flex-grow">
                                         {feature.description}
                                     </p>
                                 </div>
@@ -1191,9 +1199,9 @@ export default function HomeClient() {
                     <div className="mt-6 text-center">
                         <Link
                             href="/pooja-services"
-                            className="group relative inline-flex items-center justify-center gap-4 px-6 py-3 md:px-10 md:py-4 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] hover:shadow-[0_0_60px_-10px_rgba(249,115,22,0.8)] hover:-translate-y-1"
+                            className="group relative inline-flex items-center justify-center gap-4 px-10 py-5 md:px-12 md:py-5 rounded-full border-2 border-saffron/50 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden shadow-[0_0_40px_-10px_rgba(249,115,22,0.6)] hover:shadow-[0_0_60px_-10px_rgba(249,115,22,0.8)] hover:-translate-y-1"
                         >
-                            <span className="relative z-10 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                            <span className="relative z-10 text-lg font-bold uppercase tracking-widest flex items-center gap-3">
                                 Begin Your Sacred Journey
                             </span>
                             {/* Wave Animation */}
@@ -1210,7 +1218,7 @@ export default function HomeClient() {
 
 
             {/* CTA Section - Divine Om Redesign (Dual Theme - Explicitly Managed) */}
-            <section className={`pt-20 pb-16 md:pt-28 md:pb-24 relative overflow-hidden z-10 transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950' : 'bg-white'}`}>
+            <section className={`pt-36 pb-28 md:pt-48 md:pb-40 relative overflow-hidden z-10 transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950' : 'bg-white'}`}>
                 {/* Large Central Om Icon with Aura */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] pointer-events-none opacity-40">
                     {/* Aura layers */}
@@ -1288,14 +1296,14 @@ export default function HomeClient() {
                         </span>
                     </div>
 
-                    <h2 className={`text-2xl md:text-4xl font-black mb-4 leading-tight tracking-tight relative drop-shadow-sm transition-colors duration-500 ${isDarkTheme ? 'text-white' : 'text-slate-900'}`} style={{ fontFamily: 'Georgia, serif' }}>
+                    <h2 className={`text-4xl md:text-6xl font-black mb-8 leading-tight tracking-tight relative drop-shadow-sm transition-colors duration-500 ${isDarkTheme ? 'text-white' : 'text-slate-900'}`} style={{ fontFamily: 'Georgia, serif' }}>
                         Ready to Invite <br />
                         <span className="relative inline-block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-saffron via-orange-500 to-gold">
                             Divine Positivity?
                         </span>
                     </h2>
 
-                    <p className={`text-sm md:text-base mb-4 max-w-2xl mx-auto font-light leading-relaxed transition-colors duration-500 ${isDarkTheme ? 'text-slate-300' : 'text-slate-700'}`}>
+                    <p className={`text-lg md:text-xl mb-12 max-w-4xl mx-auto font-light leading-relaxed transition-colors duration-500 ${isDarkTheme ? 'text-slate-300' : 'text-slate-700'}`}>
                         Book your custom Vedic ritual today and embark on a spiritually fulfilling journey guided by expert Pandits.
                     </p>
 
@@ -1303,11 +1311,11 @@ export default function HomeClient() {
                         <div className="absolute inset-0 bg-gradient-to-r from-orange-400 to-red-600 rounded-full blur-xl opacity-30 group-hover:opacity-60 transition-all duration-500"></div>
                         <Link
                             href="/pooja-services"
-                            className={`relative inline-flex items-center justify-center h-12 px-10 text-sm font-black text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-full shadow-2xl hover:shadow-[0_20px_50px_rgba(249,115,22,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden border-2 ${isDarkTheme ? 'border-slate-800' : 'border-white'}`}
+                            className={`relative inline-flex items-center justify-center h-28 px-24 text-2xl md:text-3xl font-black text-white bg-gradient-to-r from-orange-500 to-red-600 rounded-full shadow-2xl hover:shadow-[0_40px_80px_rgba(249,115,22,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 overflow-hidden border-2 ${isDarkTheme ? 'border-saffron/40' : 'border-white'}`}
                         >
                             <span className="relative z-10 flex items-center gap-4 tracking-widest font-serif">
                                 START YOUR JOURNEY
-                                <svg className="w-6 h-6 transform group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                <svg className="w-10 h-10 transform group-hover:translate-x-3 transition-transform duration-300" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25L21 12m0 0l-3.75 3.75M21 12H3" />
                                 </svg>
                             </span>
@@ -1332,7 +1340,7 @@ export default function HomeClient() {
             </section>
 
             {/* Sacred Locations Section - Window to the Divine */}
-            <section className={`pt-20 pb-12 md:pt-28 md:pb-16 relative overflow-hidden z-10 transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950/40 backdrop-blur-[2px]' : 'bg-[#fffcf9]'}`}>
+            <section className={`pt-36 pb-20 md:pt-48 md:pb-32 relative overflow-hidden z-10 transition-colors duration-500 ${isDarkTheme ? 'bg-slate-950/40 backdrop-blur-[2px]' : 'bg-[#fffcf9]'}`}>
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-4">
                         <div className="flex items-center justify-center gap-3 mb-3">
@@ -1340,20 +1348,20 @@ export default function HomeClient() {
                             <span className="text-saffron-dark font-bold tracking-[0.2em] uppercase text-[10px] md:text-xs">Sacred Kshetras</span>
                             <div className="h-[1px] w-8 md:w-16 bg-gradient-to-l from-transparent to-saffron/40"></div>
                         </div>
-                        <h2 className="text-2xl md:text-4xl font-black text-foreground mb-3 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
+                        <h2 className="text-4xl md:text-6xl font-black text-foreground mb-6 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
                             Pujas Performed at <span className="text-saffron">Sacred Locations</span>
                         </h2>
-                        <p className="max-w-2xl mx-auto text-sm md:text-base text-muted-foreground font-light leading-relaxed">
+                        <p className="max-w-4xl mx-auto text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
                             Experience the magnified spiritual potency of rituals performed at the holiest pilgrimage sites in India.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6">
                         {locations.map((loc, idx) => (
                             <Link
                                 key={idx}
                                 href={`/locations/${loc.slug || '#'}`}
-                                className="group relative aspect-[3/4] rounded-[24px] overflow-hidden cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-700 hover:-translate-y-2 border border-black/5 dark:border-white/10 block"
+                                className="group relative aspect-[9/16] rounded-[32px] overflow-hidden cursor-pointer shadow-2xl hover:shadow-saffron/30 transition-all duration-700 hover:-translate-y-4 border border-black/5 dark:border-white/10 block"
                                 style={{ animationDelay: `${(idx * 100)}ms` }}
                             >
                                 {/* Background Image with Zoom Effect */}
@@ -1370,7 +1378,7 @@ export default function HomeClient() {
                                 <div className="absolute inset-0 p-8 flex flex-col justify-end relative z-10">
                                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                         <div className="flex justify-between items-end mb-2">
-                                            <h3 className="text-base md:text-lg font-black text-white drop-shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
+                                            <h3 className="text-xl md:text-2xl font-black text-white drop-shadow-lg" style={{ fontFamily: 'Georgia, serif' }}>
                                                 {loc.name}
                                             </h3>
                                         </div>
@@ -1381,10 +1389,10 @@ export default function HomeClient() {
 
                                         <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-all duration-500">
                                             <div className="overflow-hidden">
-                                                <p className="text-white/90 text-[10px] md:text-xs leading-relaxed mb-6 border-l-2 border-saffron pl-4 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 drop-shadow-sm font-medium">
+                                                <p className="text-white/90 text-sm md:text-base leading-relaxed mb-8 border-l-2 border-saffron pl-6 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 drop-shadow-sm font-medium">
                                                     {loc.desc || ""}
                                                 </p>
-                                                <span className="inline-flex items-center gap-2 text-white text-[10px] font-black uppercase tracking-[0.2em] group/link opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200 drop-shadow-md">
+                                                <span className="inline-flex items-center gap-3 text-white text-xs font-black uppercase tracking-[0.3em] group/link opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-200 drop-shadow-md border-b-2 border-saffron pb-1">
                                                     Explore Rituals
                                                 </span>
                                             </div>
@@ -1398,9 +1406,9 @@ export default function HomeClient() {
                     <div className="text-center mt-6">
                         <Link
                             href="/locations"
-                            className="group relative inline-flex items-center gap-3 px-6 py-3 md:px-10 md:py-4 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden"
+                            className="group relative inline-flex items-center gap-4 px-12 py-6 md:px-16 md:py-8 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden"
                         >
-                            <span className="relative z-10 flex items-center gap-2 text-sm">
+                            <span className="relative z-10 flex items-center gap-4 text-xl">
                                 EXPLORE ALL SACRED LOCATIONS
                             </span>
                             {/* Wave Animation */}
@@ -1416,7 +1424,7 @@ export default function HomeClient() {
             </section >
 
             {/* Featured Blog Section - Spiritual Insights */}
-            <section className="pt-20 pb-12 md:pt-28 md:pb-16 bg-background relative overflow-hidden z-10" >
+            <section className="pt-36 pb-20 md:pt-48 md:pb-32 bg-background relative overflow-hidden z-10" >
                 {/* Decorative Background */}
                 < div className="absolute inset-0 opacity-[0.02]" >
                     <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-saffron rounded-full blur-[120px]"></div>
@@ -1430,10 +1438,10 @@ export default function HomeClient() {
                             <span className="text-saffron-dark font-bold tracking-[0.2em] uppercase text-[10px] md:text-xs">Knowledge Center</span>
                             <div className="h-[1px] w-8 md:w-16 bg-gradient-to-l from-transparent to-saffron/40"></div>
                         </div>
-                        <h2 className="text-2xl md:text-4xl font-black text-foreground mb-3 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
+                        <h2 className="text-4xl md:text-6xl font-black text-foreground mb-6 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
                             Spiritual Insights & <span className="text-saffron">Guidance</span>
                         </h2>
-                        <p className="max-w-2xl mx-auto text-sm md:text-base text-muted-foreground font-light leading-relaxed">
+                        <p className="max-w-4xl mx-auto text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
                             Discover ancient wisdom and practical guidance for your spiritual journey.
                         </p>
                     </div>
@@ -1460,12 +1468,12 @@ export default function HomeClient() {
                                     </div>
 
                                     {/* Title */}
-                                    <h3 className="text-base md:text-lg font-black text-foreground mb-2 leading-tight group-hover:text-saffron transition-colors duration-300 line-clamp-2" style={{ fontFamily: 'Georgia, serif' }}>
+                                    <h3 className="text-xl md:text-2xl font-black text-foreground mb-4 leading-tight group-hover:text-saffron transition-colors duration-300 line-clamp-2" style={{ fontFamily: 'Georgia, serif' }}>
                                         {blog.title}
                                     </h3>
 
                                     {/* Excerpt */}
-                                    <div className="text-xs text-muted-foreground leading-relaxed mb-6 line-clamp-3 overflow-hidden text-ellipsis flex-grow">
+                                    <div className="text-base text-muted-foreground leading-relaxed mb-8 line-clamp-3 overflow-hidden text-ellipsis flex-grow">
                                         {/* Simple HTML strip for safety while searching/excerpting */}
                                         {blog.excerpt || (blog.content ? blog.content.replace(/<[^>]*>?/gm, '').substring(0, 100) + '...' : '')}
                                     </div>
@@ -1478,10 +1486,10 @@ export default function HomeClient() {
                                             </svg>
                                             {blog.readTime || "5 min read"}
                                         </span>
-                                        <span className="text-saffron font-bold text-sm flex items-center gap-2 group-hover:gap-3 transition-all">
-                                            Read More
-                                            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                        <span className="text-saffron font-bold text-lg flex items-center gap-4 group-hover:gap-6 transition-all">
+                                            Read Full Insight
+                                            <svg className="w-6 h-6 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
                                             </svg>
                                         </span>
                                     </div>
@@ -1497,9 +1505,9 @@ export default function HomeClient() {
                     <div className="text-center mt-4">
                         <Link
                             href="/blog"
-                            className="group relative inline-flex items-center gap-3 px-6 py-3 md:px-10 md:py-4 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden"
+                            className="group relative inline-flex items-center gap-4 px-12 py-6 md:px-16 md:py-8 rounded-full border-2 border-saffron/20 text-saffron hover:text-white transition-all duration-300 font-black overflow-hidden"
                         >
-                            <span className="relative z-10 flex items-center gap-2 text-sm uppercase tracking-widest">
+                            <span className="relative z-10 flex items-center gap-4 text-xl uppercase tracking-widest">
                                 Explore All Articles
                             </span>
                             <div className="absolute inset-0 overflow-hidden rounded-full transform translate-z-0">
@@ -1512,8 +1520,7 @@ export default function HomeClient() {
                     </div>
                 </div>
             </section >
-            {/* Divine Feed Section */}
-            <FeedSection />
+
 
             {/* Spiritual Family Section */}
             <SpiritualFamilySection />

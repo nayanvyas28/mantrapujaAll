@@ -263,7 +263,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
 
                                 {/* Call Us Button - Pulse Ring */}
                                 <a
-                                    href="tel:+919876543210"
+                                    href="tel:+918989271245"
                                     className="group relative flex w-full sm:w-auto items-center justify-center gap-2 md:gap-3 h-14 md:h-16 px-6 sm:px-10 font-bold text-base md:text-lg text-green-600 bg-white border-2 border-white rounded-full shadow-[0_6px_0_0_#d1d5db] hover:shadow-[0_3px_0_0_#d1d5db] hover:translate-y-[3px] active:translate-y-[6px] active:shadow-none transition-all duration-150 overflow-visible animate-pulse-ring"
                                 >
                                     <Phone className="w-4 h-4 md:w-5 md:h-5 animate-shake-call" />

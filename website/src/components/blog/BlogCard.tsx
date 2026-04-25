@@ -32,7 +32,7 @@ export default function BlogCard({ blog }: { blog: BlogPost }) {
 
                     {/* Category Badge */}
                     <div className="absolute top-4 left-4">
-                        <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/20 text-[10px] uppercase font-bold tracking-wider">
+                        <span className={`px-3 py-1 rounded-full border text-[9px] uppercase font-black tracking-widest shadow-2xl ${getBlogCategoryStyle(blog.category)}`}>
                             {blog.category}
                         </span>
                     </div>

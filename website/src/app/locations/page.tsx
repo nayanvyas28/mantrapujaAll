@@ -49,8 +49,8 @@ export default function LocationsPage() {
                 const { data: destData, error: destError } = await supabase
                     .from('destinations')
                     .select('*')
-                    .eq('is_featured', true)
-                    .order('created_at', { ascending: false });
+                    .eq('is_active', true)
+                    .order('name', { ascending: true });
 
                 if (destError) {
                     console.error('Error fetching destinations:', destError);
@@ -155,21 +155,24 @@ export default function LocationsPage() {
         const staticWithIds = staticLocations.map(loc => ({ ...loc, isStatic: true }));
         const dynamicWithIds = dynamicLocations.map(loc => ({ ...loc, isStatic: false }));
 
-        // Merge: static locations take precedence for coordinates/placement
-        const combined = [...staticWithIds];
-        const staticSlugs = new Set(staticWithIds.map(s => s.slug));
-        const staticNames = new Set(staticWithIds.map(s => (s.name || '').toLowerCase()));
+        // Create a map of database locations by slug for easy lookup/override
+        const dbMap = new Map(dynamicWithIds.map(d => [d.slug, d]));
         
-        dynamicWithIds.forEach(d => {
-            const lowerName = (d.name || '').toLowerCase();
-            const isDuplicate = staticSlugs.has(d.slug) || 
-                               staticNames.has(lowerName) ||
-                               (d.slug === 'varanasi' && staticSlugs.has('kashi-vishwanath'));
-
-            if (!isDuplicate) {
-                combined.push(d);
+        // Final merged list
+        const combined: Location[] = [];
+        
+        // Process static locations: if a DB override exists, use it; otherwise use static
+        staticWithIds.forEach(s => {
+            if (dbMap.has(s.slug)) {
+                combined.push(dbMap.get(s.slug)!);
+                dbMap.delete(s.slug); // Remove from map as it's processed
+            } else {
+                combined.push(s as Location);
             }
         });
+
+        // Add remaining DB locations that didn't have a static counterpart
+        dbMap.forEach(d => combined.push(d));
 
         return combined;
     }, [dynamicLocations]);
@@ -473,7 +476,7 @@ export default function LocationsPage() {
                                         <Link href={`/locations/${loc.slug}`} className="block">
                                             <div className="relative w-full h-48 mb-6 rounded-2xl overflow-hidden bg-white/50 dark:bg-slate-900/50 border border-white/10 group-hover:border-saffron/20 transition-colors flex items-center justify-center cursor-pointer">
                                                 <img
-                                                    src={loc.image}
+                                                    src={loc.image || (loc as any).images?.[0] || '/logo.png'}
                                                     alt={`${loc.name} - ${loc.type} Sacred Site`}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                     onError={(e) => {

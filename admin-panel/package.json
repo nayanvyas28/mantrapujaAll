@@ -9,9 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mantrapuja/image-optimizer": "file:../website/packages/image-optimizer",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",
-    "@mantrapuja/image-optimizer": "file:../website/packages/image-optimizer",
     "axios": "^1.14.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.35.0",
@@ -19,6 +19,7 @@
     "next": "^16.2.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

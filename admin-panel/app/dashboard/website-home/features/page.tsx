@@ -27,6 +27,7 @@ export default function FeaturesManagementPage() {
     const [features, setFeatures] = useState<Feature[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Modals
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,6 +51,7 @@ export default function FeaturesManagementPage() {
 
     const fetchFeatures = async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const { data, error } = await supabase
                 .from('home_features')
@@ -58,8 +60,9 @@ export default function FeaturesManagementPage() {
 
             if (error) throw error;
             setFeatures(data || []);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error fetching features:', err);
+            setError(err.message || 'Failed to load features');
         } finally {
             setIsLoading(false);
         }
@@ -241,6 +244,20 @@ export default function FeaturesManagementPage() {
                         <Loader2 className="w-10 h-10 animate-spin text-purple-500/50" />
                         <p className="text-gray-500 text-sm font-medium animate-pulse">Loading Features...</p>
                     </div>
+                ) : error ? (
+                    <div className="text-center py-20 bg-red-500/5 rounded-[2.5rem] border border-dashed border-red-500/20">
+                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <X className="w-8 h-8 text-red-500" />
+                        </div>
+                        <h3 className="text-lg font-bold text-red-400">Error Loading Features</h3>
+                        <p className="text-sm text-gray-500 mt-1">{error}</p>
+                        <button 
+                            onClick={fetchFeatures}
+                            className="mt-6 px-6 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all"
+                        >
+                            Try Again
+                        </button>
+                    </div>
                 ) : features.length === 0 ? (
                     <div className="text-center py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -257,7 +274,7 @@ export default function FeaturesManagementPage() {
                                 layoutId={feature.id}
                                 className={`group relative bg-white/5 border border-white/10 rounded-[2rem] overflow-hidden hover:bg-white/[0.07] transition-all duration-500 ${!feature.is_active ? 'opacity-50 grayscale' : ''}`}
                             >
-                                <div className="aspect-square relative overflow-hidden bg-black/40">
+                                <div className="aspect-video relative overflow-hidden bg-black/40">
                                     <img 
                                         src={feature.image_url} 
                                         alt={feature.title} 
@@ -341,10 +358,10 @@ export default function FeaturesManagementPage() {
                                     <div className="space-y-4">
                                         <label className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                             <ImageIcon className="w-4 h-4" /> Feature Image
-                                            <span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">Ratio 1:1</span>
+                                            <span className="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">Ratio 16:9</span>
                                         </label>
-                                        <div className="flex gap-6">
-                                            <div className="w-32 h-32 rounded-2xl bg-white/5 border border-dashed border-white/20 overflow-hidden flex items-center justify-center relative group shrink-0">
+                                        <div className="flex flex-col md:flex-row gap-6">
+                                            <div className="w-full md:w-64 aspect-video rounded-2xl bg-white/5 border border-dashed border-white/20 overflow-hidden flex items-center justify-center relative group shrink-0">
                                                 {form.imageFile || form.image_url ? (
                                                     <>
                                                         <img 
@@ -368,7 +385,7 @@ export default function FeaturesManagementPage() {
                                             </div>
                                             <div className="flex-1 flex flex-col justify-center">
                                                 <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                                                    Upload a square image for the feature card. Preferred size: 800x800px.
+                                                    Upload a 16:9 image for the feature card. Preferred size: 1600x900px.
                                                 </p>
                                                 <div className="relative">
                                                     <input 

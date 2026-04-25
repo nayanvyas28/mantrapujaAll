@@ -98,6 +98,24 @@ Focus ON guest-friendly topics like general Puja or Mantras.
 
         const pujaCatalog = allPujas?.map(p => `- ${p.name} (Link: /pooja-services/${p.slug})`).join('\n') || "Catalog updating...";
 
+        // 0.1.1 Fetch Blog Catalog (NEW KNOWLEDGE)
+        const { data: recentBlogs } = await supabaseAdmin
+            .from('blogs')
+            .select('title, slug')
+            .eq('published', true)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+        const blogCatalog = recentBlogs?.map(b => `- ${b.title} (Link: /blog/${b.slug})`).join('\n') || "Blog articles coming soon.";
+
+        // 0.1.2 Fetch Serving Cities (NEW KNOWLEDGE)
+        const { data: activeCities } = await supabaseAdmin
+            .from('serving_cities')
+            .select('name')
+            .eq('is_active', true);
+
+        const cityList = activeCities?.map(c => c.name).join(', ') || "Multiple cities across India.";
+
         // 0.2 Check for Horoscope Intent & Fetch Data
         let horoscopeContext = "";
         const lowerMsg = message.toLowerCase();
@@ -311,6 +329,17 @@ ${panchangContext}
 --- SACRED RITUAL CATALOG (OFFERINGS) ---
 You must recommend these authentic rituals when users seek specific solutions:
 ${pujaCatalog}
+
+--- DIVINE WISDOM ARTICLES (BLOGS) ---
+When users want to learn more about a topic, recommend these articles:
+${blogCatalog}
+
+--- SERVING LOCATIONS ---
+We provide physical Pandit services in these cities: ${cityList}.
+If a user asks if we serve their city, check this list. If not present, say "Hum jald hi aapke sheher mein bhi pooja prarambh karenge."
+
+--- BLOG LINKING FORMAT ---
+To link to a blog, use: [[BLOG_LINK: Title | slug]] (Example: [[BLOG_LINK: Shravan Mahatva | shravan-mahatva]])
 
 --- STRICT RULEBOOK & RESTRICTIONS ---
 ${rulebook}

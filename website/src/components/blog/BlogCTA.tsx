@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import React from "react";
 import { motion } from "framer-motion";
 import { Send, Instagram, Facebook, Youtube, Twitter, Mail } from "lucide-react";
+import NewsletterForm from "../NewsletterForm";
 
 export default function BlogCTA() {
     return (
@@ -44,32 +45,25 @@ export default function BlogCTA() {
                             <h3 className="text-2xl font-bold mb-3 font-serif">Weekly Wisdom</h3>
                             <p className="text-muted-foreground mb-8 leading-relaxed">Get curated mantras & astrology insights delivered to your inbox.</p>
 
-                            <div className="w-full relative group/input">
-                                <input
-                                    type="email"
-                                    placeholder="your@email.com"
-                                    className="w-full h-14 pl-6 pr-36 rounded-full bg-background border-2 border-muted focus:border-saffron/50 outline-none transition-all shadow-inner"
-                                />
-                                <button className="absolute right-1.5 top-1.5 bottom-1.5 uppercase px-6 rounded-full bg-gradient-to-r from-saffron to-orange-600 text-white font-bold text-xs tracking-wider hover:shadow-lg hover:scale-105 transition-all">
-                                    Subscribe
-                                </button>
-                            </div>
+                            <NewsletterForm />
                         </motion.div>
 
                         {/* WhatsApp */}
-                        <motion.div
+                        <motion.a
+                            href="https://wa.me/918989271245"
+                            target="_blank"
                             whileHover={{ y: -8 }}
-                            className="bg-green-50/50 dark:bg-green-950/10 p-8 rounded-[2.5rem] border border-green-200/50 dark:border-green-800/30 flex flex-col items-center text-center relative overflow-hidden group"
+                            className="bg-green-50/50 dark:bg-green-950/10 p-8 rounded-[2.5rem] border border-green-200/50 dark:border-green-800/30 flex flex-col items-center text-center relative overflow-hidden group cursor-pointer"
                         >
                             <div className="w-20 h-20 rounded-full bg-green-100/50 dark:bg-green-900/20 flex items-center justify-center text-[#25D366] mb-6 group-hover:scale-110 transition-transform duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" /><path d="M9 10a.5.5 0 0 0 .5.5c.34.43 1.09 1.48 2.22 2.22.46.3.5.5.5.5" /></svg>
                             </div>
                             <h3 className="text-2xl font-bold mb-3 font-serif">WhatsApp Group</h3>
                             <p className="text-muted-foreground mb-8 leading-relaxed">Join 10,000+ devotees for daily updates & community.</p>
-                            <button className="w-full h-14 rounded-full bg-[#25D366] text-white font-bold text-lg shadow-lg shadow-green-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                            <div className="w-full h-14 rounded-full bg-[#25D366] text-white font-bold text-lg shadow-lg shadow-green-500/20 group-hover:shadow-xl group-hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
                                 Join Community
-                            </button>
-                        </motion.div>
+                            </div>
+                        </motion.a>
 
                         {/* Telegram */}
                         <motion.div

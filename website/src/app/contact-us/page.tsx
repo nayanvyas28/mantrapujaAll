@@ -59,30 +59,35 @@ export default function ContactPage() {
                             {
                                 icon: Phone,
                                 title: "Phone & WhatsApp",
-                                value: "+91 98765 43210",
+                                value: "+91 89892 71245",
                                 sub: "Available 9 AM - 9 PM",
-                                color: "from-orange-500/20 to-saffron/20"
+                                color: "from-orange-500/20 to-saffron/20",
+                                href: "https://wa.me/918989271245"
                             },
                             {
                                 icon: Mail,
                                 title: "Email Address",
-                                value: "contact@mantrapuja.com",
+                                value: "info@mantrapuja.com",
                                 sub: "We reply within 24 hours",
-                                color: "from-blue-500/20 to-indigo-500/20"
+                                color: "from-blue-500/20 to-indigo-500/20",
+                                href: "mailto:info@mantrapuja.com"
                             },
                             {
                                 icon: MapPin,
                                 title: "Sacred Location",
-                                value: "123 Spiritual Avenue, Mahakal Marg, Ujjain, MP - 456001",
+                                value: "501,502 Shagun Tower, Vijay Nagar, Indore, Madhya Pradesh, India",
                                 sub: "Visit our head office",
-                                color: "from-red-500/20 to-orange-500/20"
+                                color: "from-red-500/20 to-orange-500/20",
+                                href: "#"
                             }
                         ].map((item, idx) => (
-                            <motion.div
+                            <motion.a
                                 key={idx}
+                                href={item.href}
+                                target={item.href.startsWith('http') ? "_blank" : undefined}
                                 variants={itemVariants}
                                 whileHover={{ scale: 1.02, x: 10 }}
-                                className="group flex items-center p-6 rounded-2xl bg-card/40 backdrop-blur-xl border border-border/50 shadow-xl transition-all hover:border-saffron/30"
+                                className="group flex items-center p-6 rounded-2xl bg-card/40 backdrop-blur-xl border border-border/50 shadow-xl transition-all hover:border-saffron/30 cursor-pointer"
                             >
                                 <div className={`p-4 rounded-xl bg-gradient-to-br ${item.color} text-saffron group-hover:scale-110 transition-transform duration-300 shadow-inner`}>
                                     <item.icon className="w-6 h-6" />
@@ -94,7 +99,7 @@ export default function ContactPage() {
                                     <p className="text-lg font-medium text-foreground/90">{item.value}</p>
                                     <p className="text-sm text-muted-foreground/70">{item.sub}</p>
                                 </div>
-                            </motion.div>
+                            </motion.a>
                         ))}
                     </motion.div>
 

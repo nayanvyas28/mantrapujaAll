@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 import { getBlogCategoryStyle } from "@/lib/uiMapping";
 
-export default function BlogHero({ onSearch }: { onSearch: (term: string) => void }) {
+export default function BlogHero({ onSearch, onSort, onFilter }: { onSearch: (term: string) => void, onSort: (val: string) => void, onFilter: (val: string) => void }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [mounted, setMounted] = useState(false);
 
@@ -23,7 +23,7 @@ export default function BlogHero({ onSearch }: { onSearch: (term: string) => voi
     if (!mounted) return null;
 
     return (
-        <section className="relative pt-20 md:pt-28 pb-16 md:pb-20 overflow-hidden">
+        <section className="relative pt-10 md:pt-14 pb-16 md:pb-20 overflow-hidden">
             {/* Background Animations */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 {/* Light Mode Particles */}
@@ -66,23 +66,76 @@ export default function BlogHero({ onSearch }: { onSearch: (term: string) => voi
                         Explore our collection of sacred articles on Vedic rituals, astrology, and spiritual growth to guide your journey.
                     </p>
 
-                    {/* Search Bar */}
-                    <div className="relative max-w-xl mx-auto group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-saffron to-gold rounded-full opacity-25 group-hover:opacity-50 blur transition duration-1000 group-hover:duration-200"></div>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                placeholder="Search for mantras, rituals, or guidance..."
-                                value={searchTerm}
-                                onChange={handleSearch}
-                                className="w-full px-8 py-4 rounded-full bg-white dark:bg-slate-900/80 backdrop-blur-md border border-saffron/20 dark:border-gold/30 text-foreground dark:text-slate-100 shadow-lg focus:outline-none focus:ring-2 focus:ring-saffron/50 dark:focus:ring-gold/50 transition-all placeholder:text-muted-foreground/50 dark:placeholder:text-slate-400"
-                            />
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-saffron dark:text-gold">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
+                    {/* Search & Filter Bar */}
+                    <div className="flex flex-col lg:flex-row items-center gap-4 max-w-4xl mx-auto">
+                        <div className="relative flex-1 group w-full lg:w-auto">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-saffron to-gold rounded-full opacity-25 group-hover:opacity-50 blur transition duration-1000 group-hover:duration-200"></div>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search for mantras, rituals or guidance..."
+                                    value={searchTerm}
+                                    onChange={handleSearch}
+                                    className="w-full px-8 py-4 rounded-full bg-white dark:bg-slate-900/80 backdrop-blur-md border border-saffron/20 dark:border-gold/30 text-foreground dark:text-slate-100 shadow-lg focus:outline-none focus:ring-2 focus:ring-saffron/50 dark:focus:ring-gold/50 transition-all placeholder:text-muted-foreground/50 dark:placeholder:text-slate-400"
+                                />
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-saffron dark:text-gold">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
                             </div>
                         </div>
+
+                        {/* Sort/Filter Controls */}
+                        <div className="flex flex-row items-center gap-2 w-full lg:w-auto">
+                            {/* Sort Dropdown */}
+                            <div className="relative group w-1/2 lg:w-36">
+                                <select 
+                                    onChange={(e) => onSort(e.target.value)}
+                                    className="w-full appearance-none px-4 py-4 rounded-full bg-white dark:bg-slate-900/80 backdrop-blur-md border border-saffron/20 dark:border-gold/30 text-[10px] font-black uppercase tracking-widest text-saffron dark:text-gold shadow-lg focus:outline-none focus:ring-2 focus:ring-saffron/50 transition-all cursor-pointer pr-8"
+                                >
+                                    <option value="newest">Latest</option>
+                                    <option value="oldest">Oldest</option>
+                                    <option value="popular">Popular</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-saffron opacity-50">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Time Filter Dropdown */}
+                            <div className="relative group w-1/2 lg:w-36">
+                                <select 
+                                    onChange={(e) => onFilter(e.target.value)}
+                                    className="w-full appearance-none px-4 py-4 rounded-full bg-white dark:bg-slate-900/80 backdrop-blur-md border border-saffron/20 dark:border-gold/30 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 shadow-lg focus:outline-none focus:ring-2 focus:ring-saffron/50 transition-all cursor-pointer pr-8"
+                                >
+                                    <option value="all">All Time</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">Week</option>
+                                    <option value="month">Month</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 opacity-50">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Popular Tags */}
+                    <div className="flex flex-wrap justify-center gap-2 mt-6">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest py-2 mr-2">Popular:</span>
+                        {['Mantras', 'Rituals', 'Astrology', 'Meditation', 'Vedic Wisdom'].map((tag) => (
+                            <button
+                                key={tag}
+                                onClick={() => { setSearchTerm(tag); onSearch(tag); }}
+                                className="px-4 py-1.5 rounded-full bg-white/5 border border-saffron/10 text-[10px] font-bold text-slate-500 hover:text-saffron hover:border-saffron/40 transition-all uppercase tracking-tighter"
+                            >
+                                #{tag}
+                            </button>
+                        ))}
                     </div>
                 </motion.div>
             </div>

@@ -1,7 +1,8 @@
 import Sidebar from '@/components/Sidebar';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { IndianRupee, Users, ShoppingBag, Sparkles } from 'lucide-react';
+import { IndianRupee, Users, ShoppingBag, Sparkles, RefreshCw } from 'lucide-react';
+import RefreshButton from '@/components/RefreshButton';
 
 export default async function DashboardLayout({
   children,
@@ -35,12 +36,15 @@ export default async function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-6">
-            <div className="flex flex-col items-end hidden sm:flex">
-              <span className="text-sm font-bold text-white">{user.email}</span>
-              <span className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Administrator</span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                <img src={`https://ui-avatars.com/api/?name=${user.email}&background=6b21a8&color=fff`} alt="Avatar" />
+            <RefreshButton />
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-end hidden sm:flex">
+                <span className="text-sm font-bold text-white">{user.email}</span>
+                <span className="text-[10px] font-bold text-purple-500 uppercase tracking-widest">Administrator</span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                  <img src={`https://ui-avatars.com/api/?name=${user.email}&background=6b21a8&color=fff`} alt="Avatar" />
+              </div>
             </div>
           </div>
         </header>
