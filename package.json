@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Mantra Puja Project Hub",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev:all": "npm run dev --workspaces",
     "dev:web": "npm run dev -w website -- --port 3000",
