@@ -8,8 +8,8 @@ COPY package.json ./
 COPY packages ./packages
 COPY . .
 
-# Clean install dependencies
-RUN npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
 # Build the website
 ENV NEXT_TELEMETRY_DISABLED 1
