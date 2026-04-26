@@ -10,7 +10,7 @@ COPY package.json package-lock.json* ./
 COPY website/package.json ./website/
 COPY admin-panel/package.json ./admin-panel/
 COPY backend/package.json ./backend/
-COPY website/packages ./website/packages
+COPY packages ./packages
 
 # Install dependencies from the root
 RUN npm install --legacy-peer-deps
