@@ -11,13 +11,8 @@ export default function RefreshButton() {
 
     const handleRefresh = () => {
         setIsRefreshing(true);
-        // Refresh the current route's data
-        router.refresh();
-        
-        // Also simulate a bit of loading for UX
-        setTimeout(() => {
-            setIsRefreshing(false);
-        }, 1000);
+        // Perform a full window reload to ensure everything is refreshed
+        window.location.reload();
     };
 
     return (

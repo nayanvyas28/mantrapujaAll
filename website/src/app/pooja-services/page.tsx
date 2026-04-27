@@ -96,6 +96,9 @@ interface Puja extends UiConfig {
     display_price?: number;
     packages?: any[];
     tags?: string[];
+    special_offer_price?: number;
+    is_featured?: boolean;
+    hasCustomImage?: boolean;
 }
 
 interface DatabasePooja {
@@ -111,6 +114,12 @@ interface DatabasePooja {
     display_price?: number;
     packages?: any[];
     tags?: string[];
+    is_special_offer?: boolean;
+    special_offer_price?: number;
+    category_id?: string;
+    categories?: { name: string };
+    is_featured?: boolean;
+    sort_order?: number;
 }
 
 // Helper for Tag Colors - Vibrant Gradient Style (Badge Look)
@@ -162,8 +171,8 @@ const getTagStyle = (tag: string): string => {
 };
 
 
-const CATEGORIES = [
-    'All Pujas', 'Rituals', 'Dosh Nivaran', 'Career & Business', 'Health & Peace', 'Festival'
+const STATIC_CATEGORIES = [
+    'All Pujas', 'Rituals', 'Dosh Nivaran', 'Career', 'Business', 'Health', 'Peace', 'Festival'
 ];
 
 const BLOGS = [
@@ -194,6 +203,7 @@ const BLOGS = [
 ];
 
 export default function PoojaServicesPage() {
+    const [categories, setCategories] = useState<string[]>(STATIC_CATEGORIES);
     const [pujas, setPujas] = useState<Puja[]>([]);
     const [loading, setLoading] = useState(true);
     const { setIsLoading } = useLoading();
@@ -210,12 +220,30 @@ export default function PoojaServicesPage() {
     };
 
     useEffect(() => {
-        setIsLoading(true);
-        const fetchPujas = async () => {
+        const fetchAllData = async () => {
+            setIsLoading(true);
             try {
+                // 1. Fetch Categories
+                const { data: catData } = await supabase.from('categories').select('name').order('name');
+                if (catData && catData.length > 0) {
+                    let allNames: string[] = [];
+                    catData.forEach(c => {
+                        if (c.name.includes('&')) {
+                            allNames.push(...c.name.split('&').map(s => s.trim()));
+                        } else if (c.name.toLowerCase().includes(' and ')) {
+                            allNames.push(...c.name.split(/ and /i).map(s => s.trim()));
+                        } else {
+                            allNames.push(c.name);
+                        }
+                    });
+                    const dynamicCats = ['All Pujas', ...Array.from(new Set(allNames))];
+                    setCategories(dynamicCats);
+                }
+
+                // 2. Fetch Pujas with Categories
                 const { data, error } = await supabase
                     .from('poojas')
-                    .select('*')
+                    .select('*, categories(name)')
                     .eq('is_active', true);
 
                 if (error) throw error;
@@ -235,24 +263,26 @@ export default function PoojaServicesPage() {
                             price: item.price,
                             display_price: item.display_price,
                             packages: item.packages,
-                            category: item.slug.includes('festival') ? 'Festival' : 'Rituals',
+                            is_special_offer: item.is_special_offer,
+                            special_offer_price: item.special_offer_price,
+                            is_featured: item.is_featured,
+                            hasCustomImage: item.images && item.images.length > 0,
+                            category: item.categories?.name || (item.slug.includes('festival') ? 'Festival' : 'Rituals'),
                             tags: item.tags || []
                         };
                     });
                 }
 
-
                 setPujas(mappedPujas);
             } catch (error) {
-                console.error('Error fetching pujas:', error);
+                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
                 setIsLoading(false);
             }
         };
 
-        setIsLoading(true);
-        fetchPujas();
+        fetchAllData();
     }, []);
 
     const SectionHeading = ({ children, subtitle }: { children: React.ReactNode, subtitle?: string }) => (
@@ -274,7 +304,10 @@ export default function PoojaServicesPage() {
         const result = pujas.filter(puja => {
             const matchesSearch = (puja.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (puja.desc || '').toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesCategory = selectedCategory === 'All Pujas' || puja.category === selectedCategory;
+            const matchesCategory = selectedCategory === 'All Pujas' || 
+                puja.category === selectedCategory || 
+                (puja.category && puja.category.includes(selectedCategory)) ||
+                (puja.tags && puja.tags.includes(selectedCategory));
 
             let matchesPrice = true;
             if (priceFilter === 'under-5000') matchesPrice = (puja.display_price || puja.price) < 5000;
@@ -290,8 +323,17 @@ export default function PoojaServicesPage() {
         } else if (sortBy === 'price-high') {
             result.sort((a, b) => (b.display_price || b.price) - (a.display_price || a.price));
         } else {
-            // Default: Popularity (Featured first, then ID)
-            result.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+            // Default Priority:
+            // 1. Has Custom Image
+            // 2. Is Featured
+            // 3. Is Special Offer
+            // 4. Alphabetical by Name
+            result.sort((a, b) => {
+                if (a.hasCustomImage !== b.hasCustomImage) return b.hasCustomImage ? 1 : -1;
+                if (a.is_featured !== b.is_featured) return b.is_featured ? 1 : -1;
+                if (a.is_special_offer !== b.is_special_offer) return b.is_special_offer ? 1 : -1;
+                return (a.name || '').localeCompare(b.name || '');
+            });
         }
 
         return result;
@@ -315,40 +357,28 @@ export default function PoojaServicesPage() {
 
             <div className="relative z-10 pt-10 pb-20 container mx-auto px-2 md:px-6 max-w-[1450px]">
 
-                {/* Header Section */}
-                <div className="text-center max-w-6xl mx-auto mb-12">
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase tracking-widest mb-2 border border-orange-100 dark:border-orange-800/50">
-                        Sacred Rituals
-                    </span>
-                    <h1 className="text-5xl md:text-7xl font-black mb-3 leading-snug text-foreground tracking-tight" style={{ fontFamily: 'Georgia, serif' }}>
-                        Browse Our <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 animate-gradient whitespace-nowrap py-2">Divine Pujas</span>
-                    </h1>
-                    <p className="text-lg md:text-xl text-muted-foreground font-light max-w-2xl mx-auto leading-relaxed">
-                        Explore our collection of authentic Vedic rituals performed by experienced pandits for your spiritual well-being.
-                    </p>
-                </div>
 
                 {/* Modern Filter Bar with Golden Glow - STATIC (No Sticky) */}
-                <div className="relative z-40 bg-card/80 dark:bg-card/80 backdrop-blur-md border border-border/40 dark:border-border/10 rounded-2xl shadow-[0_8px_32_rgba(249,115,22,0.05)] dark:shadow-xl p-6 mb-12 max-w-[1450px] mx-auto transition-all duration-300 ring-1 ring-black/5 hover:shadow-[0_8px_32px_rgba(249,115,22,0.1)] hover:border-saffron/20">
-                    <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+                <div className="relative z-40 bg-card/80 dark:bg-card/80 backdrop-blur-md border border-border/40 dark:border-border/10 rounded-xl shadow-lg p-4 mb-10 max-w-[1450px] mx-auto transition-all duration-300 ring-1 ring-black/5 hover:shadow-xl hover:border-saffron/20">
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
 
                         {/* Search Input */}
-                        <div className="relative w-full md:flex-1 lg:max-w-2xl group">
+                        <div className="relative w-full md:flex-1 lg:max-w-xl group">
                             <input
                                 type="text"
                                 placeholder="Search divine rituals..."
                                 value={searchQuery}
                                 onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(9); }}
-                                className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-2 border-orange-100/50 dark:border-slate-700/50 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all placeholder:text-muted-foreground/70 text-foreground font-medium shadow-inner"
+                                className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm border-2 border-orange-100/50 dark:border-slate-700/50 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all placeholder:text-muted-foreground/70 text-foreground text-sm font-medium shadow-inner"
                             />
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-hover:text-saffron transition-colors" />
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-hover:text-saffron transition-colors" />
                         </div>
 
                         {/* Filters & Sort Container */}
-                        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end">
+                        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
 
                             {/* Sort Dropdown */}
-                            <div className="w-full sm:w-auto min-w-[180px]">
+                            <div className="w-full sm:w-auto min-w-[150px]">
                                 <CustomDropdown
                                     value={sortBy}
                                     onChange={setSortBy}
@@ -362,7 +392,7 @@ export default function PoojaServicesPage() {
                             </div>
 
                             {/* Price Filter */}
-                            <div className="w-full sm:w-auto min-w-[180px]">
+                            <div className="w-full sm:w-auto min-w-[150px]">
                                 <CustomDropdown
                                     value={priceFilter}
                                     onChange={setPriceFilter}
@@ -380,15 +410,15 @@ export default function PoojaServicesPage() {
                     </div>
 
                     {/* Category Pills - Centered & Polished */}
-                    <div className="mt-8 pt-6 border-t border-border/30 overflow-x-auto pb-2 no-scrollbar flex md:justify-center">
-                        <div className="flex gap-3">
-                            {CATEGORIES.map((cat) => (
+                    <div className="mt-6 pt-4 border-t border-border/30 overflow-x-auto pb-2 no-scrollbar flex md:justify-center">
+                        <div className="flex gap-2">
+                            {categories.map((cat) => (
                                 <button
                                     key={cat}
                                     onClick={() => { setSelectedCategory(cat); setVisibleCount(9); }}
-                                    className={`px-6 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 border backdrop-blur-md ${selectedCategory === cat
-                                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-lg shadow-orange-500/30 scale-105 transform-gpu ring-2 ring-orange-200 dark:ring-orange-900/50'
-                                        : 'bg-white/40 dark:bg-slate-800/40 text-muted-foreground border-orange-100/50 dark:border-slate-700 hover:bg-white hover:text-foreground hover:border-orange-200 hover:shadow-md hover:-translate-y-0.5'
+                                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold whitespace-nowrap transition-all duration-300 border backdrop-blur-md ${selectedCategory === cat
+                                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-md shadow-orange-500/20 scale-105 transform-gpu ring-1 ring-orange-200 dark:ring-orange-900/30'
+                                        : 'bg-white/40 dark:bg-slate-800/40 text-muted-foreground border-orange-100/50 dark:border-slate-700 hover:bg-white hover:text-foreground hover:border-orange-200 hover:shadow-sm hover:-translate-y-0.5'
                                         }`}
                                 >
                                     {cat}
@@ -401,7 +431,7 @@ export default function PoojaServicesPage() {
 
 
                 {/* Puja Grid - Premium "Snake Border" Style (Replicated from Homepage) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12 lg:gap-16 mb-12">
                     {visiblePujas.map((puja, idx) => {
                         const rotatingGradients = [
                             'from-indigo-500 to-purple-600',
@@ -416,7 +446,7 @@ export default function PoojaServicesPage() {
                         const gradientId = `border-gradient-${puja.id}`;
 
                         return (
-                            <div key={puja.id} className="group relative">
+                            <div key={puja.id} className="group relative max-w-[360px] mx-auto w-full">
                                 {/* 3D Glow Effect Behind Card - Enhanced for "Behind" hover feeling */}
                                 <div className={`absolute -inset-1 bg-gradient-to-t ${displayGradient} rounded-[32px] blur-2xl opacity-0 group-hover:opacity-100 transition duration-500 group-hover:duration-300 z-0`}></div>
                                 <div className={`absolute -inset-2 bg-gradient-to-b ${displayGradient} rounded-[32px] blur-[64px] opacity-0 group-hover:opacity-40 transition duration-1000 group-hover:duration-500 z-0`}></div>
@@ -424,22 +454,42 @@ export default function PoojaServicesPage() {
                                 {/* Background Layer for Hover color (Behind the card) */}
                                 <div className={`absolute inset-0 bg-gradient-to-br ${displayGradient} rounded-[32px] opacity-0 group-hover:opacity-[0.15] dark:group-hover:opacity-[0.25] transition-all duration-500 scale-95 group-hover:scale-105 z-0 blur-md`}></div>
 
-                                <div className={`relative h-full bg-card/95 dark:bg-card/90 backdrop-blur-md text-card-foreground rounded-[32px] p-6 flex flex-col transition-all duration-500 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-white/20 dark:border-white/5 group-hover:-translate-y-2 group-hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] overflow-hidden z-10`}>
-                                    {/* Subtle Content Accent */}
-                                    <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${displayGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                                {/* Red Zigzag Special Offer Badge - Matches Requested Design */}
+                                <div className="absolute top-0 left-0 z-50 -translate-x-1/4 -translate-y-1/4 pointer-events-none transition-all duration-500 group-hover:-translate-y-[40%] group-hover:rotate-12 group-hover:scale-110">
+                                    {puja.is_special_offer && (
+                                        <motion.div
+                                            initial={{ scale: 0, rotate: -45 }}
+                                            animate={{ scale: 1, rotate: 0 }}
+                                            className="relative w-24 h-24 md:w-28 md:h-28 flex items-center justify-center drop-shadow-2xl"
+                                        >
+                                            {/* SVG Starburst Shape */}
+                                            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full fill-[#e11d48]">
+                                                <path d="M50 0 L55 10 L65 5 L68 16 L79 13 L79 24 L90 24 L87 35 L97 40 L91 50 L100 60 L89 65 L92 76 L81 77 L81 88 L70 86 L65 96 L55 91 L50 100 L45 91 L35 96 L30 86 L20 88 L19 77 L8 76 L11 65 L0 60 L9 50 L3 40 L13 35 L10 24 L21 24 L21 13 L32 16 L35 5 L45 10 Z" />
+                                                {/* Inner White Dashed Line */}
+                                                <path d="M50 5 L54 14 L63 10 L66 19 L76 17 L76 27 L85 27 L83 36 L91 40 L86 48 L94 57 L84 62 L86 71 L77 72 L77 82 L67 80 L63 89 L54 85 L50 93 L46 85 L37 89 L33 80 L23 82 L23 72 L14 71 L16 62 L6 57 L14 48 L9 40 L17 36 L15 27 L24 27 L24 17 L34 19 L37 10 L46 14 Z" fill="none" stroke="white" strokeWidth="0.8" strokeDasharray="2 1" opacity="0.6" />
+                                            </svg>
 
-                                    {/* Animated Snake Border SVG */}
-                                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ zIndex: 10 }}>
+                                            {/* Text Content */}
+                                            <div className="relative z-10 flex flex-col items-center justify-center text-white text-center leading-tight">
+                                                <span className="text-[10px] md:text-xs font-bold opacity-90 mb-0.5" style={{ fontFamily: 'var(--font-hindi), sans-serif' }}>मात्र</span>
+                                                <span className="text-xl md:text-2xl font-black">₹{puja.special_offer_price}</span>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </div>
+
+                                    {/* Animated Snake Border SVG - Moved Outside and Z-index Increased */}
+                                    <svg className="absolute -inset-[2px] -translate-y-[5px] w-[calc(100%+4px)] h-[calc(100%+4px)] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-40" style={{ pointerEvents: 'none' }}>
                                         <rect
-                                            x="2"
-                                            y="2"
-                                            width="calc(100% - 4px)"
-                                            height="calc(100% - 4px)"
-                                            rx="32"
-                                            ry="32"
+                                            x="1"
+                                            y="1"
+                                            width="calc(100% - 2px)"
+                                            height="calc(100% - 2px)"
+                                            rx="18"
+                                            ry="18"
                                             fill="none"
                                             stroke={`url(#${gradientId})`}
-                                            strokeWidth="3"
+                                            strokeWidth="4"
                                             strokeDasharray="20 10"
                                             className="animate-snake-border"
                                             style={{ strokeDashoffset: 1000 }}
@@ -453,7 +503,11 @@ export default function PoojaServicesPage() {
                                         </defs>
                                     </svg>
 
-                                    {/* Top Badge - Floating - Replaced by Tags */}
+                                    <div className={`relative h-full bg-card/95 dark:bg-card/90 backdrop-blur-md text-card-foreground rounded-2xl p-4 flex flex-col transition-all duration-500 shadow-md border border-white/10 dark:border-white/5 group-hover:-translate-y-2 group-hover:shadow-xl z-10`}>
+                                    {/* Subtle Content Accent */}
+                                    <div className={`absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r ${displayGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+
+
                                     <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-2 text-right">
 
                                         {/* Original Badge if exists */}
@@ -479,7 +533,7 @@ export default function PoojaServicesPage() {
                                     {/* Clickable Area for Navigation */}
                                     <Link href={`/pooja-services/${puja.slug}`} className="block group/content">
                                         {/* 1. Image Container (Rectangle First) */}
-                                        <div className={`relative w-full aspect-[2/1] mb-6 rounded-2xl overflow-hidden bg-white/50 dark:bg-slate-900/50 border border-white/10 group-hover/content:border-white/40 transition-colors`}>
+                                        <div className={`relative w-full aspect-[2/1] mb-4 rounded-xl overflow-hidden bg-white/50 dark:bg-slate-900/50 border border-white/10 group-hover/content:border-white/40 transition-colors`}>
                                             <img
                                                 src={puja.image}
                                                 alt={puja.name}
@@ -489,12 +543,12 @@ export default function PoojaServicesPage() {
                                         </div>
 
                                         {/* 2. Headings & Colored Text */}
-                                        <div className="mb-4">
-                                            <h3 className={`text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/80 group-hover/content:bg-gradient-to-r ${prefixGradient(displayGradient, 'group-hover/content')} transition-all duration-300 mb-2 leading-tight`} style={{ fontFamily: 'Georgia, serif' }}>
+                                        <div className="mb-3">
+                                            <h3 className={`text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/80 group-hover/content:bg-gradient-to-r ${prefixGradient(displayGradient, 'group-hover/content')} transition-all duration-300 mb-1 leading-tight`} style={{ fontFamily: 'Georgia, serif' }}>
                                                 {puja.name}
                                             </h3>
 
-                                            <p className="text-muted-foreground font-medium mb-6 leading-relaxed text-sm line-clamp-2 group-hover/content:text-foreground/80 transition-colors">
+                                            <p className="text-muted-foreground font-medium mb-4 leading-relaxed text-[13px] line-clamp-2 group-hover/content:text-foreground/80 transition-colors">
                                                 {puja.desc}
                                             </p>
                                         </div>
@@ -518,13 +572,13 @@ export default function PoojaServicesPage() {
                                     {/* 4. Action Button - Attractive Glow */}
                                     <button
                                         onClick={() => handleBookNow(puja)}
-                                        className={`group/btn relative inline-flex items-center justify-center w-full py-4 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 bg-[length:200%_auto] bg-right hover:bg-left transition-all duration-500 shadow-lg hover:shadow-xl hover:-translate-y-1 overflow-hidden`}
+                                        className={`group/btn relative inline-flex items-center justify-center w-full py-3.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-[length:200%_auto] bg-right hover:bg-left transition-all duration-500 shadow-md hover:shadow-lg hover:-translate-y-0.5 overflow-hidden`}
                                     >
                                         {/* Inner Glow */}
                                         <div className="absolute inset-0 bg-white/20 blur-md opacity-0 group-hover/btn:opacity-100 transition-opacity duration-500"></div>
 
                                         <span className="relative z-10 text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                            Book Now <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" strokeWidth={2.5} />
+                                            Book Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" strokeWidth={2.5} />
                                         </span>
                                     </button>
                                 </div>

@@ -26,7 +26,7 @@ export default async function DashboardLayout({
       <Sidebar />
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:ml-72 relative z-10 min-h-screen flex flex-col">
+      <main className="flex-1 lg:ml-72 min-h-screen flex flex-col min-w-0 overflow-hidden">
         {/* Top Header */}
         <header className="h-20 border-b border-white/5 bg-[#060606]/40 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-30">
           <div>
@@ -50,7 +50,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* Content Body */}
-        <div className="p-8 pb-12 flex-1 relative">
+        <div className="p-4 md:p-8 pb-12 flex-1 relative min-w-0 w-full">
             {children}
         </div>
       </main>

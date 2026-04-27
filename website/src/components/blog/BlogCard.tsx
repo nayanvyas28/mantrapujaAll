@@ -60,19 +60,20 @@ export default function BlogCard({ blog }: { blog: BlogPost }) {
 
                     <div className="mt-auto flex items-center justify-between">
                         {/* Author Info */}
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full overflow-hidden border border-border">
+                        <div 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const slug = blog.author.name.toLowerCase().replace(/ /g, '-');
+                                window.location.href = `/authors/${slug}`;
+                            }}
+                            className="flex items-center gap-3 cursor-pointer group/author z-20"
+                        >
+                            <div className="w-8 h-8 rounded-full overflow-hidden border border-border group-hover/author:border-saffron transition-colors">
                                 <img src={blog.author.avatar} alt={blog.author.name} className="w-full h-full object-cover" />
                             </div>
                             <div className="flex flex-col">
-                                <span
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        // Handle author click - ideally navigation
-                                        console.log(`Clicked author: ${blog.author.name}`);
-                                    }}
-                                    className="text-xs font-bold text-foreground hover:text-saffron cursor-pointer z-20"
-                                >
+                                <span className="text-xs font-bold text-foreground group-hover/author:text-saffron transition-colors">
                                     {blog.author.name}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">{blog.author.role}</span>

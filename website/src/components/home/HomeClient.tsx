@@ -38,6 +38,8 @@ interface Puja extends UiConfig {
     is_featured?: boolean;
     is_hero?: boolean;
     tags?: string[];
+    is_special_offer?: boolean;
+    special_offer_price?: number;
 }
 
 interface DatabasePooja {
@@ -51,6 +53,8 @@ interface DatabasePooja {
     is_featured: boolean;
     is_hero: boolean;
     tags?: string[];
+    is_special_offer?: boolean;
+    special_offer_price?: number;
 }
 
 interface DatabaseLocation {
@@ -243,7 +247,7 @@ export default function HomeClient() {
         }, 2000); // Reduced to 2s for snappier feel
 
         // 1. Load Initial State from Cache (SWR Pattern)
-        const CACHE_KEY = 'mantrapuja_home_cache_v2'; // bump version to bust stale is_featured cache
+        const CACHE_KEY = 'mantrapuja_home_cache_v3'; // bump version to bust stale cache
         const loadCache = () => {
             try {
                 // Remove old cache version to prevent stale popular pujas from showing
@@ -283,7 +287,7 @@ export default function HomeClient() {
                     supabase.from('pages').select('id, slug, title').or('slug.eq./,slug.eq.home').maybeSingle(),
                     supabase.from('blogs').select('id, title, slug, image, category, excerpt, tags, created_at').eq('published', true).order('created_at', { ascending: false }).limit(3),
                     supabase.from('destinations').select('id, name, type, state_id, description, images, slug, home_image_url, show_on_home, home_order').eq('show_on_home', true).order('home_order', { ascending: true }).limit(4),
-                    supabase.from('poojas').select('id, name, slug, images, description, benefits, price, is_featured, is_hero, tags').eq('is_active', true).limit(500),
+                    supabase.from('poojas').select('id, name, slug, images, description, benefits, price, is_featured, is_hero, tags, is_special_offer, special_offer_price').eq('is_active', true).limit(500),
                     supabase.from('home_features').select('id, title, description, image_url, display_order').eq('is_active', true).order('display_order', { ascending: true }),
                     supabase.from('home_banners').select('*, show_text_overlay').eq('is_active', true).or('target.eq.web,target.eq.both').order('display_order', { ascending: true })
                 ]);
@@ -339,6 +343,8 @@ export default function HomeClient() {
                         price: item.price,
                         is_featured: item.is_featured,
                         is_hero: item.is_hero,
+                        is_special_offer: item.is_special_offer,
+                        special_offer_price: item.special_offer_price,
                         tags: item.tags || []
                     }));
                     setHeroPujas(mappedPujas.filter(p => p.is_hero).slice(0, 3));
@@ -844,33 +850,32 @@ export default function HomeClient() {
                             </div>
                         ) : popularPujas.map((puja, idx) => (
                             <div key={puja.id || idx} className="group relative">
+                                {/* Red Zigzag Special Offer Badge - Matches Requested Design */}
+                                <div className="absolute top-0 left-0 z-50 -translate-x-1/3 -translate-y-1/3 pointer-events-none transition-all duration-500 group-hover:-translate-y-[40%] group-hover:rotate-12 group-hover:scale-110">
+                                    {puja.is_special_offer && (
+                                        <motion.div
+                                            initial={{ scale: 0, rotate: -45 }}
+                                            animate={{ scale: 1, rotate: 0 }}
+                                            className="relative w-24 h-24 md:w-28 md:h-28 flex items-center justify-center drop-shadow-2xl"
+                                        >
+                                            {/* SVG Starburst Shape */}
+                                            <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full fill-[#e11d48]">
+                                                <path d="M50 0 L55 10 L65 5 L68 16 L79 13 L79 24 L90 24 L87 35 L97 40 L91 50 L100 60 L89 65 L92 76 L81 77 L81 88 L70 86 L65 96 L55 91 L50 100 L45 91 L35 96 L30 86 L20 88 L19 77 L8 76 L11 65 L0 60 L9 50 L3 40 L13 35 L10 24 L21 24 L21 13 L32 16 L35 5 L45 10 Z" />
+                                                {/* Inner White Dashed Line */}
+                                                <path d="M50 5 L54 14 L63 10 L66 19 L76 17 L76 27 L85 27 L83 36 L91 40 L86 48 L94 57 L84 62 L86 71 L77 72 L77 82 L67 80 L63 89 L54 85 L50 93 L46 85 L37 89 L33 80 L23 82 L23 72 L14 71 L16 62 L6 57 L14 48 L9 40 L17 36 L15 27 L24 27 L24 17 L34 19 L37 10 L46 14 Z" fill="none" stroke="white" strokeWidth="0.8" strokeDasharray="2 1" opacity="0.6" />
+                                            </svg>
+
+                                            {/* Text Content */}
+                                            <div className="relative z-10 flex flex-col items-center justify-center text-white text-center leading-tight">
+                                                <span className="text-[10px] md:text-xs font-bold opacity-90 mb-0.5" style={{ fontFamily: 'var(--font-hindi), sans-serif' }}>मात्र</span>
+                                                <span className="text-xl md:text-2xl font-black">₹{puja.special_offer_price}</span>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </div>
+
                                 <div className="relative h-full bg-white/90 dark:bg-card/40 dark:backdrop-blur-xl text-slate-900 dark:text-white/90 rounded-[24px] flex flex-col transition-all duration-500 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.2)] border border-black/5 dark:border-white/10 group-hover:-translate-y-2 overflow-hidden">
 
-                                    {/* Animated Snake Border SVG - Restored */}
-                                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ zIndex: 30 }}>
-                                        <rect
-                                            x="1.5"
-                                            y="1.5"
-                                            width="calc(100% - 3px)"
-                                            height="calc(100% - 3px)"
-                                            rx="22.5"
-                                            ry="22.5"
-                                            fill="none"
-                                            stroke="url(#saffronGradient)"
-                                            strokeWidth="3"
-                                            strokeDasharray="20 10"
-                                            className="animate-snake-border"
-                                        />
-                                        <defs>
-                                            <linearGradient id="saffronGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stopColor="#f97316" stopOpacity="0.8" />
-                                                <stop offset="50%" stopColor="#fb923c" stopOpacity="1" />
-                                                <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.8" />
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
-
-                                    {/* Top Badge - Floating - Replaced by Tags */}
                                     <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5">
                                         {/* Original Badge if exists */}
                                         {puja.badge && (

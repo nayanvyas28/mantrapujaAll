@@ -77,7 +77,8 @@ export default function BookingPackagesPopup({
     onClose,
     pujaName,
     packages,
-    onSelect
+    onSelect,
+    isHindi
 }: BookingPackagesPopupProps) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
 

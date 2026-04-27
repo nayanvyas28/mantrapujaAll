@@ -11,7 +11,8 @@ import {
     ChevronRight,
     Search,
     Star,
-    User
+    User,
+    ArrowRight
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -250,24 +251,28 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                         }
                     })()}
 
-                    {/* Author Section */}
                     {blog.author && (
-                        <div className="mt-20 p-8 md:p-12 rounded-[40px] bg-saffron/5 border border-saffron/10 flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:scale-110 transition-transform">
-                                <User size={120} />
+                        <Link href={`/authors/${blog.author.name.toLowerCase().replace(/ /g, '-')}`} className="block mt-20 group/author">
+                            <div className="p-8 md:p-12 rounded-[40px] bg-saffron/5 border border-saffron/10 flex flex-col md:flex-row items-center md:items-start gap-8 relative overflow-hidden group hover:border-saffron/30 hover:bg-saffron/[0.08] transition-all">
+                                <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover/author:scale-110 transition-transform">
+                                    <User size={120} />
+                                </div>
+                                <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] overflow-hidden border-2 border-saffron/20 shadow-2xl flex-shrink-0 group-hover/author:scale-105 transition-transform">
+                                    <img src={blog.author.avatar} alt={blog.author.name} className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex-1 text-center md:text-left relative z-10">
+                                    <p className="text-[10px] font-black text-saffron uppercase tracking-[0.3em] mb-2">About the Writer</p>
+                                    <h3 className="text-2xl md:text-3xl font-black font-serif mb-2 group-hover/author:text-saffron transition-colors">{blog.author.name}</h3>
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">{blog.author.role}</p>
+                                    <p className="text-base md:text-lg text-foreground/70 leading-relaxed italic">
+                                        {blog.author.bio || "A dedicated contributor to the spiritual path, sharing wisdom for the benefit of all devotees."}
+                                    </p>
+                                    <div className="inline-flex items-center gap-2 mt-6 text-saffron font-black uppercase tracking-widest text-[10px] group/link">
+                                        View Full Profile <ArrowRight className="w-3 h-3 group-hover/link:translate-x-1 transition-transform" />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2rem] overflow-hidden border-2 border-saffron/20 shadow-2xl flex-shrink-0">
-                                <img src={blog.author.avatar} alt={blog.author.name} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1 text-center md:text-left relative z-10">
-                                <p className="text-[10px] font-black text-saffron uppercase tracking-[0.3em] mb-2">About the Writer</p>
-                                <h3 className="text-2xl md:text-3xl font-black font-serif mb-2">{blog.author.name}</h3>
-                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">{blog.author.role}</p>
-                                <p className="text-base md:text-lg text-foreground/70 leading-relaxed italic">
-                                    {blog.author.bio || "A dedicated contributor to the spiritual path, sharing wisdom for the benefit of all devotees."}
-                                </p>
-                            </div>
-                        </div>
+                        </Link>
                     )}
 
                     {/* Footer / Share & Next Steps */}

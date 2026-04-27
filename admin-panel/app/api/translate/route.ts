@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
     try {
-        const { text, target = 'hi' } = await req.json();
+        const { text, target = 'hi', source = 'auto' } = await req.json();
 
         if (!text) {
             return NextResponse.json({ error: 'Text is required' }, { status: 400 });
@@ -15,14 +15,14 @@ export async function POST(req: Request) {
             // Sequential translation of fields to avoid hitting web rate limits too hard
             for (const [key, value] of Object.entries(text)) {
                 if (value && typeof value === 'string') {
-                    results[key] = await translateText(value, target);
+                    results[key] = await translateText(value, target, source);
                 }
             }
             
             return NextResponse.json(results);
         }
 
-        const translated = await translateText(text, target);
+        const translated = await translateText(text, target, source);
         return NextResponse.json({ translated });
     } catch (error: any) {
         console.error('Translation route error:', error);
@@ -30,8 +30,8 @@ export async function POST(req: Request) {
     }
 }
 
-async function translateText(query: string, target: string) {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${target}&dt=t&q=${encodeURIComponent(query)}`;
+async function translateText(query: string, target: string, source: string = 'auto') {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${target}&dt=t&q=${encodeURIComponent(query)}`;
     
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch from Google Translate');

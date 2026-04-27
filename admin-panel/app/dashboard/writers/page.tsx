@@ -22,6 +22,9 @@ interface Author {
   role: string;
   avatar: string;
   bio?: string;
+  biography?: string;
+  philosophy?: string;
+  expertise?: string;
   created_at: string;
 }
 
@@ -111,7 +114,7 @@ export default function WritersPage() {
         </div>
         <button 
           onClick={() => {
-            setCurrentAuthor({ name: '', role: '', avatar: '', bio: '' });
+            setCurrentAuthor({ name: '', role: '', avatar: '', bio: '', biography: '', philosophy: '', expertise: '' });
             setIsModalOpen(true);
           }}
           className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl text-white font-bold shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all"
@@ -212,9 +215,9 @@ export default function WritersPage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-xl bg-[#0d0d0d] border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden"
+              className="relative w-full max-w-xl bg-[#0d0d0d] border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-8 border-b border-white/5 flex items-center justify-between">
+              <div className="p-8 border-b border-white/5 flex items-center justify-between flex-shrink-0">
                 <h3 className="text-xl font-bold text-white">
                   {currentAuthor?.id ? 'Edit Writer' : 'Add New Writer'}
                 </h3>
@@ -223,7 +226,8 @@ export default function WritersPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="p-8 space-y-6">
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                <form onSubmit={handleSave} className="p-8 space-y-6">
                 {error && (
                   <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-sm">
                     <AlertCircle size={18} />
@@ -317,14 +321,48 @@ export default function WritersPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Biography / About</label>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Short Bio (Card View)</label>
                   <textarea 
-                    rows={3}
+                    rows={2}
                     value={currentAuthor?.bio || ''}
                     onChange={(e) => setCurrentAuthor(prev => ({ ...prev, bio: e.target.value }))}
-                    placeholder="Briefly describe the writer's spiritual journey or expertise..."
+                    placeholder="Short bio for the card..."
                     className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white resize-none"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Biography (Profile Page)</label>
+                  <textarea 
+                    rows={4}
+                    value={currentAuthor?.biography || ''}
+                    onChange={(e) => setCurrentAuthor(prev => ({ ...prev, biography: e.target.value }))}
+                    placeholder="In-depth spiritual journey..."
+                    className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Spiritual Philosophy</label>
+                        <textarea 
+                            rows={3}
+                            value={currentAuthor?.philosophy || ''}
+                            onChange={(e) => setCurrentAuthor(prev => ({ ...prev, philosophy: e.target.value }))}
+                            placeholder="Core spiritual beliefs..."
+                            className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white resize-none"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Expertise (Comma separated)</label>
+                        <textarea 
+                            rows={3}
+                            value={currentAuthor?.expertise || ''}
+                            onChange={(e) => setCurrentAuthor(prev => ({ ...prev, expertise: e.target.value }))}
+                            placeholder="e.g. Vedic Rituals, Mantra Science, Astrologer"
+                            className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-sm focus:outline-none focus:border-purple-500/50 transition-all text-white resize-none"
+                        />
+                    </div>
                 </div>
 
                 <div className="pt-4 flex gap-4">
@@ -345,7 +383,8 @@ export default function WritersPage() {
                   </button>
                 </div>
               </form>
-            </motion.div>
+            </div>
+          </motion.div>
           </div>
         )}
       </AnimatePresence>

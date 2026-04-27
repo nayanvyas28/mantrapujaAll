@@ -57,7 +57,6 @@ const websiteGroups = [
     category: 'Devotee Engagement',
     items: [
       { name: 'WhatsApp Connect', icon: MessageCircle, href: '/dashboard/settings/whatsapp' },
-      { name: 'Divine Alerts', icon: Bell, href: '/dashboard/notifications' },
       { name: 'Weekly Wisdom', icon: Mail, href: '/dashboard/newsletter' },
       { name: 'Kundali Hub', icon: Moon, href: '/dashboard/kundli' },
       { name: 'Guru Ji AI', icon: Settings, href: '/dashboard/settings' },
@@ -68,6 +67,7 @@ const websiteGroups = [
 const mobileAppItems = [
   { name: 'App Home', icon: Home, href: '/dashboard/home-settings' },
   { name: 'Divine Reels', icon: Film, href: '/dashboard/reels' },
+  { name: 'Divine Alerts', icon: Bell, href: '/dashboard/notifications' },
   { name: 'Spiritual Music', icon: Music, href: '/dashboard/music' },
   { name: 'Marketing Popups', icon: MousePointer2, href: '/dashboard/popups' },
   { name: 'Referral Program', icon: Users, href: '/dashboard/referral' },

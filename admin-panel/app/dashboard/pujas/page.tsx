@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Star, Tag, Info, ArrowLeft, Image as ImageIcon, Briefcase, IndianRupee, ChevronDown, MapPin, Calendar, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Star, Tag, Info, ArrowLeft, Image as ImageIcon, Briefcase, IndianRupee, ChevronDown, MapPin, Calendar, AlertTriangle, Globe, Zap, PlusCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { deleteFileFromStorage } from '@/lib/storage-utils';
 import Link from 'next/link';
@@ -37,6 +37,9 @@ interface Puja {
     packages?: any[];
     date?: string;
     location?: string;
+    is_special_offer?: boolean;
+    special_offer_price?: number;
+    tags?: string[];
 }
 
 export default function PujaManagementPage() {
@@ -45,6 +48,7 @@ export default function PujaManagementPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [universalOfferPrice, setUniversalOfferPrice] = useState(1);
 
     // Modals
     const [isPujaModalOpen, setIsPujaModalOpen] = useState(false);
@@ -74,6 +78,8 @@ export default function PujaManagementPage() {
         display_price: 0,
         date: '',
         location: '',
+        is_special_offer: false,
+        special_offer_price: 1,
         packages: [] as any[],
         imageFile: null as File | null
     });
@@ -115,12 +121,14 @@ export default function PujaManagementPage() {
     const [filterCategory, setFilterCategory] = useState('all');
     const [aiGenerated, setAiGenerated] = useState({ name_hi: '', tagline_hi: '', description_hi: '', about_description_hi: '' });
     const [isTranslating, setIsTranslating] = useState(false);
+    const [isBulkTranslating, setIsBulkTranslating] = useState(false);
+    const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
 
     // Pagination
     const [hasMore, setHasMore] = useState(false);
     const [offset, setOffset] = useState(0);
     const [isMoreLoading, setIsMoreLoading] = useState(false);
-    const LIMIT = 10;
+    const LIMIT = 1000; // Fetch all for consistent filtering
 
     useEffect(() => {
         fetchInitialData();
@@ -221,13 +229,6 @@ export default function PujaManagementPage() {
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            // Apply Server-side Filters
-            if (searchQuery) {
-                query = query.ilike('name', `%${searchQuery}%`);
-            }
-            if (filterCategory !== 'all') {
-                query = query.eq('category_id', filterCategory);
-            }
 
             const { data: pujaData, error } = await query.range(currentOffset, currentOffset + LIMIT);
 
@@ -347,6 +348,8 @@ export default function PujaManagementPage() {
                 packages: pujasForm.packages,
                 date: pujasForm.date || null,
                 location: pujasForm.location || null,
+                is_special_offer: pujasForm.is_special_offer,
+                special_offer_price: pujasForm.special_offer_price,
                 image_url: imageUrl,
                 images: imageUrl ? [imageUrl] : []
             };
@@ -413,6 +416,8 @@ export default function PujaManagementPage() {
             display_price: 0,
             date: '',
             location: '',
+            is_special_offer: false,
+            special_offer_price: 1,
             packages: [
                 { id: 'special-' + Date.now(), name: 'Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.', tag: 'Limited' },
                 { id: 'individual-' + Date.now(), name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.', tag: 'Popular' },
@@ -453,6 +458,8 @@ export default function PujaManagementPage() {
             display_price: puja.display_price || 0,
             date: puja.date || '',
             location: puja.location || '',
+            is_special_offer: puja.is_special_offer || false,
+            special_offer_price: puja.special_offer_price || 1,
             packages: puja.packages || [
                 { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
                 { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
@@ -513,6 +520,44 @@ export default function PujaManagementPage() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleUniversalSpecialOffer = async (enable: boolean) => {
+        const price = universalOfferPrice;
+
+        setConfirmState({
+            isOpen: true,
+            message: enable 
+                ? `This will enable the Special Offer (Only ₹${price}) for ALL pujas. Continue?`
+                : 'This will disable the Special Offer for ALL pujas. Continue?',
+            onConfirm: async () => {
+                setIsSaving(true);
+                try {
+                    const res = await fetch('/api/pujas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            action: 'sync-special-offer', 
+                            is_special_offer: enable,
+                            special_offer_price: price
+                        })
+                    });
+                        
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || 'Sync failed');
+                    }
+
+                    showToast(`Universal offer ${enable ? 'enabled' : 'disabled'} successfully!`);
+                    fetchData(true);
+                } catch (error: any) {
+                    showToast('Sync failed: ' + error.message, 'error');
+                } finally {
+                    setIsSaving(false);
+                    setConfirmState({ isOpen: false, message: '', onConfirm: null });
+                }
+            }
+        });
     };
 
     const handleDelete = async (id: string) => {
@@ -588,15 +633,114 @@ export default function PujaManagementPage() {
         });
     };
 
-    const filteredPujas = pujas;
+    const handleBulkTranslate = async () => {
+        setConfirmState({
+            isOpen: true,
+            message: 'This will attempt to standardize English names and generate missing Hindi names for ALL rituals in your catalog. Continue?',
+            onConfirm: async () => {
+                setIsBulkTranslating(true);
+                setConfirmState({ isOpen: false, message: '', onConfirm: null });
+                try {
+                    // 1. Fetch all pujas to ensure we process the entire catalog
+                    const { data: allPujas, error: fetchError } = await supabase
+                        .from('poojas')
+                        .select('id, name, name_hi')
+                        .order('name');
+                    
+                    if (fetchError) throw fetchError;
+                    if (!allPujas) return;
+
+                    setBulkProgress({ current: 0, total: allPujas.length });
+
+                    for (let i = 0; i < allPujas.length; i++) {
+                        const puja = allPujas[i];
+                        setBulkProgress(prev => ({ ...prev, current: i + 1 }));
+
+                        const updates: any = {};
+                        
+                        // Step A: Standardize English Name
+                        const resEn = await fetch('/api/translate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: puja.name, target: 'en', source: 'auto' })
+                        });
+                        
+                        let currentEnglishName = puja.name;
+                        if (resEn.ok) {
+                            const dataEn = await resEn.json();
+                            if (dataEn.translated && dataEn.translated.trim() !== puja.name.trim()) {
+                                updates.name = dataEn.translated;
+                                currentEnglishName = dataEn.translated;
+                            }
+                        }
+
+                        // Step B: Translate to Hindi (if missing or if name was updated)
+                        if (!puja.name_hi || updates.name) {
+                            const resHi = await fetch('/api/translate', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ text: currentEnglishName, target: 'hi', source: 'en' })
+                            });
+                            if (resHi.ok) {
+                                const dataHi = await resHi.json();
+                                if (dataHi.translated && dataHi.translated.trim() !== (puja.name_hi || '').trim()) {
+                                    updates.name_hi = dataHi.translated;
+                                }
+                            }
+                        }
+
+                        // Step C: Save via API if changes detected
+                        if (Object.keys(updates).length > 0) {
+                            await fetch('/api/pujas', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    action: 'save',
+                                    id: puja.id,
+                                    pujaData: updates
+                                })
+                            });
+                        }
+                        
+                        // Throttle to respect API limits
+                        await new Promise(r => setTimeout(r, 150));
+                    }
+
+                    showToast(`Successfully processed ${allPujas.length} rituals!`);
+                    fetchData(true);
+                } catch (error: any) {
+                    showToast('Bulk translation failed: ' + error.message, 'error');
+                } finally {
+                    setIsBulkTranslating(false);
+                }
+            }
+        });
+    };
+    const filteredPujas = useMemo(() => {
+        return pujas.filter(puja => {
+            // 1. Search Query Filter
+            const matchesSearch = !searchQuery || 
+                puja.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                puja.slug.toLowerCase().includes(searchQuery.toLowerCase());
+
+            if (!matchesSearch) return false;
+
+            // 2. Category Filter (Logic identical to website)
+            if (filterCategory === 'all') return true;
+
+            const selectedCat = categories.find(c => c.id === filterCategory);
+            if (!selectedCat) return true;
+
+            const matchesPrimary = puja.category_id === filterCategory;
+            const matchesTag = puja.tags && puja.tags.includes(selectedCat.name);
+
+            return matchesPrimary || matchesTag;
+        });
+    }, [pujas, searchQuery, filterCategory, categories]);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white p-6 md:p-10 font-sans relative overflow-x-hidden">
-            {/* Background elements */}
-            <div className="fixed top-0 left-[-10%] w-[50%] h-[50%] bg-purple-900/10 blur-[150px] rounded-full pointer-events-none" />
-            <div className="fixed bottom-0 right-[-10%] w-[50%] h-[50%] bg-orange-900/10 blur-[150px] rounded-full pointer-events-none" />
-
-            <div className="max-w-7xl mx-auto relative z-10 w-full">
+        <div className="relative">
+            <div className="relative z-10 w-full">
                 <Link
                     href="/dashboard"
                     className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors w-fit"
@@ -604,22 +748,32 @@ export default function PujaManagementPage() {
                     <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                 </Link>
 
-                <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/10 pb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-3 bg-gradient-to-tr from-orange-500/20 to-red-500/20 rounded-2xl border border-white/10 shadow-lg shadow-orange-500/5">
-                                <Star className="w-6 h-6 text-orange-400" />
-                            </div>
-                            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                                Puja Manager
-                            </h1>
+                <header className="mb-12 border-b border-white/10 pb-8 space-y-6">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-gradient-to-tr from-orange-500/20 to-red-500/20 rounded-2xl border border-white/10 shadow-lg shadow-orange-500/5">
+                            <Star className="w-6 h-6 text-orange-400" />
                         </div>
-                        <p className="text-gray-400 text-sm max-w-xl leading-relaxed">
-                            Organize your spiritual rituals. Toggle visibility, curate pricing, and manage exclusive <span className="text-orange-400/80 font-semibold">₹999 promotional offers</span> for the mobile app home screen.
-                        </p>
+                        <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                            Puja Manager
+                        </h1>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex flex-wrap gap-4">
+                        <button
+                            onClick={handleBulkTranslate}
+                            disabled={isBulkTranslating}
+                            className="flex items-center gap-2 px-6 py-4 bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98] text-[10px] tracking-widest uppercase text-blue-400 group disabled:opacity-50"
+                        >
+                            {isBulkTranslating ? (
+                                <span className="flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    {bulkProgress.current}/{bulkProgress.total}
+                                </span>
+                            ) : (
+                                <Globe className="w-4 h-4 text-blue-500 group-hover:rotate-12 transition-transform" />
+                            )}
+                            {isBulkTranslating ? 'Translating...' : 'Bulk Translate Names'}
+                        </button>
                         <button
                             onClick={() => setIsGlobalPackageModalOpen(true)}
                             className="flex items-center gap-2 px-6 py-4 bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98] text-[10px] tracking-widest uppercase text-orange-400 group"
@@ -636,6 +790,46 @@ export default function PujaManagementPage() {
                         </button>
                     </div>
                 </header>
+
+                {/* Universal Offer Controls */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-[2.5rem]">
+                    <div className="flex items-center gap-4">
+                        <div className="p-2.5 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
+                            <Zap className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-white uppercase tracking-wider">Universal Special Offer</p>
+                            <p className="text-[10px] text-emerald-400/70 font-medium">Apply or remove offer from ALL pujas in one click</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center bg-black/40 border border-white/10 rounded-2xl px-4 py-2 group-focus-within:border-emerald-500/50 transition-all">
+                            <span className="text-emerald-500 font-bold mr-2">₹</span>
+                            <input 
+                                type="number"
+                                value={universalOfferPrice}
+                                onChange={(e) => setUniversalOfferPrice(parseInt(e.target.value) || 0)}
+                                className="w-16 bg-transparent border-none focus:outline-none text-white font-bold text-sm"
+                                placeholder="Price"
+                            />
+                        </div>
+                        <button
+                            onClick={() => handleUniversalSpecialOffer(true)}
+                            className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-lg shadow-emerald-900/20 flex items-center gap-2 group"
+                        >
+                            <PlusCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            Enable Offer for All
+                        </button>
+                        <button
+                            onClick={() => handleUniversalSpecialOffer(false)}
+                            className="px-6 py-3 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all flex items-center gap-2 group"
+                        >
+                            <XCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            Disable All Offers
+                        </button>
+                    </div>
+                </div>
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div className="flex-1 max-w-md relative group">
@@ -677,7 +871,7 @@ export default function PujaManagementPage() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                     >
                         <AnimatePresence>
                             {filteredPujas.map(puja => (
@@ -790,7 +984,7 @@ export default function PujaManagementPage() {
             {/* Premium Puja Modal */}
             <AnimatePresence>
                 {isPujaModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:pl-72">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -803,7 +997,7 @@ export default function PujaManagementPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-[#111] border border-white/10 w-full max-w-[95%] lg:max-w-[90%] rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[95vh] flex flex-col"
+                            className="bg-[#111] border border-white/10 w-full max-w-[95%] lg:max-w-6xl rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[95vh] flex flex-col"
                         >
                             <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-[#111] z-30">
                                 <div>
@@ -1117,6 +1311,42 @@ export default function PujaManagementPage() {
                                                             placeholder="0"
                                                             className="w-full px-4 py-2.5 bg-black/60 border border-white/10 rounded-xl focus:outline-none focus:border-blue-500 font-bold text-center"
                                                         />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="p-6 rounded-[24px] bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm font-bold text-emerald-400">Custom Special Offer</p>
+                                                        <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mt-0.5">Left-top "Only ₹X" Badge</p>
+                                                    </div>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={pujasForm.is_special_offer}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, is_special_offer: e.target.checked })}
+                                                            className="sr-only peer"
+                                                        />
+                                                        <div className="w-12 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+                                                    </label>
+                                                </div>
+
+                                                {pujasForm.is_special_offer && (
+                                                    <div className="pt-5 border-t border-white/5 space-y-4">
+                                                        <div>
+                                                            <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-wider">Offer Price (₹)</label>
+                                                            <div className="relative group">
+                                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold">₹</div>
+                                                                <input
+                                                                    type="number"
+                                                                    value={pujasForm.special_offer_price}
+                                                                    onChange={(e) => setPujasForm({ ...pujasForm, special_offer_price: parseInt(e.target.value) || 0 })}
+                                                                    placeholder="1"
+                                                                    className="w-full pl-8 pr-4 py-2.5 bg-black/60 border border-white/10 rounded-xl focus:outline-none focus:border-emerald-500 font-bold text-white text-sm"
+                                                                />
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -1511,7 +1741,7 @@ export default function PujaManagementPage() {
 
             <AnimatePresence>
                 {isGlobalPackageModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:pl-72">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -1524,7 +1754,7 @@ export default function PujaManagementPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-[#111] border border-white/10 w-full max-w-[95%] lg:max-w-[90%] rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[95vh] flex flex-col"
+                            className="bg-[#111] border border-white/10 w-full max-w-[95%] lg:max-w-6xl rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[95vh] flex flex-col"
                         >
                             <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-[#111] z-30">
                                 <div>
