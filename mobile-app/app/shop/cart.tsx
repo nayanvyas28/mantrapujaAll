@@ -21,7 +21,7 @@ import {
   ShieldCheck,
   CreditCard,
   Wallet as WalletIcon,
-  Sparkles
+  Star
 } from 'lucide-react-native';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Plus, Search, Trash2, Edit2, X, Check, Loader2, Sparkles, Video, Globe, ArrowLeft, Play, ExternalLink, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, X, Check, Loader2, Star, Video, Globe, ArrowLeft, Play, ExternalLink, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 
@@ -393,7 +393,7 @@ export default function ReelsManagementPage() {
                                                         className="p-1 hover:bg-white/5 rounded transition-colors text-blue-400"
                                                         title="Translate Now"
                                                     >
-                                                        <Sparkles className="w-3 h-3" />
+                                                        <Star className="w-3 h-3" />
                                                     </button>
                                                 </div>
                                             </label>

@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useMemo, Suspense, useEffect } from 'react';
+import React, { useState, useMemo, Suspense, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { Search, Filter, ArrowRight, Star, Sun, Clock, Calendar, BadgeCheck, MapPin, Video, Headphones, Zap, Gift, IndianRupee } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { Search, Filter, ArrowRight, Star, Sun, Clock, Calendar, BadgeCheck, MapPin, Video, Headphones, Zap, Gift, IndianRupee, X, Loader2, CheckCircle, MessageCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from "@/context/AuthContext";
 import { CustomDropdown } from '@/components/CustomDropdown';
 import FireParticles from '@/components/FireParticles';
 import EmberParticles from '@/components/EmberParticles';
@@ -195,32 +197,20 @@ export default function PoojaServicesPage() {
     const [pujas, setPujas] = useState<Puja[]>([]);
     const [loading, setLoading] = useState(true);
     const { setIsLoading } = useLoading();
+    const { user } = useAuth();
+    const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All Pujas');
     const [visibleCount, setVisibleCount] = useState(9);
     const [sortBy, setSortBy] = useState('popularity');
     const [priceFilter, setPriceFilter] = useState('all');
 
-    // Booking Popup State
-    const [isBookingOpen, setIsBookingOpen] = useState(false);
-    const [selectedPujaForBooking, setSelectedPujaForBooking] = useState<Puja | null>(null);
-
     const handleBookNow = (puja: Puja) => {
-        setSelectedPujaForBooking(puja);
-        setIsBookingOpen(true);
-    };
-
-    const handlePackageSelect = (pkg: any) => {
-        if (!selectedPujaForBooking) return;
-
-        const message = `Namaste, I want to book ${selectedPujaForBooking.name}.\n\nSelected Package: ${pkg.name}\nPrice: ₹${pkg.price}`;
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = `https://wa.me/918989271245?text=${encodedMessage}`;
-        window.open(whatsappUrl, '_blank');
-        setIsBookingOpen(false);
+        router.push(`/pooja-services/${puja.slug}#packages`);
     };
 
     useEffect(() => {
+        setIsLoading(true);
         const fetchPujas = async () => {
             try {
                 const { data, error } = await supabase
@@ -489,15 +479,12 @@ export default function PoojaServicesPage() {
                                     {/* Clickable Area for Navigation */}
                                     <Link href={`/pooja-services/${puja.slug}`} className="block group/content">
                                         {/* 1. Image Container (Rectangle First) */}
-                                        <div className={`relative w-full h-48 mb-6 rounded-2xl overflow-hidden bg-white/50 dark:bg-slate-900/50 border border-white/10 group-hover/content:border-white/40 transition-colors`}>
-                                            <div className="absolute inset-0 flex items-center justify-center p-4">
-                                                <img
-                                                    src={puja.image}
-                                                    alt={puja.name}
-                                                    className="w-full h-full object-contain drop-shadow-md transition-transform duration-700 group-hover/content:scale-110"
-                                                />
-                                            </div>
-                                            {/* Dynamic color accent inside image container on hover */}
+                                        <div className={`relative w-full aspect-[2/1] mb-6 rounded-2xl overflow-hidden bg-white/50 dark:bg-slate-900/50 border border-white/10 group-hover/content:border-white/40 transition-colors`}>
+                                            <img
+                                                src={puja.image}
+                                                alt={puja.name}
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover/content:scale-110"
+                                            />
                                             <div className={`absolute inset-0 bg-gradient-to-tr ${displayGradient} opacity-0 group-hover/content:opacity-10 transition-opacity duration-500`}></div>
                                         </div>
 
@@ -608,16 +595,6 @@ export default function PoojaServicesPage() {
 
             <SpiritualFamilySection />
 
-            {/* Direct Booking Popup */}
-            {selectedPujaForBooking && (
-                <BookingPackagesPopup
-                    isOpen={isBookingOpen}
-                    onClose={() => setIsBookingOpen(false)}
-                    pujaName={selectedPujaForBooking.name}
-                    packages={selectedPujaForBooking.packages || []}
-                    onSelect={handlePackageSelect}
-                />
-            )}
         </div>
     );
 }

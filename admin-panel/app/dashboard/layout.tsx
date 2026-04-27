@@ -1,7 +1,7 @@
 import Sidebar from '@/components/Sidebar';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { IndianRupee, Users, ShoppingBag, Sparkles, RefreshCw } from 'lucide-react';
+import { IndianRupee, Users, ShoppingBag, Star, RefreshCw } from 'lucide-react';
 import RefreshButton from '@/components/RefreshButton';
 
 export default async function DashboardLayout({

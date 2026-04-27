@@ -26,7 +26,7 @@ import {
     FileText,
     History,
     FilePieChart,
-    Sparkles,
+    Star,
     Calendar,
     Clock,
     MapPin,

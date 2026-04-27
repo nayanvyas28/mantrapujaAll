@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, Share, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Sparkles, Play, Pause } from 'lucide-react-native';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Star, Play, Pause } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 import YoutubePlayer from "react-native-youtube-iframe";
 import { supabase } from '../../lib/supabase';
@@ -68,7 +68,7 @@ export default function FeedScreen() {
           <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Spiritual Vichaar & Reels</Text>
         </View>
         <TouchableOpacity className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center">
-          <Sparkles size={20} color="#FF4D00" />
+          <Star size={20} color="#FF4D00" />
         </TouchableOpacity>
       </View>
 
@@ -198,7 +198,7 @@ export default function FeedScreen() {
             ))
           ) : (
             <View className="items-center justify-center py-20">
-               <Sparkles size={48} color="#FF4D00" opacity={0.2} />
+               <Star size={48} color="#FF4D00" opacity={0.2} />
                <Text className="text-gray-400 mt-4 font-bold text-center px-10 leading-relaxed">Divine content abhi dhyan (meditation) mein hai. Jaldi hi wapas aayenge!</Text>
             </View>
           )}

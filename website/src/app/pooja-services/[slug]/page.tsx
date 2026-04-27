@@ -1,4 +1,5 @@
 import React from 'react';
+export const revalidate = 0; // Disable caching for dynamic data
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
@@ -110,7 +111,8 @@ async function getPujaData(rawSlug: string): Promise<PujaData | null> {
                     items: data.faq_list || data.faq || []
                 },
                 seoTitle: data.seo_title,
-                seoDescription: data.seo_description
+                seoDescription: data.seo_description,
+                packages: data.packages || []
             };
             return pujaData;
         }

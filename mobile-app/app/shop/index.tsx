@@ -17,7 +17,7 @@ import {
   ShoppingBag, 
   Search, 
   Filter, 
-  Sparkles,
+  Star,
   Plus,
   ShoppingCart,
   ArrowRight
@@ -200,7 +200,7 @@ export default function ShopScreen() {
                 className="p-6 rounded-[32px] overflow-hidden relative"
             >
                 <View className="absolute -right-10 -top-10 opacity-20">
-                    <Sparkles size={120} color="white" />
+                    <Star size={120} color="white" />
                 </View>
                 <View className="pr-20">
                     <View className="bg-white/20 self-start px-2 py-0.5 rounded-md mb-2">

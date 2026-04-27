@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Bell, Sparkles, Moon, Sun } from 'lucide-react-native';
+import { ChevronLeft, Bell, Star, Moon, Sun } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 
 export default function ComingSoonScreen() {
@@ -30,7 +30,7 @@ export default function ComingSoonScreen() {
             <View className="absolute inset-0 bg-orange-100 rounded-full opacity-30 scale-125" />
             <View className="absolute inset-0 bg-primary/5 rounded-full opacity-50 scale-110" />
             <View className="w-full h-full bg-white rounded-full items-center justify-center shadow-2xl border-2 border-orange-50">
-              <Sparkles size={72} color="#FF4D00" />
+              <Star size={72} color="#FF4D00" />
             </View>
           </View>
 
@@ -59,7 +59,7 @@ export default function ComingSoonScreen() {
           <View className="flex-row mt-20 space-x-12 opacity-10">
              <Moon size={28} color="#000" />
              <Sun size={28} color="#000" />
-             <Sparkles size={28} color="#000" />
+             <Star size={28} color="#000" />
           </View>
         </View>
       </ScrollView>

@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSidebar } from '../../context/SidebarContext';
 import { useCart } from '../../context/CartContext';
 import Skeleton from '../../components/Skeleton';
-import { Heart, Wallet, Bell, Sparkles, Calendar, ChevronRight, Star, ShoppingBag, MapPin, Users, Coins, Plus } from 'lucide-react-native';
+import { Heart, Wallet, Bell, Star, Calendar, ChevronRight, Star, ShoppingBag, MapPin, Users, Coins, Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import { supabase } from '../../lib/supabase';
@@ -205,7 +205,7 @@ export default function HomeScreen() {
               style={{ width: width - 40 }}
               className="h-44 rounded-[40px] overflow-hidden bg-primary/10 self-center items-center justify-center border border-primary/20"
             >
-              <Sparkles size={40} color="#FF4D00" opacity={0.2} />
+              <Star size={40} color="#FF4D00" opacity={0.2} />
               <Text className="text-primary font-bold text-lg mt-2">Welcome to Mantra Pooja</Text>
               <Text className="text-primary/60 text-xs">Explore divine rituals and items</Text>
             </TouchableOpacity>
@@ -262,7 +262,7 @@ export default function HomeScreen() {
                 <Text className="text-gray-500 text-[10px] mt-1 leading-4" numberOfLines={2}>Get detailed Kundli analysis and daily guidance from Guru AI.</Text>
               </View>
               <View className="w-14 h-14 bg-primary/10 rounded-2xl items-center justify-center">
-                <Sparkles size={28} color="#FF4D00" />
+                <Star size={28} color="#FF4D00" />
               </View>
             </View>
 

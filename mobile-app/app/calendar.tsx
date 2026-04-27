@@ -15,7 +15,7 @@ import {
   ChevronLeft, 
   Calendar as CalendarIcon, 
   ArrowRight, 
-  Sparkles,
+  Star,
   Info,
   Clock,
   MapPin,

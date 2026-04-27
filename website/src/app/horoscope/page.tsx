@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Sparkles, Moon, Sun, Stars } from 'lucide-react';
+import { Star, Moon, Sun, Stars } from 'lucide-react';
 import StarsGalaxyBackground from "@/components/ui/StarsGalaxyBackground";
 
 const zodiacSigns = [
@@ -100,7 +100,7 @@ export default function HoroscopePage() {
                     {[
                         { icon: <Sun className="w-8 h-8" />, title: "Daily Insights", desc: "Get fresh predictions every morning before you start your day." },
                         { icon: <Moon className="w-8 h-8" />, title: "Weekly & Monthly", desc: "Plan your future with comprehensive long-term celestial guidance." },
-                        { icon: <Sparkles className="w-8 h-8" />, title: "Love & Career", desc: "Specific insights into your personal and professional relationships." }
+                        { icon: <Star className="w-8 h-8" />, title: "Love & Career", desc: "Specific insights into your personal and professional relationships." }
                     ].map((feature, i) => (
                         <div key={i} className="bg-white/80 dark:bg-white/5 border border-orange-100 dark:border-white/10 rounded-3xl p-8 backdrop-blur-md shadow-lg dark:shadow-none">
                             <div className="text-saffron mb-4">{feature.icon}</div>

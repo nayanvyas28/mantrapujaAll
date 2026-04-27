@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { View } from 'react-native';
-import { Home, Sparkles, User, Layout, Rss, Play, Headphones } from 'lucide-react-native';
+import { Home, Star, User, Layout, Rss, Play, Headphones } from 'lucide-react-native';
 import { useSidebar } from '../../context/SidebarContext';
 import Sidebar from '../../components/Sidebar';
 
@@ -53,7 +53,7 @@ export default function TabLayout() {
           name="puja"
           options={{
             title: 'Puja',
-            tabBarIcon: ({ color }) => <Sparkles size={20} color={color} />,
+            tabBarIcon: ({ color }) => <Star size={20} color={color} />,
           }}
         />
         <Tabs.Screen

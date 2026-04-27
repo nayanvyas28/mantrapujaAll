@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { 
   User, 
   Wallet, 
-  Sparkles, 
+  Star, 
   Settings, 
   LogOut, 
   Shield, 
@@ -200,7 +200,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   onPress={() => handleNavigate('/profile/edit-profile')} 
                 />
                 <SidebarItem 
-                  icon={Sparkles} 
+                  icon={Star} 
                   title="My Bookings" 
                   onPress={() => handleNavigate('/profile/bookings')} 
                 />

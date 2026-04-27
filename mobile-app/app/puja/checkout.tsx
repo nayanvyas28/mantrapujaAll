@@ -17,7 +17,7 @@ import {
   User, 
   Calendar, 
   ShieldCheck, 
-  Sparkles,
+  Star,
   Wallet as WalletIcon,
   Plus
 } from 'lucide-react-native';
@@ -231,7 +231,7 @@ export default function CheckoutScreen() {
                 </View>
 
                 <View className="mt-6 p-4 bg-blue-50 rounded-2xl border border-blue-100 flex-row items-center">
-                    <Sparkles size={16} color="#3B82F6" />
+                    <Star size={16} color="#3B82F6" />
                     <Text className="text-blue-700 text-[10px] font-bold ml-2 flex-1">Our Pandit ji will take this name during the sacred ritual for personalized blessings.</Text>
                 </View>
             </View>
@@ -309,7 +309,7 @@ export default function CheckoutScreen() {
           ) : (
             <>
               <Text className="text-white font-black text-lg mr-2 uppercase tracking-tighter">Confirm Booking</Text>
-              <Sparkles size={20} color="white" />
+              <Star size={20} color="white" />
             </>
           )}
         </TouchableOpacity>

@@ -18,7 +18,7 @@ import {
   Share2, 
   MapPin, 
   Clock, 
-  Sparkles, 
+  Star, 
   ChevronRight,
   Info,
   Calendar,
@@ -182,7 +182,7 @@ export default function YatraDetailScreen() {
           {destination.spiritualArchitecture && (
             <View className="mb-10 p-8 bg-gray-900 rounded-[40px] shadow-2xl shadow-black/20">
                 <View className="flex-row items-center mb-6">
-                    <Sparkles size={20} color="#FFD700" />
+                    <Star size={20} color="#FFD700" />
                     <Text className="text-white text-xl font-black ml-3">Sacred Architecture</Text>
                 </View>
                 <Text className="text-white/70 leading-relaxed text-sm">
@@ -224,7 +224,7 @@ export default function YatraDetailScreen() {
           onPress={() => Alert.alert('Inquiry Sent', 'Our representative will contact you shortly to help you plan this sacred yatra.')}
           className="bg-primary h-16 rounded-2xl shadow-xl shadow-primary/30 flex-row items-center justify-center"
         >
-          <Sparkles size={20} color="white" />
+          <Star size={20} color="white" />
           <Text className="text-white font-black text-base ml-3 uppercase tracking-tighter">Plan My Yatra</Text>
         </TouchableOpacity>
       </View>

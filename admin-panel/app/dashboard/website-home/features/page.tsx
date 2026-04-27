@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
-    Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, 
+    Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Star, 
     Info, ArrowLeft, ImageIcon, Eye, EyeOff, Layout
 } from 'lucide-react';
 import { deleteFileFromStorage } from '@/lib/storage-utils';
@@ -219,7 +219,7 @@ export default function FeaturesManagementPage() {
                         </Link>
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-gradient-to-tr from-purple-500/20 to-blue-500/20 rounded-2xl border border-white/10">
-                                <Sparkles className="w-8 h-8 text-purple-400" />
+                                <Star className="w-8 h-8 text-purple-400" />
                             </div>
                             <div>
                                 <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
@@ -261,7 +261,7 @@ export default function FeaturesManagementPage() {
                 ) : features.length === 0 ? (
                     <div className="text-center py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Sparkles className="w-8 h-8 text-gray-600" />
+                            <Star className="w-8 h-8 text-gray-600" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-400">No Features Added Yet</h3>
                         <p className="text-sm text-gray-500 mt-1">Click the button above to add your first "Why Choose Us" card.</p>
@@ -340,7 +340,7 @@ export default function FeaturesManagementPage() {
                                 <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                                     <div className="flex items-center gap-4">
                                         <div className="p-2 bg-purple-500/20 rounded-xl text-purple-400">
-                                            <Sparkles className="w-5 h-5" />
+                                            <Star className="w-5 h-5" />
                                         </div>
                                         <h2 className="text-2xl font-bold">{editingFeature ? 'Edit Feature' : 'Add New Feature'}</h2>
                                     </div>

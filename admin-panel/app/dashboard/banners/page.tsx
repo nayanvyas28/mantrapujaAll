@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
-    Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, 
+    Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Star, 
     Tag, Info, ArrowLeft, Image as ImageIcon, ExternalLink, 
     Eye, EyeOff, Layout, Smartphone, Globe, ChevronDown, Gift
 } from 'lucide-react';
@@ -421,7 +421,7 @@ export default function BannerManagementPage() {
                             <div className="p-5 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-orange-500/10 to-transparent">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-orange-500/20 rounded-xl border border-orange-500/30">
-                                        <Sparkles className="w-5 h-5 text-orange-400" />
+                                        <Star className="w-5 h-5 text-orange-400" />
                                     </div>
                                     <div>
                                         <h2 className="text-lg font-black">{editingBanner ? 'Edit Banner' : 'Create New Banner'}</h2>

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Sparkles, ArrowLeft, Sun, Moon } from 'lucide-react';
+import { ShoppingBag, Star, ArrowLeft, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ChadavaPage() {
@@ -39,7 +39,7 @@ export default function ChadavaPage() {
                 <div className="flex items-center justify-center gap-3 mb-10">
                     <div className="h-px w-12 bg-gradient-to-r from-transparent to-orange-500" />
                     <span className="flex items-center gap-2 text-orange-400 font-bold uppercase tracking-[0.3em] text-sm">
-                        <Sparkles className="w-4 h-4" />
+                        <Star className="w-4 h-4" />
                         Coming Soon
                     </span>
                     <div className="h-px w-12 bg-gradient-to-l from-transparent to-orange-500" />

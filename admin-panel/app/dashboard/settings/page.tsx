@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bot, Save, Shield, CheckCircle2, AlertCircle, Loader2, Key, ArrowLeft, RefreshCw, Layers, Plus, Trash2, MessageSquare, Type, Sparkles } from 'lucide-react';
+import { Bot, Save, Shield, CheckCircle2, AlertCircle, Loader2, Key, ArrowLeft, RefreshCw, Layers, Plus, Trash2, MessageSquare, Type, Star } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AISettingsPage() {
@@ -505,7 +505,7 @@ export default function AISettingsPage() {
                                     <div className="pt-8 mt-8 border-t border-white/20 space-y-8">
                                         <div className="flex items-center justify-between">
                                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                                <Sparkles className="w-5 h-5 text-orange-400" />
+                                                <Star className="w-5 h-5 text-orange-400" />
                                                 Divine Chat Templates
                                             </h3>
                                             <div className="flex items-center gap-3">

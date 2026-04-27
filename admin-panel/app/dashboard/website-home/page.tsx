@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { LogOut, ArrowLeft, Image as ImageIcon, Star, Sparkles, Layout } from 'lucide-react';
+import { LogOut, ArrowLeft, Image as ImageIcon, Star, Layout } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function WebsiteHomeSettingsPage() {
@@ -89,7 +89,7 @@ export default async function WebsiteHomeSettingsPage() {
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
-                                    <Sparkles className="w-6 h-6" />
+                                    <Star className="w-6 h-6" />
                                 </div>
                                 <h2 className="text-xl font-bold text-white">Why Choose Us?</h2>
                             </div>

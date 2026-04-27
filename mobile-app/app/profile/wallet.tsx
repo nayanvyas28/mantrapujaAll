@@ -16,7 +16,7 @@ import {
   ArrowUpRight, 
   ArrowDownLeft,
   History,
-  Sparkles,
+  Star,
   Info,
   Coins
 } from 'lucide-react-native';
@@ -133,7 +133,7 @@ export default function WalletScreen() {
             )}
             
             <View className="flex-row items-center mt-6 bg-white/10 px-4 py-1.5 rounded-full border border-white/10">
-                <Sparkles size={12} color="white" />
+                <Star size={12} color="white" />
                 <Text className="text-white font-bold text-[10px] ml-2 uppercase">100% Secure Divine Credits</Text>
             </View>
         </View>

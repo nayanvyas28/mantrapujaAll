@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import BlogContent from '@/components/blog/BlogContent';
 
 export const metadata: Metadata = {

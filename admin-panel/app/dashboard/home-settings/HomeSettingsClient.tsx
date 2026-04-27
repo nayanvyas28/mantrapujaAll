@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, Save, MapPin, CheckSquare, Image as ImageIcon, Sparkles, ShoppingBag, BookOpen, Loader2, ChevronDown } from 'lucide-react';
+import { Settings, Save, MapPin, CheckSquare, Image as ImageIcon, Star, ShoppingBag, BookOpen, Loader2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { saveHomeLayout, getMoreItems } from './actions';
 
@@ -54,8 +54,8 @@ export default function HomeSettingsClient({ initialSections }: { initialSection
 
     const getIconForSection = (id: string, className: string) => {
         switch (id) {
-            case 'poojas': return <Sparkles className={className} />;
-            case 'poojas_999': return <Sparkles className={className} />;
+            case 'poojas': return <Star className={className} />;
+            case 'poojas_999': return <Star className={className} />;
             case 'destinations': return <MapPin className={className} />;
             case 'products_99': return <ShoppingBag className={className} />;
             case 'blogs': return <BookOpen className={className} />;

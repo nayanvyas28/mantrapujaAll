@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Sparkles, Tag, Info, ArrowLeft, Image as ImageIcon, Briefcase, IndianRupee, ChevronDown, MapPin, Calendar } from 'lucide-react';
+import { Plus, Search, Trash2, Edit2, Upload, X, Check, Loader2, Star, Tag, Info, ArrowLeft, Image as ImageIcon, Briefcase, IndianRupee, ChevronDown, MapPin, Calendar, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { deleteFileFromStorage } from '@/lib/storage-utils';
 import Link from 'next/link';
@@ -74,16 +74,42 @@ export default function PujaManagementPage() {
         display_price: 0,
         date: '',
         location: '',
-        packages: [
-            { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
-            { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
-            { id: 'couple', name: 'Couple Package (Offline)', price: 2100, description: 'Offline ritual for couples at sacred location.' },
-            { id: 'family', name: 'Family Package (Offline)', price: 5100, description: 'Offline ritual for families at sacred location.' },
-        ],
+        packages: [] as any[],
         imageFile: null as File | null
+    });
+    const [isGlobalPackageModalOpen, setIsGlobalPackageModalOpen] = useState(false);
+    const [globalPackagesForm, setGlobalPackagesForm] = useState<any[]>([
+        { id: 'special-' + Date.now(), name: 'Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.', tag: 'Limited', inclusions: ["Special Sankalp with your Name and Gotra inclusion.", "Group participation ritual along with other devotees.", "High-definition video recording shared on WhatsApp.", "Digital Aashirwad and blessings."], inclusions_hi: ["आपके नाम और गोत्र के साथ विशेष संकल्प।", "अन्य भक्तों के साथ सामूहिक अनुष्ठान भागीदारी।", "व्हाट्सएप पर साझा की गई हाई-डेफिनिशन वीडियो रिकॉर्डिंग।", "डिजिटल आशीर्वाद।"] },
+        { id: 'individual-' + Date.now(), name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.', tag: 'Popular', inclusions: ["Dedicated Panditji for your personalized Sankalp ritual.", "Exclusive participation with focused divine attention.", "Live interaction and guidance via call.", "Blessed Prasad delivered to your home."], inclusions_hi: ["आपके व्यक्तिगत संकल्प अनुष्ठान के लिए समर्पित पंडितजी।", "केंद्रित दिव्य ध्यान के साथ विशेष भागीदारी।", "कॉल के माध्यम से लाइव बातचीत और मार्गदर्शन।", "आपके घर तक पहुंचाया गया धन्य प्रसाद।"] },
+        { id: 'couple-' + (Date.now()+1), name: 'Couple Package (Offline)', price: 2100, description: 'Offline ritual for couples.', tag: 'Recommended', inclusions: ["Dual Sankalp for harmony and prosperity.", "Personalized rituals involving both partners.", "Extended consultation with Panditji.", "Premium Aashirwad Hamper."], inclusions_hi: ["सद्भाव और समृद्धि के लिए दोहरा संकल्प।", "दोनों भागीदारों को शामिल करते हुए व्यक्तिगत अनुष्ठान।", "पंडितजी के साथ विस्तृत परामर्श।", "प्रीमियम आशीर्वाद हैम्पर।"] },
+        { id: 'family-' + (Date.now()+2), name: 'Family Package (Offline)', price: 5100, description: 'Offline ritual for families.', tag: 'Best Value', inclusions: ["Shanthi Puja rituals for all family members.", "Multi-generational Sankalp.", "VIP scheduling and dedicated support.", "Deluxe Gift Box with sacred Prasad."], inclusions_hi: ["परिवार के सभी सदस्यों के लिए शांति पूजा अनुष्ठान।", "बहु-पीढ़ी संकल्प।", "वीआईपी शेड्यूलिंग और समर्पित सहायता।", "पवित्र प्रसाद के साथ डीलक्स उपहार बॉक्स।"] },
+    ]);
+
+    const [globalPopupSettings, setGlobalPopupSettings] = useState({
+        title: 'Divine Package Selection',
+        subtitle: '{pujaName} • Authentic Vedic Rituals',
+        selectionHeading: 'Select Your Sacred Package',
+        successTitle: 'Jai Ho! 🎉',
+        successMessage: 'Booking Confirmed Successfully'
     });
 
     const [isAutoSlug, setIsAutoSlug] = useState(true);
+    const [confirmState, setConfirmState] = useState<{
+        isOpen: boolean;
+        message: string;
+        onConfirm: (() => void) | null;
+    }>({
+        isOpen: false,
+        message: '',
+        onConfirm: null
+    });
+
+    const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | null }>({ message: '', type: null });
+
+    const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification({ message: '', type: null }), 4000);
+    };
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterCategory, setFilterCategory] = useState('all');
@@ -232,7 +258,7 @@ export default function PujaManagementPage() {
         setIsMoreLoading(false);
     };
 
-    const handleFileUpload = async (file: File) => {
+    const handleFileUpload = async (file: File, folder: string = 'pujas') => {
         try {
             // 1. Optimize image through our Sharp-powered API
             const optimizeFormData = new FormData();
@@ -251,11 +277,11 @@ export default function PujaManagementPage() {
             const optimizedBlob = await optimizeResponse.blob();
             
             // 2. Upload the optimized WebP image via our secure proxy API (Fixes RLS Error)
-            const fileName = `puja_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
+            const fileName = `${folder}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
             
             const uploadFormData = new FormData();
             uploadFormData.append('file', optimizedBlob, fileName);
-            uploadFormData.append('path', fileName);
+            uploadFormData.append('folder', folder);
             uploadFormData.append('bucket', 'pujas');
 
             const uploadResponse = await fetch('/api/upload', {
@@ -269,17 +295,21 @@ export default function PujaManagementPage() {
             }
 
             const uploadResult = await uploadResponse.json();
-
-            // If updating and new file uploaded, delete old one
-            if (editingPuja?.image_url) {
-                console.log("[Pujas] Deleting old image:", editingPuja.image_url);
-                await deleteFileFromStorage(editingPuja.image_url);
-            }
-
             return uploadResult.url;
         } catch (error: any) {
             console.error('Upload & Optimization error:', error);
             throw new Error(`Failed to process image: ${error.message}`);
+        }
+    };
+
+    const handlePackageImageUpload = async (file: File, pkgIdx: number) => {
+        try {
+            const url = await handleFileUpload(file, 'package');
+            const newPkgs = [...pujasForm.packages];
+            newPkgs[pkgIdx].image = url;
+            setPujasForm({ ...pujasForm, packages: newPkgs });
+        } catch (error: any) {
+            showToast(error.message, 'error');
         }
     };
 
@@ -290,6 +320,9 @@ export default function PujaManagementPage() {
             let imageUrl = editingPuja?.image_url || '';
             if (pujasForm.imageFile) {
                 imageUrl = await handleFileUpload(pujasForm.imageFile);
+                if (editingPuja?.image_url) {
+                    await deleteFileFromStorage(editingPuja.image_url);
+                }
             }
 
             const pujaData = {
@@ -343,12 +376,13 @@ export default function PujaManagementPage() {
                 throw new Error(errData.error || 'Server-side save failed');
             }
 
+            showToast(editingPuja ? 'Ritual updated successfully!' : 'New ritual published!');
             setIsPujaModalOpen(false);
             setEditingPuja(null);
             resetForm();
             fetchData(true);
         } catch (error: any) {
-            alert(`Error: ${error.message}`);
+            showToast(`Error: ${error.message}`, 'error');
         } finally {
             setIsSaving(false);
         }
@@ -380,10 +414,8 @@ export default function PujaManagementPage() {
             date: '',
             location: '',
             packages: [
-                { id: 'special', name: '₹1 Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.' },
-                { id: 'individual', name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.' },
-                { id: 'couple', name: 'Couple Package (Offline)', price: 2100, description: 'Offline ritual for couples at sacred location.' },
-                { id: 'family', name: 'Family Package (Offline)', price: 5100, description: 'Offline ritual for families at sacred location.' },
+                { id: 'special-' + Date.now(), name: 'Special Offer Package (Online)', price: 1, description: 'Exclusive online ritual for limited time.', tag: 'Limited' },
+                { id: 'individual-' + Date.now(), name: 'Individual Package (Offline)', price: 1100, description: 'Personal offline ritual at sacred location.', tag: 'Popular' },
             ],
             imageFile: null
         });
@@ -485,30 +517,75 @@ export default function PujaManagementPage() {
 
     const handleDelete = async (id: string) => {
         const pujaToDelete = pujas.find(p => p.id === id);
-        if (!confirm(`Are you sure you want to delete Puja "${pujaToDelete?.name}"?`)) return;
         
-        try {
-            // Delete via secure proxy
-            const delRes = await fetch('/api/pujas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'delete', id })
-            });
+        setConfirmState({
+            isOpen: true,
+            message: `Are you sure you want to delete Puja "${pujaToDelete?.name}"? This action cannot be undone.`,
+            onConfirm: async () => {
+                try {
+                    // Delete via secure proxy
+                    const delRes = await fetch('/api/pujas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'delete', id })
+                    });
 
-            if (!delRes.ok) {
-                const delErr = await delRes.json();
-                throw new Error(delErr.error || 'Server-side delete failed');
+                    if (!delRes.ok) {
+                        const delErr = await delRes.json();
+                        throw new Error(delErr.error || 'Server-side delete failed');
+                    }
+
+                    // Delete storage file
+                    if (pujaToDelete?.image_url) {
+                        await deleteFileFromStorage(pujaToDelete.image_url);
+                    }
+
+                    showToast('Puja deleted successfully');
+                    fetchData(true);
+                } catch (error: any) {
+                    showToast('Error deleting puja: ' + error.message, 'error');
+                } finally {
+                    setConfirmState({ isOpen: false, message: '', onConfirm: null });
+                }
             }
+        });
+    };
 
-            // Delete storage file
-            if (pujaToDelete?.image_url) {
-                await deleteFileFromStorage(pujaToDelete.image_url);
+    const handleSyncGlobalPackages = async () => {
+        setConfirmState({
+            isOpen: true,
+            message: 'This will update packages for ALL pujas in the catalog. Continue?',
+            onConfirm: async () => {
+                setIsSaving(true);
+                try {
+                    const res = await fetch('/api/pujas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                    action: 'sync-packages', 
+                    packages: [
+                        { id: '__config__', ...globalPopupSettings },
+                        ...globalPackagesForm
+                    ] 
+                })
+                    });
+                        
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || 'Sync failed');
+                    }
+
+                    showToast('Universal packages synchronized successfully across all pujas!');
+                    setIsGlobalPackageModalOpen(false);
+                    fetchData(true);
+                } catch (error: any) {
+                    showToast('Sync failed: ' + error.message, 'error');
+                } finally {
+                    setIsSaving(false);
+                    setConfirmState({ isOpen: false, message: '', onConfirm: null });
+                }
             }
-
-            fetchData(true);
-        } catch (error: any) {
-            alert('Error deleting puja: ' + error.message);
-        }
+        });
     };
 
     const filteredPujas = pujas;
@@ -531,7 +608,7 @@ export default function PujaManagementPage() {
                     <div>
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-3 bg-gradient-to-tr from-orange-500/20 to-red-500/20 rounded-2xl border border-white/10 shadow-lg shadow-orange-500/5">
-                                <Sparkles className="w-6 h-6 text-orange-400" />
+                                <Star className="w-6 h-6 text-orange-400" />
                             </div>
                             <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                                 Puja Manager
@@ -542,21 +619,22 @@ export default function PujaManagementPage() {
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => { resetForm(); setEditingPuja(null); setIsPujaModalOpen(true); }}
-                        className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 rounded-2xl font-black transition-all shadow-xl hover:shadow-orange-500/20 active:scale-[0.98] uppercase text-xs tracking-widest group"
-                    >
-                        <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-                        Add New Ritual
-                    </button>
-                    <button
-                        onClick={handleAutoTranslate}
-                        disabled={isSaving}
-                        className="flex items-center gap-2 px-6 py-4 bg-white/5 border border-orange-500/30 hover:bg-orange-500/10 rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98] text-[10px] tracking-widest uppercase text-orange-400 group"
-                    >
-                        <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
-                        ✨ Auto Translate Hindi
-                    </button>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <button
+                            onClick={() => setIsGlobalPackageModalOpen(true)}
+                            className="flex items-center gap-2 px-6 py-4 bg-orange-500/10 border border-orange-500/30 hover:bg-orange-500/20 rounded-2xl font-bold transition-all shadow-lg active:scale-[0.98] text-[10px] tracking-widest uppercase text-orange-400 group"
+                        >
+                            <Star className="w-4 h-4 text-orange-500 group-hover:rotate-12 transition-transform" />
+                            Manage Universal Packages
+                        </button>
+                        <button
+                            onClick={() => { resetForm(); setEditingPuja(null); setIsPujaModalOpen(true); }}
+                            className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 rounded-2xl font-black transition-all shadow-xl hover:shadow-orange-500/20 active:scale-[0.98] uppercase text-xs tracking-widest group"
+                        >
+                            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                            Add New Ritual
+                        </button>
+                    </div>
                 </header>
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -624,7 +702,7 @@ export default function PujaManagementPage() {
 
                                         {puja.is_offer_999 && (
                                             <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-orange-500 rounded-full shadow-lg shadow-orange-500/30 border border-white/20">
-                                                <Sparkles className="w-3 h-3 text-white" />
+                                                <Star className="w-3 h-3 text-white" />
                                                 <span className="text-[10px] font-black tracking-tight uppercase">₹999 OFFER</span>
                                             </div>
                                         )}
@@ -712,7 +790,7 @@ export default function PujaManagementPage() {
             {/* Premium Puja Modal */}
             <AnimatePresence>
                 {isPujaModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:pl-72">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -725,7 +803,7 @@ export default function PujaManagementPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-[#111] border border-white/10 w-full max-w-4xl rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[90vh] flex flex-col"
+                            className="bg-[#111] border border-white/10 w-full max-w-[95%] lg:max-w-[90%] rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[95vh] flex flex-col"
                         >
                             <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-[#111] z-30">
                                 <div>
@@ -943,150 +1021,13 @@ export default function PujaManagementPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="pt-4 space-y-6">
-                                                <div className="flex items-center gap-3 pb-2 border-b border-white/5">
-                                                    <Tag className="w-4 h-4 text-orange-500" />
-                                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Ritual Knowledge &amp; Content</h4>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-4">Quick Summary (Catalog Lists)</p>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div className="space-y-2">
-                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">English Summary</label>
-                                                            <textarea
-                                                                rows={3}
-                                                                value={pujasForm.description}
-                                                                onChange={(e) => setPujasForm({ ...pujasForm, description: e.target.value })}
-                                                                placeholder="Spiritual significance..."
-                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
-                                                                Hindi Summary
-                                                                {isTranslating && (pujasForm.description && (!pujasForm.description_hi || pujasForm.description_hi === aiGenerated.description_hi)) && (
-                                                                    <span className="flex items-center gap-1 text-[8px] animate-pulse">
-                                                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                                                        AI Translating...
-                                                                    </span>
-                                                                )}
-                                                            </label>
-                                                            <textarea
-                                                                rows={3}
-                                                                value={pujasForm.description_hi}
-                                                                onChange={(e) => setPujasForm({ ...pujasForm, description_hi: e.target.value })}
-                                                                placeholder="आध्यात्मिक महत्व..."
-                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
-                                                            />
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Tiered Packages Section */}
-                                                    <div className="pt-8 space-y-6">
-                                                        <div className="flex items-center gap-3 pb-2 border-b border-white/5">
-                                                            <Briefcase className="w-4 h-4 text-orange-500" />
-                                                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Booking Packages (Tiers)</h4>
-                                                        </div>
-
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            {pujasForm.packages?.map((pkg, idx) => (
-                                                                <div key={pkg.id} className="p-5 rounded-[2rem] bg-white/[0.02] border border-white/10 space-y-4 hover:border-orange-500/30 transition-all">
-                                                                    <div className="flex flex-col gap-2">
-                                                                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest px-2">{pkg.name}</span>
-                                                                        <div className="flex items-center gap-3 px-2">
-                                                                            <span className="text-[10px] font-bold text-gray-500 uppercase shrink-0">Price (₹):</span>
-                                                                            <input 
-                                                                                type="number"
-                                                                                value={pkg.price}
-                                                                                onChange={(e) => {
-                                                                                    const newPkgs = [...pujasForm.packages!];
-                                                                                    newPkgs[idx].price = parseInt(e.target.value) || 0;
-                                                                                    setPujasForm({ ...pujasForm, packages: newPkgs });
-                                                                                }}
-                                                                                className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-orange-500/50"
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="space-y-1 px-2">
-                                                                        <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest">Description</label>
-                                                                        <textarea
-                                                                            rows={2}
-                                                                            value={pkg.description}
-                                                                            onChange={(e) => {
-                                                                                const newPkgs = [...pujasForm.packages!];
-                                                                                newPkgs[idx].description = e.target.value;
-                                                                                setPujasForm({ ...pujasForm, packages: newPkgs });
-                                                                            }}
-                                                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-gray-400 focus:outline-none focus:border-orange-500/50 resize-none leading-relaxed"
-                                                                            placeholder="Enter package benefits..."
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-2 pt-2">
-                                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-4">Detailed Background (About Section)</p>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div className="space-y-2">
-                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">English Insight</label>
-                                                            <textarea
-                                                                rows={4}
-                                                                value={pujasForm.about_description}
-                                                                onChange={(e) => setPujasForm({ ...pujasForm, about_description: e.target.value })}
-                                                                placeholder="In-depth details about the ritual..."
-                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
-                                                                Hindi Insight
-                                                                {isTranslating && (pujasForm.about_description && (!pujasForm.about_description_hi || pujasForm.about_description_hi === aiGenerated.about_description_hi)) && (
-                                                                    <span className="flex items-center gap-1 text-[8px] animate-pulse">
-                                                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                                                        AI Translating...
-                                                                    </span>
-                                                                )}
-                                                            </label>
-                                                            <textarea
-                                                                rows={4}
-                                                                value={pujasForm.about_description_hi}
-                                                                onChange={(e) => setPujasForm({ ...pujasForm, about_description_hi: e.target.value })}
-                                                                placeholder="विस्तृत विवरण..."
-                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        <div className="flex items-center gap-5 p-6 rounded-3xl bg-white/[0.02] border border-white/10 group hover:border-orange-500/20 transition-all">
-                                            <div className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    id="is_active_check"
-                                                    checked={pujasForm.is_active}
-                                                    onChange={(e) => setPujasForm({ ...pujasForm, is_active: e.target.checked })}
-                                                    className="w-6 h-6 rounded-lg border-white/20 bg-black text-orange-500 focus:ring-orange-500/50 cursor-pointer"
-                                                />
-                                            </div>
-                                            <label htmlFor="is_active_check" className="flex-1 cursor-pointer">
-                                                <p className="text-sm font-bold text-gray-200">App Catalog Visibility</p>
-                                                <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-semibold flex items-center gap-2">
-                                                    <span className={`w-1.5 h-1.5 rounded-full ${pujasForm.is_active ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
-                                                    Instantly toggle availability across all platforms
-                                                </p>
-                                            </label>
-                                        </div>
                                     </div>
 
                                     {/* Right Column: Promotional & Assets */}
                                     <div className="lg:col-span-5 space-y-8">
                                         <div className="space-y-6">
                                             <h4 className="text-[10px] font-black text-orange-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                <Sparkles className="w-3.5 h-3.5" /> Promotional Engine
+                                                <Star className="w-3.5 h-3.5" /> Promotional Engine
                                             </h4>
 
                                             <div className="p-6 rounded-[24px] bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20 space-y-6">
@@ -1216,7 +1157,319 @@ export default function PujaManagementPage() {
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                    </div>
+
+                                    {/* Full Width Sections */}
+                                    <div className="space-y-12 pt-8 border-t border-white/5">
+                                            <div className="space-y-6">
+                                                <div className="flex items-center gap-3 pb-2 border-b border-white/5">
+                                                    <Tag className="w-4 h-4 text-orange-500" />
+                                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Ritual Knowledge &amp; Content</h4>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-4">Quick Summary (Catalog Lists)</p>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">English Summary</label>
+                                                            <textarea
+                                                                rows={3}
+                                                                value={pujasForm.description}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, description: e.target.value })}
+                                                                placeholder="Spiritual significance..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                                Hindi Summary
+                                                                {isTranslating && (pujasForm.description && (!pujasForm.description_hi || pujasForm.description_hi === aiGenerated.description_hi)) && (
+                                                                    <span className="flex items-center gap-1 text-[8px] animate-pulse">
+                                                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                                        AI Translating...
+                                                                    </span>
+                                                                )}
+                                                            </label>
+                                                            <textarea
+                                                                rows={3}
+                                                                value={pujasForm.description_hi}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, description_hi: e.target.value })}
+                                                                placeholder="आध्यात्मिक महत्व..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-8 space-y-6">
+                                                        <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                                                            <div className="flex items-center gap-3">
+                                                                <Briefcase className="w-4 h-4 text-orange-500" />
+                                                                <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Booking Packages (Tiers)</h4>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newPkgs = [...(pujasForm.packages || [])];
+                                                                    newPkgs.push({
+                                                                        id: 'pkg-' + Date.now(),
+                                                                        name: 'New Package',
+                                                                        price: 0,
+                                                                        description: '',
+                                                                        tag: ''
+                                                                    });
+                                                                    setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                }}
+                                                                className="px-3 py-1 bg-orange-500/10 border border-orange-500/30 rounded-lg text-[10px] font-bold text-orange-400 hover:bg-orange-500/20 transition-all uppercase tracking-wider"
+                                                            >
+                                                                + Add Package
+                                                            </button>
+                                                        </div>
+
+                                                        <div className="p-6 mb-8 rounded-[2.5rem] bg-orange-500/[0.03] border border-orange-500/10 space-y-6">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 rounded-lg text-[10px] font-black text-orange-400 uppercase tracking-widest">
+                                                                    <Star className="w-3 h-3" /> Universal Package Manager
+                                                                </div>
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (confirm('Reset all packages to standard set?')) {
+                                                                            setPujasForm({
+                                                                                ...pujasForm,
+                                                                                packages: [
+                                                                                    { id: 'special-' + Date.now(), name: 'Special Offer Package', price: 1, description: 'Exclusive online ritual for limited time.', tag: 'Limited' },
+                                                                                    { id: 'individual-' + Date.now(), name: 'Individual Package', price: 1100, description: 'Personal offline ritual at sacred location.', tag: 'Popular' },
+                                                                                    { id: 'couple-' + (Date.now()+1), name: 'Couple Package', price: 2100, description: 'Offline ritual for couples.', tag: 'Recommended' },
+                                                                                    { id: 'family-' + (Date.now()+2), name: 'Family Package', price: 5100, description: 'Offline ritual for families.', tag: 'Best Value' },
+                                                                                ]
+                                                                            });
+                                                                        }
+                                                                    }}
+                                                                    className="px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-lg text-[9px] font-bold text-red-400 hover:bg-red-500 hover:text-white transition-all uppercase tracking-wider"
+                                                                >
+                                                                    Reset to Defaults
+                                                                </button>
+                                                            </div>
+
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                <div className="space-y-4">
+                                                                    <div className="space-y-1">
+                                                                        <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Apply Global Tag</label>
+                                                                        <input 
+                                                                            type="text"
+                                                                            placeholder="e.g. Most Popular"
+                                                                            onChange={(e) => {
+                                                                                const val = e.target.value;
+                                                                                const newPkgs = pujasForm.packages.map(p => ({ ...p, tag: val }));
+                                                                                setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                            }}
+                                                                            className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-orange-500/50"
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Apply Global Image</label>
+                                                                        <div className="relative group/univ h-[42px]">
+                                                                            <input 
+                                                                                type="file"
+                                                                                accept="image/*"
+                                                                                onChange={async (e) => {
+                                                                                    const file = e.target.files?.[0];
+                                                                                    if (file) {
+                                                                                        try {
+                                                                                            const url = await handleFileUpload(file, 'package');
+                                                                                            const newPkgs = pujasForm.packages.map(p => ({ ...p, image: url }));
+                                                                                            setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                                        } catch (err: any) { alert(err.message); }
+                                                                                    }
+                                                                                }}
+                                                                                className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                            />
+                                                                            <div className="h-full flex items-center justify-between px-4 bg-white/5 border border-white/10 rounded-xl group-hover/univ:border-orange-500/30 transition-all">
+                                                                                <span className="text-[10px] font-bold text-gray-500">Upload to all packages...</span>
+                                                                                <Upload className="w-4 h-4 text-gray-600" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="space-y-1">
+                                                                    <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Apply Global Summary/Content</label>
+                                                                    <textarea 
+                                                                        rows={4}
+                                                                        placeholder="Paste content to apply to ALL packages..."
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value;
+                                                                            const newPkgs = pujasForm.packages.map(p => ({ ...p, description: val }));
+                                                                            setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                        }}
+                                                                        className="w-full px-4 py-3 bg-black/40 border border-white/10 rounded-2xl text-xs text-gray-400 focus:outline-none focus:border-orange-500/50 resize-none leading-relaxed"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <p className="text-[9px] text-orange-500/50 font-bold italic text-center uppercase tracking-tighter">* Changes above will overwrite existing data for all packages below instantly.</p>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                            {pujasForm.packages?.map((pkg, idx) => (
+                                                                <div key={pkg.id} className="p-5 rounded-[2rem] bg-white/[0.02] border border-white/10 space-y-4 hover:border-orange-500/30 transition-all relative group/pkg">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const newPkgs = pujasForm.packages.filter((_, i) => i !== idx);
+                                                                            setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                        }}
+                                                                        className="absolute top-4 right-4 p-2 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 opacity-0 group-hover/pkg:opacity-100 transition-all hover:bg-red-500 hover:text-white"
+                                                                    >
+                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                    </button>
+
+                                                                    <div className="flex flex-col gap-4">
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div className="space-y-1">
+                                                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Package Name</label>
+                                                                                <input 
+                                                                                    type="text"
+                                                                                    value={pkg.name}
+                                                                                    onChange={(e) => {
+                                                                                        const newPkgs = [...pujasForm.packages];
+                                                                                        newPkgs[idx].name = e.target.value;
+                                                                                        setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                                    }}
+                                                                                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-orange-500/50"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="space-y-1">
+                                                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Tag (e.g. Popular)</label>
+                                                                                <input 
+                                                                                    type="text"
+                                                                                    value={pkg.tag}
+                                                                                    onChange={(e) => {
+                                                                                        const newPkgs = [...pujasForm.packages];
+                                                                                        newPkgs[idx].tag = e.target.value;
+                                                                                        setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                                    }}
+                                                                                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-orange-400 focus:outline-none focus:border-orange-500/50"
+                                                                                    placeholder="Recommended"
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <div className="space-y-1">
+                                                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Price (₹)</label>
+                                                                                <input 
+                                                                                    type="number"
+                                                                                    value={pkg.price}
+                                                                                    onChange={(e) => {
+                                                                                        const newPkgs = [...pujasForm.packages];
+                                                                                        newPkgs[idx].price = parseInt(e.target.value) || 0;
+                                                                                        setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                                    }}
+                                                                                    className="w-full px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-orange-500/50"
+                                                                                />
+                                                                            </div>
+                                                                            <div className="space-y-1">
+                                                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Image Asset</label>
+                                                                                <div className="relative group/pkgimg h-[36px]">
+                                                                                    <input 
+                                                                                        type="file"
+                                                                                        accept="image/*"
+                                                                                        onChange={(e) => {
+                                                                                            const file = e.target.files?.[0];
+                                                                                            if (file) handlePackageImageUpload(file, idx);
+                                                                                        }}
+                                                                                        className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                                    />
+                                                                                    <div className="h-full flex items-center justify-between px-4 bg-white/5 border border-white/10 rounded-xl group-hover/pkgimg:border-orange-500/30 transition-all overflow-hidden">
+                                                                                        <span className="text-[10px] font-bold text-gray-500 truncate max-w-[100px]">
+                                                                                            {pkg.image ? 'Change Image' : 'Upload Image'}
+                                                                                        </span>
+                                                                                        {pkg.image ? (
+                                                                                            <div className="w-6 h-6 rounded-md overflow-hidden bg-gray-800 border border-white/10">
+                                                                                                <img src={pkg.image} className="w-full h-full object-cover" />
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <Upload className="w-3.5 h-3.5 text-gray-600" />
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-1">
+                                                                        <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Brief Summary</label>
+                                                                        <textarea
+                                                                            rows={2}
+                                                                            value={pkg.description}
+                                                                            onChange={(e) => {
+                                                                                const newPkgs = [...pujasForm.packages];
+                                                                                newPkgs[idx].description = e.target.value;
+                                                                                setPujasForm({ ...pujasForm, packages: newPkgs });
+                                                                            }}
+                                                                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs text-gray-400 focus:outline-none focus:border-orange-500/50 resize-none leading-relaxed"
+                                                                            placeholder="Briefly describe what's included..."
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-2 pt-2">
+                                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.1em] mb-4">Detailed Background (About Section)</p>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">English Insight</label>
+                                                            <textarea
+                                                                rows={4}
+                                                                value={pujasForm.about_description}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, about_description: e.target.value })}
+                                                                placeholder="In-depth details about the ritual..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-white/10 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-white"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <label className="block text-[10px] font-bold text-orange-400 uppercase tracking-widest pl-1 flex items-center justify-between">
+                                                                Hindi Insight
+                                                                {isTranslating && (pujasForm.about_description && (!pujasForm.about_description_hi || pujasForm.about_description_hi === aiGenerated.about_description_hi)) && (
+                                                                    <span className="flex items-center gap-1 text-[8px] animate-pulse">
+                                                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                                        AI Translating...
+                                                                    </span>
+                                                                )}
+                                                            </label>
+                                                            <textarea
+                                                                rows={4}
+                                                                value={pujasForm.about_description_hi}
+                                                                onChange={(e) => setPujasForm({ ...pujasForm, about_description_hi: e.target.value })}
+                                                                placeholder="विस्तृत विवरण..."
+                                                                className="w-full px-6 py-5 bg-white/[0.03] border border-orange-500/20 rounded-3xl focus:outline-none focus:border-orange-500/50 transition-all resize-none text-sm leading-relaxed text-orange-100"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-5 p-6 rounded-3xl bg-white/[0.02] border border-white/10 group hover:border-orange-500/20 transition-all">
+                                                    <div className="relative inline-flex items-center cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="is_active_check"
+                                                            checked={pujasForm.is_active}
+                                                            onChange={(e) => setPujasForm({ ...pujasForm, is_active: e.target.checked })}
+                                                            className="w-6 h-6 rounded-lg border-white/20 bg-black text-orange-500 focus:ring-orange-500/50 cursor-pointer"
+                                                        />
+                                                    </div>
+                                                    <label htmlFor="is_active_check" className="flex-1 cursor-pointer">
+                                                        <p className="text-sm font-bold text-gray-200">App Catalog Visibility</p>
+                                                        <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-widest font-semibold flex items-center gap-2">
+                                                            <span className={`w-1.5 h-1.5 rounded-full ${pujasForm.is_active ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+                                                            Instantly toggle availability across all platforms
+                                                        </p>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                    </div>
 
                                 </div>
 
@@ -1251,6 +1504,300 @@ export default function PujaManagementPage() {
                 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
             ` }} />
                             </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {isGlobalPackageModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 lg:pl-72">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsGlobalPackageModalOpen(false)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                        />
+
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-[#111] border border-white/10 w-full max-w-[95%] lg:max-w-[90%] rounded-[32px] shadow-2xl overflow-hidden relative z-10 max-h-[95vh] flex flex-col"
+                        >
+                            <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between bg-[#111] z-30">
+                                <div>
+                                    <h2 className="text-xl font-bold flex items-center gap-3">
+                                        <Star className="w-5 h-5 text-orange-500" />
+                                        Universal Package Configuration
+                                    </h2>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-1">Changes here can be applied to ALL pujas globally</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsGlobalPackageModalOpen(false)}
+                                    className="p-2 hover:bg-white/5 rounded-xl transition-all"
+                                >
+                                    <X className="w-6 h-6 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto no-scrollbar custom-scrollbar p-8">
+                                <div className="space-y-12">
+                                    {/* Global UI Text Settings */}
+                                    <div className="p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/10">
+                                        <h4 className="text-sm font-black text-white mb-6 uppercase tracking-widest flex items-center gap-3">
+                                            <Info className="w-4 h-4 text-orange-500" />
+                                            Global UI Content
+                                        </h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-1">
+                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Popup Main Title</label>
+                                                <input 
+                                                    type="text" value={globalPopupSettings.title}
+                                                    onChange={(e) => setGlobalPopupSettings({ ...globalPopupSettings, title: e.target.value })}
+                                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Selection Heading</label>
+                                                <input 
+                                                    type="text" value={globalPopupSettings.selectionHeading}
+                                                    onChange={(e) => setGlobalPopupSettings({ ...globalPopupSettings, selectionHeading: e.target.value })}
+                                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white"
+                                                />
+                                            </div>
+                                            <div className="space-y-1 md:col-span-2">
+                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Subtitle Template (Use {'{pujaName}'})</label>
+                                                <input 
+                                                    type="text" value={globalPopupSettings.subtitle}
+                                                    onChange={(e) => setGlobalPopupSettings({ ...globalPopupSettings, subtitle: e.target.value })}
+                                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-6">
+                                        {globalPackagesForm.map((pkg, idx) => (
+                                            <div key={idx} className="group relative p-8 rounded-[2.5rem] bg-white/[0.03] border border-white/10 hover:border-orange-500/30 transition-all duration-500">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setGlobalPackagesForm(globalPackagesForm.filter((_, i) => i !== idx))}
+                                                    className="absolute top-8 right-8 p-2 bg-red-500/10 text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                                <div className="flex items-center gap-4 mb-6">
+                                                    <div className="w-12 h-12 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 font-black text-xl">
+                                                        {idx + 1}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Package #{idx + 1}</h4>
+                                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Ritual Tier Configuration</p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-1">
+                                                            <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Display Name</label>
+                                                            <input 
+                                                                type="text" value={pkg.name}
+                                                                onChange={(e) => {
+                                                                    const n = [...globalPackagesForm]; n[idx].name = e.target.value; setGlobalPackagesForm(n);
+                                                                }}
+                                                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white focus:border-orange-500/50 outline-none transition-all"
+                                                            />
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-1">
+                                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Price (INR)</label>
+                                                                <input 
+                                                                    type="number" value={pkg.price}
+                                                                    onChange={(e) => {
+                                                                        const n = [...globalPackagesForm]; n[idx].price = parseInt(e.target.value) || 0; setGlobalPackagesForm(n);
+                                                                    }}
+                                                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white focus:border-orange-500/50 outline-none transition-all"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Tag (Badge)</label>
+                                                                <input 
+                                                                    type="text" value={pkg.tag}
+                                                                    onChange={(e) => {
+                                                                        const n = [...globalPackagesForm]; n[idx].tag = e.target.value; setGlobalPackagesForm(n);
+                                                                    }}
+                                                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-bold text-orange-400 focus:border-orange-500/50 outline-none transition-all"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Summary Description</label>
+                                                            <textarea 
+                                                                rows={2} value={pkg.description}
+                                                                onChange={(e) => {
+                                                                    const n = [...globalPackagesForm]; n[idx].description = e.target.value; setGlobalPackagesForm(n);
+                                                                }}
+                                                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] text-gray-400 focus:border-orange-500/50 outline-none transition-all resize-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-4">
+                                                        <div className="space-y-1">
+                                                            <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Inclusions (English - One per line)</label>
+                                                            <textarea 
+                                                                rows={3} value={(pkg.inclusions || []).join('\n')}
+                                                                onChange={(e) => {
+                                                                    const n = [...globalPackagesForm]; 
+                                                                    n[idx].inclusions = e.target.value.split('\n').filter(l => l.trim()); 
+                                                                    setGlobalPackagesForm(n);
+                                                                }}
+                                                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] text-gray-300 focus:border-orange-500/50 outline-none transition-all resize-none leading-relaxed"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="block text-[8px] font-bold text-orange-500 uppercase tracking-widest pl-1">Inclusions (Hindi - One per line)</label>
+                                                            <textarea 
+                                                                rows={3} value={(pkg.inclusions_hi || []).join('\n')}
+                                                                onChange={(e) => {
+                                                                    const n = [...globalPackagesForm]; 
+                                                                    n[idx].inclusions_hi = e.target.value.split('\n').filter(l => l.trim()); 
+                                                                    setGlobalPackagesForm(n);
+                                                                }}
+                                                                className="w-full px-4 py-3 bg-white/5 border border-orange-500/10 rounded-2xl text-[10px] text-orange-200/80 focus:border-orange-500/50 outline-none transition-all resize-none leading-relaxed"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="block text-[8px] font-bold text-gray-600 uppercase tracking-widest pl-1">Package Visual</label>
+                                                            <div className="relative group/upload h-12">
+                                                                <input 
+                                                                    type="file" accept="image/*"
+                                                                    onChange={async (e) => {
+                                                                        const file = e.target.files?.[0];
+                                                                        if (file) {
+                                                                            const url = await handleFileUpload(file, 'package');
+                                                                            const n = [...globalPackagesForm]; n[idx].image = url; setGlobalPackagesForm(n);
+                                                                        }
+                                                                    }}
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                                                />
+                                                                <div className="h-full flex items-center justify-between px-4 bg-white/5 border border-white/10 rounded-2xl group-hover/upload:border-orange-500/30 transition-all">
+                                                                    <span className="text-[10px] font-bold text-gray-500">{pkg.image ? 'Change Asset' : 'Upload Asset'}</span>
+                                                                    {pkg.image && (
+                                                                        <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/20">
+                                                                            <img src={pkg.image} className="w-full h-full object-cover" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const newPkgs = [...globalPackagesForm];
+                                            newPkgs.push({ id: 'pkg-' + Date.now(), name: 'New Package', price: 0, description: '', tag: '', inclusions: [] });
+                                            setGlobalPackagesForm(newPkgs);
+                                        }}
+                                        className="w-full py-4 border-2 border-dashed border-white/10 rounded-[2rem] text-[10px] font-bold text-gray-500 hover:border-orange-500/30 hover:text-orange-500 transition-all uppercase tracking-widest"
+                                    >
+                                        + Add New Package Tier
+                                    </button>
+
+                                    <div className="p-6 rounded-[2.5rem] bg-red-500/5 border border-red-500/10">
+                                        <p className="text-xs font-bold text-red-400 mb-2 uppercase tracking-widest">⚠️ Danger Zone</p>
+                                        <p className="text-[10px] text-gray-500 mb-4 font-medium">Clicking the button below will replace the packages for ALL {pujas.length} pujas in your catalog with the template above.</p>
+                                        <button
+                                            onClick={handleSyncGlobalPackages}
+                                            disabled={isSaving}
+                                            className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-black rounded-2xl transition-all uppercase text-[10px] tracking-widest shadow-xl shadow-red-900/20"
+                                        >
+                                            {isSaving ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : `Synchronize Universal Packages to Complete Catalog`}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Notification Toast */}
+            <AnimatePresence>
+                {notification.type && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 20, x: '-50%' }}
+                        className={`fixed bottom-10 left-1/2 z-[100] px-8 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border flex items-center gap-4 min-w-[320px] ${
+                            notification.type === 'success' 
+                                ? 'bg-green-500/10 border-green-500/20 text-green-400' 
+                                : 'bg-red-500/10 border-red-500/20 text-red-400'
+                        }`}
+                    >
+                        <div className={`p-2 rounded-xl ${notification.type === 'success' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                            {notification.type === 'success' ? <Check className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-xs font-black uppercase tracking-widest opacity-60 mb-0.5">{notification.type}</p>
+                            <p className="text-sm font-bold text-white">{notification.message}</p>
+                        </div>
+                        <button onClick={() => setNotification({ message: '', type: null })} className="p-1 hover:bg-white/5 rounded-lg transition-all">
+                            <X className="w-4 h-4 opacity-40" />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Custom Confirmation Modal */}
+            <AnimatePresence>
+                {confirmState.isOpen && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setConfirmState({ isOpen: false, message: '', onConfirm: null })}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative w-full max-w-md bg-[#111] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl overflow-hidden"
+                        >
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-red-600" />
+                            
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center mb-6">
+                                    <AlertTriangle className="w-8 h-8 text-orange-500" />
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-2">Confirmation Required</h3>
+                                <p className="text-gray-400 text-sm leading-relaxed mb-8">
+                                    {confirmState.message}
+                                </p>
+                                
+                                <div className="flex gap-4 w-full">
+                                    <button
+                                        onClick={() => setConfirmState({ isOpen: false, message: '', onConfirm: null })}
+                                        className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all uppercase text-[10px] tracking-widest border border-white/5"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={() => confirmState.onConfirm?.()}
+                                        className="flex-1 py-4 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-black rounded-2xl shadow-xl shadow-orange-500/20 transition-all uppercase text-[10px] tracking-widest"
+                                    >
+                                        Confirm
+                                    </button>
+                                </div>
+                            </div>
                         </motion.div>
                     </div>
                 )}

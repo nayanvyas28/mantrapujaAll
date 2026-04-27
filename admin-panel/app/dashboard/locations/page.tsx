@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { 
     Plus, Search, Trash2, Edit2, Upload, X, Check, 
-    Loader2, Sparkles, Tag, Info, ArrowLeft, 
+    Loader2, Star, Tag, Info, ArrowLeft, 
     Image as ImageIcon, MapPin, ChevronDown, 
     Compass, Landmark, Map, LayoutGrid
 } from 'lucide-react';
@@ -374,7 +374,7 @@ export default function LocationManagementPage() {
                             disabled={isTranslating}
                             className="flex items-center gap-2 px-6 py-4 bg-white/5 border border-saffron/30 hover:bg-saffron/10 rounded-2xl font-bold transition-all active:scale-[0.98] text-[10px] tracking-widest uppercase text-saffron"
                         >
-                            <Sparkles className="w-4 h-4" />
+                            <Star className="w-4 h-4" />
                             Auto Translate
                         </button>
                         <button

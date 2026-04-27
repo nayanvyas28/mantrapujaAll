@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Calendar, Clock, MapPin, Sparkles, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { ChevronLeft, Calendar, Clock, MapPin, Star, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -131,7 +131,7 @@ export default function BookingsScreen() {
                       <CheckCircle2 size={18} color="#059669" />
                       <Text className="text-emerald-700 text-[10px] font-black uppercase tracking-tight ml-2">Pandit ji Assigned</Text>
                     </View>
-                    <Sparkles size={16} color="#059669" />
+                    <Star size={16} color="#059669" />
                   </View>
                 )}
                 
@@ -148,7 +148,7 @@ export default function BookingsScreen() {
           ) : (
             <View className="items-center justify-center py-20 px-10">
                <View className="w-24 h-24 bg-orange-50 rounded-[40px] items-center justify-center mb-6">
-                 <Sparkles size={48} color="#FF4D00" opacity={0.2} />
+                 <Star size={48} color="#FF4D00" opacity={0.2} />
                </View>
                <Text className="text-gray-900 font-bold text-lg text-center mb-2">Abhi tak koi booking nahi hai</Text>
                <Text className="text-gray-500 text-sm text-center leading-relaxed">Divine puja aur anusthan book karein aur Pandit ji ka ashirwad payein.</Text>

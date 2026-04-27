@@ -11,6 +11,7 @@ import FireParticles from "@/components/FireParticles"; // Ensure this component
 import CollapsibleText from "@/components/ui/CollapsibleText";
 import SpiritualFamilySection from "@/components/home/SpiritualFamilySection";
 import BookingPackagesPopup from "@/components/BookingPackagesPopup";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     // Helper to render icons
@@ -65,6 +66,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     } = puja;
 
     const { user } = useAuth();
+    const { language } = useLanguage();
     const router = useRouter();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -74,6 +76,12 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
     const [selectedPkg, setSelectedPkg] = useState<any>(null);
     const [sankalpName, setSankalpName] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [realReviews, setRealReviews] = useState<any[]>([]);
+
+    // Extract success screen config
+    const config = (puja.packages || []).find(p => p.id === '__config__') as any;
+    const successTitle = config?.successTitle || 'Jai Ho! 🎉';
+    const successMessage = config?.successMessage || 'Booking Confirmed Successfully';
 
     useEffect(() => {
         const handleScroll = () => {
@@ -95,6 +103,23 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
 
         return () => window.removeEventListener('scroll', handleScroll);
     }, [user]); // Re-run when user state changes to ensure scrollToBooking has the right auth context
+
+    useEffect(() => {
+        const fetchReviews = async () => {
+            try {
+                const res = await fetch(`/api/puja-reviews/${puja.slug}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setRealReviews(data.reviews || []);
+                }
+            } catch (err) {
+                console.error("Failed to fetch reviews:", err);
+            }
+        };
+        fetchReviews();
+    }, [puja.slug]);
+
+    const allReviews = [...realReviews, ...(testimonials.reviews || [])];
 
     const scrollToBooking = () => {
         if (!user) {
@@ -723,12 +748,12 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
             </section>
 
             {/* --- TESTIMONIALS --- */}
-            {testimonials.reviews && testimonials.reviews.length > 0 && (
+            {allReviews.length > 0 && (
                 <section className="py-8 md:py-16 relative z-10">
                     <div className="container mx-auto px-4">
                         <SectionHeading subtitle="Trust">{testimonials.title || "What Devotees Say"}</SectionHeading>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                            {testimonials.reviews.map((t, i) => (
+                            {allReviews.map((t, i) => (
                                 <motion.div
                                     key={i}
                                     initial={{ opacity: 0, y: 20 }}
@@ -749,8 +774,12 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                         </div>
                                         <p className="text-base md:text-xl text-gray-800 dark:text-muted-foreground italic mb-8 md:mb-10 leading-relaxed font-serif relative z-10">"{t.comment}"</p>
                                         <div className="flex items-center gap-4 md:gap-5 mt-auto">
-                                            <div className={`w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center font-black text-lg md:text-2xl text-white shadow-lg`}>
-                                                {t.avatar}
+                                            <div className={`w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center font-black text-lg md:text-2xl text-white shadow-lg overflow-hidden`}>
+                                                {t.avatar && (t.avatar.startsWith('http') || t.avatar.startsWith('/') || t.avatar.includes('.')) ? (
+                                                    <img src={t.avatar} alt={t.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span>{t.avatar || t.name.charAt(0)}</span>
+                                                )}
                                             </div>
                                             <div>
                                                 <p className="font-black font-serif text-lg md:text-xl text-gray-900 dark:text-white">{t.name}</p>
@@ -971,6 +1000,7 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                 pujaName={name}
                 packages={puja.packages || []}
                 onSelect={handlePackageSelect}
+                isHindi={language === 'hi'}
             />
 
             {/* Step 2: Sankalp Name Entry */}
@@ -1072,8 +1102,8 @@ export default function PoojaDetailClient({ puja }: { puja: PujaData }) {
                                 <CheckCircle className="w-12 h-12 text-white" strokeWidth={3} />
                             </motion.div>
 
-                            <h3 className="text-3xl font-black text-gray-900 dark:text-white font-serif mb-4">Jai Ho! 🎉</h3>
-                            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">Booking Confirmed Successfully</p>
+                            <h3 className="text-3xl font-black text-gray-900 dark:text-white font-serif mb-4">{successTitle}</h3>
+                            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">{successMessage}</p>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-10 leading-relaxed">
                                 Divine blessings await you, <span className="text-gray-900 dark:text-white font-black">{sankalpName}</span>. Your ritual has been scheduled.
                             </p>

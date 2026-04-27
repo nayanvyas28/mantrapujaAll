@@ -28,7 +28,7 @@ import {
   SkipForward,
   Repeat,
   Shuffle,
-  Sparkles
+  Star
 } from 'lucide-react-native';
 import YoutubePlayer from "react-native-youtube-iframe";
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
@@ -390,7 +390,7 @@ export default function MusicScreen() {
                                         />
                                         {playing && (
                                             <View className="absolute inset-0 bg-black/10 items-center justify-center">
-                                                <Sparkles size={100} color="rgba(255,255,255,0.2)" />
+                                                <Star size={100} color="rgba(255,255,255,0.2)" />
                                             </View>
                                         )}
                                     </View>

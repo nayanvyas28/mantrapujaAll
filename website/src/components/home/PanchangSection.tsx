@@ -10,7 +10,7 @@ import {
     AlertTriangle, CheckCircle2,
     CalendarDays, Compass, MapPin, 
     Wind, Zap, Mountain, Flame,
-    User, Sparkles, Stars
+    User, Star, Stars
 } from 'lucide-react';
 
 interface PanchangData {
@@ -219,7 +219,7 @@ export default function PanchangSection() {
                                     className="w-36 h-36 md:w-44 md:h-44 object-cover rounded-full border-4 border-white shadow-2xl relative z-10"
                                 />
                                 <div className="absolute -bottom-2 -right-2 bg-white p-2.5 rounded-full shadow-2xl z-20">
-                                    <Sparkles className="w-5 h-5 text-orange-500" />
+                                    <Star className="w-5 h-5 text-orange-500" />
                                 </div>
                             </div>
                             <div className="text-center">

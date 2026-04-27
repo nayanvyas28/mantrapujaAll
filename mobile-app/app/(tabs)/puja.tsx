@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, Dimensions, StatusBar, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Sparkles, MapPin, Calendar, Heart, Search, Filter, Star, ChevronRight } from 'lucide-react-native';
+import { Star, MapPin, Calendar, Heart, Search, Filter, Star, ChevronRight } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import Skeleton from '../../components/Skeleton';
 
@@ -107,7 +107,7 @@ export default function ServicesScreen() {
                  <View className="mt-4 flex-row items-center justify-between border-t border-gray-50 pt-5">
                     <View className="flex-row items-center">
                        <View className="w-8 h-8 rounded-full bg-orange-50 items-center justify-center mr-2 border border-orange-100">
-                          <Sparkles size={14} color="#FF4D00" />
+                          <Star size={14} color="#FF4D00" />
                        </View>
                        <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-tighter">Certified Vedic Ritual</Text>
                     </View>
@@ -198,7 +198,7 @@ export default function ServicesScreen() {
             {/* Divine Offer Banner */}
             <TouchableOpacity className="mx-6 mb-10 bg-indigo-600 rounded-[40px] p-8 flex-row items-center justify-between overflow-hidden">
                <View className="absolute -right-10 -top-10 opacity-10">
-                  <Sparkles size={160} color="white" />
+                  <Star size={160} color="white" />
                </View>
                <View className="flex-1 pr-4">
                   <View className="bg-white/20 self-start px-2 py-0.5 rounded-md mb-2">
@@ -244,7 +244,7 @@ export default function ServicesScreen() {
             
             {filteredPujas.length === 0 && (
               <View className="py-20 items-center justify-center">
-                <Sparkles size={48} color="#FF4D00" opacity={0.2} />
+                <Star size={48} color="#FF4D00" opacity={0.2} />
                 <Text className="text-gray-400 mt-4 font-bold">No services found in this category</Text>
               </View>
             )}

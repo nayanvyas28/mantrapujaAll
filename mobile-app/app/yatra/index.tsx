@@ -15,7 +15,7 @@ import {
   ChevronLeft, 
   MapPin, 
   Search, 
-  Sparkles,
+  Star,
   ArrowRight,
   Compass,
   Star

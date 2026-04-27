@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StatusBar, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Bell, Sparkles, ShoppingBag, Gift, Clock, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, Bell, Star, ShoppingBag, Gift, Clock, Trash2 } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -67,7 +67,7 @@ export default function NotificationsScreen() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'divine': return <Sparkles size={20} color="#FF4D00" />;
+      case 'divine': return <Star size={20} color="#FF4D00" />;
       case 'offer': return <Gift size={20} color="#10B981" />;
       case 'order': return <ShoppingBag size={20} color="#4F46E5" />;
       default: return <Clock size={20} color="#F59E0B" />;

@@ -193,7 +193,7 @@ export default function ProductDetailScreen() {
           {/* Vedic Wisdom Section */}
           <View className="mt-10 p-6 bg-orange-50 rounded-[32px] border border-orange-100">
             <View className="flex-row items-center mb-3">
-                <Sparkles size={18} color="#FF4D00" />
+                <Star size={18} color="#FF4D00" />
                 <Text className="text-gray-900 font-bold text-base ml-2">Vedic Significance</Text>
             </View>
             <Text className="text-gray-600 text-xs leading-5 italic">

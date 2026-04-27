@@ -52,6 +52,11 @@ export async function POST(req: NextRequest) {
             if (!id) throw new Error('ID required for delete');
             const { error } = await supabaseAdmin.from('poojas').delete().eq('id', id);
             if (error) throw error;
+        } else if (action === 'sync-packages') {
+            const { packages } = body;
+            if (!packages) throw new Error('Packages required for sync');
+            const { error } = await supabaseAdmin.from('poojas').update({ packages }).not('id', 'is', null);
+            if (error) throw error;
         }
 
         return NextResponse.json({ success: true, id: activeId });

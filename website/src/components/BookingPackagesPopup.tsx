@@ -20,6 +20,7 @@ interface BookingPackagesPopupProps {
     pujaName: string;
     packages: Package[];
     onSelect: (pkg: Package) => void;
+    isHindi?: boolean;
 }
 
 // Dynamic Inclusions Mapping
@@ -89,11 +90,25 @@ export default function BookingPackagesPopup({
         { id: 'family', name: 'Family Package (Offline)', price: 5100, description: 'Offline ritual for families at sacred location.', image: '/packages/family_puja_gathering_1776301019356.png', tag: 'Best Value' },
     ];
 
-    const displayPackages = (packages && packages.length > 0 ? packages : defaultPackages).map((p, i) => ({
-        ...p,
-        image: (p as any).image || defaultPackages[i % 4].image,
-        tag: (p as any).tag || defaultPackages[i % 4].tag
-    }));
+    // Extract config if present in packages
+    const configItem = (packages || []).find(p => p.id === '__config__') as any;
+    const settings = {
+        title: configItem?.title || 'Divine Package Selection',
+        subtitle: (configItem?.subtitle || '{pujaName} • Authentic Vedic Rituals').replace('{pujaName}', pujaName),
+        selectionHeading: configItem?.selectionHeading || 'Select Your Sacred Package'
+    };
+
+    const actualPackages = (packages || []).filter(p => p.id !== '__config__');
+
+    const displayPackages = (actualPackages && actualPackages.length > 0 ? actualPackages : defaultPackages).map((p, i) => {
+        const inclusions = isHindi ? ((p as any).inclusions_hi || (p as any).inclusions || getInclusions(p.id, p.name)) : ((p as any).inclusions || getInclusions(p.id, p.name));
+        return {
+            ...p,
+            image: (p as any).image || defaultPackages[i % 4].image,
+            tag: (p as any).tag || defaultPackages[i % 4].tag,
+            inclusions: inclusions
+        };
+    });
 
     // Default selection
     if (!selectedId && displayPackages.length > 0) {
@@ -101,7 +116,7 @@ export default function BookingPackagesPopup({
     }
 
     const selectedPkg = displayPackages.find(p => p.id === selectedId) || displayPackages[0];
-    const currentInclusions = getInclusions(selectedPkg.id, selectedPkg.name);
+    const currentInclusions = selectedPkg.inclusions;
 
     return (
         <AnimatePresence>
@@ -130,11 +145,11 @@ export default function BookingPackagesPopup({
                              <div className="flex items-center gap-3">
                                 <Sun className="w-5 h-5 text-saffron" />
                                 <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white font-serif tracking-tight">
-                                    Divine Package Selection
+                                    {settings.title}
                                 </h3>
                              </div>
                              <p className="text-[10px] uppercase font-black tracking-[0.3em] text-slate-500 dark:text-gray-500">
-                                {pujaName} • Authentic Vedic Rituals
+                                {settings.subtitle}
                              </p>
                         </div>
                         <button 
@@ -166,21 +181,12 @@ export default function BookingPackagesPopup({
                             ))}
                         </div>
 
-                        {/* Note Section */}
-                        <div className="mx-8 p-5 rounded-3xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 flex items-start gap-4 mb-12 group hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all">
-                            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-500">
-                                <Info size={18} />
-                            </div>
-                            <p className="text-[10px] font-black text-slate-500 dark:text-gray-500 uppercase tracking-widest leading-loose">
-                                Additional offerings like <span className="text-emerald-600 dark:text-emerald-400">Vastra Daan</span>, <span className="text-emerald-600 dark:text-emerald-400">Anna Daan</span>, or <span className="text-emerald-600 dark:text-emerald-400">Gau Seva</span> can be added during Checkout.
-                            </p>
-                        </div>
 
                         {/* Tier Selection */}
                         <div className="px-8">
                             <h4 className="text-xl font-black mb-8 text-slate-900 dark:text-white font-serif flex items-center gap-3">
                                 <div className="h-px w-8 bg-saffron/40"></div>
-                                Select Your Sacred Package
+                                {settings.selectionHeading}
                                 <div className="h-px w-8 bg-saffron/40"></div>
                             </h4>
 
@@ -262,6 +268,16 @@ export default function BookingPackagesPopup({
                                     );
                                 })}
                             </div>
+                        </div>
+
+                        {/* Note Section */}
+                        <div className="mx-8 p-5 rounded-3xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/5 flex items-start gap-4 mt-8 mb-4 group hover:bg-slate-100 dark:hover:bg-white/[0.05] transition-all">
+                            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-500">
+                                <Info size={18} />
+                            </div>
+                            <p className="text-[10px] font-black text-slate-500 dark:text-gray-500 uppercase tracking-widest leading-loose">
+                                Additional offerings like <span className="text-emerald-600 dark:text-emerald-400">Vastra Daan</span>, <span className="text-emerald-600 dark:text-emerald-400">Anna Daan</span>, or <span className="text-emerald-600 dark:text-emerald-400">Gau Seva</span> can be added during Checkout.
+                            </p>
                         </div>
                         
                         {/* Spacer for scroll clarity */}

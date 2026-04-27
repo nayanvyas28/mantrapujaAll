@@ -9,7 +9,7 @@ import {
     Plus,
     Trash2,
     MessageSquare,
-    Sparkles,
+    Star,
     Type,
     BrainCircuit
 } from 'lucide-react';
@@ -151,7 +151,7 @@ export default function GuruAiManager() {
                 <div className="lg:col-span-12">
                     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
                         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-6 flex items-center gap-2">
-                            <Sparkles size={16} /> First Response Instruction (System Prompt)
+                            <Star size={16} /> First Response Instruction (System Prompt)
                         </h2>
                         <textarea
                             value={instruction}

@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { 
     Plus, Trash2, Edit2, X, Check, Loader2,
     ImageIcon, ArrowLeft, Smartphone, Globe,
-    Calendar, Clock, Layout, MapPin, Sparkles, ChevronRight
+    Calendar, Clock, Layout, MapPin, Star, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { deleteFileFromStorage } from '@/lib/storage-utils';
@@ -269,7 +269,7 @@ export default function PopupManagementPage() {
                         </Link>
                         <div className="flex items-center gap-4">
                             <div className="p-3 bg-gradient-to-tr from-purple-500/20 to-orange-500/20 rounded-2xl border border-white/10 shadow-lg">
-                                <Sparkles className="w-8 h-8 text-orange-400" />
+                                <Star className="w-8 h-8 text-orange-400" />
                             </div>
                             <div>
                                 <h1 className="text-4xl font-black tracking-tight mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">Marketing Popups</h1>

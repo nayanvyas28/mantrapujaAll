@@ -534,13 +534,31 @@ export default function ProfilePage() {
                                                         <div key={idx} className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 hover:border-orange-500/50 transition-colors bg-zinc-50 dark:bg-zinc-800/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
                                                             <div>
                                                                 <div className="flex items-center gap-3 mb-1">
-                                                                    <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                                                                        {booking.status}
+                                                                    <div className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                                                                        booking.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 
+                                                                        booking.scheduled_date ? 'bg-blue-100 text-blue-700' : 
+                                                                        'bg-orange-100 text-orange-700'
+                                                                    }`}>
+                                                                        {booking.status === 'completed' ? 'completed' : booking.scheduled_date ? 'Scheduled' : booking.status}
                                                                     </div>
                                                                     <span className="text-xs text-zinc-500 font-bold">{new Date(booking.created_at).toLocaleDateString()}</span>
                                                                 </div>
                                                                 <h3 className="font-bold text-zinc-800 dark:text-white text-lg">{booking.puja_name}</h3>
                                                                 <p className="text-sm text-zinc-500">Sankalp: {booking.sankalp_name} • {booking.package_name}</p>
+                                                                
+                                                                {booking.scheduled_date && booking.status !== 'completed' && (
+                                                                    <div className="mt-3 flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-xl w-fit border border-blue-100 dark:border-blue-800/50">
+                                                                        <Calendar size={14} className="animate-pulse" />
+                                                                        <span>Scheduled for: {new Date(booking.scheduled_date).toLocaleString([], { 
+                                                                            weekday: 'short',
+                                                                            day: 'numeric',
+                                                                            month: 'short',
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit',
+                                                                            hour12: true
+                                                                        })}</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             <div className="flex flex-col items-end gap-3 shrink-0">

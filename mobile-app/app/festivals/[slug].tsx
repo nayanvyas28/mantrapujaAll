@@ -20,7 +20,7 @@ import {
   Clock, 
   Info,
   ChevronRight,
-  Sparkles,
+  Star,
   Zap,
   CheckCircle2
 } from 'lucide-react-native';
@@ -175,7 +175,7 @@ export default function FestivalDetailScreen() {
         <View className="px-6 mt-10">
           <View className="flex-row items-center mb-4">
             <View className="w-10 h-10 bg-orange-50 rounded-2xl items-center justify-center mr-3">
-              <Sparkles size={20} color="#FF4D00" />
+              <Star size={20} color="#FF4D00" />
             </View>
             <Text className="text-gray-900 text-xl font-black">{language === 'hi' ? 'महत्व' : 'Significance'}</Text>
           </View>

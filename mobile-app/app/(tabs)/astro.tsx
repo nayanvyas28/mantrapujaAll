@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { 
-  Sparkles, 
+  Star, 
   Plus, 
   ChevronRight, 
   User, 
@@ -142,7 +142,7 @@ export default function AstroScreen() {
                         className="bg-white rounded-3xl p-5 shadow-sm border border-saffron-100 flex-row items-center"
                     >
                         <View className="w-16 h-16 bg-saffron-50 rounded-2xl items-center justify-center mr-4">
-                            <Sparkles color="#FF4D00" size={32} />
+                            <Star color="#FF4D00" size={32} />
                         </View>
                         <View className="flex-1">
                             <Text className="text-gray-900 font-bold text-lg">My Destiny Insight</Text>
@@ -156,7 +156,7 @@ export default function AstroScreen() {
                         className="bg-primary/5 rounded-3xl p-5 border border-primary/10 flex-row items-center"
                     >
                         <View className="w-16 h-16 bg-primary rounded-2xl items-center justify-center mr-4">
-                            <Sparkles color="white" size={32} />
+                            <Star color="white" size={32} />
                         </View>
                         <View className="flex-1">
                             <Text className="text-primary font-bold text-lg">Setup Vedic Profile</Text>
