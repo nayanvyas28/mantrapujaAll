@@ -138,6 +138,23 @@ export default function GuruAIChat() {
     const [pendingAction, setPendingAction] = useState<any>(null);
     const [queuedMessages, setQueuedMessages] = useState<Message[]>([]);
 
+    // Persistent guest message counter (survives chat clear)
+    const GUEST_MSG_COUNT_KEY = 'mp_guest_msg_count';
+    const GUEST_MSG_LIMIT = 3;
+    const getGuestMsgCount = () => {
+        if (typeof window === 'undefined') return 0;
+        return parseInt(localStorage.getItem(GUEST_MSG_COUNT_KEY) || '0', 10);
+    };
+    const incrementGuestMsgCount = () => {
+        if (typeof window === 'undefined') return;
+        const current = getGuestMsgCount();
+        localStorage.setItem(GUEST_MSG_COUNT_KEY, String(current + 1));
+    };
+    const resetGuestMsgCount = () => {
+        if (typeof window === 'undefined') return;
+        localStorage.removeItem(GUEST_MSG_COUNT_KEY);
+    };
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Queue Processor Effect with Self-Correction
@@ -409,17 +426,23 @@ export default function GuruAIChat() {
         }
 
         // --- AUTH FLOW INTERCEPTOR ---
+        // Use localStorage-persisted count so chat clear cannot bypass the limit
         if (!user && authStep === null && !skipAuth) {
-            // Trigger Auth Request
-            setAuthStep('phone');
-            setPendingAction({ message: userMessage });
+            const guestCount = getGuestMsgCount();
+            if (guestCount >= GUEST_MSG_LIMIT) {
+                // Limit reached — trigger login flow
+                setAuthStep('phone');
+                setPendingAction({ message: userMessage });
                 setQueuedMessages(prev => [...prev, { 
                     role: 'model', 
                     content: chatLanguage === 'hi'
                         ? "नमस्ते! आगे बढ़ने के लिए कृपया अपना मोबाइल नंबर दर्ज करें।"
                         : "Namaste! To proceed with your spiritual request, please provide your mobile number for a quick verification."
                 }]);
-            return;
+                return;
+            }
+            // Count this message (guest is within limit)
+            incrementGuestMsgCount();
         }
 
         if (authStep === 'phone' && !skipAuth) {
@@ -493,6 +516,9 @@ export default function GuruAIChat() {
                     setAuthStep(null);
                     const resumeMessage = pendingAction?.message;
                     setPendingAction(null);
+
+                    // Clear guest message counter — user is now logged in
+                    resetGuestMsgCount();
 
                     // Standardize profile in correct table
                     await supabase.from('profiles').upsert({ 
@@ -1061,7 +1087,13 @@ export default function GuruAIChat() {
                             <form onSubmit={handleSend} className="relative flex items-center gap-3">
                                 <div className="relative flex-1 group">
                                     <input
-                                        type={authStep === 'otp' ? 'text' : (collectionStep === 1 ? 'date' : (collectionStep === 2 ? 'time' : 'text'))}
+                                        type={
+                                            authStep === 'phone' ? 'tel' :
+                                            authStep === 'otp' ? 'text' :
+                                            collectionStep === 1 ? 'date' :
+                                            collectionStep === 2 ? 'time' :
+                                            'text'
+                                        }
                                         value={input}
                                         onChange={(e) => authStep === 'phone' ? setInput(e.target.value.replace(/\D/g, '').slice(0, 10)) : (collectionStep === 3 ? handlePlaceSearchLocal(e.target.value) : setInput(e.target.value))}
                                         placeholder={

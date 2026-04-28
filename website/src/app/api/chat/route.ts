@@ -82,11 +82,24 @@ TAG REQUIRED: ALWAYS append [[START_KUNDLI_FLOW]] after asking for their details
             }
         } else {
             profileContext = `
---- GUEST MODE (RESTRICTED) ---
-The user is a GUEST.
-STRICT MISSION: Tell them "Jab aap LOGIN karenge, tabhi hum aapki Kundali ke gehre rahasya bata payenge." 
-Focus ON guest-friendly topics like general Puja or Mantras.
---------------------------
+--- GUEST MODE (ENGAGE & INTRIGUE) ---
+The user is a GUEST — they have NOT logged in yet. You have a VERY limited window (only 3 messages) to CAPTIVATE them.
+
+YOUR CORE MISSION: Give genuinely interesting, valuable answers BUT always leave the user wanting MORE. Create a strong emotional pull toward logging in.
+
+STRICT RULES FOR GUEST RESPONSES:
+1. ANSWER THEIR QUESTION — Give a real, fascinating insight related to their topic (astrology, spirituality, puja, mantra, etc.). Do NOT refuse to answer. Make them feel the answer is valuable.
+2. ADD A MYSTERIOUS HOOK — After your answer, hint that there is something DEEPLY PERSONAL and SPECIFIC about them hidden in the stars. Use language like:
+   - "Lekin ek baat aur hai jo aapki janam kundali mein chhupa hai — jo sirf aapke liye hai..."
+   - "Mujhe aapke naam/janm ke baare mein kuch pata karna hai jo aapki zindagi badal sakta hai..."
+   - "Aapke sawal ka jawab toh maine de diya, par aapke ग्रहों ki ek aisi sthiti hai jo bahut kam logon mein hoti hai..."
+3. CREATE FOMO — End with a soft, spiritual call-to-action that feels personal, NOT pushy:
+   - "Kya aap chahenge ki main aapki kundali dekh kar aapko PERSONALLY guide karun? Bas ek kadam aur..."
+   - "Apna janam vivran share karein aur main aapko wo rahasya bataunga jo aaj ke din ke liye sabse zaroori hai."
+4. LANGUAGE: Respond in the same language the user used (Hindi or English). Keep tone warm, mysterious, and divine — like a wise sage.
+5. NEVER be robotic or generic. Each response must feel unique and personal even without their birth data.
+6. DO NOT mention "login" or "signup" in a technical way. Use spiritual language: "apni parichay dein", "apni kundali ki dvaar kholen", "mere saath judein".
+-----------------------------------------
             `;
         }
 
@@ -245,58 +258,56 @@ Inauspicious Rahu Kaal: ${JSON.stringify(pData.inauspicious_timings?.rahu_kaal |
         const endInstruction = settings?.find(s => s.key === 'chat_end_instruction')?.value || "Always end your message with a short, topic-related mystery or curiosity question (e.g., 'Kya aap janna chahenge aapka Career kaisa rahega?').";
         const guruAiInstruction = settings?.find(s => s.key === 'guru_ai_instruction')?.value || "";
 
-        // --- Usage Check with Time-Based Reset ---
-        const limit = userId ? freeQueryLimit : guestQueryLimit;
+        // --- Usage Check with Time-Based Reset (LOGGED-IN USERS ONLY) ---
+        // Guests are limited to 3 messages on the frontend (localStorage).
+        // The 10-chat / 3-hour rest rule only applies to authenticated users.
+        if (userId) {
+            const { data: usageData, error: usageError } = await supabaseAdmin
+                .from('ai_usage')
+                .select('query_count, last_query_at')
+                .eq('user_id', identifier)
+                .single();
 
-        const { data: usageData, error: usageError } = await supabaseAdmin
-            .from('ai_usage')
-            .select('query_count, last_query_at')
-            .eq('user_id', identifier)
-            .single();
-
-        if (usageError && usageError.code !== 'PGRST116') {
-            console.error("Failed to fetch usage:", usageError);
-        }
-
-        let currentCount = usageData?.query_count || 0;
-        const lastQueryAt = usageData?.last_query_at ? new Date(usageData.last_query_at) : null;
-        const now = new Date();
-
-        if (lastQueryAt) {
-            const hoursSinceLastQuery = (now.getTime() - lastQueryAt.getTime()) / (1000 * 60 * 60);
-            
-            // If the reset period has passed, we treat the count as 0
-            if (hoursSinceLastQuery >= chatResetHours) {
-                currentCount = 0;
-                // Proactively reset in DB so the next check is clean
-                await supabaseAdmin
-                    .from('ai_usage')
-                    .update({ query_count: 0 })
-                    .eq('user_id', identifier);
+            if (usageError && usageError.code !== 'PGRST116') {
+                console.error("Failed to fetch usage:", usageError);
             }
-        }
 
-        if (currentCount >= limit) {
-            // Calculate remaining wait time
+            let currentCount = usageData?.query_count || 0;
+            const lastQueryAt = usageData?.last_query_at ? new Date(usageData.last_query_at) : null;
+            const now = new Date();
+
             if (lastQueryAt) {
-                const waitMs = (chatResetHours * 60 * 60 * 1000) - (now.getTime() - lastQueryAt.getTime());
-                const waitHours = Math.floor(waitMs / (1000 * 60 * 60));
-                const waitMinutes = Math.floor((waitMs % (1000 * 60 * 60)) / (1000 * 60));
-
-                const timeMsg = language === 'hi'
-                    ? (waitHours > 0 ? `${waitHours} घंटे और ${waitMinutes} मिनट` : `${waitMinutes} मिनट`)
-                    : (waitHours > 0 ? `${waitHours} hours and ${waitMinutes} minutes` : `${waitMinutes} minutes`);
-
-                const waitingText = language === 'hi'
-                    ? `प्रणाम! गुरु जी अभी गहन ध्यान (meditation) में हैं ताकि वह आपकी समस्याओं का दिव्य समाधान खोज सकें। 🙏\n\nवैसे, आपकी कुंडली में मुझे कुछ बहुत ही विलक्षण और खास दिख रहा है... इसके बारे में मैं आपको अगली बार विस्तार से बताऊंगा जब आपकी आध्यात्मिक शक्तियां पुनः संचित हो जाएंगी। कृपया ${timeMsg} बाद पुनः पधारें। ✨`
-                    : `Pranaam! Guru Ji is currently in deep meditation to find the most divine solution for your concerns. 🙏\n\nI see something very unique and special in your birth chart... I will reveal more about it next time when your spiritual energies are replenished. Please return after ${timeMsg}. ✨`;
-
-                return NextResponse.json({ text: waitingText });
+                const hoursSinceLastQuery = (now.getTime() - lastQueryAt.getTime()) / (1000 * 60 * 60);
+                if (hoursSinceLastQuery >= chatResetHours) {
+                    currentCount = 0;
+                    await supabaseAdmin
+                        .from('ai_usage')
+                        .update({ query_count: 0 })
+                        .eq('user_id', identifier);
+                }
             }
-            
-            return NextResponse.json({ 
-                text: `Guru Ji abhi dhyan mein hain. Vaise aapki kundali mein kuch bahut hi vishesh yog ban raha hai... Kirpaya ${chatResetHours} ghante baad punah aayein. 🙏`
-            });
+
+            if (currentCount >= freeQueryLimit) {
+                if (lastQueryAt) {
+                    const waitMs = (chatResetHours * 60 * 60 * 1000) - (new Date().getTime() - lastQueryAt.getTime());
+                    const waitHours = Math.floor(waitMs / (1000 * 60 * 60));
+                    const waitMinutes = Math.floor((waitMs % (1000 * 60 * 60)) / (1000 * 60));
+
+                    const timeMsg = language === 'hi'
+                        ? (waitHours > 0 ? `${waitHours} घंटे और ${waitMinutes} मिनट` : `${waitMinutes} मिनट`)
+                        : (waitHours > 0 ? `${waitHours} hours and ${waitMinutes} minutes` : `${waitMinutes} minutes`);
+
+                    const waitingText = language === 'hi'
+                        ? `प्रणाम! गुरु जी अभी गहन ध्यान (meditation) में हैं ताकि वह आपकी समस्याओं का दिव्य समाधान खोज सकें। 🙏\n\nवैसे, आपकी कुंडली में मुझे कुछ बहुत ही विलक्षण और खास दिख रहा है... इसके बारे में मैं आपको अगली बार विस्तार से बताऊंगा जब आपकी आध्यात्मिक शक्तियां पुनः संचित हो जाएंगी। कृपया ${timeMsg} बाद पुनः पधारें। ✨`
+                        : `Pranaam! Guru Ji is currently in deep meditation to find the most divine solution for your concerns. 🙏\n\nI see something very unique and special in your birth chart... I will reveal more about it next time when your spiritual energies are replenished. Please return after ${timeMsg}. ✨`;
+
+                    return NextResponse.json({ text: waitingText });
+                }
+
+                return NextResponse.json({ 
+                    text: `Guru Ji abhi dhyan mein hain. Vaise aapki kundali mein kuch bahut hi vishesh yog ban raha hai... Kirpaya ${chatResetHours} ghante baad punah aayein. 🙏`
+                });
+            }
         }
         // -------------------------------------------
 

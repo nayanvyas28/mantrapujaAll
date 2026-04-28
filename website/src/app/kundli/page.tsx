@@ -659,7 +659,10 @@ export default function KundliPage() {
 
     useEffect(() => {
         if (isGenerated) {
-            // Fresh Invalidation: Clear current language's reports to force a server-side reload in new language
+            // Reset the fetching guard first so a concurrent fetch doesn't block this reload
+            setFetchingReports(false);
+
+            // Clear cached language-specific reports so they re-fetch in the new language
             setApiData((prev: any) => {
                 if (!prev) return null;
                 const fresh = { ...prev };
@@ -675,9 +678,15 @@ export default function KundliPage() {
                 return fresh;
             });
 
-            if (activeTab === 'charts') fetchSpecificChart();
-            fetchMissingReports();
+            // Small delay to let state settle before re-fetching
+            const timer = setTimeout(() => {
+                if (activeTab === 'charts') fetchSpecificChart();
+                fetchMissingReports();
+            }, 200);
+
+            return () => clearTimeout(timer);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [language]);
 
     const fetchMissingReports = async () => {
