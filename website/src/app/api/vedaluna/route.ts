@@ -90,14 +90,14 @@ export async function POST(request: NextRequest) {
             { key: 'dasha', url: 'major_vdasha' },
             { key: 'gemstone', url: 'basic_gem_suggestion' },
             { key: 'rudraksha', url: 'rudraksha_suggestion' },
-            { key: 'character', url: 'personal_characteristics' },
+            { key: 'character', url: 'general_ascendant_report' }, // Updated from personal_characteristics
             { key: 'career', url: 'career_report' },
             { key: 'health', url: 'health_report' },
-            { key: 'love', url: 'love_report' },
-            { key: 'physical', url: 'physique_report' },
+            { key: 'love', url: 'manglik' }, // Updated from love_report
+            { key: 'physical', url: 'general_ascendant_report' }, // Updated from physique_report
             { key: 'numero_table', url: 'numero_table' },
             { key: 'numero_report', url: 'numero_report' },
-            { key: 'numero_time', url: 'numero_time' },
+            { key: 'numero_time', url: 'numero_fav_time' }, // Updated from numero_time
             { key: 'numero_place_vastu', url: 'numero_place_vastu' },
             { key: 'planets', url: 'planets' },
             { key: 'current_dasha', url: 'current_vdasha' },
@@ -115,31 +115,41 @@ export async function POST(request: NextRequest) {
                 { key: 'chart', url: `horo_chart_image/${params.chart_id || 'D1'}` },
                 { key: 'planets', url: `planets` }
             ];
+        } else if (params.keys && Array.isArray(params.keys)) {
+            endpoints = allPossibleEndpoints.filter(ep => params.keys.includes(ep.key));
         } else {
-            endpoints = allPossibleEndpoints;
+            // Default load - only essential dashboard + charts data to keep it fast
+            endpoints = allPossibleEndpoints.filter(ep => [
+                'core', 'panchang', 'planets', 'numero_table', 
+                'manglik', 'sadhesati', 'current_dasha', 'dasha'
+            ].includes(ep.key));
         }
 
         const results: any = {};
 
-        for (const ep of endpoints) {
-            try {
-                let data = await fetchWithRetry(ep.url, basePayload);
-
-                if (ep.key === 'chart') {
-                    results[ep.key] = data.svg || null;
-                } else {
-                    results[ep.key] = data;
+        // Parallel processing with concurrency limit (Batch size: 5)
+        const batchSize = 5;
+        for (let i = 0; i < endpoints.length; i += batchSize) {
+            const batch = endpoints.slice(i, i + batchSize);
+            await Promise.all(batch.map(async (ep) => {
+                try {
+                    let data = await fetchWithRetry(ep.url, basePayload);
+                    if (ep.key === 'chart') {
+                        results[ep.key] = data.svg || null;
+                    } else {
+                        results[ep.key] = data;
+                    }
+                } catch (err: any) {
+                    console.error(`[VedaNexus] Total failure for ${ep.key}:`, err.message);
+                    results[ep.key] = { error: true, msg: err.message };
                 }
-            } catch (err: any) {
-                console.error(`[VedaNexus] Total failure for ${ep.key}:`, err.message);
-                results[ep.key] = { error: true, msg: err.message };
-            }
+            }));
         }
 
         return NextResponse.json({
             success: true,
             data: results,
-            engine: 'VedaNexus-Failover-V1.2',
+            engine: 'VedaNexus-Failover-V2.0-Parallel',
             timestamp: new Date().toISOString()
         });
 

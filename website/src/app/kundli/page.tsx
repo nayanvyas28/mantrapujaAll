@@ -125,7 +125,11 @@ export default function KundliPage() {
     const getR = (d: any, category?: string) => {
         if (!d) return '';
         const errMsg = d.message || d.msg || '';
-        if (d.error && (errMsg.toLowerCase().includes('plan') || errMsg.toLowerCase().includes('authorized'))) {
+        
+        const isSubscriptionError = d.error && (errMsg.toLowerCase().includes('plan') || errMsg.toLowerCase().includes('authorized'));
+        const isNotFoundError = d.error && errMsg.includes('404');
+        
+        if (isSubscriptionError || isNotFoundError) {
             const fallbacks: { [key: string]: string } = {
                 'character': "He will have full of vigour and vitality as also intelligence of the highest order. He is firm believer of god and leads a life of truthful existence. He does not believe in the orthodox principles nor the age old tradition. He is fond of adopting modern ideas. Mostly he lives away from his family. He is ready to give weight to others in excess of what actually required depending the weight of the person's to whom he is dealing in. Slavery is suicidal for him. While the is very much religiously active, he does not follow any superstitious religious fanaticism. He treats all religions, castes and creed as one. He is a follower of Gandhian philosopohy of Ahimsa Paramodharma' ( Religion is Non-violence) and 'Truth is God'. In certain cases I have seen that such type of persons accept Sanyasa (saintism) when they touch 35 years of age. When we say sanyasa it does not mean that complete detraction from the 'Grihastashram' (duty towards the family). He will smiultaneously look after the family and follow sanyasa.",
                 'career': "Your career trajectory is strongly influenced by your innate ability to synthesize complex ideas and execute them with precision. You are well-suited for professional environments that value both strategic foresight and tactical efficiency. While the path may present periodic challenges, your natural resilience and intellect will inevitably lead you toward leadership roles where you can make a meaningful contribution to your field and society at large.",
@@ -137,20 +141,36 @@ export default function KundliPage() {
                 'Favorable Timing': "Your most auspicious windows for new beginnings occur during the waxing moon cycles. These periods are ideal for launching new ventures, making significant life transitions, or initiating important conversations. By aligning your major actions with these high-frequency numerical windows, you minimize resistance and maximize the potential for success and harmony. Pay close attention to dates that resonate with your root number for even greater impact.",
                 'Places & Vastu': "You thrive in environments with open eastern exposures and balanced elemental flows. Aligning your living and workspace with your conductor number will significantly enhance your focus, peace, and creative output. Specific spatial corrections, such as placing water elements in the Northeast or ensuring the Southwest is stable and grounded, will act as powerful neutralizers for any energetic imbalances, inviting divine blessings and clarity into your daily surroundings."
             };
-            return fallbacks[category || ''] || `⚠️ ${errMsg}`;
+            return fallbacks[category || ''] || (isNotFoundError ? t.synthesizing_insights : `⚠️ ${errMsg}`);
         }
         if (d.error) return `⚠️ ${errMsg || 'ENGINE_SYNC_FAIL'}`;
         const keys = ['report', 'personality', 'career_report', 'health_report', 'love_report', 'physique_report', 'description', 'interpretation', 'manglik_report', 'sadhesati_status', 'panchang_report', 'yoga_report', 'observation', 'prediction'];
+        
+        // Recursive flattener to extract human-readable text from nested API objects
+        const extractText = (val: any): string => {
+            if (!val) return '';
+            if (typeof val === 'string') return val;
+            if (Array.isArray(val)) {
+                return val.map((v: any) => extractText(v)).filter(Boolean).join('\n\n');
+            }
+            if (typeof val === 'object') {
+                if (val.desc) return `${val.title ? val.title + ': ' : ''}${val.desc}`;
+                if (val.observation) return extractText(val.observation);
+                return extractText(val.report || val.description || val.personality || val.prediction || '');
+            }
+            return String(val);
+        };
+
         if (Array.isArray(d)) {
             return d.map(item => {
                 const mainKey = keys.find(k => item[k]);
-                return mainKey ? item[mainKey] : '';
+                return mainKey ? extractText(item[mainKey]) : extractText(item);
             }).filter(Boolean).join('\n\n');
         }
+        
         const mainReportKey = Object.keys(d).find(k => keys.includes(k.toLowerCase()) || k.toLowerCase().includes('report'));
         const raw = mainReportKey ? d[mainReportKey] : d;
-        if (Array.isArray(raw)) return raw.map(item => typeof item === 'string' ? item : (item.report || item.description || item.personality || item.prediction || '')).join(' ');
-        return typeof raw === 'string' ? raw : (raw.report || raw.description || raw.personality || raw.prediction || '');
+        return extractText(raw);
     };
 
     const [form, setForm] = useState({
@@ -646,13 +666,22 @@ export default function KundliPage() {
     useEffect(() => {
         if (isGenerated) {
             if (activeTab === 'charts') fetchSpecificChart();
-            const needsGems = activeTab === 'predictions' && !apiData?.gemstone;
-            const needsCharacter = activeTab === 'predictions' && !apiData?.character;
-            const needsNumero = activeTab === 'numerology' && (!apiData?.numero_report || !apiData?.numero_time);
-            const needsDasha = activeTab === 'dasha' && !apiData?.current_dasha;
+            
+            let missingKeys: string[] = [];
+            
+            if (activeTab === 'predictions') {
+                if (!apiData?.gemstone) missingKeys.push('gemstone', 'rudraksha');
+                if (!apiData?.character) missingKeys.push('character', 'career', 'love', 'health', 'physical');
+            }
+            if (activeTab === 'numerology') {
+                if (!apiData?.numero_report) missingKeys.push('numero_report', 'numero_time', 'numero_place_vastu');
+            }
+            if (activeTab === 'dasha' && !apiData?.current_dasha) {
+                missingKeys.push('current_dasha', 'dasha');
+            }
 
-            if (needsGems || needsCharacter || needsNumero || needsDasha) {
-                fetchMissingReports();
+            if (missingKeys.length > 0) {
+                fetchMissingReports(missingKeys);
             }
         }
     }, [activeChart, activeTab]);
@@ -670,18 +699,26 @@ export default function KundliPage() {
                 delete fresh.rudraksha;
                 delete fresh.character;
                 delete fresh.career;
-                delete fresh.relation;
+                delete fresh.love;
                 delete fresh.health;
                 delete fresh.physical;
                 delete fresh.numero_report;
                 delete fresh.numero_time;
+                delete fresh.numero_place_vastu;
                 return fresh;
             });
 
             // Small delay to let state settle before re-fetching
             const timer = setTimeout(() => {
                 if (activeTab === 'charts') fetchSpecificChart();
-                fetchMissingReports();
+                
+                // Fetch the keys for the current active tab
+                let keysToRefetch: string[] = [];
+                if (activeTab === 'predictions') keysToRefetch = ['gemstone', 'rudraksha', 'character', 'career', 'love', 'health', 'physical'];
+                else if (activeTab === 'numerology') keysToRefetch = ['numero_report', 'numero_time', 'numero_place_vastu'];
+                else if (activeTab === 'dasha') keysToRefetch = ['current_dasha', 'dasha'];
+                
+                if (keysToRefetch.length > 0) fetchMissingReports(keysToRefetch);
             }, 200);
 
             return () => clearTimeout(timer);
@@ -689,8 +726,8 @@ export default function KundliPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [language]);
 
-    const fetchMissingReports = async () => {
-        if (!isGenerated || fetchingReports) return;
+    const fetchMissingReports = async (keys: string[]) => {
+        if (!isGenerated || fetchingReports || keys.length === 0) return;
         setFetchingReports(true);
         try {
             const datetime = `${form.birthDate}T${form.birthTime}:00+05:30`;
@@ -698,7 +735,7 @@ export default function KundliPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    params: { datetime, coordinates: `${form.lat},${form.lon}`, name: form.name, language }
+                    params: { datetime, coordinates: `${form.lat},${form.lon}`, name: form.name, language, keys }
                 })
             });
             const result = await response.json();
@@ -823,8 +860,8 @@ export default function KundliPage() {
                 return (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
                         {/* Core Birth Identity Card */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-14 border border-zinc-200 dark:border-white/5 relative overflow-hidden group shadow-xl hover:shadow-saffron/5 transition-all">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                            <div className="lg:col-span-2 bg-white dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 lg:p-14 border border-zinc-200 dark:border-white/5 relative overflow-hidden group shadow-xl hover:shadow-saffron/5 transition-all">
                                 <Star className="absolute top-10 right-10 text-saffron/5 group-hover:rotate-12 group-hover:scale-125 transition-all duration-1000" size={150} />
                                 <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-saffron/5 rounded-full blur-[80px]" />
                                 <h3 className="text-2xl font-black mb-10 flex items-center gap-3 text-saffron uppercase">
@@ -847,7 +884,7 @@ export default function KundliPage() {
                                     ))}
                                 </div>
                             </div>
-                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[48px] p-10 border border-zinc-200 dark:border-white/5 flex flex-col items-center justify-center text-center shadow-xl group transition-all relative overflow-hidden hover:border-saffron/30">
+                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 border border-zinc-200 dark:border-white/5 flex flex-col items-center justify-center text-center shadow-xl group transition-all relative overflow-hidden hover:border-saffron/30 min-h-[250px]">
                                 <div className="absolute inset-0 bg-gradient-to-br from-saffron/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-700" />
                                 <div className="relative mb-6">
                                     <div className="w-24 h-24 rounded-full border-4 border-zinc-200 dark:border-zinc-800 flex items-center justify-center group-hover:border-saffron/30 transition-all">
@@ -860,8 +897,8 @@ export default function KundliPage() {
                         </div>
 
                         {/* Cosmic Profile & Panchang Grids */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[48px] p-10 border border-zinc-200 dark:border-white/5 shadow-xl transition-all hover:bg-white dark:hover:bg-[#111] hover:shadow-2xl">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 border border-zinc-200 dark:border-white/5 shadow-xl transition-all hover:bg-white dark:hover:bg-[#111] hover:shadow-2xl">
                                 <h3 className="text-xl font-black mb-10 flex items-center gap-3 uppercase tracking-tight text-amber-600"><Sun size={24} className="group-hover:rotate-45" /> {t.birth_panchang}</h3>
                                 <div className="space-y-4">
                                     {[
@@ -878,7 +915,7 @@ export default function KundliPage() {
                                     ))}
                                 </div>
                             </div>
-                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[48px] p-10 border border-zinc-200 dark:border-white/5 shadow-xl transition-all hover:bg-white dark:hover:bg-[#111] hover:shadow-2xl">
+                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 border border-zinc-200 dark:border-white/5 shadow-xl transition-all hover:bg-white dark:hover:bg-[#111] hover:shadow-2xl">
                                 <h3 className="text-xl font-black mb-10 flex items-center gap-3 uppercase tracking-tight text-amber-600"><User size={24} /> {t.astro_profile}</h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     {[
@@ -901,7 +938,7 @@ export default function KundliPage() {
                         </div>
 
                         {/* Quick Destiny Snapshot */}
-                        <div className="bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-16 border border-zinc-200 dark:border-white/5 shadow-22 shadow-saffron/10 relative overflow-hidden transition-all duration-700 group">
+                        <div className="bg-white dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 lg:p-16 border border-zinc-200 dark:border-white/5 shadow-22 shadow-saffron/10 relative overflow-hidden transition-all duration-700 group">
                             <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-transparent via-transparent to-saffron/5 pointer-events-none" />
                             <h3 className="text-2xl font-black mb-10 flex items-center gap-3 text-saffron uppercase"><Zap size={24} className="fill-saffron" /> {t.destiny_snapshot}</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10">
@@ -939,30 +976,32 @@ export default function KundliPage() {
                             ))}
                         </div>
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                            <div className="bg-white dark:bg-[#030303] p-10 md:p-16 rounded-[48px] border-4 border-zinc-100 dark:border-white/5 shadow-22 shadow-saffron/10 flex flex-col items-center justify-center min-h-[550px] relative overflow-hidden group">
+                            <div className="bg-white dark:bg-[#030303] p-6 md:p-10 lg:p-16 rounded-[40px] md:rounded-[48px] border-4 border-zinc-100 dark:border-white/5 shadow-22 shadow-saffron/10 flex flex-col min-h-[400px] md:min-h-[550px] relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-gradient-to-br from-saffron/5 to-transparent pointer-events-none" />
 
-                                <div className="absolute top-10 left-10 z-20 flex items-center gap-3">
+                                <div className="relative z-20 flex items-center gap-3 w-full mb-8">
                                     <div className="w-1.5 h-6 bg-saffron rounded-full" />
-                                    <h4 className="text-xl font-black uppercase tracking-tighter text-zinc-900 dark:text-white">
+                                    <h4 className="text-lg md:text-xl font-black uppercase tracking-tighter text-zinc-900 dark:text-white">
                                         {translateValue(activeChart)} {t.analysis}
                                     </h4>
                                 </div>
 
-                                {fetchingChart ? (
-                                    <div className="flex flex-col items-center gap-4 relative z-10">
-                                        <div className="w-12 h-12 border-4 border-saffron/30 border-t-saffron rounded-full animate-spin" />
-                                        <p className="text-[10px] font-black uppercase text-saffron animate-pulse">{t.syncing}</p>
-                                    </div>
-                                ) : apiData?.chart ? (
-                                    <div dangerouslySetInnerHTML={{ __html: apiData.chart }} className="w-full h-full max-w-[500px] aspect-square flex items-center justify-center dark:invert opacity-90 transition-all duration-1000 scale-100 group-hover:scale-105 [&>svg]:w-full [&>svg]:h-auto" />
-                                ) : (
-                                    <div className="w-full h-full max-w-[500px] aspect-square flex items-center justify-center">
-                                        <NorthIndianChart planets={apiData?.planets || []} />
-                                    </div>
-                                )}
+                                <div className="flex-1 w-full flex items-center justify-center">
+                                    {fetchingChart ? (
+                                        <div className="flex flex-col items-center gap-4 relative z-10">
+                                            <div className="w-12 h-12 border-4 border-saffron/30 border-t-saffron rounded-full animate-spin" />
+                                            <p className="text-[10px] font-black uppercase text-saffron animate-pulse">{t.syncing}</p>
+                                        </div>
+                                    ) : apiData?.chart ? (
+                                        <div dangerouslySetInnerHTML={{ __html: apiData.chart }} className="w-full h-full max-w-[500px] aspect-square flex items-center justify-center dark:invert opacity-90 transition-all duration-1000 scale-100 group-hover:scale-105 [&>svg]:w-full [&>svg]:h-auto" />
+                                    ) : (
+                                        <div className="w-full h-full max-w-[500px] aspect-square flex items-center justify-center">
+                                            <NorthIndianChart planets={apiData?.planets || []} />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[48px] p-10 border border-zinc-200 dark:border-white/5 shadow-xl transition-all overflow-x-auto">
+                            <div className="bg-zinc-50 dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 border border-zinc-200 dark:border-white/5 shadow-xl transition-all overflow-x-auto">
                                 <h3 className="text-lg font-black uppercase tracking-tighter text-saffron mb-8">{t.planetary_alignment}</h3>
                                 <table className="w-full text-left">
                                     <thead>
@@ -1012,7 +1051,7 @@ export default function KundliPage() {
                                     { label: t.lucky_gem, data: apiData?.gemstone?.LUCKY, color: 'text-saffron' }
                                 ];
                                 return gems.map((gem, idx) => (
-                                    <div key={idx} className="bg-white dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/5 rounded-[48px] p-10 space-y-8 group hover:border-saffron/30 transition-all shadow-xl flex flex-col justify-between min-h-[350px]">
+                                    <div key={idx} className="bg-white dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/5 rounded-[40px] md:rounded-[48px] p-6 md:p-10 space-y-6 group hover:border-saffron/30 transition-all shadow-xl flex flex-col justify-between min-h-[220px] md:min-h-[260px]">
                                         <div className="space-y-4">
                                             <p className={`text-[11px] font-black uppercase tracking-[0.2em] ${gem.color}`}>{gem.label}</p>
                                             <h3 className="text-3xl font-black text-zinc-900 dark:text-white group-hover:text-saffron transition-all uppercase tracking-tighter leading-none">
@@ -1030,7 +1069,7 @@ export default function KundliPage() {
                         </div>
 
                         {/* Divine Protection Section */}
-                        <div className="bg-zinc-50 dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/5 rounded-[48px] p-10 md:p-14 relative overflow-hidden group shadow-xl">
+                        <div className="bg-zinc-50 dark:bg-[#0c0c0c] border border-zinc-200 dark:border-white/5 rounded-[40px] md:rounded-[48px] p-6 md:p-10 lg:p-14 relative overflow-hidden group shadow-xl">
                             <Sun className="absolute top-10 right-10 text-saffron/10 group-hover:rotate-12 transition-all duration-1000" size={120} />
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-4 text-saffron">
@@ -1051,7 +1090,7 @@ export default function KundliPage() {
                         </div>
 
                         {/* 💎 PREMIUM LIFE PREDICTIONS (PIXEL-PERFECT MATCH) */}
-                        <div className="bg-white dark:bg-[#0c0c0c] rounded-[42px] p-10 md:p-14 border border-zinc-200 dark:border-zinc-800/50 shadow-2xl transition-all">
+                        <div className="bg-white dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[42px] p-6 md:p-10 lg:p-14 border border-zinc-200 dark:border-zinc-800/50 shadow-2xl transition-all">
 
                             {/* Header Row */}
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 mb-20">
@@ -1115,10 +1154,10 @@ export default function KundliPage() {
                                 { l: t.destiny_no, v: apiData?.numero_table?.destiny_number || '-', d: t.destiny_desc },
                                 { l: t.name_no, v: apiData?.numero_table?.name_number || '-', d: t.name_desc }
                             ].map((n, i) => (
-                                <div key={i} className="bg-white dark:bg-[#0c0c0c] rounded-[40px] p-10 border border-zinc-200 dark:border-white/5 relative overflow-hidden transition-colors">
+                                <div key={i} className="bg-white dark:bg-[#0c0c0c] rounded-[32px] md:rounded-[40px] p-6 md:p-10 border border-zinc-200 dark:border-white/5 relative overflow-hidden transition-colors">
                                     <div className="relative z-10">
                                         <p className="text-[10px] font-black text-saffron uppercase mb-4 tracking-widest">{n.l}</p>
-                                        <p className="text-5xl font-black text-zinc-900 dark:text-white mb-4 tracking-tighter">{n.v}</p>
+                                        <p className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white mb-4 tracking-tighter">{n.v}</p>
                                         <p className="text-xs font-medium text-zinc-500 max-w-[150px] leading-relaxed">{n.d}</p>
                                     </div>
                                     <div className="absolute -right-4 -bottom-4 text-9xl font-black opacity-[0.03] text-zinc-900 dark:text-white">{n.v}</div>
@@ -1127,7 +1166,7 @@ export default function KundliPage() {
                         </div>
 
                         <div className="grid grid-cols-1 xl:grid-cols-1 gap-12">
-                            <div className="bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-14 border border-zinc-200 dark:border-white/5 shadow-2xl transition-colors">
+                            <div className="bg-white dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 lg:p-14 border border-zinc-200 dark:border-white/5 shadow-2xl transition-colors">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
                                     <div className="flex items-center gap-5 text-zinc-900 dark:text-white">
                                         <Sun className="text-saffron" size={24} />
@@ -1145,7 +1184,7 @@ export default function KundliPage() {
                                         ))}
                                     </div>
                                 </div>
-                                <div className="p-8 md:p-10 bg-zinc-50 dark:bg-black/20 rounded-[44px] text-zinc-800 dark:text-zinc-300 text-base md:text-lg leading-relaxed selection:bg-saffron/20 transition-all font-semibold whitespace-pre-wrap min-h-[400px] flex items-start justify-start border border-zinc-100 dark:border-white/5 relative shadow-inner">
+                                <div className="p-6 md:p-10 bg-zinc-50 dark:bg-black/20 rounded-[32px] md:rounded-[44px] text-zinc-800 dark:text-zinc-300 text-sm md:text-lg leading-relaxed selection:bg-saffron/20 transition-all font-semibold whitespace-pre-wrap min-h-[300px] md:min-h-[400px] flex items-start justify-start border border-zinc-100 dark:border-white/5 relative shadow-inner">
                                     <div className="absolute top-0 right-0 p-8 opacity-5">
                                         <FileText size={120} />
                                     </div>
@@ -1172,7 +1211,7 @@ export default function KundliPage() {
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 animate-in fade-in slide-in-from-bottom-10 duration-1000">
                         {/* ⏳ LEFT COLUMN: VIMSHOTTARI ENGINE */}
                         <div className="space-y-12">
-                            <div className="bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-14 border border-zinc-200 dark:border-zinc-800/40 shadow-2xl relative overflow-hidden transition-colors">
+                            <div className="bg-white dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 lg:p-14 border border-zinc-200 dark:border-zinc-800/40 shadow-2xl relative overflow-hidden transition-colors">
                                 <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none">
                                     <Activity size={200} />
                                 </div>
@@ -1188,7 +1227,7 @@ export default function KundliPage() {
                                         { l: t.antardasha_label, p: apiData?.current_dasha?.antardasha?.planet || 'Mercury', s: apiData?.current_dasha?.antardasha?.start || '7-7-2024', e: apiData?.current_dasha?.antardasha?.end || '4-12-2026' },
                                         { l: t.pratyantar_label, p: apiData?.current_dasha?.pratyantardasha?.planet || 'Jupiter', s: apiData?.current_dasha?.pratyantardasha?.start || '22-3-2026', e: apiData?.current_dasha?.pratyantardasha?.end || '17-7-2026' }
                                     ].map((d, i) => (
-                                        <div key={i} className="bg-zinc-100 dark:bg-[#141414] rounded-[28px] p-8 border border-zinc-200 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-zinc-200 dark:hover:bg-[#1a1a1a] transition-all">
+                                        <div key={i} className="bg-zinc-100 dark:bg-[#141414] rounded-[24px] md:rounded-[28px] p-6 md:p-8 border border-zinc-200 dark:border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-zinc-200 dark:hover:bg-[#1a1a1a] transition-all">
                                             <div className="space-y-3">
                                                 <p className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.2em]">{d.l}</p>
                                                 <div className="flex items-center gap-4 text-zinc-500 dark:text-zinc-400 font-mono text-[11px] font-bold">
@@ -1236,7 +1275,7 @@ export default function KundliPage() {
 
                         {/* 🛡️ RIGHT COLUMN: DOSHA ANALYZER */}
                         <div className="space-y-12">
-                            <div className="bg-white dark:bg-[#0c0c0c] rounded-[48px] p-10 md:p-14 border border-zinc-200 dark:border-zinc-800/40 shadow-2xl transition-colors">
+                            <div className="bg-white dark:bg-[#0c0c0c] rounded-[40px] md:rounded-[48px] p-6 md:p-10 lg:p-14 border border-zinc-200 dark:border-zinc-800/40 shadow-2xl transition-colors">
                                 <div className="flex items-center gap-5 text-zinc-900 dark:text-white mb-10">
                                     <Shield className="text-saffron" size={24} />
                                     <h3 className="text-2xl font-black tracking-tighter">{t.dasha}</h3>
@@ -1244,7 +1283,7 @@ export default function KundliPage() {
 
                                 <div className="space-y-10">
                                     {/* Manglik Section */}
-                                    <div className="bg-zinc-100 dark:bg-[#141414] rounded-[40px] p-10 border border-zinc-200 dark:border-white/5 space-y-8 relative overflow-hidden group">
+                                    <div className="bg-zinc-100 dark:bg-[#141414] rounded-[32px] md:rounded-[40px] p-6 md:p-10 border border-zinc-200 dark:border-white/5 space-y-6 md:space-y-8 relative overflow-hidden group">
                                         <div className="flex justify-between items-center mb-2">
                                             <div className="flex items-center gap-4 text-zinc-900 dark:text-white">
                                                 <AlertTriangle className="text-saffron/80" size={24} />
@@ -1264,7 +1303,7 @@ export default function KundliPage() {
                                     </div>
 
                                     {/* Sadhesati Section */}
-                                    <div className="bg-zinc-100 dark:bg-[#141414] rounded-[40px] p-10 border border-zinc-200 dark:border-white/5 space-y-8 relative overflow-hidden">
+                                    <div className="bg-zinc-100 dark:bg-[#141414] rounded-[32px] md:rounded-[40px] p-6 md:p-10 border border-zinc-200 dark:border-white/5 space-y-6 md:space-y-8 relative overflow-hidden">
                                         <div className="flex justify-between items-center mb-2">
                                             <div className="flex items-center gap-4 text-zinc-900 dark:text-white">
                                                 <Sun className="text-emerald-500/80" size={24} />
@@ -1300,45 +1339,23 @@ export default function KundliPage() {
 
     return (
         <div className="min-h-screen bg-white dark:bg-[#020202] text-zinc-900 dark:text-white font-sans selection:bg-saffron/30 transition-colors duration-300">
-            <aside className="fixed left-0 top-0 h-screen w-20 md:w-64 bg-zinc-50 dark:bg-[#080808] border-r border-zinc-200 dark:border-white/5 flex flex-col z-50">
-                <div className="p-10 mb-2 flex flex-col items-center gap-6">
-                    <Link href="/">
-                        <img src="/logo.png" alt="Mantra Puja Logo" className="w-32 h-auto hover:scale-105 transition-transform" />
-                    </Link>
-                    <Link 
-                        href="/"
-                        className="w-full h-12 flex items-center justify-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-saffron hover:border-saffron/30 transition-all shadow-sm group"
-                    >
-                        <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-                        <span className="hidden md:block">{t.back_to_website}</span>
-                    </Link>
-                </div>
-                <nav className="flex-1 px-4 space-y-1">
-                    {menuItems.map((item) => (
-                        <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center gap-4 px-6 py-4 rounded-xl transition-all group ${activeTab === item.id ? 'bg-gradient-to-r from-saffron to-amber-500 shadow-xl shadow-saffron/20 text-white' : 'text-zinc-500 hover:bg-zinc-200 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}>
-                            <item.icon size={20} className={activeTab === item.id ? 'text-white' : 'group-hover:text-saffron transition-all'} />
-                            <span className="hidden md:block font-bold text-[10px] uppercase font-black tracking-widest leading-none">{item.label}</span>
-                        </button>
-                    ))}
-                </nav>
-                <div className="p-8 space-y-6">
-                    <button onClick={handleReset} className="w-full py-4 bg-zinc-100 dark:bg-white/5 hover:bg-red-500/10 border border-zinc-200 dark:border-white/5 rounded-2xl text-[10px] font-black text-zinc-400 hover:text-red-500 transition-all uppercase tracking-widest flex items-center justify-center gap-3 group">
-                        <RefreshCcw size={14} className="group-hover:rotate-180 transition-all duration-700" />
-                        {t.new_analysis}
-                    </button>
-
-                    <div className="bg-zinc-100 dark:bg-zinc-900 rounded-2xl p-6 border border-zinc-200 dark:border-white/5 transition-all outline outline-transparent hover:outline-saffron/20 shadow-sm">
-                        <div className="text-[10px] font-black uppercase text-zinc-500 mb-1 leading-none font-black italic flex items-center justify-between">
-                            {t.memory} <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        </div>
-                        <p className="text-xs font-bold text-zinc-900 dark:text-white flex items-center gap-2">{t.persistent} <Shield size={12} className="text-saffron" /></p>
-                    </div>
-                </div>
-            </aside>
-
-            <main className="ml-20 md:ml-64 p-6 md:p-12 min-h-screen">
+            <main className="w-full p-4 md:p-8 lg:p-12 min-h-screen">
                 {!isGenerated ? (
-                    <div className="max-w-6xl mx-auto pt-10 animate-in fade-in zoom-in-95 duration-700">
+                    <div className="max-w-6xl mx-auto pt-4 md:pt-10 animate-in fade-in zoom-in-95 duration-700">
+                        {/* Top Bar for Dashboard/Form View */}
+                        <div className="flex justify-between items-center mb-12 bg-zinc-50 dark:bg-[#0c0c0c] p-4 md:p-6 rounded-3xl border border-zinc-200 dark:border-white/5 shadow-sm">
+                            <Link href="/">
+                                <img src="/logo.png" alt="Mantra Puja Logo" className="w-24 md:w-32 h-auto hover:scale-105 transition-transform" />
+                            </Link>
+                            <Link 
+                                href="/"
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-black border border-zinc-200 dark:border-white/10 rounded-full text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-saffron hover:border-saffron/30 transition-all shadow-sm group"
+                            >
+                                <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                                <span className="hidden md:inline">{t.back_to_website}</span>
+                            </Link>
+                        </div>
+
                         <div className="text-center mb-16">
                             <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter uppercase leading-none underline decoration-saffron decoration-4 underline-offset-8">KUNDALI MANAGER</h1>
                             <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">Manage your celestial identities</p>
@@ -1346,7 +1363,7 @@ export default function KundliPage() {
 
                         {(!isCreationMode && savedKundalis.length > 0) ? (
                             <div className="space-y-12">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {savedKundalis.map((k) => (
                                         <div 
                                             key={k.id} 
@@ -1477,52 +1494,66 @@ export default function KundliPage() {
                         )}
                     </div>
                 ) : (
-                    <div className="max-w-7xl mx-auto space-y-12 transition-all">
-                        {/* ✨ PREMIUM HEADER (PIXEL-PERFECT MATCH) */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-12 transition-all">
-                            <div className="space-y-1">
-                                <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter leading-none">
-                                    {menuItems.find(i => i.id === activeTab)?.label || 'Dashboard'}
-                                </h1>
-                                <p className="text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
-                                    {t.analysis_for} {formattedBirthDate}
-                                </p>
-                            </div>
-
-                            <div className="flex items-center gap-3 flex-wrap">
-                                {/* PDF Report Button */}
-                                <button className="flex items-center gap-2.5 px-6 py-3.5 bg-transparent border border-zinc-200 dark:border-zinc-800 rounded-full font-black text-[11px] uppercase tracking-wider text-zinc-900 dark:text-white hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all">
-                                    <Download size={16} /> PDF Report
-                                </button>
-
-                                {/* Theme Toggle (Circle) */}
-                                <button
-                                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                                    className="w-12 h-12 flex items-center justify-center rounded-full border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-saffron transition-all"
-                                >
-                                    {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                                </button>
-
-                                {/* Language Toggle (Mini-Pill) */}
-                                <div className="flex bg-zinc-100 dark:bg-zinc-900/50 p-1 rounded-full border border-zinc-200 dark:border-zinc-800 h-10 w-28">
-                                    <button
-                                        onClick={() => setLanguage('en')}
-                                        className={`flex-1 rounded-full text-[10px] font-black transition-all ${language === 'en' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500'}`}
-                                    >
-                                        EN
-                                    </button>
-                                    <button
-                                        onClick={() => setLanguage('hi')}
-                                        className={`flex-1 rounded-full text-[10px] font-black transition-all ${language === 'hi' ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500'}`}
-                                    >
-                                        HI
-                                    </button>
+                    <div className="max-w-7xl mx-auto space-y-8 transition-all">
+                        {/* ✨ NEW PREMIUM HORIZONTAL NAV */}
+                        <div className="flex flex-col space-y-4">
+                            {/* Top Info Bar */}
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-zinc-50 dark:bg-[#0c0c0c] p-6 md:p-8 rounded-[40px] border border-zinc-200 dark:border-white/5 shadow-sm relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-10 opacity-[0.02] pointer-events-none">
+                                    <Sun size={200} />
+                                </div>
+                                <div className="flex items-center gap-6 relative z-10">
+                                    <Link href="/" className="bg-white dark:bg-black p-3 rounded-2xl shadow-sm border border-zinc-100 dark:border-white/10 hidden sm:block">
+                                        <img src="/logo.png" alt="Mantra Puja Logo" className="w-16 h-auto hover:scale-105 transition-transform" />
+                                    </Link>
+                                    <div className="space-y-1">
+                                        <h1 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-none">
+                                            {form.name || 'User Profile'}
+                                        </h1>
+                                        <p className="text-zinc-500 font-bold uppercase tracking-[0.2em] text-[10px] flex items-center gap-2">
+                                            <Calendar size={12} className="text-saffron" /> {t.analysis_for} {formattedBirthDate}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                {/* Current Age Badge */}
-                                <div className="bg-zinc-100 dark:bg-zinc-900/40 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-800 text-center min-w-[120px] transition-all group">
-                                    <p className="text-[9px] uppercase font-black text-cyan-600 dark:text-cyan-500 mb-1 leading-none tracking-widest">{t.current_age}</p>
-                                    <p className="text-xl font-black text-zinc-900 dark:text-white transition-all group-hover:scale-110">{age} {language === 'hi' ? 'वर्ष' : 'Yrs'}</p>
+                                <div className="flex items-center gap-3 flex-wrap relative z-10">
+                                    <button onClick={handleReset} className="flex items-center gap-2 px-5 py-3.5 bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-white/5 hover:border-red-500/30 rounded-full text-[10px] font-black text-zinc-500 hover:text-red-500 transition-all uppercase tracking-widest group shadow-sm">
+                                        <RefreshCcw size={14} className="group-hover:rotate-180 transition-all duration-700" />
+                                        <span className="hidden sm:inline">{t.new_analysis}</span>
+                                    </button>
+
+                                    {/* Language Toggle */}
+                                    <div className="flex bg-white dark:bg-black p-1 rounded-full border border-zinc-200 dark:border-zinc-800 h-11 w-32 shadow-sm">
+                                        <button onClick={() => setLanguage('en')} className={`flex-1 rounded-full text-[10px] font-black transition-all ${language === 'en' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>EN</button>
+                                        <button onClick={() => setLanguage('hi')} className={`flex-1 rounded-full text-[10px] font-black transition-all ${language === 'hi' ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>HI</button>
+                                    </div>
+
+                                    {/* Theme Toggle */}
+                                    <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-11 h-11 flex items-center justify-center rounded-full bg-white dark:bg-black border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-saffron transition-all shadow-sm">
+                                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Tab Navigation */}
+                            <div className="flex items-center justify-between gap-4 bg-white dark:bg-[#0c0c0c] p-2 rounded-full border border-zinc-200 dark:border-white/5 shadow-xl overflow-hidden relative">
+                                <div className="flex gap-1 overflow-x-auto no-scrollbar w-full relative z-10 px-2 py-1">
+                                    {menuItems.map((item) => (
+                                        <button 
+                                            key={item.id} 
+                                            onClick={() => setActiveTab(item.id)} 
+                                            className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full transition-all whitespace-nowrap group ${activeTab === item.id ? 'bg-zinc-900 dark:bg-white text-white dark:text-black shadow-md' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-white'}`}
+                                        >
+                                            <item.icon size={18} className={activeTab === item.id ? 'text-white dark:text-black' : 'text-zinc-400 group-hover:text-saffron transition-colors'} />
+                                            <span className="font-black text-[10px] uppercase tracking-widest">{item.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Age Badge Right Aligned */}
+                                <div className="hidden lg:flex items-center gap-3 px-6 py-2 mr-2 bg-zinc-50 dark:bg-zinc-900 rounded-full border border-zinc-100 dark:border-zinc-800 shrink-0 relative z-10">
+                                    <p className="text-[10px] uppercase font-black text-cyan-600 dark:text-cyan-500 tracking-widest">{t.current_age}</p>
+                                    <p className="text-lg font-black text-zinc-900 dark:text-white">{age} <span className="text-xs text-zinc-500">{language === 'hi' ? 'वर्ष' : 'Yrs'}</span></p>
                                 </div>
                             </div>
                         </div>

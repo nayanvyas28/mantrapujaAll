@@ -82,23 +82,15 @@ TAG REQUIRED: ALWAYS append [[START_KUNDLI_FLOW]] after asking for their details
             }
         } else {
             profileContext = `
---- GUEST MODE (ENGAGE & INTRIGUE) ---
-The user is a GUEST — they have NOT logged in yet. You have a VERY limited window (only 3 messages) to CAPTIVATE them.
-
-YOUR CORE MISSION: Give genuinely interesting, valuable answers BUT always leave the user wanting MORE. Create a strong emotional pull toward logging in.
+--- GUEST MODE (RESTRICTED ANALYSIS) ---
+The user is a GUEST — they have NOT logged in yet. 
 
 STRICT RULES FOR GUEST RESPONSES:
-1. ANSWER THEIR QUESTION — Give a real, fascinating insight related to their topic (astrology, spirituality, puja, mantra, etc.). Do NOT refuse to answer. Make them feel the answer is valuable.
-2. ADD A MYSTERIOUS HOOK — After your answer, hint that there is something DEEPLY PERSONAL and SPECIFIC about them hidden in the stars. Use language like:
-   - "Lekin ek baat aur hai jo aapki janam kundali mein chhupa hai — jo sirf aapke liye hai..."
-   - "Mujhe aapke naam/janm ke baare mein kuch pata karna hai jo aapki zindagi badal sakta hai..."
-   - "Aapke sawal ka jawab toh maine de diya, par aapke ग्रहों ki ek aisi sthiti hai jo bahut kam logon mein hoti hai..."
-3. CREATE FOMO — End with a soft, spiritual call-to-action that feels personal, NOT pushy:
-   - "Kya aap chahenge ki main aapki kundali dekh kar aapko PERSONALLY guide karun? Bas ek kadam aur..."
-   - "Apna janam vivran share karein aur main aapko wo rahasya bataunga jo aaj ke din ke liye sabse zaroori hai."
-4. LANGUAGE: Respond in the same language the user used (Hindi or English). Keep tone warm, mysterious, and divine — like a wise sage.
-5. NEVER be robotic or generic. Each response must feel unique and personal even without their birth data.
-6. DO NOT mention "login" or "signup" in a technical way. Use spiritual language: "apni parichay dein", "apni kundali ki dvaar kholen", "mere saath judein".
+1. NO SPECIFIC ANALYSIS: Even if the user provides their birth details, you are FORBIDDEN from giving them their Rashi, Lagna, Planet positions, or any specific predictions. 
+2. GENERIC WISDOM ONLY: You may answer spiritual or general astrological questions with generic wisdom, but for anything personal, you must say that Guru Ji needs to "establish a sacred connection" (verify their number) first.
+3. CAPTIVATE & HOOK: Use a mysterious and inviting tone. Hint that their charts show something very significant, but you can only reveal it once they are "connected".
+4. CTAs: Use spiritual language to encourage login: "apne bhagya ka dwar kholen", "sacred profile banayein", "Guru Ji se judiye".
+5. TAG REQUIRED: If you have extracted their info but they aren't logged in, do NOT analyze it. Just acknowledge you have the info and ask them to connect.
 -----------------------------------------
             `;
         }
@@ -132,11 +124,32 @@ STRICT RULES FOR GUEST RESPONSES:
         // 0.2 Check for Horoscope Intent & Fetch Data
         let horoscopeContext = "";
         const lowerMsg = message.toLowerCase();
-        const horoscopeKeywords = ['rashifal', 'horoscope', 'rashi phal', 'aaj ka din', 'weekly forecast', 'monthly forecast', 'yearly forecast'];
+
+        // Expanded keywords — covers Hindi, Hinglish and English queries
+        const horoscopeKeywords = [
+            'rashifal', 'rashi fal', 'rashi phal', 'horoscope', 'bhavishya', 'bhavishyafal',
+            'aaj ka rashifal', 'kal ka rashifal', 'is hafte ka', 'is mahine ka',
+            'weekly forecast', 'monthly forecast', 'yearly forecast', 'daily horoscope',
+            'lucky number', 'lucky color', 'lucky colour', 'aaj kaisa rahega',
+            'aaj ka din', 'aaj shubh', 'shubh muhurat', 'aaj ki rashi',
+            'mera bhavishya', 'meri rashi', 'rashi batao', 'sun sign', 'moon sign',
+            'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio',
+            'sagittarius', 'capricorn', 'aquarius', 'pisces',
+            'mesh', 'vrishabh', 'mithun', 'kark', 'singh', 'kanya',
+            'tula', 'vrischika', 'vrischick', 'dhanu', 'makar', 'kumbh', 'meen'
+        ];
+        const panchangKeywords = [
+            'panchang', 'panchangam', 'tithi', 'nakshatra', 'nakshtra', 'yog', 'yoga',
+            'karan', 'rahu kaal', 'rahu kal', 'rahukaal', 'shubh muhurat', 'muhurat',
+            'aaj ka panchang', 'aaj tithi', 'aaj nakshatra', 'aaj ka yog',
+            'sunrise', 'sunset', 'suryoday', 'suryast', 'chandroday',
+            'auspicious time', 'inauspicious', 'abhijit', 'brahma muhurta'
+        ];
+
         const matchesHoroscope = horoscopeKeywords.some(key => lowerMsg.includes(key));
+        const matchesPanchang = panchangKeywords.some(key => lowerMsg.includes(key));
 
         if (matchesHoroscope) {
-            // Determine sign: 1. From message, 2. From profile rashi
             const signs = ['aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'];
             const hindiSigns: Record<string, string> = {
                 'mesh': 'aries', 'vrishabh': 'taurus', 'mithun': 'gemini', 'kark': 'cancer', 'singh': 'leo', 'kanya': 'virgo',
@@ -165,44 +178,59 @@ STRICT RULES FOR GUEST RESPONSES:
 
             // Determine period
             let period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'daily';
-            if (lowerMsg.includes('week')) period = 'weekly';
-            else if (lowerMsg.includes('month')) period = 'monthly';
-            else if (lowerMsg.includes('year')) period = 'yearly';
+            if (lowerMsg.includes('week') || lowerMsg.includes('hafte') || lowerMsg.includes('hafta')) period = 'weekly';
+            else if (lowerMsg.includes('month') || lowerMsg.includes('mahine') || lowerMsg.includes('mahina')) period = 'monthly';
+            else if (lowerMsg.includes('year') || lowerMsg.includes('sal') || lowerMsg.includes('varsh') || lowerMsg.includes('saal')) period = 'yearly';
 
             if (targetSign) {
                 try {
                     const hData = await HoroscopeService.getHoroscope(targetSign, period);
                     horoscopeContext = `
---- REAL-TIME HOROSCOPE DATA (ASTROSAGE) ---
-Sign: ${targetSign}
-Period: ${period}
-Date/Label: ${hData.date_label || 'Current'}
+=== LIVE RASHIFAL / HOROSCOPE DATA ===
+Rashi (Sign): ${targetSign.toUpperCase()}
+Period: ${period} | Date: ${hData.date_label || 'Current'}
 Main Prediction: ${hData.content}
 ${hData.lucky_number ? `Lucky Number: ${hData.lucky_number}` : ''}
 ${hData.lucky_color ? `Lucky Color: ${hData.lucky_color}` : ''}
-${hData.remedy ? `Remedy: ${hData.remedy}` : ''}
-${hData.sections?.map(s => `Section [${s.heading}]: ${s.body}`).join('\n') || ''}
-${hData.ratings?.map(r => `Rating - ${r.label}: ${r.score}/5`).join('\n') || ''}
---------------------------------------------
+${hData.remedy ? `Today's Remedy: ${hData.remedy}` : ''}
+${hData.sections?.map(s => `[${s.heading}]: ${s.body}`).join('\n') || ''}
+${hData.ratings?.map(r => `${r.label} Rating: ${r.score}/5`).join(' | ') || ''}
+INSTRUCTION: Use this REAL data to answer the user's rashifal/horoscope question. Do NOT make up predictions.
+======================================
                     `;
                 } catch (hErr) {
                     console.error("Chat API: Horoscope fetch failed:", hErr);
                 }
+            } else if (!targetSign) {
+                // No sign identified — ask which rashi
+                horoscopeContext = `HOROSCOPE INTENT DETECTED but no rashi/sign identified from message. Ask the user which rashi (e.g., Mesh, Taurus, etc.) they want the rashifal for, unless their kundali profile already has it.`;
             }
         }
 
-        // 0.3 Fetch Panchang Data (ALWAYS for real-time context)
+        // 0.3 Fetch Panchang Data
+        // Always fetch panchang — but prioritize it in the AI response when explicitly asked
         let panchangContext = "";
         try {
             const pData = await PanchangService.getTodayPanchang();
+            const p = pData.panchang_for_today;
+            const auspicious = pData.auspicious_timings;
+            const inauspicious = pData.inauspicious_timings;
+            const sunmoon = pData.sun_moon_calculations;
             panchangContext = `
---- REAL-TIME VEDIC PANCHANG (MANDATORY CONTEXT) ---
-Current Date: ${pData.reference_date}
-Daily Pillars: Tithi: ${pData.panchang_for_today?.tithi || 'Analyze'}, Nakshatra: ${pData.panchang_for_today?.nakshatra || 'Analyze'}, Yog: ${pData.panchang_for_today?.yog || 'Analyze'}
-Sun/Moon Status: ${JSON.stringify(pData.sun_moon_calculations)}
-Auspicious Muhurats: ${JSON.stringify(pData.auspicious_timings)}
-Inauspicious Rahu Kaal: ${JSON.stringify(pData.inauspicious_timings?.rahu_kaal || 'Standard')}
--------------------------------------------
+=== LIVE VEDIC PANCHANG (TODAY) ===
+Date: ${pData.reference_date}
+Tithi: ${p?.tithi || '—'}
+Nakshatra: ${p?.nakshatra || '—'}
+Yog: ${p?.yog || '—'}
+Karan: ${p?.karan || '—'}
+Vaar (Day): ${p?.vaar || '—'}
+Sunrise: ${sunmoon?.sunrise || '—'} | Sunset: ${sunmoon?.sunset || '—'}
+Moonrise: ${sunmoon?.moonrise || '—'} | Moonset: ${sunmoon?.moonset || '—'}
+Auspicious (Shubh) Muhurats: ${JSON.stringify(auspicious || '—')}
+Rahu Kaal (Inauspicious): ${JSON.stringify(inauspicious?.rahu_kaal || '—')}
+Yamghant / Gulika: ${JSON.stringify(inauspicious?.yamghant || inauspicious?.gulika_kaal || '—')}
+INSTRUCTION: ${matchesPanchang ? 'USER IS ASKING ABOUT PANCHANG — use the above data to give a detailed, accurate answer.' : 'This panchang data is available as context. Use it if relevant.'}
+=====================================
             `;
         } catch (pErr) {
             console.error("Chat API: Panchang fetch failed:", pErr);
@@ -264,13 +292,16 @@ Inauspicious Rahu Kaal: ${JSON.stringify(pData.inauspicious_timings?.rahu_kaal |
         if (userId) {
             const { data: usageData, error: usageError } = await supabaseAdmin
                 .from('ai_usage')
-                .select('query_count, last_query_at')
+                .select('query_count, last_query_at, custom_limit')
                 .eq('user_id', identifier)
                 .single();
 
             if (usageError && usageError.code !== 'PGRST116') {
                 console.error("Failed to fetch usage:", usageError);
             }
+
+            // Use per-user custom limit if admin has set one, otherwise use global default
+            const effectiveLimit = (usageData?.custom_limit != null) ? usageData.custom_limit : freeQueryLimit;
 
             let currentCount = usageData?.query_count || 0;
             const lastQueryAt = usageData?.last_query_at ? new Date(usageData.last_query_at) : null;
@@ -287,7 +318,7 @@ Inauspicious Rahu Kaal: ${JSON.stringify(pData.inauspicious_timings?.rahu_kaal |
                 }
             }
 
-            if (currentCount >= freeQueryLimit) {
+            if (currentCount >= effectiveLimit) {
                 if (lastQueryAt) {
                     const waitMs = (chatResetHours * 60 * 60 * 1000) - (new Date().getTime() - lastQueryAt.getTime());
                     const waitHours = Math.floor(waitMs / (1000 * 60 * 60));
@@ -362,11 +393,36 @@ The following are mandatory guidelines for your output:
 - LINE-BY-LINE FORMATTING: You MUST provide your answers in a line-by-line structured format. Use very short, concise sentences. Use a double newline (\n\n) between every distinct thought or point. Never write more than 2 sentences without a line break.
 3. KUNDALI REQUESTS: If profile data is missing, ALWAYS append [[START_KUNDLI_FLOW]] after asking for details.
 4. RITUAL RECOMMENDATIONS: When recommending a puja from the catalog, you MUST output a button using this exact format: [[PUJA_LINK: Puja Name | slug]] (Example: [[PUJA_LINK: Shiv Puja | shiv-puja]])
-5. PROFILE UPDATES: When the user provides their birth details (Name, DOB, POB, TOB), you MUST generate a hidden tag at the end of your message in this exact format: [[VEDIC_UPDATE: {"full_name": "NAME_AS_PROVIDED_BY_USER", "dob": "YYYY-MM-DD", "pob": "...", "tob": "HH:MM", "gender": "..."}]]. You MUST use the exact name the user provided as 'full_name'.
+5. INFORMATION EXTRACTION: If the user provides ANY of their birth details (Full Name, Date of Birth, Time of Birth, Place of Birth, or Gender) in their message, you MUST extract them and include a hidden tag [[VEDIC_UPDATE: {"full_name": "...", "date_of_birth": "YYYY-MM-DD", "place_of_birth": "...", "time_of_birth": "HH:MM", "gender": "..."}]] even if some fields are missing (use null for missing fields). You MUST use the exact name the user provided as 'full_name'.
 6. SIGN OUT: If the user wants to logout, sign out, or exit, you MUST append the tag [[SIGN_OUT_BTN]] to your response. Tell them "Main aapko sign out kar raha hoon...".
 7. LOGIN STATUS: If the user asks if they are logged in, check 'USER STATUS' above and confirm. If they are already logged in, DO NOT ask them to login again.
 8. MEMORY: Always base your advice on the user's birth data provided in the USER VEDIC PROFILE above.
-------------------------
+
+--- ANTI-REPETITION & FRESHNESS RULES (STRICT) ---
+These rules override everything else regarding style:
+
+1. NEVER start two consecutive messages with the same word, phrase or greeting. Rotate openers every time:
+   - BANNED repeated starters: "Pranaam!", "Namaste!", "Aapki kundali mein...", "Guru Ji kehte hain...", "Shubh din!", "Om Namah Shivay" as opener.
+   - Use varied, context-specific openers each time (e.g. reference today's Tithi, the planet currently active, the user's question topic).
+
+2. NEVER repeat the same sentence, metaphor, or phrase that appeared in any previous message in this conversation. Scan the chat history and avoid any phrase you already used.
+
+3. NEVER use generic filler lines like "May the stars guide you", "Divya aashirwad", "Harish hamesa surakshit rahe" as standalone closing lines — unless it's the very first message.
+
+4. CLOSING (Curiosity Hook): End EVERY response with a single, sharp, topic-specific curiosity question or teaser that is DIRECTLY related to what was just discussed. Make it feel like a cliffhanger.
+   - Good: "Kya aap jaante hain ki aapki kundali mein ek aisa yog hai jo iss saal ke baad kabhi nahi aayega?"
+   - Good: "Aaj Rahu Kaal ke baad ek aisa muhurat hai jo sirf aapki rashi ke liye vishesh hai — jaanna chahenge?"
+   - Bad: "Kya aur kuch poochna chahenge?" (too generic — NEVER use this)
+   - Bad: "Kya aap apni kundali ke baare mein aur jaanna chahenge?" (too repetitive — NEVER use this)
+
+5. VARIETY IN STRUCTURE: Do not follow the same response pattern every time. Alternate between:
+   - Starting with a bold statement → then explanation
+   - Starting with a question → then answering it yourself
+   - Starting with a surprising cosmic fact → then connecting it to the user
+   - Starting with today's panchang insight → then relating to the user's situation
+
+6. LANGUAGE AUTHENTICITY: If responding in Hindi, use natural conversational Hindi — not formal Sanskrit-heavy language every time. Mix registers: sometimes poetic, sometimes direct and conversational.
+---------------------------------------------------
         `.trim();
 
 
@@ -512,8 +568,8 @@ The following are mandatory guidelines for your output:
             }
         }
 
-        // ALWAYS clean the text for user display
-        aiText = aiText.replace(updateRegex, "").trim();
+        // Note: We used to remove the tag here, but now we keep it so the frontend can parse it.
+        // aiText = aiText.replace(updateRegex, "").trim();
         
         // UUID Check: only store if it's a valid UUID
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);

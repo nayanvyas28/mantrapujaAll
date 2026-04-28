@@ -36,6 +36,7 @@ const websiteGroups = [
     category: 'Platform Control',
     items: [
       { name: 'Overview', icon: LayoutDashboard, href: '/dashboard' },
+      { name: 'Devotee Users', icon: Users, href: '/dashboard/users' },
       { name: 'Ritual Bookings', icon: Scroll, href: '/dashboard/bookings' },
       { name: 'Contact Inquiries', icon: MessageCircle, href: '/dashboard/inquiries' },
       { name: 'Newsletter Subs', icon: Mail, href: '/dashboard/newsletter' },

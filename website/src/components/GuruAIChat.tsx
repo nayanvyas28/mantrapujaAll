@@ -99,6 +99,7 @@ const formatDivineMessage = (text: string) => {
     safeText = safeText.replace(/\[\[VIEW_KUNDALI_BTN\]\]/g, '');
     safeText = safeText.replace(/\[\[CHAT_RESET_BTN\]\]/g, '');
     safeText = safeText.replace(/\[\[SIGN_OUT_BTN\]\]/g, '');
+    safeText = safeText.replace(/\[\[VEDIC_UPDATE:.*?\]\]/g, '');
     
     // Format Headings
     safeText = safeText.replace(/^### (.*?)$/gm, '<h3 class="text-[17px] font-black text-saffron mt-4 mb-2 leading-tight">$1</h3>');
@@ -515,6 +516,7 @@ export default function GuruAIChat() {
                 if (authUser) {
                     setAuthStep(null);
                     const resumeMessage = pendingAction?.message;
+                    const pendingSubmission = pendingAction?.type === 'KUNDLI_SUBMISSION' ? pendingAction.data : null;
                     setPendingAction(null);
 
                     // Clear guest message counter — user is now logged in
@@ -536,6 +538,9 @@ export default function GuruAIChat() {
                     // Resume pending action if exists
                     if (resumeMessage) {
                         setTimeout(() => handleSend(undefined, resumeMessage, true), 1000);
+                    } else if (pendingSubmission) {
+                        // Pass authUser.id directly to avoid stale `user` state
+                        setTimeout(() => handleFinalSubmission(pendingSubmission, authUser.id), 800);
                     }
                 }
             } catch (err: any) {
@@ -553,28 +558,127 @@ export default function GuruAIChat() {
         // --- KUNDLI COLLECTION INTERCEPTOR ---
         if (collectionStep !== null) {
             const currentStep = COLLECTION_STEPS[collectionStep];
-            const newData = { ...collectedData, [currentStep.id]: userMessage };
-            if (collectedData.lat && currentStep.id === 'place') {
-                newData.lat = collectedData.lat;
-                newData.lon = collectedData.lon;
+
+            // Helper: find next missing step after saving current field
+            const advanceStep = (updatedData: any) => {
+                let nextMissingIndex = -1;
+                for (let i = 0; i < COLLECTION_STEPS.length; i++) {
+                    if (!updatedData[COLLECTION_STEPS[i].id]) {
+                        nextMissingIndex = i;
+                        break;
+                    }
+                }
+                if (nextMissingIndex !== -1) {
+                    setCollectionStep(nextMissingIndex);
+                    setQueuedMessages(prev => [...prev, {
+                        role: 'model',
+                        content: COLLECTION_STEPS[nextMissingIndex][chatLanguage]
+                    }]);
+                } else {
+                    setCollectionStep(null);
+                    handleFinalSubmission(updatedData);
+                }
+            };
+
+            // ── STRUCTURED FIELDS (dob, time, gender) ──
+            // These use date-picker, time-picker, or gender buttons — input is always valid.
+            // Direct-save, no AI needed.
+            const structuredFields = ['dob', 'time', 'gender'];
+            if (structuredFields.includes(currentStep.id)) {
+                const newData = { ...collectedData, [currentStep.id]: userMessage };
+                setCollectedData(newData);
+                advanceStep(newData);
+                return;
             }
 
-            if (collectionStep < COLLECTION_STEPS.length - 1) {
-                const nextStepIndex = collectionStep + 1;
-                setCollectedData(newData);
-                setCollectionStep(nextStepIndex);
-                setQueuedMessages(prev => [...prev, { 
-                    role: 'model', 
-                    content: COLLECTION_STEPS[nextStepIndex][chatLanguage] 
+            // ── FREE-TEXT FIELDS (name, place) ──
+            // User can type anything here — use AI to extract or answer + re-ask.
+            const fieldLabels: Record<string, string> = {
+                name: 'Full Name (Poora Naam)',
+                place: 'Birth Place / City (Janm Sthan)'
+            };
+
+            const collectionInstruction = `
+CRITICAL CONTEXT: You are collecting Kundali information. Currently waiting for: ${fieldLabels[currentStep.id]}
+Already collected: ${JSON.stringify(collectedData)}
+
+USER JUST SAID: "${userMessage}"
+
+YOUR TASK:
+1. If the message contains the "${currentStep.id}" (even casually phrased), EXTRACT it and include [[VEDIC_UPDATE: {"full_name": "...", "date_of_birth": null, "time_of_birth": null, "place_of_birth": null, "gender": null}]] with the extracted value (use null for unknowns).
+2. If the message is a question or unrelated, answer it briefly and warmly, then ask again for "${fieldLabels[currentStep.id]}". Do NOT include [[VEDIC_UPDATE]] if field was not found.
+3. Keep response short and spiritual.
+            `.trim();
+
+            setIsLoading(true);
+            const chatHistory = messages.map(m => ({
+                role: m.role,
+                parts: [{ text: m.content }]
+            }));
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: userMessage,
+                        chatHistory,
+                        userId: user?.id,
+                        sessionId: sessionId,
+                        language: chatLanguage,
+                        templateInstruction: collectionInstruction
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                const updateMatch = data.text?.match(/\[\[VEDIC_UPDATE:\s*({[\s\S]*?})\]\]/);
+                let currentCollected = { ...collectedData };
+                let fieldWasExtracted = false;
+
+                if (updateMatch) {
+                    try {
+                        const updateData = JSON.parse(updateMatch[1]);
+                        const mapping: Record<string, string> = {
+                            full_name: 'name',
+                            place_of_birth: 'place'
+                        };
+                        Object.entries(mapping).forEach(([jsonKey, stepKey]) => {
+                            if (updateData[jsonKey] && updateData[jsonKey] !== 'null') {
+                                currentCollected[stepKey] = updateData[jsonKey];
+                                if (stepKey === currentStep.id) fieldWasExtracted = true;
+                            }
+                        });
+                        setCollectedData(currentCollected);
+                    } catch (e) {
+                        console.error("Collection: Failed to parse VEDIC_UPDATE:", e);
+                    }
+                }
+
+                const cleanText = data.text?.replace(/\[\[VEDIC_UPDATE:[\s\S]*?\]\]/g, '').trim();
+                if (cleanText) setQueuedMessages(prev => [...prev, { role: 'model', content: cleanText }]);
+
+                if (fieldWasExtracted) {
+                    advanceStep(currentCollected);
+                }
+                // else: stay on same step — AI already re-asked in cleanText
+
+                if (data.sessionId) setSessionId(data.sessionId);
+            } catch (err: any) {
+                console.error("Collection step AI error:", err);
+                setQueuedMessages(prev => [...prev, {
+                    role: 'model',
+                    content: chatLanguage === 'hi'
+                        ? `क्षमा करें, कुछ गड़बड़ हो गई। कृपया फिर से बताएं: ${COLLECTION_STEPS[collectionStep][chatLanguage]}`
+                        : `Sorry, something went wrong. Please try again: ${COLLECTION_STEPS[collectionStep]['en']}`
                 }]);
-                return;
-            } else {
-                setCollectionStep(null);
-                setCollectedData(newData);
-                handleFinalSubmission(newData);
-                return;
             }
+
+            setIsLoading(false);
+            return;
         }
+
 
         setIsLoading(true);
         const chatHistory = messages.map(m => ({
@@ -610,14 +714,53 @@ export default function GuruAIChat() {
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
                 
+                const updateMatch = data.text?.match(/\[\[VEDIC_UPDATE:\s*({[\s\S]*?})\]\]/);
+                let currentCollected = { ...collectedData };
+                
+                if (updateMatch) {
+                    try {
+                        const updateData = JSON.parse(updateMatch[1]);
+                        const mapping: any = {
+                            full_name: 'name',
+                            date_of_birth: 'dob',
+                            time_of_birth: 'time',
+                            place_of_birth: 'place',
+                            gender: 'gender'
+                        };
+                        Object.entries(mapping).forEach(([jsonKey, stepKey]: [string, any]) => {
+                            if (updateData[jsonKey] && updateData[jsonKey] !== 'null') {
+                                currentCollected[stepKey] = updateData[jsonKey];
+                            }
+                        });
+                        setCollectedData(currentCollected);
+                    } catch (e) {
+                        console.error("Failed to parse VEDIC_UPDATE:", e);
+                    }
+                }
+
                 if (data.text?.includes('[[START_KUNDLI_FLOW]]')) {
-                    const cleanText = data.text.replace('[[START_KUNDLI_FLOW]]', '').trim();
+                    const cleanText = data.text.replace('[[START_KUNDLI_FLOW]]', '').replace(/\[\[VEDIC_UPDATE:.*?\]\]/g, '').trim();
                     const msgsToQueue: Message[] = [];
                     if (cleanText) msgsToQueue.push({ role: 'model', content: cleanText });
-                    msgsToQueue.push({ role: 'model', content: COLLECTION_STEPS[0][chatLanguage] });
                     
-                    setQueuedMessages(prev => [...prev, ...msgsToQueue]);
-                    setCollectionStep(0);
+                    // Determine first missing step
+                    let firstMissing = -1;
+                    for (let i = 0; i < COLLECTION_STEPS.length; i++) {
+                        if (!currentCollected[COLLECTION_STEPS[i].id]) {
+                            firstMissing = i;
+                            break;
+                        }
+                    }
+
+                    if (firstMissing === -1) {
+                        // Everything already extracted!
+                        setCollectionStep(null);
+                        handleFinalSubmission(currentCollected);
+                    } else {
+                        msgsToQueue.push({ role: 'model', content: COLLECTION_STEPS[firstMissing][chatLanguage] });
+                        setQueuedMessages(prev => [...prev, ...msgsToQueue]);
+                        setCollectionStep(firstMissing);
+                    }
                 } else {
                     setQueuedMessages(prev => [...prev, { role: 'model', content: data.text }]);
                 }
@@ -645,10 +788,28 @@ export default function GuruAIChat() {
         setIsLoading(false);
     };
 
-    const handleFinalSubmission = async (formData: any) => {
+    const handleFinalSubmission = async (formData: any, overrideUserId?: string) => {
         setIsLoading(true);
         try {
-            if (!user) {
+            // Resolve the active user ID — use override (passed directly after login) or fall back to React state
+            // This is critical because React's `user` state may still be null right after login (stale closure)
+            let activeUserId = overrideUserId || user?.id;
+            if (!activeUserId) {
+                // Last resort: check the live session
+                const { data: { session } } = await supabase.auth.getSession();
+                activeUserId = session?.user?.id;
+            }
+
+            if (!activeUserId) {
+                // Genuinely not logged in — ask for login
+                setAuthStep('phone');
+                setPendingAction({ type: 'KUNDLI_SUBMISSION', data: formData });
+                setQueuedMessages(prev => [...prev, { 
+                    role: 'model', 
+                    content: chatLanguage === 'hi'
+                        ? "अद्भुत! मैंने आपका विवरण प्राप्त कर लिया है। आपकी कुंडली का सटीक विश्लेषण और ग्रहों की स्थिति जानने के लिए, कृपया अपना मोबाइल नंबर सत्यापित करें।"
+                        : "Wonderful! I have received your details. To reveal your precise Kundali analysis, please verify your mobile number."
+                }]);
                 setIsLoading(false);
                 return;
             }
@@ -657,7 +818,7 @@ export default function GuruAIChat() {
             const { data: existingK, error: fetchErr } = await supabase
                 .from('user_kundalis')
                 .select('id, full_name, date_of_birth')
-                .eq('user_id', user.id);
+                .eq('user_id', activeUserId);
 
             if (fetchErr) throw fetchErr;
 
@@ -703,9 +864,9 @@ export default function GuruAIChat() {
                 })
             });
             const result = await res.json();
-            if (result.success && result.data && user) {
+            if (result.success && result.data) {
                 await supabase.from('user_kundalis').insert({
-                    user_id: user.id,
+                    user_id: activeUserId,
                     full_name: formData.name,
                     date_of_birth: formData.dob,
                     time_of_birth: formData.time,
@@ -714,7 +875,7 @@ export default function GuruAIChat() {
                     full_data: result.data
                 });
                 await supabase.from('user_vedic_profiles').upsert({
-                    user_id: user.id,
+                    user_id: activeUserId,
                     full_name: formData.name,
                     date_of_birth: formData.dob,
                     time_of_birth: formData.time,
@@ -1105,7 +1266,7 @@ export default function GuruAIChat() {
                                         }
                                         className="w-full pl-6 pr-14 py-4 bg-zinc-100 dark:bg-white/5 border border-transparent focus:border-saffron/30 focus:bg-white dark:focus:bg-zinc-900 rounded-2xl outline-none transition-all font-bold text-[12px] md:text-[13px] text-slate-800 dark:text-white placeholder:text-slate-400 placeholder:text-[11px] md:placeholder:text-[12px] placeholder:font-medium"
                                     />
-                                    {collectionStep === 4 && (
+                                    {collectionStep === 4 && authStep === null && (
                                         <div className="absolute right-12 top-1/2 -translate-y-1/2 flex gap-1.5 bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm p-1 rounded-xl border border-zinc-200 dark:border-white/10 shadow-lg z-10 scale-90">
                                             {['male', 'female', 'other'].map((g) => (
                                                 <button key={g} disabled={isLoading || queuedMessages.length > 0 || messages.some(m => m.isStreaming)} onClick={() => handleSend(undefined, g)} className="px-3 py-1.5 text-[9px] font-black uppercase bg-zinc-100 dark:bg-white/10 hover:bg-saffron hover:text-white rounded-lg transition-all disabled:opacity-50">{g}</button>
