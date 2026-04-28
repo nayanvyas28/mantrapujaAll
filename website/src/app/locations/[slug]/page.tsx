@@ -159,10 +159,12 @@ export default function DestinationDetailPage() {
         return null; // Handled by global LoadingScreen
     }
 
-    // Check if destination exists in either Static or DB
+    // Check if destination exists and is of an allowed type
+    const allowedTypes = ['Char Dham', 'Jyotirlinga', 'Shakti Peeth', 'Kumbh Mela'];
     const exists = baseLocation || locationDetails[slug] || dbDetail;
+    const isAllowed = exists && allowedTypes.includes(fullDetails.type);
 
-    if (!exists) {
+    if (!exists || !isAllowed) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background">
                 <div className="text-center">
@@ -216,13 +218,13 @@ export default function DestinationDetailPage() {
                         transition={{ duration: 0.8 }}
                         className="max-w-6xl"
                     >
-                        <button
-                            onClick={() => router.back()}
+                        <Link
+                            href="/locations"
                             className="inline-flex items-center text-white/80 hover:text-white mb-8 transition-all font-bold tracking-widest text-[10px] uppercase group cursor-pointer bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10"
                         >
                             <ArrowLeft className="w-3 h-3 mr-2 group-hover:-translate-x-1 transition-transform" />
-                            Return to Scared Map
-                        </button>
+                            Return to Sacred Map
+                        </Link>
 
                         <div className="flex flex-wrap items-center gap-3 mb-6">
                             <motion.span
@@ -437,7 +439,7 @@ export default function DestinationDetailPage() {
                             className="p-1 gap-1 flex items-center justify-center"
                         >
                             <Link
-                                href={`/contact?subject=Custom Ritual in ${fullDetails.name}`}
+                                href={`/contact-us?subject=Custom Ritual in ${fullDetails.name}`}
                                 className="group relative px-12 py-6 bg-gradient-to-r from-orange-600 to-amber-600 rounded-full text-white font-black uppercase tracking-[0.3em] text-xs shadow-[0_20px_50px_-10px_rgba(234,88,12,0.5)] hover:shadow-[0_30px_60px_-10px_rgba(234,88,12,0.7)] hover:-translate-y-2 transition-all duration-500 flex items-center gap-3 overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
@@ -572,7 +574,7 @@ export default function DestinationDetailPage() {
                             className="flex items-center justify-center py-10"
                         >
                             <Link
-                                href="/scholars"
+                                href={`/contact-us?subject=Scholar Consultation for ${fullDetails.name}`}
                                 className="group relative flex items-center gap-6 p-1 pr-10 bg-purple-600/10 hover:bg-purple-600/20 border border-purple-500/30 rounded-full transition-all duration-500 overflow-hidden"
                             >
                                 <div className="w-16 h-16 rounded-full bg-purple-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 transition-transform">
@@ -663,7 +665,7 @@ export default function DestinationDetailPage() {
                                         Join over 50,000+ devotees who receive weekly spiritual insights and exclusive early access to sacred rituals.
                                     </p>
                                     <Link
-                                        href="/community"
+                                        href="/about-us"
                                         className="group relative inline-flex items-center gap-4 bg-foreground text-background px-12 py-6 rounded-2xl font-black uppercase tracking-[0.3em] text-xs hover:bg-saffron hover:text-white transition-all duration-500 shadow-2xl hover:shadow-saffron/50"
                                     >
                                         Join the Sacred Community <ArrowLeft className="w-5 h-5 rotate-180 group-hover:translate-x-3 transition-transform duration-500" />

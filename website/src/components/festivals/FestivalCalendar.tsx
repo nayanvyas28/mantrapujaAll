@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Sparkle } from 'lucide-react';
 import { Festival } from '@/lib/festivalData';
 
 interface FestivalCalendarProps {
     festivals: Festival[];
     selectedDate: Date | null;
     onDateSelect: (date: Date) => void;
+    onMonthChange?: (date: Date) => void;
 }
 
-export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect }: FestivalCalendarProps) => {
+export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect, onMonthChange }: FestivalCalendarProps) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const daysInMonth = (date: Date) => {
@@ -47,11 +47,15 @@ export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect }: Fest
     const calendarDays = useMemo(() => generateCalendarDays(), [currentDate]);
 
     const prevMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+        const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        setCurrentDate(newDate);
+        if (onMonthChange) onMonthChange(newDate);
     };
 
     const nextMonth = () => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+        const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+        setCurrentDate(newDate);
+        if (onMonthChange) onMonthChange(newDate);
     };
 
     const isToday = (date: Date) => {
@@ -77,54 +81,59 @@ export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect }: Fest
     };
 
     return (
-        <div className="w-full max-w-6xl mx-auto bg-card dark:bg-card/50 backdrop-blur-md rounded-3xl shadow-xl border border-border/50 overflow-hidden">
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between p-6 md:p-8 bg-saffron/5 dark:bg-white/5 border-b border-border/50">
-                <div>
-                    <h2 className="text-2xl md:text-3xl font-bold font-serif text-foreground flex items-center gap-3">
-                        <CalendarIcon className="w-6 h-6 md:w-8 md:h-8 text-saffron" />
-                        {monthNames[currentDate.getMonth()]} <span className="text-muted-foreground">{currentDate.getFullYear()}</span>
-                    </h2>
+        <div className="w-full max-w-6xl mx-auto bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white dark:border-white/5 overflow-hidden">
+            {/* Calendar Header - Premium Look */}
+            <div className="relative flex items-center justify-between p-8 overflow-hidden bg-gradient-to-r from-saffron/5 via-transparent to-orange-500/5">
+                <div className="relative z-10 flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-saffron to-orange-600 flex items-center justify-center shadow-lg shadow-saffron/20 transform -rotate-3">
+                        <CalendarIcon className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                        <h2 className="text-3xl md:text-4xl font-black font-serif text-zinc-900 dark:text-zinc-100 flex items-baseline gap-3">
+                            {monthNames[currentDate.getMonth()]}
+                            <span className="text-xl font-medium text-zinc-400 dark:text-zinc-600">{currentDate.getFullYear()}</span>
+                        </h2>
+                    </div>
                 </div>
-                <div className="flex bg-background/50 rounded-full border border-border/50 p-1">
+
+                <div className="flex gap-3 relative z-10">
                     <button
                         onClick={prevMonth}
-                        className="p-2 rounded-full hover:bg-saffron/10 hover:text-saffron transition-colors"
-                        aria-label="Previous Month"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center bg-white dark:bg-zinc-800 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all border border-zinc-100 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-saffron"
                     >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-6 h-6" />
                     </button>
                     <button
                         onClick={nextMonth}
-                        className="p-2 rounded-full hover:bg-saffron/10 hover:text-saffron transition-colors"
-                        aria-label="Next Month"
+                        className="w-12 h-12 rounded-xl flex items-center justify-center bg-white dark:bg-zinc-800 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all border border-zinc-100 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:text-saffron"
                     >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-6 h-6" />
                     </button>
                 </div>
+
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-saffron/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl -ml-16 -mb-16"></div>
             </div>
 
-            {/* Mobile Scroll Hint */}
-            <div className="md:hidden text-center py-2 bg-muted/20 text-[10px] text-muted-foreground animate-pulse border-b border-border/50">
-                ← Swipe to explore calendar →
-            </div>
-
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto border-t border-zinc-100 dark:border-zinc-800">
                 <div className="min-w-[700px]">
-                    {/* Weekday Headers */}
-                    <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                            <div key={day} className="py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                                {day}
+                    {/* Weekday Headers - Modernized */}
+                    <div className="grid grid-cols-7 bg-zinc-50/50 dark:bg-white/5">
+                        {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                            <div key={day} className="py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-600 border-b border-zinc-100 dark:border-zinc-800">
+                                {day.substring(0, 3)}
                             </div>
                         ))}
                     </div>
 
                     {/* Calendar Grid */}
-                    <div className="grid grid-cols-7 auto-rows-fr bg-background/50">
+                    <div className="grid grid-cols-7 auto-rows-fr">
                         {calendarDays.map((date, index) => {
                             if (!date) {
-                                return <div key={`empty-${index}`} className="min-h-[80px] md:min-h-[100px] border-b border-r border-border/30 bg-muted/5"></div>;
+                                return (
+                                    <div key={`empty-${index}`} className="min-h-[100px] border-b border-r border-zinc-50 dark:border-zinc-800 bg-zinc-50/20 dark:bg-transparent"></div>
+                                );
                             }
 
                             const dayFestivals = getFestivalsForDate(date);
@@ -135,23 +144,43 @@ export const FestivalCalendar = ({ festivals, selectedDate, onDateSelect }: Fest
                                 <div
                                     key={date.toISOString()}
                                     onClick={() => onDateSelect(date)}
-                                    className={`min-h-[80px] md:min-h-[100px] border-b border-r border-border/30 p-2 relative group cursor-pointer transition-all ${today ? 'bg-saffron/10' : ''} ${selected ? 'ring-2 ring-inset ring-saffron bg-saffron/5' : 'hover:bg-saffron/5'}`}
+                                    className={`group relative min-h-[110px] p-3 border-b border-r border-zinc-100 dark:border-zinc-800 cursor-pointer transition-all duration-300 ${
+                                        selected ? 'bg-saffron/5' : 'hover:bg-zinc-50/80 dark:hover:bg-white/5'
+                                    }`}
                                 >
-                                    <span className={`text-sm font-medium inline-flex w-7 h-7 items-center justify-center rounded-full ${today ? 'bg-saffron text-white shadow-lg shadow-saffron/30' : selected ? 'bg-saffron/20 text-saffron font-bold' : 'text-muted-foreground group-hover:text-saffron transition-colors'}`}>
-                                        {date.getDate()}
-                                    </span>
+                                    <div className="flex justify-between items-start mb-3">
+                                        <span className={`text-base font-black w-8 h-8 flex items-center justify-center rounded-xl transition-all duration-300 ${
+                                            today 
+                                            ? 'bg-gradient-to-br from-saffron to-orange-600 text-white shadow-lg shadow-saffron/30 scale-110' 
+                                            : selected 
+                                            ? 'bg-saffron/20 text-saffron' 
+                                            : 'text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-900 dark:group-hover:text-zinc-100'
+                                        }`}>
+                                            {date.getDate()}
+                                        </span>
+                                        
+                                        {dayFestivals.length > 0 && !today && !selected && (
+                                            <div className="w-1.5 h-1.5 rounded-full bg-saffron/40"></div>
+                                        )}
+                                    </div>
 
-                                    <div className="mt-2 space-y-1">
+                                    <div className="space-y-1.5">
                                         {dayFestivals.map(festival => (
                                             <div
                                                 key={festival.id}
-                                                className="block p-1.5 rounded-lg text-[10px] md:text-xs font-semibold bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/40 dark:to-orange-800/20 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-700/50 truncate hover:scale-105 transition-transform shadow-sm"
-                                                title={festival.name}
+                                                className={`px-2 py-1.5 rounded-lg text-[10px] font-bold leading-tight transition-all duration-300 shadow-sm ${
+                                                    selected 
+                                                    ? 'bg-saffron text-white' 
+                                                    : 'bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 group-hover:border-saffron/50 group-hover:text-saffron'
+                                                }`}
                                             >
-                                                {festival.name}
+                                                <div className="truncate">{festival.name}</div>
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Hover Indicator */}
+                                    <div className={`absolute bottom-0 left-0 h-0.5 bg-saffron transition-all duration-500 ${selected ? 'w-full' : 'w-0 group-hover:w-full opacity-50'}`}></div>
                                 </div>
                             );
                         })}

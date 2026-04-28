@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabaseClient';
 import {
     Users, LayoutDashboard, Settings, LogOut,
     Menu, Bell, Edit3, Package, Globe, FileText,
-    Image as ImageIcon, Server, Database, Zap
+    Image as ImageIcon, Server, Database, Zap,
+    MessageSquare, Mail, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,6 +21,9 @@ import ServerManager from '@/components/admin/ServerManager';
 import CategoryManager from '@/components/admin/CategoryManager';
 import SitemapManager from '@/app/(admin)/admin/sitemaps/page';
 import KundliApiManager from '@/components/admin/KundliApiManager';
+import InquiryManager from '@/components/admin/InquiryManager';
+import SubscriberManager from '@/components/admin/SubscriberManager';
+import FestivalBookingManager from '@/components/admin/FestivalBookingManager';
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -71,6 +75,9 @@ export default function AdminDashboard() {
             case 'categories': return <CategoryManager />;
             case 'server': return <ServerManager />;
             case 'kundli-api': return <KundliApiManager />;
+            case 'inquiries': return <InquiryManager />;
+            case 'subscribers': return <SubscriberManager />;
+            case 'festival-bookings': return <FestivalBookingManager />;
             default: return <Overview stats={stats} recentUsers={recentUsers} />;
         }
     };
@@ -104,6 +111,10 @@ export default function AdminDashboard() {
                     <SidebarItem icon={ImageIcon} label="Asset Library" id="assets" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                     <SidebarItem icon={Server} label="Server Config" id="server" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                     <SidebarItem icon={Zap} label="Kundli API" id="kundli-api" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
+                    <div className="h-px bg-slate-800 my-4 mx-2" />
+                    <SidebarItem icon={MessageSquare} label="Contact Inquiries" id="inquiries" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
+                    <SidebarItem icon={Mail} label="NEWS TEST" id="subscribers" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
+                    <SidebarItem icon={Calendar} label="Festival Booking" id="festival-bookings" current={currentTab} set={setCurrentTab} collapsed={!sidebarOpen} />
                 </nav>
 
                 <div className="p-4 border-t border-slate-800">

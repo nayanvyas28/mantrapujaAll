@@ -1,10 +1,13 @@
 'use client';
-
+import { useState } from 'react';
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
+import { useAuth } from '@/context/AuthContext';
 
 export default function ContactPage() {
+    const { user } = useAuth();
+    const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const containerVariants: Variants = {
         hidden: { opacity: 0 },
         visible: {
@@ -114,7 +117,37 @@ export default function ContactPage() {
                         {/* Decorative background glow */}
                         <div className="absolute -inset-1 bg-gradient-to-r from-saffron/30 to-gold/30 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity"></div>
 
-                        <form className="relative bg-card/60 backdrop-blur-2xl p-8 md:p-10 rounded-3xl shadow-2xl border border-white/10 dark:border-white/5 space-y-6">
+                        <form 
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const data = {
+                                    name: formData.get('name'),
+                                    email: formData.get('email'),
+                                    message: formData.get('message'),
+                                    subject: new URLSearchParams(window.location.search).get('subject') || 'General Inquiry',
+                                    user_id: user?.id || null
+                                };
+                                
+                                setFormStatus('loading');
+                                try {
+                                    const res = await fetch('/api/contact', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(data)
+                                    });
+                                    if (res.ok) {
+                                        setFormStatus('success');
+                                        (e.target as HTMLFormElement).reset();
+                                    } else {
+                                        setFormStatus('error');
+                                    }
+                                } catch (err) {
+                                    setFormStatus('error');
+                                }
+                            }}
+                            className="relative bg-card/60 backdrop-blur-2xl p-8 md:p-10 rounded-3xl shadow-2xl border border-white/10 dark:border-white/5 space-y-6"
+                        >
                             <h3 className="text-3xl font-serif font-bold mb-8 text-foreground flex items-center">
                                 <span className="w-8 h-8 rounded-full bg-saffron/10 flex items-center justify-center mr-3">
                                     <Send className="w-4 h-4 text-saffron" />
@@ -127,6 +160,8 @@ export default function ContactPage() {
                                     <label className="text-sm font-medium text-muted-foreground ml-1">Your Name</label>
                                     <input
                                         type="text"
+                                        name="name"
+                                        required
                                         placeholder="Arjun Sharma"
                                         className="w-full p-4 bg-background/50 border border-border/50 rounded-2xl focus:ring-2 focus:ring-saffron/50 focus:border-saffron outline-none transition-all placeholder:text-muted-foreground/40"
                                     />
@@ -135,6 +170,8 @@ export default function ContactPage() {
                                     <label className="text-sm font-medium text-muted-foreground ml-1">Email Address</label>
                                     <input
                                         type="email"
+                                        name="email"
+                                        required
                                         placeholder="arjun@example.com"
                                         className="w-full p-4 bg-background/50 border border-border/50 rounded-2xl focus:ring-2 focus:ring-saffron/50 focus:border-saffron outline-none transition-all placeholder:text-muted-foreground/40"
                                     />
@@ -144,6 +181,8 @@ export default function ContactPage() {
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-muted-foreground ml-1">Message</label>
                                 <textarea
+                                    name="message"
+                                    required
                                     rows={5}
                                     placeholder="How can we help you today?"
                                     className="w-full p-4 bg-background/50 border border-border/50 rounded-2xl focus:ring-2 focus:ring-saffron/50 focus:border-saffron outline-none transition-all resize-none placeholder:text-muted-foreground/40"
@@ -153,12 +192,25 @@ export default function ContactPage() {
                             <motion.button
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
-                                type="button"
-                                className="w-full py-4 bg-gradient-to-r from-saffron to-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-saffron/30 hover:shadow-saffron/50 transition-all flex items-center justify-center space-x-2 text-lg"
+                                type="submit"
+                                disabled={formStatus === 'loading'}
+                                className="w-full py-4 bg-gradient-to-r from-saffron to-orange-600 text-white font-bold rounded-2xl shadow-lg shadow-saffron/30 hover:shadow-saffron/50 transition-all flex items-center justify-center space-x-2 text-lg disabled:opacity-50"
                             >
-                                <span>Seek Assistance</span>
-                                <Send className="w-5 h-5" />
+                                {formStatus === 'loading' ? (
+                                    <span className="animate-pulse">Sending...</span>
+                                ) : formStatus === 'success' ? (
+                                    <span>Message Sent!</span>
+                                ) : (
+                                    <>
+                                        <span>Seek Assistance</span>
+                                        <Send className="w-5 h-5" />
+                                    </>
+                                )}
                             </motion.button>
+
+                            {formStatus === 'error' && (
+                                <p className="text-red-500 text-center font-bold text-sm">Something went wrong. Please try again.</p>
+                            )}
                         </form>
                     </motion.div>
                 </div>

@@ -2,8 +2,44 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, ArrowRight, ChevronDown, CheckCircle, Sun, Star, Flame, User, MessageCircle, Phone, IndianRupee, Flower, Heart, Scroll, ShieldCheck, BadgeCheck } from "lucide-react";
+import { Calendar, Clock, ArrowRight, ChevronDown, CheckCircle, Sun, Star, Flame, User, MessageCircle, Phone, IndianRupee, Flower, Heart, Scroll, ShieldCheck, BadgeCheck, Sparkle, X } from "lucide-react";
 import Link from "next/link";
+
+// Related Puja Data Generator
+const getRelatedPujas = (festivalName: string) => {
+    const common = [
+        { name: "Panchamrit Abhishekam", desc: "Sacred bathing of the deity with 5 divine elements.", image: "/puja images/abhishekam.jpg" },
+        { name: "Sahasranama Archana", desc: "Chanting of 1000 divine names with flower offerings.", image: "/puja images/archana.jpg" },
+        { name: "Shanti Homa", desc: "Vedic fire ritual for peace and cosmic balance.", image: "/puja images/homa.jpg" }
+    ];
+
+    const name = festivalName.toLowerCase();
+    if (name.includes('shiva') || name.includes('pradosh') || name.includes('rudra')) {
+        return [
+            { name: "Rudra Abhishek", desc: "Powerful Vedic ritual for Lord Shiva to dissolve sins.", image: "/puja images/rudra abhishek 1.png" },
+            { name: "Maha Mrityunjaya Path", desc: "Chanting for longevity and healing energy.", image: "/puja images/mahamrit.jpg" },
+            { name: "Shiva Sahasranama", desc: "1000 names of Shiva for spiritual awakening.", image: "/puja images/shiva-sah.jpg" }
+        ];
+    }
+    
+    if (name.includes('ekadashi') || name.includes('vishnu') || name.includes('narayana')) {
+        return [
+            { name: "Satyanarayan Puja", desc: "Invoking the Lord of Truth for prosperity.", image: "/puja images/satyanarayan.jpg" },
+            { name: "Vishnu Sahasranama", desc: "Most potent chanting for wealth and peace.", image: "/puja images/vishnu-sah.jpg" },
+            { name: "Tulsi Archana", desc: "Sacred worship with holy basil for Vishnu's grace.", image: "/puja images/tulsi.jpg" }
+        ];
+    }
+
+    if (name.includes('ganesh') || name.includes('vinayaka') || name.includes('ganpati')) {
+        return [
+            { name: "Ganpati Atharvashirsha", desc: "Sacred recitation for wisdom and obstacle removal.", image: "/puja images/ganesha.jpg" },
+            { name: "Modak Arpan", desc: "Offering of 21 modaks to satisfy the Lord of Ganas.", image: "/puja images/modak.jpg" },
+            { name: "Sankat Mochan Path", desc: "Hymns to overcome any life crisis with Ganesha's grace.", image: "/puja images/sankat.jpg" }
+        ];
+    }
+
+    return common;
+};
 import { supabase } from '@/lib/supabaseClient';
 import { Festival } from "@/lib/festivalData";
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
@@ -17,34 +53,85 @@ interface FestivalDetailClientProps {
 export default function FestivalDetailClient({ festival }: FestivalDetailClientProps) {
     const [isScrolled, setIsScrolled] = useState(false);
 
+// --- VISUAL UTILITIES FROM POOJA PAGE ---
+const colorMap: Record<string, string> = {
+    'orange-500': '#f97316', 'red-500': '#ef4444', 'red-600': '#dc2626',
+    'indigo-500': '#6366f1', 'purple-600': '#9333ea', 'amber-400': '#fbbf24',
+    'orange-400': '#fb923c', 'blue-500': '#3b82f6', 'indigo-600': '#4f46e5',
+    'purple-500': '#a855f7', 'emerald-500': '#10b981', 'teal-600': '#0d9488',
+    'rose-500': '#f43f5e', 'yellow-400': '#facc15', 'amber-500': '#f59e0b'
+};
+
+const getHexFromTailwind = (tailwindClass: string) => {
+    if (!tailwindClass) return '#f97316';
+    const parts = tailwindClass.split('-');
+    if (parts.length < 3) return '#f97316';
+    const key = `${parts[1]}-${parts[2]}`;
+    return colorMap[key] || '#f97316';
+};
+
+const extractGradientColors = (gradient: string) => {
+    if (!gradient) return { from: '#f97316', to: '#dc2626' };
+    const parts = gradient.split(' ');
+    const from = parts.find(p => p.startsWith('from-')) || 'from-orange-500';
+    const to = parts.find(p => p.startsWith('to-')) || 'to-red-600';
+    return { from: getHexFromTailwind(from), to: getHexFromTailwind(to) };
+};
+
     const [blogs, setBlogs] = useState<any[]>([]);
     const [loadingBlogs, setLoadingBlogs] = useState(true);
+    const [recommendedPujas, setRecommendedPujas] = useState<any[]>([]);
+    
+    // Booking Modal States
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [formState, setFormState] = useState<'idle' | 'submitting' | 'success'>('idle');
+    const [formData, setFormData] = useState({ name: '', phone: '' });
+
+    const handleBookingSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setFormState('submitting');
+        try {
+            const response = await fetch('/api/festival-bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    festival_name: festival.name
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Server responded with status ${response.status}`);
+            }
+
+            setFormState('success');
+            setTimeout(() => {
+                setIsModalOpen(false);
+                setFormState('idle');
+                setFormData({ name: '', phone: '' });
+            }, 3000);
+        } catch (error: any) {
+            console.error("Booking error details:", error);
+            setFormState('idle');
+            alert("Error: " + error.message + "\nCheck if the API route is correctly deployed.");
+        }
+    };
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 100);
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
-    useEffect(() => {
-        const fetchRelatedBlogs = async () => {
+        const fetchRelatedData = async () => {
             try {
-                // Using imported supabase singleton
-
-                // Fetch blogs where title or tags contain the festival name
-                const { data } = await supabase
+                // 1. Fetch Related Blogs
+                const { data: blogData } = await supabase
                     .from('blogs')
                     .select('*')
                     .eq('published', true)
                     .or(`title.ilike.%${festival.name}%,tags.cs.{${festival.name}}`)
                     .limit(3);
 
-                if (data && data.length > 0) {
-                    setBlogs(data);
+                if (blogData && blogData.length > 0) {
+                    setBlogs(blogData);
                 } else {
-                    // Fallback to general spiritual blogs if no specific matches
                     const { data: generalBlogs } = await supabase
                         .from('blogs')
                         .select('*')
@@ -52,14 +139,44 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                         .limit(3);
                     setBlogs(generalBlogs || []);
                 }
+
+                // 2. Fetch Recommended Pujas (REAL DATA)
+                let searchTerms = [festival.name];
+                const name = festival.name.toLowerCase();
+                if (name.includes('shiva') || name.includes('pradosh')) searchTerms.push('shiva', 'rudra', 'lingam');
+                if (name.includes('ekadashi') || name.includes('vishnu')) searchTerms.push('vishnu', 'narayana', 'satyanarayan');
+                if (name.includes('ganesh') || name.includes('ganpati')) searchTerms.push('ganesh', 'vinayaka');
+
+                const orQuery = searchTerms.map(term => `name.ilike.%${term}%`).join(',');
+                
+                const { data: pujaData } = await supabase
+                    .from('poojas')
+                    .select('*')
+                    .eq('is_active', true)
+                    .or(orQuery)
+                    .limit(3);
+
+                if (pujaData && pujaData.length > 0) {
+                    setRecommendedPujas(pujaData);
+                } else {
+                    // Fallback to featured pujas if no specific match
+                    const { data: featuredPujas } = await supabase
+                        .from('poojas')
+                        .select('*')
+                        .eq('is_active', true)
+                        .eq('is_featured', true)
+                        .limit(3);
+                    setRecommendedPujas(featuredPujas || []);
+                }
+
             } catch (error) {
-                console.error("Error fetching related blogs:", error);
+                console.error("Error fetching related data:", error);
             } finally {
                 setLoadingBlogs(false);
             }
         };
 
-        fetchRelatedBlogs();
+        fetchRelatedData();
     }, [festival.name]);
 
     const scrollToBooking = () => {
@@ -90,7 +207,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
             <UnifiedPujaBackground />
 
             {/* --- HERO SECTION --- */}
-            <section className="relative pt-8 pb-10 lg:pt-12 lg:pb-16 overflow-hidden min-h-[85vh] flex items-center">
+            <section className="relative pt-2 pb-0 lg:pt-4 lg:pb-0 overflow-hidden min-h-[75vh] flex items-center">
                 {/* Hero Background Image */}
                 <div className="absolute inset-0 z-0">
                     <img src={festival.heroImage} alt={festival.heroImageAlt || festival.name} className="w-full h-full object-cover opacity-30 dark:opacity-20 blur-sm animate-zoom-in" />
@@ -98,10 +215,10 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                     <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background/60"></div>
                 </div>
 
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-12 lg:gap-16">
+                <div className="w-full mx-auto px-2 md:px-4 relative z-10">
+                    <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-4 lg:gap-6">
                         {/* Text Content */}
-                        <div className="lg:w-1/2 space-y-8 text-center lg:text-left flex flex-col justify-center">
+                        <div className="lg:w-3/5 space-y-8 text-center lg:text-left flex flex-col justify-center lg:pl-20">
                             <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -110,12 +227,15 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                                 <span className="inline-block px-6 py-2 rounded-full text-xs font-bold uppercase tracking-[0.2em] mb-6 border border-saffron/20 bg-saffron/10 text-saffron backdrop-blur-md">
                                     Auspicious Vedic Festival
                                 </span>
-                                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-black mb-4 md:mb-6 leading-[1.2] md:leading-[1.1] font-serif text-transparent bg-clip-text bg-gradient-to-r from-saffron via-gold to-saffron animate-gradient pb-2 px-2">
+                                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-3 md:mb-4 leading-[1.2] md:leading-[1.1] font-serif text-transparent bg-clip-text bg-gradient-to-r from-saffron via-gold to-saffron animate-gradient pb-2 px-2">
                                     {festival.name}
                                 </h1>
-                                <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground font-light leading-relaxed max-w-2xl mx-auto lg:mx-0 px-4 md:px-0">
-                                    {festival.shortDesc}
-                                </p>
+                                <div className="relative">
+                                    <div className="absolute -left-4 top-0 w-1 h-full bg-saffron/30 rounded-full hidden lg:block"></div>
+                                    <p className="text-lg md:text-xl lg:text-xl text-zinc-500 dark:text-zinc-400 font-medium leading-relaxed w-full mx-auto lg:mx-0 italic font-serif line-clamp-2">
+                                        {festival.shortDesc || "Explore the divine significance, sacred rituals, and mythological history of this auspicious occasion."}
+                                    </p>
+                                </div>
                             </motion.div>
 
                             <motion.div
@@ -146,7 +266,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                             >
                                 {/* 3D Primary Button with Fire Particles */}
                                 <button
-                                    onClick={scrollToBooking}
+                                    onClick={() => setIsModalOpen(true)}
                                     className="group relative flex w-full sm:w-auto items-center justify-center h-16 md:h-20 px-8 sm:px-12 font-bold text-lg md:text-xl text-white rounded-full shadow-[0_6px_0_0_#9a3412] hover:shadow-[0_3px_0_0_#9a3412] hover:translate-y-[3px] active:translate-y-[6px] active:shadow-none transition-all duration-150 overflow-visible"
                                 >
                                     {/* Animated Snake Border */}
@@ -177,12 +297,12 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                             </motion.div>
                         </div>
 
-                        <div className="lg:w-1/2 relative mt-8 lg:mt-0 w-full max-w-2xl mx-auto lg:max-w-none lg:h-auto">
+                        <div className="lg:w-2/5 relative mt-8 lg:mt-0 w-full flex items-center justify-center">
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
                                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                                 transition={{ duration: 0.8 }}
-                                className="relative rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 border-white/10 aspect-square sm:aspect-[4/3] lg:aspect-auto lg:h-full group"
+                                className="relative w-full max-w-lg rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl border-2 border-white/10 aspect-square group"
                             >
                                 <img src={festival.heroImage} alt={festival.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent md:from-black/80 md:via-transparent"></div>
@@ -205,9 +325,107 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                 </div>
             </section>
 
+            {/* --- RECOMMENDED PUJAS SECTION --- */}
+            <section className="pt-0 pb-8 relative z-20 -mt-8 md:-mt-12 mb-8">
+                <div className="w-full mx-auto px-2 md:px-4">
+                    <div className="bg-white/60 dark:bg-black/60 backdrop-blur-2xl rounded-[2.5rem] border border-white/30 dark:border-white/10 shadow-xl p-6 md:p-8">
+                        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+                            <div className="text-center md:text-left">
+                                <h2 className="text-2xl md:text-3xl font-black font-serif text-transparent bg-clip-text bg-gradient-to-r from-saffron to-orange-600">Recommended Pujas</h2>
+                                <p className="text-xs text-muted-foreground italic">Auspicious rituals for {festival.name}</p>
+                            </div>
+                            <div className="h-px flex-1 bg-gradient-to-r from-saffron/20 to-transparent mx-6 hidden md:block"></div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12 lg:gap-16">
+                            {recommendedPujas.map((puja, idx) => {
+                                const rotatingGradients = [
+                                    'from-indigo-500 to-purple-600',
+                                    'from-red-500 to-red-800',
+                                    'from-emerald-500 to-teal-600',
+                                    'from-amber-400 to-orange-500',
+                                    'from-pink-500 to-rose-500',
+                                    'from-blue-500 to-indigo-600'
+                                ];
+                                const displayGradient = rotatingGradients[idx % rotatingGradients.length];
+                                const colors = extractGradientColors(displayGradient);
+                                const gradientId = `border-gradient-rec-${puja.id}`;
+
+                                return (
+                                    <div key={puja.id} className="group relative max-w-[360px] mx-auto w-full">
+                                        {/* 3D Glow Effect */}
+                                        <div className={`absolute -inset-1 bg-gradient-to-t ${displayGradient} rounded-[32px] blur-2xl opacity-0 group-hover:opacity-100 transition duration-500 z-0`}></div>
+                                        
+                                        {/* Red Zigzag Special Offer Badge */}
+                                        {puja.is_special_offer && (
+                                            <div className="absolute top-0 left-0 z-50 -translate-x-1/4 -translate-y-1/4 pointer-events-none transition-all duration-500 group-hover:rotate-12 group-hover:scale-110">
+                                                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="relative w-24 h-24 flex items-center justify-center drop-shadow-2xl">
+                                                    <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full fill-[#e11d48]">
+                                                        <path d="M50 0 L55 10 L65 5 L68 16 L79 13 L79 24 L90 24 L87 35 L97 40 L91 50 L100 60 L89 65 L92 76 L81 77 L81 88 L70 86 L65 96 L55 91 L50 100 L45 91 L35 96 L30 86 L20 88 L19 77 L8 76 L11 65 L0 60 L9 50 L3 40 L13 35 L10 24 L21 24 L21 13 L32 16 L35 5 L45 10 Z" />
+                                                    </svg>
+                                                    <div className="relative z-10 flex flex-col items-center justify-center text-white text-center leading-tight">
+                                                        <span className="text-[10px] font-bold opacity-90">मात्र</span>
+                                                        <span className="text-xl font-black">₹{puja.special_offer_price}</span>
+                                                    </div>
+                                                </motion.div>
+                                            </div>
+                                        )}
+
+                                        {/* Animated Snake Border */}
+                                        <svg className="absolute -inset-[2px] -translate-y-[5px] w-[calc(100%+4px)] h-[calc(100%+4px)] pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-40">
+                                            <rect x="1" y="1" width="calc(100% - 2px)" height="calc(100% - 2px)" rx="18" ry="18" fill="none" stroke={`url(#${gradientId})`} strokeWidth="4" strokeDasharray="20 10" className="animate-snake-border" />
+                                            <defs>
+                                                <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stopColor={colors.from} stopOpacity="0.8" />
+                                                    <stop offset="100%" stopColor={colors.to} stopOpacity="1" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+
+                                        <div className="relative h-full bg-card/95 dark:bg-card/90 backdrop-blur-md text-card-foreground rounded-2xl p-4 flex flex-col transition-all duration-500 shadow-md border border-white/10 group-hover:-translate-y-2 z-10">
+                                            <Link href={`/pooja-services/${puja.slug}`} className="block group/content">
+                                                <div className="relative w-full aspect-[2/1] mb-4 rounded-xl overflow-hidden bg-white/50 dark:bg-slate-900/50 border border-white/10">
+                                                    <img src={(puja.images && puja.images.length > 0) ? puja.images[0] : '/diya.png'} alt={puja.name} className="w-full h-full object-cover transition-transform duration-700 group-hover/content:scale-110" />
+                                                </div>
+                                                <h3 className="text-xl font-black text-foreground group-hover/content:text-saffron transition-all duration-300 mb-1 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
+                                                    {puja.name}
+                                                </h3>
+                                                <p className="text-muted-foreground font-medium mb-4 leading-relaxed text-[13px] line-clamp-2">
+                                                    {puja.description || puja.tagline}
+                                                </p>
+                                            </Link>
+
+                                            <div className="mb-6 flex flex-wrap gap-1.5">
+                                                {(puja.benefits || []).slice(0, 3).map((benefit: any, i: number) => (
+                                                    <span key={i} className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-secondary/40 border border-border/30 text-muted-foreground flex items-center gap-1">
+                                                        <div className={`w-1 h-1 rounded-full bg-gradient-to-r ${displayGradient}`}></div>
+                                                        {benefit}
+                                                    </span>
+                                                ))}
+                                            </div>
+
+                                            <div className="mt-auto">
+                                                <button 
+                                                    onClick={() => setIsModalOpen(true)}
+                                                    className="group/btn relative inline-flex items-center justify-center w-full py-3.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 bg-[length:200%_auto] bg-right hover:bg-left transition-all duration-500 shadow-md"
+                                                >
+                                                    <span className="relative z-10 text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                                        Book Now <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* --- SIGNIFICANCE SECTION (Bento Style) --- */}
             <section className="py-10 md:py-16 relative z-10">
-                <div className="container mx-auto px-4 relative">
+                <div className="w-full mx-auto px-2 md:px-4 relative">
                     {/* Decorative Blob */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full lg:w-[120%] h-[120%] bg-saffron/5 rounded-full blur-3xl -z-10"></div>
                     <SectionHeading subtitle="Divine Meaning">Significance & Lore</SectionHeading>
@@ -223,7 +441,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                                 <Scroll className="w-7 h-7" />
                             </div>
                             <h3 className="text-2xl font-bold font-serif mb-4 group-hover:text-saffron transition-colors">Mythology</h3>
-                            <p className="text-muted-foreground leading-relaxed text-base md:text-lg">{festival.significance.mythology}</p>
+                            <p className="text-muted-foreground leading-relaxed text-base md:text-lg">{festival.significance?.mythology || "Explore the ancient scriptures and sacred legends that define the origin of this divine occasion."}</p>
                         </motion.div>
 
                         {/* Spiritual Essence */}
@@ -236,7 +454,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                                 <Flame className="w-8 h-8" />
                             </div>
                             <h3 className="text-2xl font-bold font-serif mb-4 text-foreground">Spiritual Essence</h3>
-                            <p className="text-muted-foreground leading-relaxed relative z-10 text-base md:text-lg">{festival.significance.spiritual}</p>
+                            <p className="text-muted-foreground leading-relaxed relative z-10 text-base md:text-lg">{festival.significance?.spiritual || "Connect with the inner light and higher consciousness through the spiritual vibrations of this sacred day."}</p>
                         </motion.div>
 
                         {/* Cultural Impact */}
@@ -249,7 +467,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                                 <User className="w-7 h-7" />
                             </div>
                             <h3 className="text-2xl font-bold font-serif mb-4 group-hover:text-blue-500 transition-colors">Cultural Impact</h3>
-                            <p className="text-muted-foreground leading-relaxed text-base md:text-lg">{festival.significance.cultural}</p>
+                            <p className="text-muted-foreground leading-relaxed text-base md:text-lg">{festival.significance?.cultural || "Witness the vibrant celebrations, community unity, and timeless traditions across our diverse landscape."}</p>
                         </motion.div>
                     </div>
                 </div>
@@ -257,42 +475,48 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
 
             {/* --- RITUALS SECTION (Snake Cards) --- */}
             <section className="py-10 md:py-16 relative z-10">
-                <div className="container mx-auto px-4">
+                <div className="w-full mx-auto px-2 md:px-4">
                     <SectionHeading subtitle="Vedic Vidhi">Sacred Rituals</SectionHeading>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
-                        {festival.rituals.map((ritual, i) => (
-                            <div key={i} className="group relative">
-                                {/* Bottom Glow */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-saffron/20 to-transparent rounded-[32px] translate-y-4 blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500"></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full">
+                        {(festival.rituals && festival.rituals.length > 0) ? (
+                            festival.rituals.map((ritual, i) => (
+                                <div key={i} className="group relative">
+                                    {/* Bottom Glow */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-saffron/20 to-transparent rounded-[32px] translate-y-4 blur-xl opacity-0 group-hover:opacity-40 transition-opacity duration-500"></div>
 
-                                <div className="relative bg-card text-card-foreground rounded-[32px] p-8 md:p-10 border border-border/50 shadow-lg transition-all duration-300 group-hover:-translate-y-2 overflow-hidden h-full">
-                                    {/* Snake Border SVG */}
-                                    <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ zIndex: 10 }}>
-                                        <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="32" ry="32" fill="none" stroke="url(#saffronGradient)" strokeWidth="3" strokeDasharray="30 15" className="animate-snake-border" style={{ strokeDashoffset: 1000 }} />
-                                        <defs>
-                                            <linearGradient id="saffronGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                                <stop offset="0%" stopColor="#f97316" stopOpacity="0.8" />
-                                                <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.8" />
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
+                                    <div className="relative bg-card text-card-foreground rounded-[32px] p-8 md:p-10 border border-border/50 shadow-lg transition-all duration-300 group-hover:-translate-y-2 overflow-hidden h-full">
+                                        {/* Snake Border SVG */}
+                                        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ zIndex: 10 }}>
+                                            <rect x="2" y="2" width="calc(100% - 4px)" height="calc(100% - 4px)" rx="32" ry="32" fill="none" stroke="url(#saffronGradient)" strokeWidth="3" strokeDasharray="30 15" className="animate-snake-border" style={{ strokeDashoffset: 1000 }} />
+                                            <defs>
+                                                <linearGradient id="saffronGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                    <stop offset="0%" stopColor="#f97316" stopOpacity="0.8" />
+                                                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.8" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
 
-                                    <div className="flex flex-col h-full">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <div className="w-12 h-12 rounded-xl bg-saffron/10 flex items-center justify-center text-saffron">
-                                                <CheckCircle className="w-6 h-6" />
+                                        <div className="flex flex-col h-full">
+                                            <div className="flex items-center justify-between mb-6">
+                                                <div className="w-12 h-12 rounded-xl bg-saffron/10 flex items-center justify-center text-saffron">
+                                                    <CheckCircle className="w-6 h-6" />
+                                                </div>
+                                                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-3 py-1 rounded-full bg-secondary/50 border border-border">
+                                                    {ritual.timing}
+                                                </span>
                                             </div>
-                                            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-3 py-1 rounded-full bg-secondary/50 border border-border">
-                                                {ritual.timing}
-                                            </span>
+                                            <h3 className="font-bold text-2xl mb-4 font-serif group-hover:text-saffron transition-colors">{ritual.name}</h3>
+                                            <p className="text-muted-foreground leading-relaxed text-base">{ritual.description}</p>
                                         </div>
-                                        <h3 className="font-bold text-2xl mb-4 font-serif group-hover:text-saffron transition-colors">{ritual.name}</h3>
-                                        <p className="text-muted-foreground leading-relaxed text-base">{ritual.description}</p>
                                     </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-10 bg-card/40 rounded-[32px] border border-dashed border-saffron/30">
+                                <p className="text-muted-foreground italic font-serif">Sacred Vidhi details are being compiled by our Vedic scholars...</p>
                             </div>
-                        ))}
+                        )}
                     </div>
 
                     {/* CTA Button */}
@@ -318,30 +542,36 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
 
             {/* --- FAQ SECTION --- */}
             <section className="py-10 md:py-16 relative z-10">
-                <div className="container mx-auto px-4 max-w-4xl">
-                    <SectionHeading subtitle="Queries">Common Questions</SectionHeading>
-                    <div className="space-y-4">
-                        {festival.faqs.map((item, i) => (
-                            <details key={i} open={i === 0} className="group bg-card/50 backdrop-blur-sm p-6 rounded-2xl border border-white/5 cursor-pointer open:bg-card open:shadow-lg transition-all duration-300">
-                                <summary className="font-bold text-lg mb-2 flex items-center justify-between list-none select-none">
-                                    <div className="flex items-start gap-4">
-                                        <div className="mt-1 w-6 h-6 rounded-full bg-saffron/10 flex items-center justify-center text-saffron text-sm">?</div>
-                                        {item.question}
+                <div className="w-full mx-auto px-2 md:px-4">
+                    <SectionHeading subtitle="Queries">Common Questions</SectionHeading>                    <div className="space-y-4">
+                        {(festival.faqs && festival.faqs.length > 0) ? (
+                            festival.faqs.map((item, i) => (
+                                <details key={i} open={i === 0} className="group bg-card/50 backdrop-blur-sm p-6 rounded-2xl border border-white/5 cursor-pointer open:bg-card open:shadow-lg transition-all duration-300">
+                                    <summary className="font-bold text-lg mb-2 flex items-center justify-between list-none select-none">
+                                        <div className="flex items-start gap-4">
+                                            <div className="mt-1 w-6 h-6 rounded-full bg-saffron/10 flex items-center justify-center text-saffron text-sm">?</div>
+                                            {item.question}
+                                        </div>
+                                        <ChevronDown className="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform duration-300" />
+                                    </summary>
+                                    <div className="text-muted-foreground ml-10 mt-4 leading-relaxed animate-fade-in opacity-80">
+                                        {item.answer}
                                     </div>
-                                    <ChevronDown className="w-5 h-5 text-muted-foreground group-open:rotate-180 transition-transform duration-300" />
-                                </summary>
-                                <div className="text-muted-foreground ml-10 mt-4 leading-relaxed animate-fade-in opacity-80">
-                                    {item.answer}
-                                </div>
-                            </details>
-                        ))}
+                                </details>
+                            ))
+                        ) : (
+                            <div className="text-center py-10 bg-card/20 rounded-2xl border border-white/5">
+                                <p className="text-muted-foreground italic">Detailed spiritual guidance for this festival is coming soon...</p>
+                            </div>
+                        )}
                     </div>
+
                 </div>
             </section>
 
             <section id="book-now" className="py-10 md:py-24 relative overflow-hidden">
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="max-w-6xl mx-auto">
+                <div className="w-full mx-auto px-2 md:px-4 relative z-10">
+                    <div className="w-full mx-auto">
                         <div className="relative rounded-[3rem] overflow-hidden bg-white/60 dark:bg-black/60 backdrop-blur-xl border border-saffron/20 dark:border-white/10 shadow-2xl p-8 md:p-12 lg:p-20 text-center group">
 
                             <h2 className="text-3xl md:text-5xl lg:text-7xl font-black font-serif mb-8 leading-tight">
@@ -395,7 +625,7 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
             {/* --- SACRED INSIGHTS (Related Blogs) --- */}
             {blogs.length > 0 && (
                 <section className="py-10 md:py-24 relative z-10">
-                    <div className="container mx-auto px-4">
+                    <div className="w-full mx-auto px-2 md:px-4">
                         <SectionHeading subtitle="Knowledge Center">Sacred Insights & Guidance</SectionHeading>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -451,6 +681,106 @@ export default function FestivalDetailClient({ festival }: FestivalDetailClientP
                 </section>
             )}
             <SpiritualFamilySection />
+
+            {/* --- BOOKING MODAL --- */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 sm:p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={() => setIsModalOpen(false)}
+                        ></motion.div>
+
+                        <motion.div
+                            initial={{ y: "100%", opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: "100%", opacity: 0 }}
+                            className="relative w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl p-8 md:p-10"
+                        >
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                className="absolute top-6 right-6 p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10 rounded-full transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            {formState === 'success' ? (
+                                <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
+                                    <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-4">
+                                        <CheckCircle className="w-10 h-10" />
+                                    </div>
+                                    <h3 className="text-3xl font-black font-serif">Request Sent!</h3>
+                                    <p className="text-zinc-500 dark:text-zinc-400">
+                                        Our Pandit ji will contact you shortly to discuss the <span className="text-saffron font-bold">{festival.name}</span> puja details.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="mb-8">
+                                        <div className="flex items-center gap-2 text-saffron font-bold tracking-widest uppercase text-xs mb-2">
+                                            <Calendar className="w-4 h-4" />
+                                            Sacred Booking
+                                        </div>
+                                        <h3 className="text-black dark:text-white text-3xl font-black font-serif mb-2 leading-tight">Book {festival.name} Puja</h3>
+                                        <p className="text-zinc-500 dark:text-zinc-400 text-sm">
+                                            Request a divine callback from our expert Vedic Pandits.
+                                        </p>
+                                    </div>
+
+                                    <form onSubmit={handleBookingSubmit} className="space-y-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-zinc-400 pl-1">Your Full Name</label>
+                                            <div className="relative group">
+                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-saffron transition-colors" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    placeholder="Enter your name"
+                                                    className="text-black dark:text-white w-full pl-12 pr-4 py-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 focus:border-saffron focus:ring-4 focus:ring-saffron/10 outline-none transition-all font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-black uppercase tracking-widest text-zinc-400 pl-1">WhatsApp Number</label>
+                                            <div className="relative group">
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-saffron transition-colors" />
+                                                <input
+                                                    type="tel"
+                                                    required
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                    placeholder="+91 00000 00000"
+                                                    className="text-black dark:text-white w-full pl-12 pr-4 py-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 focus:border-saffron focus:ring-4 focus:ring-saffron/10 outline-none transition-all font-medium"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            disabled={formState === 'submitting'}
+                                            className="w-full py-5 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 text-white font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-1 active:translate-y-0 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 group/btn"
+                                        >
+                                            {formState === 'submitting' ? (
+                                                <span className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                            ) : (
+                                                <>
+                                                    Confirm Booking <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-2 transition-transform" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </form>
+                                </>
+                            )}
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

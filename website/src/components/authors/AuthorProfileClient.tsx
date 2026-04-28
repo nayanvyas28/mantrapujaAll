@@ -48,8 +48,8 @@ export default function AuthorProfileClient({ author }: { author: any }) {
     };
 
     const fallback = getFallbackContent();
-    // Prioritize biography from DB, then fallback. Use bio only as a last resort if biography and fallback fail
-    const biography = author.biography || fallback.bio;
+    // Prioritize biography from DB ONLY if it's long enough, otherwise use premium fallback
+    const biography = (author.biography && author.biography.length > 50) ? author.biography : fallback.bio;
     const philosophy = author.philosophy || fallback.philosophy;
     const expertise = author.expertise 
         ? (typeof author.expertise === 'string' ? author.expertise.split(',').map((s: string) => s.trim()) : author.expertise)
@@ -125,9 +125,9 @@ export default function AuthorProfileClient({ author }: { author: any }) {
                                     </div>
                                     <h2 className="text-3xl md:text-4xl font-black font-serif">Biography</h2>
                                 </div>
-                                <div className="prose prose-lg dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:text-foreground/80 font-medium">
+                                <div className="prose prose-lg dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:text-foreground font-bold text-lg md:text-xl opacity-90">
                                     {biography.split('\n\n').map((p: string, i: number) => (
-                                        <p key={i} className="mb-6">{p}</p>
+                                        <p key={i} className="mb-8">{p}</p>
                                     ))}
                                 </div>
                             </motion.div>

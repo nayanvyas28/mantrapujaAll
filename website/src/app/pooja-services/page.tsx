@@ -229,9 +229,9 @@ export default function PoojaServicesPage() {
                     let allNames: string[] = [];
                     catData.forEach(c => {
                         if (c.name.includes('&')) {
-                            allNames.push(...c.name.split('&').map(s => s.trim()));
+                            allNames.push(...c.name.split('&').map((s: string) => s.trim()));
                         } else if (c.name.toLowerCase().includes(' and ')) {
-                            allNames.push(...c.name.split(/ and /i).map(s => s.trim()));
+                            allNames.push(...c.name.split(/ and /i).map((s: string) => s.trim()));
                         } else {
                             allNames.push(c.name);
                         }
@@ -331,7 +331,7 @@ export default function PoojaServicesPage() {
             result.sort((a, b) => {
                 if (a.hasCustomImage !== b.hasCustomImage) return b.hasCustomImage ? 1 : -1;
                 if (a.is_featured !== b.is_featured) return b.is_featured ? 1 : -1;
-                if (a.is_special_offer !== b.is_special_offer) return b.is_special_offer ? 1 : -1;
+                if ((a as any).is_special_offer !== (b as any).is_special_offer) return (b as any).is_special_offer ? 1 : -1;
                 return (a.name || '').localeCompare(b.name || '');
             });
         }
@@ -456,7 +456,7 @@ export default function PoojaServicesPage() {
 
                                 {/* Red Zigzag Special Offer Badge - Matches Requested Design */}
                                 <div className="absolute top-0 left-0 z-50 -translate-x-1/4 -translate-y-1/4 pointer-events-none transition-all duration-500 group-hover:-translate-y-[40%] group-hover:rotate-12 group-hover:scale-110">
-                                    {puja.is_special_offer && (
+                                    {(puja as any).is_special_offer && (
                                         <motion.div
                                             initial={{ scale: 0, rotate: -45 }}
                                             animate={{ scale: 1, rotate: 0 }}

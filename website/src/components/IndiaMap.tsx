@@ -2,7 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TempleIcon, LingamIcon, TrishulIcon, KalashIcon } from './icons/SpiritualIcons';
 import { Location } from '../data/spiritual-locations';
-import { INDIA_MAP_PATHS, INDIA_MAP_VIEWBOX } from '../data/india-map-data';
+import { 
+    INDIA_MAP_PATHS, 
+    INDIA_MAP_VIEWBOX,
+    MAP_OFFSET_X,
+    MAP_OFFSET_Y,
+    MAP_WIDTH,
+    MAP_HEIGHT 
+} from '../data/india-map-data';
 
 interface IndiaMapProps {
     locations: Location[];
@@ -106,11 +113,11 @@ const IndiaMap = ({ locations, activeFilter, selectedStateId, onLocationClick }:
                         y: isMobile ? 10 : 0
                     }}
                     transition={{ duration: 1.8, ease: "easeOut" }}
-                    className="relative w-full aspect-[612/696] preserve-3d mx-auto"
+                    className="relative w-full aspect-[712/820] preserve-3d mx-auto"
                 >
                     {/* "INDIA" Background Text - Positioned at the top center */}
-                    <div className="absolute top-[-10%] sm:top-[-15%] left-1/2 -translate-x-1/2 z-0 pointer-events-none select-none w-full text-center">
-                        <span className="text-[60px] sm:text-[140px] md:text-[220px] font-black tracking-[0.1em] sm:tracking-[0.2em] text-[#fbbf24] opacity-20 sm:opacity-30 font-sans leading-none" style={{ filter: 'drop-shadow(0 0 10px rgba(251,191,36,0.1))' }}>
+                    <div className="absolute top-[-8%] sm:top-[-12%] left-1/2 -translate-x-1/2 z-0 pointer-events-none select-none w-full text-center">
+                        <span className="text-[12vw] sm:text-[100px] md:text-[160px] font-black tracking-widest text-[#fbbf24] opacity-20 sm:opacity-30 font-sans leading-none inline-block whitespace-nowrap" style={{ filter: 'drop-shadow(0 0 10px rgba(251,191,36,0.1))' }}>
                             BHARAT
                         </span>
                     </div>
@@ -211,8 +218,8 @@ const IndiaMap = ({ locations, activeFilter, selectedStateId, onLocationClick }:
                         <AnimatePresence>
                             {locations.map((loc) => {
                                 const pinColor = getPinColor(loc.type);
-                                const xPercent = (loc.x / 612) * 100;
-                                const yPercent = (loc.y / 696) * 100;
+                                const xPercent = ((loc.x - MAP_OFFSET_X) / MAP_WIDTH) * 100;
+                                const yPercent = ((loc.y - MAP_OFFSET_Y) / MAP_HEIGHT) * 100;
 
                                 const isStateSelected = selectedStateId === loc.stateId;
                                 const baseZIndex = Math.floor(yPercent) + 10 + (isStateSelected ? 100 : 0);
@@ -225,7 +232,6 @@ const IndiaMap = ({ locations, activeFilter, selectedStateId, onLocationClick }:
                                             scale: 1,
                                             opacity: 1,
                                             z: isStateSelected ? 30 : 0,
-                                            y: isStateSelected ? -20 : 0,
                                             zIndex: baseZIndex
                                         }}
                                         exit={{ scale: 0, opacity: 0, z: 0 }}
