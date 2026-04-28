@@ -22,17 +22,35 @@ export const StickyBookingButton = ({ festivalName }: { festivalName: string }) 
         return () => window.removeEventListener('scroll', toggleVisibility);
     }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const [formData, setFormData] = useState({ name: '', phone: '' });
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormState('submitting');
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const response = await fetch('/api/festival-bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    phone: formData.phone,
+                    festival_name: festivalName
+                })
+            });
+
+            if (!response.ok) throw new Error('Submission failed');
+
             setFormState('success');
             setTimeout(() => {
                 setIsModalOpen(false);
                 setFormState('idle');
-            }, 2000);
-        }, 1500);
+                setFormData({ name: '', phone: '' });
+            }, 3000);
+        } catch (error) {
+            console.error("Booking error:", error);
+            setFormState('idle');
+            alert("Something went wrong. Please try again.");
+        }
     };
 
     return (
@@ -43,7 +61,7 @@ export const StickyBookingButton = ({ festivalName }: { festivalName: string }) 
                         initial={{ opacity: 0, y: 100 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 100 }}
-                        className="fixed bottom-10 right-10 z-50"
+                        className="fixed bottom-10 left-10 z-50"
                     >
                         <button
                             onClick={() => setIsModalOpen(true)}
@@ -114,8 +132,10 @@ export const StickyBookingButton = ({ festivalName }: { festivalName: string }) 
                                                 <input
                                                     type="text"
                                                     required
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                                     placeholder="Your Full Name"
-                                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-saffron focus:ring-1 focus:ring-saffron outline-none transition-all"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-saffron focus:ring-1 focus:ring-saffron outline-none transition-all text-black dark:text-white"
                                                 />
                                             </div>
                                         </div>
@@ -127,8 +147,10 @@ export const StickyBookingButton = ({ festivalName }: { festivalName: string }) 
                                                 <input
                                                     type="tel"
                                                     required
+                                                    value={formData.phone}
+                                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                                     placeholder="+91 98765 43210"
-                                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-saffron focus:ring-1 focus:ring-saffron outline-none transition-all"
+                                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-muted/50 border border-border focus:border-saffron focus:ring-1 focus:ring-saffron outline-none transition-all text-black dark:text-white"
                                                 />
                                             </div>
                                         </div>

@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Database,
   MapPin,
-  Mail
+  Mail,
+  Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -36,12 +37,16 @@ const websiteGroups = [
     items: [
       { name: 'Overview', icon: LayoutDashboard, href: '/dashboard' },
       { name: 'Ritual Bookings', icon: Scroll, href: '/dashboard/bookings' },
+      { name: 'Contact Inquiries', icon: MessageCircle, href: '/dashboard/inquiries' },
+      { name: 'Newsletter Subs', icon: Mail, href: '/dashboard/newsletter' },
+      { name: 'Festival Booking', icon: Calendar, href: '/dashboard/festival-bookings' },
     ]
   },
   {
     category: 'Sacred Content',
     items: [
       { name: 'Puja Catalog', icon: Flame, href: '/dashboard/pujas' },
+      { name: 'Divine Festivals', icon: Calendar, href: '/dashboard/festivals' },
       { name: 'Sacred Locations', icon: MapPin, href: '/dashboard/locations' },
       { name: 'Blog Categories', icon: Database, href: '/dashboard/categories' },
       { name: 'Blog Writers', icon: Users, href: '/dashboard/writers' },
@@ -57,7 +62,6 @@ const websiteGroups = [
     category: 'Devotee Engagement',
     items: [
       { name: 'WhatsApp Connect', icon: MessageCircle, href: '/dashboard/settings/whatsapp' },
-      { name: 'Weekly Wisdom', icon: Mail, href: '/dashboard/newsletter' },
       { name: 'Kundali Hub', icon: Moon, href: '/dashboard/kundli' },
       { name: 'Guru Ji AI', icon: Settings, href: '/dashboard/settings' },
     ]

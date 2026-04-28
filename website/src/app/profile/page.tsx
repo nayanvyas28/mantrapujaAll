@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Phone, User as UserIcon, Calendar, Settings, MapPin, Edit3, Loader2, Star, Upload, Check, ChevronLeft } from 'lucide-react';
+import { Mail, Phone, User as UserIcon, Calendar, Settings, MapPin, Edit3, Loader2, Star, Upload, Check, ChevronLeft, MessageSquare, Clock } from 'lucide-react';
 import { TranslationDropdown } from '@/components/ui/TranslationDropdown';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { supabase } from '@/lib/supabaseClient';
@@ -14,10 +14,11 @@ export default function ProfilePage() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'address' | 'preferences'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'address' | 'preferences' | 'support'>('overview');
     const [showMobileView, setShowMobileView] = useState(false); // New state for mobile drill-down
     const [profileData, setProfileData] = useState<any>(null);
     const [bookings, setBookings] = useState<any[]>([]);
+    const [inquiries, setInquiries] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Reviews
@@ -63,7 +64,7 @@ export default function ProfilePage() {
     // Handle Tab Sync from URL
     useEffect(() => {
         const tab = searchParams.get('tab');
-        if (tab && ['overview', 'bookings', 'address', 'preferences'].includes(tab)) {
+        if (tab && ['overview', 'bookings', 'address', 'preferences', 'support'].includes(tab)) {
             setActiveTab(tab as any);
             setShowMobileView(true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -78,6 +79,7 @@ export default function ProfilePage() {
                 const data = await res.json();
                 setProfileData(data.profile);
                 setBookings(data.bookings || []);
+                setInquiries(data.inquiries || []);
                 if (data.profile?.address) {
                     setAddressForm({
                         houseNo: data.profile.address.houseNo || '',
@@ -469,6 +471,10 @@ export default function ProfilePage() {
                             <button onClick={() => { setActiveTab('preferences'); setShowMobileView(true); }} className={`w-full flex items-center gap-4 px-6 py-5 rounded-[1.5rem] font-bold transition-all shadow-sm ${activeTab === 'preferences' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/25 scale-[1.02]' : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}>
                                 <Settings size={20} /> <span className="flex-1 text-left">Preferences</span>
                             </button>
+                            <button onClick={() => { setActiveTab('support'); setShowMobileView(true); }} className={`w-full flex items-center justify-between px-6 py-5 rounded-[1.5rem] font-bold transition-all shadow-sm ${activeTab === 'support' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/25 scale-[1.02]' : 'bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'}`}>
+                                <div className="flex items-center gap-4"><MessageSquare size={20} /> <span className="flex-1 text-left">Support Inquiries</span></div>
+                                {inquiries.length > 0 && <span className={`px-2.5 py-0.5 rounded-lg text-xs font-black ${activeTab === 'support' ? 'bg-white/20 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'}`}>{inquiries.length}</span>}
+                            </button>
                         </div>
 
                         {/* Main Panel - Hidden on mobile if in menu */}
@@ -686,6 +692,66 @@ export default function ProfilePage() {
                                             </div>
                                                 </div>
                                             )}
+                                             {/* SUPPORT TAB */}
+                                             {activeTab === 'support' && (
+                                                <div>
+                                                    <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-8 font-serif flex items-center gap-2"><MessageSquare size={24} className="text-orange-500" /> Support Inquiries</h2>
+                                                    {loading ? (
+                                                        <div className="flex justify-center py-10"><Loader2 className="animate-spin text-orange-500" /></div>
+                                                    ) : inquiries.length === 0 ? (
+                                                        <div className="text-center py-16 opacity-50 grayscale">
+                                                            <MessageSquare className="w-16 h-16 mx-auto mb-4" />
+                                                            <p className="font-black uppercase tracking-[0.2em] text-sm">No inquiries raised yet</p>
+                                                            <p className="text-xs mt-2 normal-case font-medium">Any message you send through "Contact Us" will appear here.</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-6">
+                                                            {inquiries.map((inquiry, idx) => (
+                                                                <div key={idx} className="p-6 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-800/30 overflow-hidden relative group">
+                                                                    <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                                                                        <div>
+                                                                            <div className="flex items-center gap-3 mb-2">
+                                                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                                                    inquiry.status === 'resolved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                                                                }`}>
+                                                                                    {inquiry.status || 'pending'}
+                                                                                </span>
+                                                                                <span className="text-xs text-zinc-400 font-bold">{new Date(inquiry.created_at).toLocaleDateString()}</span>
+                                                                            </div>
+                                                                            <h3 className="font-black text-zinc-800 dark:text-white text-lg">{inquiry.subject}</h3>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="space-y-4">
+                                                                        <div className="p-4 bg-white dark:bg-zinc-900/50 rounded-2xl border border-zinc-100 dark:border-zinc-700/50">
+                                                                            <p className="text-sm text-zinc-600 dark:text-zinc-400 italic">"{inquiry.message}"</p>
+                                                                        </div>
+
+                                                                        {inquiry.admin_response ? (
+                                                                            <motion.div 
+                                                                                initial={{ opacity: 0, y: 10 }}
+                                                                                animate={{ opacity: 1, y: 0 }}
+                                                                                className="p-5 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800/50 rounded-[1.5rem] relative"
+                                                                            >
+                                                                                <div className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
+                                                                                    <Check size={14} /> MantraPuja Team Response
+                                                                                </div>
+                                                                                <p className="text-sm text-zinc-800 dark:text-zinc-200 font-medium leading-relaxed">
+                                                                                    {inquiry.admin_response}
+                                                                                </p>
+                                                                            </motion.div>
+                                                                        ) : (
+                                                                            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                                                                                <Clock size={12} /> Awaiting Guru Ji's response...
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                             )}
                                         </motion.div>
                                     </AnimatePresence>
                             </div>

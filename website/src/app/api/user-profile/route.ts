@@ -15,7 +15,7 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
         }
 
-        // Fetch User Profile and Bookings in Parallel
+        // Fetch User Profile and Bookings first
         const [profileRes, bookingsRes] = await Promise.all([
             supabaseAdmin.from('profiles').select('*').eq('id', userId).single(),
             supabaseAdmin.from('puja_bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false })
@@ -23,6 +23,19 @@ export async function GET(request: Request) {
 
         const profile = profileRes.data;
         const bookings = bookingsRes.data || [];
+
+        // Fetch Inquiries using both ID and Email from profile
+        let inquiries = [];
+        if (profile) {
+            const { data: inqData, error: inqError } = await supabaseAdmin
+                .from('contact_inquiries')
+                .select('*')
+                .or(`user_id.eq.${userId},email.eq.${profile.email}`)
+                .order('created_at', { ascending: false });
+            
+            if (!inqError) inquiries = inqData || [];
+            else console.error("Inquiries Fetch Error:", inqError);
+        }
 
         if (profileRes.error && profileRes.error.code !== 'PGRST116') {
             console.error("Profile Error:", profileRes.error);
@@ -59,7 +72,8 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             profile: profile || null,
-            bookings: finalBookings
+            bookings: finalBookings,
+            inquiries: inquiries
         }, { status: 200 });
 
     } catch (error: any) {

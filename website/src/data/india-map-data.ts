@@ -1,4 +1,9 @@
-export const INDIA_MAP_VIEWBOX = "0 0 612 696";
+export const INDIA_MAP_VIEWBOX = "-110 -135 720 840";
+export const MAP_OFFSET_X = -110;
+export const MAP_OFFSET_Y = -135;
+export const MAP_WIDTH = 720;
+export const MAP_HEIGHT = 840;
+
 
 export interface MapState {
     name: string;

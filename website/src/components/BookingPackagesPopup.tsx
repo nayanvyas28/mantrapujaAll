@@ -117,7 +117,7 @@ export default function BookingPackagesPopup({
     }
 
     const selectedPkg = displayPackages.find(p => p.id === selectedId) || displayPackages[0];
-    const currentInclusions = selectedPkg.inclusions;
+    const currentInclusions: string[] = Array.isArray(selectedPkg.inclusions) ? (selectedPkg.inclusions as string[]) : [];
 
     return (
         <AnimatePresence>

@@ -213,7 +213,7 @@ const Header = () => {
                                                     className="absolute right-0 mt-4 w-64 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-2xl border border-zinc-200/50 dark:border-white/10 rounded-3xl shadow-2xl z-[200] overflow-hidden"
                                                 >
                                                     <div className="p-5 border-b border-zinc-100 dark:border-white/5">
-                                                        <div className="font-black text-zinc-900 dark:text-white truncate">{profile?.full_name || user.user_metadata?.full_name || 'User'}</div>
+                                                        <div className="font-black text-zinc-900 dark:text-white truncate">{t.welcome}, <span className="capitalize">{profile?.full_name || user.user_metadata?.full_name || 'User'}</span></div>
                                                         <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate">{user.email || profile?.phone || user.phone || 'Welcome'}</div>
                                                     </div>
                                                     

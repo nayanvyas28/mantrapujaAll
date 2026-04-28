@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import AuthorProfileClient from '@/components/authors/AuthorProfileClient';
 
-// Revalidate every hour
-export const revalidate = 3600;
+// Disable caching for real-time updates during development
+export const revalidate = 0;
 
 async function getAuthor(slug: string) {
     const supabase = createClient(
