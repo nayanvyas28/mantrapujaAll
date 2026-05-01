@@ -14,10 +14,21 @@ export default function BlogHero({ onSearch, onSort, onFilter }: { onSearch: (te
 
     }, []);
 
+    const [debouncedTerm, setDebouncedTerm] = useState("");
+
+    // Debounce search term
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onSearch(debouncedTerm);
+        }, 500); // 500ms delay
+
+        return () => clearTimeout(timer);
+    }, [debouncedTerm, onSearch]);
+
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const term = e.target.value;
         setSearchTerm(term);
-        onSearch(term);
+        setDebouncedTerm(term);
     };
 
     if (!mounted) return null;
@@ -127,7 +138,7 @@ export default function BlogHero({ onSearch, onSort, onFilter }: { onSearch: (te
                     {/* Popular Tags */}
                     <div className="flex flex-wrap justify-center gap-2 mt-6">
                         <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest py-2 mr-2">Popular:</span>
-                        {['Mantras', 'Rituals', 'Astrology', 'Meditation', 'Vedic Wisdom'].map((tag) => (
+                        {['Mantras', 'Rituals', 'Astrology', 'Meditation', 'Ancient Wisdom'].map((tag) => (
                             <button
                                 key={tag}
                                 onClick={() => { setSearchTerm(tag); onSearch(tag); }}

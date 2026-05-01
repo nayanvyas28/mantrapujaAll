@@ -16,7 +16,8 @@ import {
   Calendar,
   User,
   Tag,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -116,18 +117,43 @@ export default function BlogsPage() {
     }
   };
 
-  const filteredBlogs = blogs.filter(b => 
-    b.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    b.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBlogs = blogs.filter(b => {
+    const searchLower = searchTerm.toLowerCase().trim();
+    if (!searchLower) return true;
+    
+    const words = searchLower.split(/\s+/).filter(w => w.length > 0);
+    const title = b.title.toLowerCase();
+    const category = (b.category || '').toLowerCase();
+    const excerpt = (b.excerpt || '').toLowerCase();
+
+    // Smart Search: Match any of the words in title, category, or excerpt
+    return words.some(word => 
+      title.includes(word) || 
+      category.includes(word) || 
+      excerpt.includes(word)
+    );
+  });
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Sacred Blogs</h1>
-          <p className="text-gray-400 text-sm">Create and manage spiritual articles for your devotees.</p>
+          <div className="flex flex-wrap items-center gap-4 mt-2">
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+              <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Total</span>
+              <span className="text-sm font-bold text-white">{blogs.length}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+              <span className="text-[10px] font-bold text-green-500/60 uppercase tracking-widest">Published</span>
+              <span className="text-sm font-bold text-green-400">{blogs.filter(b => b.published).length}</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-full">
+              <span className="text-[10px] font-bold text-orange-500/60 uppercase tracking-widest">Drafts</span>
+              <span className="text-sm font-bold text-orange-400">{blogs.filter(b => !b.published).length}</span>
+            </div>
+          </div>
         </div>
         <button 
           onClick={() => {
@@ -142,10 +168,13 @@ export default function BlogsPage() {
             });
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-saffron to-gold rounded-2xl text-white font-bold shadow-lg shadow-saffron/20 hover:scale-105 active:scale-95 transition-all"
+          className="group relative flex items-center gap-3 px-8 py-4 bg-[#f97316] rounded-[2rem] text-white font-bold uppercase tracking-widest text-[11px] shadow-[0_0_25px_rgba(249,115,22,0.5)] hover:shadow-[0_0_40px_rgba(249,115,22,0.8)] hover:-translate-y-1 active:scale-95 transition-all duration-300 overflow-hidden"
         >
-          <Plus size={18} />
-          Create Blog
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#fbbf24] to-transparent opacity-0 group-hover:opacity-40 transition-opacity" />
+          <div className="p-1.5 bg-white/20 rounded-xl">
+            <Plus size={16} strokeWidth={3} />
+          </div>
+          <span className="relative z-10">Create New Blog</span>
         </button>
       </div>
 
@@ -173,10 +202,11 @@ export default function BlogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-black border-b border-white/5">
+              <tr className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold border-b border-white/5">
                 <th className="px-8 py-5">Article</th>
                 <th className="px-8 py-5">Category</th>
                 <th className="px-8 py-5">Author</th>
+                <th className="px-8 py-5">Status</th>
                 <th className="px-8 py-5">Date</th>
                 <th className="px-8 py-5 text-right">Actions</th>
               </tr>
@@ -184,7 +214,7 @@ export default function BlogsPage() {
             <tbody className="divide-y divide-white/[0.03]">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center">
+                  <td colSpan={6} className="px-8 py-20 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-10 h-10 border-4 border-saffron/20 border-t-saffron rounded-full animate-spin" />
                       <span className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Loading Wisdom...</span>
@@ -216,6 +246,15 @@ export default function BlogsPage() {
                             <span className="text-xs text-gray-400 font-medium">{blog.author_name}</span>
                         </div>
                     </td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                        blog.published 
+                          ? 'bg-green-500/10 border border-green-500/20 text-green-400' 
+                          : 'bg-orange-500/10 border border-orange-500/20 text-orange-400'
+                      }`}>
+                        {blog.published ? 'Published' : 'Draft'}
+                      </span>
+                    </td>
                     <td className="px-8 py-6 text-[10px] text-gray-500 font-bold uppercase tracking-widest">
                       {new Date(blog.created_at).toLocaleDateString()}
                     </td>
@@ -242,7 +281,7 @@ export default function BlogsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center text-gray-500 italic text-sm">
+                  <td colSpan={6} className="px-8 py-20 text-center text-gray-500 italic text-sm">
                     No blogs found. Time to write some sacred content!
                   </td>
                 </tr>
@@ -261,13 +300,13 @@ export default function BlogsPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/90 backdrop-blur-md"
+              className="absolute inset-0 bg-[#0f172a]/90 backdrop-blur-md"
             />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-5xl max-h-[90vh] bg-[#0a0a0a] border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
+              className="relative w-full max-w-5xl max-h-[90vh] bg-[#0f172a] border border-white/10 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col"
             >
               <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                 <div className="flex items-center gap-4">
@@ -298,7 +337,7 @@ export default function BlogsPage() {
                     {/* Left Column - Main Content */}
                     <div className="lg:col-span-8 space-y-8">
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-saffron shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
                                 Article Title
                             </label>
@@ -317,7 +356,7 @@ export default function BlogsPage() {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-saffron shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
                                 Full Content
                             </label>
@@ -332,7 +371,7 @@ export default function BlogsPage() {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-saffron shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
                                 Brief Excerpt
                             </label>
@@ -352,11 +391,11 @@ export default function BlogsPage() {
                         {/* Status Card */}
                         <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-6">
                             <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Publish Status</span>
+                                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Publish Status</span>
                                 <button 
                                     type="button"
                                     onClick={() => setCurrentBlog(prev => ({ ...prev, published: !prev?.published }))}
-                                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${
+                                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-tighter transition-all ${
                                         currentBlog?.published 
                                         ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
                                         : 'bg-orange-500/10 text-orange-400 border border-orange-500/20'
@@ -368,7 +407,7 @@ export default function BlogsPage() {
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                                         <Tag size={12} className="text-saffron" /> Category
                                     </label>
                                     <select 
@@ -377,7 +416,7 @@ export default function BlogsPage() {
                                         onChange={(e) => setCurrentBlog(prev => ({ ...prev, category: e.target.value }))}
                                         className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white focus:outline-none focus:border-saffron/50 appearance-none cursor-pointer"
                                     >
-                                        {categories.map(c => <option key={c.id} value={c.name} className="bg-black">{c.name}</option>)}
+                                        {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                     </select>
                                 </div>
 
@@ -401,8 +440,8 @@ export default function BlogsPage() {
                                         }}
                                         className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold text-white focus:outline-none focus:border-saffron/50 appearance-none cursor-pointer"
                                     >
-                                        <option value="" className="bg-black">Choose a Writer</option>
-                                        {writers.map(w => <option key={w.id} value={w.name} className="bg-black">{w.name}</option>)}
+                                        <option value="">Choose a Writer</option>
+                                        {writers.map(w => <option key={w.id} value={w.name}>{w.name}</option>)}
                                     </select>
                                 </div>
                             </div>
@@ -410,12 +449,12 @@ export default function BlogsPage() {
 
                         {/* Image Preview Card */}
                         <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                                 <ImageIcon size={12} className="text-saffron" /> Cover Image URL
                             </label>
                             <div className="aspect-video rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-2xl group relative">
                                 <img src={currentBlog?.image_url} alt="Cover" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="absolute inset-0 bg-[#0f172a]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <ImageIcon size={32} className="text-white/50" />
                                 </div>
                             </div>
@@ -431,11 +470,19 @@ export default function BlogsPage() {
                         <div className="p-6 rounded-[2rem] bg-orange-500/5 border border-orange-500/10 space-y-3">
                             <div className="flex items-center gap-2 text-orange-400">
                                 <Calendar size={14} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Metadata</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Metadata</span>
                             </div>
                             <div className="space-y-1">
-                                <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tighter">URL Slug</p>
-                                <p className="text-[10px] text-orange-400 font-mono truncate">{currentBlog?.slug || 'auto-generated-slug'}</p>
+                                <p className="text-[9px] text-gray-600 font-bold uppercase tracking-tighter">URL Slug (Click to view)</p>
+                                <a 
+                                    href={`http://localhost:3000/blogs/${currentBlog?.slug}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-[10px] text-orange-400 font-mono hover:text-orange-300 transition-colors group/link"
+                                >
+                                    <span className="truncate">{currentBlog?.slug || 'auto-generated-slug'}</span>
+                                    {currentBlog?.slug && <ExternalLink size={12} className="shrink-0 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />}
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -446,7 +493,7 @@ export default function BlogsPage() {
                   <button 
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="flex-1 px-8 py-5 bg-white/5 border border-white/10 rounded-3xl text-sm font-bold text-gray-400 hover:bg-white/10 hover:text-white transition-all"
+                    className="flex-1 px-8 py-5 border-2 border-red-500/30 rounded-3xl text-xs font-black uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-all shadow-[0_0_15px_rgba(239,68,68,0.1)]"
                   >
                     Discard Changes
                   </button>
@@ -454,10 +501,13 @@ export default function BlogsPage() {
                     onClick={handleSave}
                     disabled={isSaving}
                     type="button"
-                    className="flex-1 px-8 py-5 bg-gradient-to-r from-saffron to-gold rounded-3xl text-white font-black uppercase tracking-[0.2em] text-xs shadow-xl shadow-saffron/20 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-3"
+                    className="group relative flex-[1.5] flex items-center justify-center gap-3 px-8 py-5 bg-[#f97316] rounded-3xl text-white font-bold uppercase tracking-[0.2em] text-[10px] shadow-[0_0_30px_rgba(249,115,22,0.4)] hover:shadow-[0_0_45px_rgba(249,115,22,0.6)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all overflow-hidden"
                   >
-                    {isSaving ? <RefreshCw className="animate-spin" size={20} /> : <Check size={20} />}
-                    {currentBlog?.id ? 'Update Wisdom' : 'Publish Article'}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#fbbf24] to-transparent opacity-0 group-hover:opacity-40 transition-opacity" />
+                    {isSaving ? <RefreshCw className="animate-spin" size={18} /> : <Check size={18} strokeWidth={3} />}
+                    <span className="relative z-10">
+                        {currentBlog?.id ? 'Update Wisdom' : 'Publish Article'}
+                    </span>
                   </button>
               </div>
             </motion.div>

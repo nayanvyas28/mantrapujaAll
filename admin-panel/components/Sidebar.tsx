@@ -24,7 +24,8 @@ import {
   Database,
   MapPin,
   Mail,
-  Calendar
+  Calendar,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -49,6 +50,7 @@ const websiteGroups = [
       { name: 'Puja Catalog', icon: Flame, href: '/dashboard/pujas' },
       { name: 'Divine Festivals', icon: Calendar, href: '/dashboard/festivals' },
       { name: 'Sacred Locations', icon: MapPin, href: '/dashboard/locations' },
+      { name: 'Sacred Blogs', icon: BookOpen, href: '/dashboard/blogs' },
       { name: 'Blog Categories', icon: Database, href: '/dashboard/categories' },
       { name: 'Blog Writers', icon: Users, href: '/dashboard/writers' },
     ]

@@ -77,9 +77,16 @@ export default function BlogContent() {
                 query = query.eq('category', activeCategory);
             }
 
-            // Apply Search
+            // Apply Smart Search
             if (searchTerm) {
-                query = query.or(`title.ilike.%${searchTerm}%,excerpt.ilike.%${searchTerm}%`);
+                const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
+                if (words.length > 0) {
+                    // Create an OR filter for each word across multiple columns
+                    const orFilters = words.map(word => 
+                        `title.ilike.%${word}%,excerpt.ilike.%${word}%,category.ilike.%${word}%`
+                    ).join(',');
+                    query = query.or(orFilters);
+                }
             }
 
             // Pagination
@@ -130,12 +137,16 @@ export default function BlogContent() {
         }
     }, [activeCategory, searchTerm, sortBy, timeFilter]);
 
+    const [isFirstLoad, setIsFirstLoad] = useState(true);
+
     // Initial Load & Filter Changes
     useEffect(() => {
         setIsLoading(true);
         setPage(0);
-        setBlogs([]); 
-        fetchBlogs(0, true);
+        // We don't clear blogs here to keep the "Direct" feel during search
+        fetchBlogs(0, true).then(() => {
+            setIsFirstLoad(false);
+        });
     }, [activeCategory, searchTerm, sortBy, timeFilter, fetchBlogs]);
 
     const handleLoadMore = () => {
@@ -150,6 +161,9 @@ export default function BlogContent() {
         <div className="min-h-screen bg-background transition-colors duration-500 relative">
             <UnifiedPujaBackground />
 
+            {/* Only show full loading screen on absolute first visit */}
+            {isFirstLoad && isLoading && <LoadingScreen />}
+
             <BlogHero onSearch={setSearchTerm} onSort={setSortBy} onFilter={setTimeFilter} />
 
             <div className="container mx-auto px-4 pb-24 -mt-10 relative z-20">
@@ -163,20 +177,16 @@ export default function BlogContent() {
 
                     {/* Main Content Grid */}
                     <div className="flex-1">
-                        {/* Debug Info (Visible only if empty and error exists) */}
+                        {/* Debug Info */}
                         {!isLoading && blogs.length === 0 && (
                             <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-xs font-mono">
                                 Debug: Blogs=0 | Category={activeCategory} | Search={searchTerm} | Status=Loaded
-                                {fetchError && <div className="mt-2 text-white bg-red-600 p-2 rounded">Error: {fetchError}</div>}
-                                <br />
-                                Check if 'published' column is true in DB.
                             </div>
                         )}
 
-                        {isLoading && page === 0 ? (
-                            <LoadingScreen />
-                        ) : blogs.length > 0 ? (
-                            <>
+                        <div className={`transition-all duration-500 ${isLoading ? "opacity-60 blur-[1px] pointer-events-none" : "opacity-100"}`}>
+                            {blogs.length > 0 ? (
+                             <>
                                 <motion.div
                                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                                 >
@@ -210,13 +220,16 @@ export default function BlogContent() {
                                         </button>
                                     </div>
                                 )}
-                            </>
-                        ) : (
-                            <div className="text-center py-8 bg-card/50 rounded-[2rem] border border-border dashed">
-                                <h3 className="text-2xl font-bold mb-2">No wisdom found</h3>
-                                <p className="text-muted-foreground">Try adjusting your search or category.</p>
-                            </div>
-                        )}
+                             </>
+                            ) : (
+                                !isLoading && (
+                                    <div className="text-center py-20 bg-card/30 rounded-[2.5rem] border border-border border-dashed">
+                                        <h3 className="text-2xl font-bold mb-2">No wisdom found</h3>
+                                        <p className="text-muted-foreground">Try adjusting your search or category.</p>
+                                    </div>
+                                )
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
