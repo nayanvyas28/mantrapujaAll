@@ -398,8 +398,10 @@ export const deletePooja = async (id: string): Promise<boolean> => {
 export const getBlogs = async (): Promise<Blog[]> => {
     const supabase = getClient();
     const { data, error } = await supabase
-        .from('blogs')
+        .from('Final_blog')
         .select('*')
+        .eq('published', true)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -418,7 +420,7 @@ export const getBlogs = async (): Promise<Blog[]> => {
 
 export const updateBlog = async (id: string, updates: Partial<Blog>): Promise<Blog | null> => {
     const { data, error } = await defaultSupabase
-        .from('blogs')
+        .from('Final_blog')
         .update(updates)
         .eq('id', id)
         .select()

@@ -48,9 +48,10 @@ export default function BlogContent() {
 
             // 2. Build Query
             let query = supabase
-                .from('blogs')
+                .from('Final_blog')
                 .select('*')
                 .eq('published', true)
+                .eq('is_active', true) // Added is_active check from new schema
                 .neq('slug', 'cache-buster-' + Date.now()); // Safe string-based cache buster
 
             // Apply Sorting
@@ -102,11 +103,7 @@ export default function BlogContent() {
             }
 
             if (data) {
-                const totalMatched = data.filter((b: any) => b.author_id && authorIdMap.has(b.author_id)).length;
-                console.log(`Sync Status: ${totalMatched}/${data.length} blogs linked correctly.`);
                 const mappedBlogs: BlogPost[] = data.map((b: any) => {
-                    const latestAuthor = authorIdMap.get(b.author_id) || authorNameMap.get((b.author_name || "").trim().toLowerCase());
-                    
                     return {
                         id: b.id,
                         title: b.title,
@@ -118,9 +115,9 @@ export default function BlogContent() {
                         tags: b.tags || [],
                         views: b.views || 0,
                         author: {
-                            name: latestAuthor?.name || b.author_name || "MantraPuja Team",
-                            avatar: latestAuthor?.avatar || b.author_avatar || "/logo.png",
-                            role: latestAuthor?.role || b.author_role || "Editor"
+                            name: b.author_name || "MantraPuja Team",
+                            avatar: b.author_avatar || "/logo.png",
+                            role: b.author_role || "Editor"
                         }
                     };
                 });

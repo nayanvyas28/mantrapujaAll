@@ -14,7 +14,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com'
 
 async function getSitemapData() {
     const [blogsCount, poojasCount, destinationsCount] = await Promise.all([
-        supabase.from('blogs').select('*', { count: 'exact', head: true }).then(res => res.count || 0),
+        supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then(res => res.count || 0),
         supabase.from('poojas').select('*', { count: 'exact', head: true }).then(res => res.count || 0),
         supabase.from('destinations').select('*', { count: 'exact', head: true }).then(res => res.count || 0)
     ]);

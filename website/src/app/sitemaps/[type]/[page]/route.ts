@@ -58,8 +58,10 @@ export async function GET(
             }
         } else if (type === 'blog') {
             const { data } = await supabase
-                .from('blogs')
+                .from('Final_blog')
                 .select('slug, updated_at')
+                .eq('published', true)
+                .eq('is_active', true)
                 .range(startIdx, endIdx);
 
             if (data) {

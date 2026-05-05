@@ -98,7 +98,7 @@ export default function SeoManager() {
             }
 
             // 4. Fetch Blog Posts
-            const { data: blogs } = await supabase.from('blogs').select('id, title, slug').eq('published', true);
+            const { data: blogs } = await supabase.from('Final_blog').select('id, title, slug').eq('published', true).eq('is_active', true);
             if (blogs) {
                 blogs.forEach(blog => {
                     allRoutes.push({

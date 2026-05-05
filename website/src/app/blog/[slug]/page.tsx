@@ -16,10 +16,11 @@ async function getBlog(slug: string) {
     // Try finding by the provided slug first
     console.log(`[getBlog] 1. Searching for slug: "${slug}"`);
     let { data: blog, error } = await supabase
-        .from('blogs')
-        .select('*, blog_authors(*)')
+        .from('Final_blog')
+        .select('*')
         .eq('slug', slug)
         .eq('published', true)
+        .eq('is_active', true)
         .single();
 
     if (error) {
@@ -46,10 +47,11 @@ async function getBlog(slug: string) {
             for (const candidate of candidates) {
                 console.log(`[getBlog] Trying candidate: "${candidate}"`);
                 const { data: foundBlog } = await supabase
-                    .from('blogs')
-                    .select('*, blog_authors(*)')
+                    .from('Final_blog')
+                    .select('*')
                     .eq('slug', candidate)
                     .eq('published', true)
+                    .eq('is_active', true)
                     .single();
 
                 if (foundBlog) {
@@ -70,20 +72,13 @@ async function getBlog(slug: string) {
         return null;
     }
 
-    // Fetch full author info from blog_authors table
-    const { data: authorData } = await supabase
-        .from('blog_authors')
-        .select('*')
-        .eq('name', blog.author_name)
-        .single();
-
     return {
         ...blog,
         author: {
-            name: authorData?.name || blog.author_name || "MantraPuja Team",
-            avatar: authorData?.avatar || blog.author_avatar || "/logo.png",
-            role: authorData?.role || blog.author_role || "Editor",
-            bio: authorData?.bio || ""
+            name: blog.author_name || "MantraPuja Team",
+            avatar: blog.author_avatar || "/logo.png",
+            role: blog.author_role || "Editor",
+            bio: "" // Bio is not in the flattened table, can be empty or added if needed
         }
     };
 }

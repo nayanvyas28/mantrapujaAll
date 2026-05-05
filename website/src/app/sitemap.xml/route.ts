@@ -13,7 +13,7 @@ export async function GET() {
     try {
         // Get counts for dynamic content
         const [blogsCount, poojasCount, destinationsCount] = await Promise.all([
-            supabase.from('blogs').select('*', { count: 'exact', head: true }).then(res => res.count || 0),
+            supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then(res => res.count || 0),
             supabase.from('poojas').select('*', { count: 'exact', head: true }).then(res => res.count || 0),
             supabase.from('destinations').select('*', { count: 'exact', head: true }).then(res => res.count || 0)
         ]);

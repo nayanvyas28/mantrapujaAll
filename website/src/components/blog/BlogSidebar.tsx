@@ -28,8 +28,10 @@ export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSi
         async function fetchRecentBlogs() {
             try {
                 const { data, error } = await supabase
-                    .from('blogs')
+                    .from('Final_blog')
                     .select('id, title, slug, image_url, created_at')
+                    .eq('published', true)
+                    .eq('is_active', true)
                     .order('created_at', { ascending: false })
                     .limit(3);
 

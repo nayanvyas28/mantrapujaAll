@@ -285,7 +285,7 @@ export default function HomeClient() {
                     bannersResponse
                 ] = await Promise.all([
                     supabase.from('pages').select('id, slug, title').or('slug.eq./,slug.eq.home').maybeSingle(),
-                    supabase.from('blogs').select('id, title, slug, image, category, excerpt, tags, created_at').eq('published', true).order('created_at', { ascending: false }).limit(3),
+                    supabase.from('Final_blog').select('id, title, slug, image_url, category, excerpt, tags, created_at').eq('published', true).eq('is_active', true).order('created_at', { ascending: false }).limit(3),
                     supabase.from('destinations').select('id, name, type, state_id, description, images, slug, home_image_url, show_on_home, home_order').eq('show_on_home', true).order('home_order', { ascending: true }).limit(4),
                     supabase.from('poojas').select('id, name, slug, images, description, benefits, price, is_featured, is_hero, tags, is_special_offer, special_offer_price').eq('is_active', true).limit(500),
                     supabase.from('home_features').select('id, title, description, image_url, display_order').eq('is_active', true).order('display_order', { ascending: true }),
@@ -297,12 +297,8 @@ export default function HomeClient() {
                 // 1. Process Page Data
                 if (pDataResponse.data) setPageData(pDataResponse.data);
 
-                // 2. Process Blogs with Fallback
+                // 2. Process Blogs
                 let blogsData = fBlogsResponse.data;
-                if (fBlogsResponse.error && fBlogsResponse.error.code === '42703') {
-                    const fb = await supabase.from('blogs').select('*').eq('published', true).order('created_at', { ascending: false }).limit(3);
-                    blogsData = fb.data;
-                }
                 if (blogsData) setBlogs(blogsData);
 
                 // 3. Process Locations with Fallback
