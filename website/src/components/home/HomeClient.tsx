@@ -1350,7 +1350,7 @@ export default function HomeClient() {
                             <div className="h-[1px] w-8 md:w-16 bg-gradient-to-l from-transparent to-saffron/40"></div>
                         </div>
                         <h2 className="text-4xl md:text-6xl font-black text-foreground mb-6 leading-tight" style={{ fontFamily: 'Georgia, serif' }}>
-                            Pujas Performed at <span className="text-saffron">Sacred Locations</span>
+                            Pujas Performed at <span className="text-saffron">Sacred Location</span>
                         </h2>
                         <p className="max-w-4xl mx-auto text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
                             Experience the magnified spiritual potency of rituals performed at the holiest pilgrimage sites in India.
