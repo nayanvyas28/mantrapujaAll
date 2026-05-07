@@ -12,11 +12,16 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error('************************************************');
 }
 
+const ws = require('ws');
+
 // Create a Supabase Client with the Service Role Key
 const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: {
         autoRefreshToken: false,
         persistSession: false
+    },
+    realtime: {
+        transport: ws
     }
 }) : null;
 
@@ -25,9 +30,11 @@ const supabaseClientAuth = (SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANO
     auth: {
         autoRefreshToken: false,
         persistSession: false
+    },
+    realtime: {
+        transport: ws
     }
 }) : null;
-
 
 
 module.exports = {
