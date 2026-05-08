@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { LogOut, User as UserIcon, LogIn, ChevronDown, Calendar, Settings, MapPin, Search, X } from "lucide-react";
+import { LogOut, User as UserIcon, LogIn, ChevronDown, Calendar, Settings, MapPin, Search, X, Compass, Calculator, MessageSquare, Scroll } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -118,11 +118,17 @@ const Header = () => {
     // --- Standard Public Header ---
     const navLinks = [
         { name: "Home", href: "/" },
-
         { name: "Puja", href: "/pooja-services" },
         { name: "Festivals", href: "/festivals" },
         { name: "Locations", href: "/locations" },
         { name: "Blog", href: "/blog" }
+    ];
+
+    const extraMobileLinks = [
+        { name: "Horoscope", href: "/horoscope", icon: Compass },
+        { name: "Calendar", href: "/festivals", icon: Calendar },
+        { name: "Kundali", href: "/kundli", icon: Scroll },
+        { name: "Calculators", href: "/calculators", icon: Calculator },
     ];
 
     return (
@@ -293,34 +299,80 @@ const Header = () => {
             <AnimatePresence>
                 {isMenuOpen && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="absolute inset-x-0 top-full bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-white/5 p-6 lg:hidden"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="fixed inset-0 top-[72px] bg-white dark:bg-zinc-950 z-[100] overflow-y-auto lg:hidden"
                     >
-                        <div className="flex flex-col space-y-4">
-                            {navLinks.map((link) => {
-                                const isActive = pathname === link.href;
-                                return (
+                        <div className="p-6 pb-20 flex flex-col space-y-8">
+                            {/* Primary Navigation */}
+                            <div className="space-y-4">
+                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Menu</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {navLinks.map((link) => {
+                                        const isActive = pathname === link.href;
+                                        return (
+                                            <Link
+                                                key={link.name}
+                                                href={link.href}
+                                                className={`flex items-center justify-between p-4 rounded-2xl transition-all ${
+                                                    isActive 
+                                                    ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20" 
+                                                    : "bg-zinc-50 dark:bg-white/5 text-zinc-800 dark:text-zinc-200"
+                                                }`}
+                                                onClick={() => setIsMenuOpen(false)}
+                                            >
+                                                <span className="text-lg font-black">{link.name}</span>
+                                                <ChevronRight size={18} opacity={0.5} />
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Sacred Tools & More */}
+                            <div className="space-y-4">
+                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Sacred Tools</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {extraMobileLinks.map((link) => (
+                                        <Link
+                                            key={link.name}
+                                            href={link.href}
+                                            className="flex flex-col items-center justify-center p-5 rounded-3xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 gap-3 group active:scale-95 transition-all"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center shadow-sm group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                                                <link.icon size={20} className="text-orange-500 group-hover:text-white transition-colors" />
+                                            </div>
+                                            <span className="text-xs font-black text-zinc-700 dark:text-zinc-300 tracking-tight">{link.name}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Quick Actions */}
+                            <div className="space-y-4">
+                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Quick Access</p>
+                                <div className="flex flex-col gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setIsMenuOpen(false);
+                                            window.dispatchEvent(new CustomEvent('toggle-guru-chat'));
+                                        }}
+                                        className="w-full flex items-center justify-center gap-3 p-4 bg-zinc-950 dark:bg-white text-white dark:text-zinc-950 rounded-2xl font-black transition-all active:scale-95"
+                                    >
+                                        <MessageSquare size={18} />
+                                        Guru AI Chat
+                                    </button>
                                     <Link
-                                        key={link.name}
-                                        href={link.href}
-                                        className={`text-lg font-black transition-all ${
-                                            isActive ? "text-orange-600 dark:text-orange-400 pl-2 border-l-4 border-orange-500" : "text-zinc-800 dark:text-zinc-100"
-                                        }`}
+                                        href="/pooja-services"
+                                        className="w-full flex items-center justify-center gap-3 p-5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-2xl font-black shadow-lg shadow-orange-500/20 transition-all active:scale-95"
                                         onClick={() => setIsMenuOpen(false)}
                                     >
-                                        {link.name}
+                                        Book A Puja
                                     </Link>
-                                );
-                            })}
-                            <Link
-                                href="/pooja-services"
-                                className="w-full py-4 bg-orange-500 text-white rounded-2xl text-center font-black"
-                                onClick={() => setIsMenuOpen(false)}
-                            >
-                                Book A Puja
-                            </Link>
+                                </div>
+                            </div>
                         </div>
                     </motion.div>
                 )}

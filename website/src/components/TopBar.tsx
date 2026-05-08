@@ -67,8 +67,8 @@ const TopBar = () => {
     }[language === 'hi' ? 'hi' : 'en'] as any;
 
     const topLinks = [
-        { name: t.horoscope, href: "/today-horoscope", icon: Compass },
-        { name: t.calendar, href: "/calendar-2026", icon: CalendarIcon },
+        { name: t.horoscope, href: "/horoscope", icon: Compass },
+        { name: t.calendar, href: "/festivals", icon: CalendarIcon },
     ];
 
     const calculators = [
