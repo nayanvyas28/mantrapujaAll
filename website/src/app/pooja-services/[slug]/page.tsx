@@ -2,7 +2,7 @@ import React from 'react';
 export const revalidate = 0; // Disable caching for dynamic data
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { getSupabaseServer } from '@/lib/supabaseServer';
+import { createClient } from '@supabase/supabase-js';
 import PoojaDetailClient from './PoojaDetailClient';
 import { getPujaBySlug, PujaData } from '@/lib/pujaData';
 
@@ -12,12 +12,15 @@ interface PageProps {
     };
 }
 
+// Initialize Supabase client on server
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 // Helper function to get puja by slug from Supabase OR fallback to hardcoded data
 async function getPujaData(rawSlug: string): Promise<PujaData | null> {
     const slug = decodeURIComponent(rawSlug);
-    const supabase = getSupabaseServer();
-    if (!supabase) return getPujaBySlug(slug) || null;
-
     try {
         // First: Try to get from Supabase
         const { data, error } = await supabase

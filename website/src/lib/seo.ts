@@ -1,4 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
 import { Metadata } from 'next';
 import { getSupabaseAdmin } from './supabaseServer';
 
