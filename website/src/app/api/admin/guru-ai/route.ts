@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Setup Supabase Admin (Bypass RLS for admin settings)
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdminInstance: any = null;
+
+function getSupabaseAdmin() {
+    if (!supabaseAdminInstance) {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        
+        if (!url || !key) {
+            throw new Error('Supabase URL or Service Role Key is missing');
+        }
+        
+        supabaseAdminInstance = createClient(url, key);
+    }
+    return supabaseAdminInstance;
+}
 
 const ADMIN_SECRET = 'mantrapuja-admin-keys';
 
@@ -18,7 +28,7 @@ export async function GET(req: Request) {
     }
 
     try {
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getSupabaseAdmin()
             .from('settings')
             .select('key, value')
             .in('key', ['guru_ai_templates', 'guru_ai_instruction']);
@@ -27,8 +37,8 @@ export async function GET(req: Request) {
 
         // Map to object for easier consumption
         const settings = {
-            templates: data?.find(s => s.key === 'guru_ai_templates')?.value || '[]',
-            instruction: data?.find(s => s.key === 'guru_ai_instruction')?.value || ''
+            templates: data?.find((s: any) => s.key === 'guru_ai_templates')?.value || '[]',
+            instruction: data?.find((s: any) => s.key === 'guru_ai_instruction')?.value || ''
         };
 
         return NextResponse.json({ data: settings });
@@ -52,7 +62,7 @@ export async function POST(req: Request) {
         ];
 
         for (const item of updates) {
-            const { error } = await supabaseAdmin
+            const { error } = await getSupabaseAdmin()
                 .from('settings')
                 .upsert(item, { onConflict: 'key' });
             

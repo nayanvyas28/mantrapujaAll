@@ -1,21 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-// Initialize Supabase Admin Client
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
-);
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 export async function GET() {
     try {
-        const { data, error } = await supabaseAdmin
+        const supabase = getSupabaseAdmin();
+        if (!supabase) throw new Error("Supabase client not initialized");
+
+        const { data, error } = await supabase
             .from('serving_cities')
             .select('*')
             .order('display_order', { ascending: true });
@@ -29,8 +20,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
+        const supabase = getSupabaseAdmin();
+        if (!supabase) throw new Error("Supabase client not initialized");
+
         const body = await req.json();
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabase
             .from('serving_cities')
             .insert([body])
             .select();
@@ -44,12 +38,15 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
     try {
+        const supabase = getSupabaseAdmin();
+        if (!supabase) throw new Error("Supabase client not initialized");
+
         const body = await req.json();
         const { id, ...updates } = body;
 
         if (!id) throw new Error("ID is required for update");
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabase
             .from('serving_cities')
             .update(updates)
             .eq('id', id)
@@ -64,12 +61,15 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
     try {
+        const supabase = getSupabaseAdmin();
+        if (!supabase) throw new Error("Supabase client not initialized");
+
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
 
         if (!id) throw new Error("ID is required for delete");
 
-        const { error } = await supabaseAdmin
+        const { error } = await supabase
             .from('serving_cities')
             .delete()
             .eq('id', id);

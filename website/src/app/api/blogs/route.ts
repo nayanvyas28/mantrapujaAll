@@ -1,18 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-// Initialize Supabase Admin client (bypass RLS for automation)
-// We prioritize the SERVICE_ROLE_KEY for backend operations
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
-);
+function getClient() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 function generateSlug(title: string): string {
     return title
@@ -23,7 +16,7 @@ function generateSlug(title: string): string {
 
 export async function GET() {
     try {
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getClient()
             .from('blogs')
             .select('*')
             .eq('published', true)
@@ -46,11 +39,11 @@ export async function POST(request: Request) {
         let { title, content, slug, image_url, tags, meta_title, meta_description, meta_tags, published, secret } = body;
 
         if (!secret) {
-            await supabaseAdmin.from('system_logs').insert({ event_type: 'automation', status: 'warning', message: 'Blog Webhook: Missing Secret', details: { ip: 'unknown' } });
+            await getClient().from('system_logs').insert({ event_type: 'automation', status: 'warning', message: 'Blog Webhook: Missing Secret', details: { ip: 'unknown' } });
             return NextResponse.json({ error: 'Unauthorized: Secret is missing' }, { status: 401 });
         }
         if (secret !== process.env.N8N_WEBHOOK_SECRET) {
-            await supabaseAdmin.from('system_logs').insert({ event_type: 'automation', status: 'warning', message: 'Blog Webhook: Invalid Secret', details: { ip: 'unknown' } });
+            await getClient().from('system_logs').insert({ event_type: 'automation', status: 'warning', message: 'Blog Webhook: Invalid Secret', details: { ip: 'unknown' } });
             return NextResponse.json({ error: 'Unauthorized: Invalid Secret' }, { status: 401 });
         }
 
@@ -72,7 +65,7 @@ export async function POST(request: Request) {
             image_url = 'https://via.placeholder.com/800x400?text=' + encodeURIComponent(title);
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getClient()
             .from('blogs')
             .upsert([
                 {
@@ -92,7 +85,7 @@ export async function POST(request: Request) {
 
         if (error) {
             console.error("Supabase Insert Error:", error);
-            await supabaseAdmin.from('system_logs').insert({
+            await getClient().from('system_logs').insert({
                 event_type: 'automation',
                 status: 'failed',
                 message: `Blog Webhook Failed: ${error.message}`,
@@ -102,7 +95,7 @@ export async function POST(request: Request) {
         }
 
         // Log Success
-        await supabaseAdmin.from('system_logs').insert({
+        await getClient().from('system_logs').insert({
             event_type: 'automation',
             status: 'success',
             message: `Blog Created via Automation: ${title}`,

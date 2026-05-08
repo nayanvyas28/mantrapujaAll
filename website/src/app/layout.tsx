@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://mantrapuja.com'),
   title: "Mantra Puja - Book Authentic Vedic Poojas",
   description: "Find and book the right Pooja for every purpose. Authentic Vedic rituals at your home.",
 };

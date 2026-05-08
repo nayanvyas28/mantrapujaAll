@@ -5,14 +5,24 @@ import { Category, Page } from '@/types/content';
 // --- Robust Client Selection ---
 // On the server, we use the Service Role key to bypass RLS issues for public data.
 // On the client, we use the default (Anon/Auth) client.
+let serverSupabase: SupabaseClient | null = null;
+
 const getClient = (): SupabaseClient => {
-    if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY,
-            { auth: { persistSession: false } }
-        );
+    // If we're on the client (browser), always return the default client
+    if (typeof window !== 'undefined') return defaultSupabase;
+
+    // If we're on the server and have the service role key
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        if (!serverSupabase) {
+            serverSupabase = createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY,
+                { auth: { persistSession: false } }
+            );
+        }
+        return serverSupabase;
     }
+    
     return defaultSupabase;
 };
 
@@ -467,15 +477,24 @@ export const getHomeQuickAccess = async (): Promise<any[]> => {
         .eq('key', 'home_quick_access')
         .single();
 
-    if (error) {
-        console.warn("home_quick_access not found in settings, using defaults");
-        return [];
+    const defaults = [
+        { name: "Kundali", img: "/features/kundali.png", link: "/kundli", color: "from-orange-500/10 to-red-500/10", border: "#f97316" },
+        { name: "Rashifal", img: "/features/rashifal.png", link: "/horoscope", color: "from-amber-500/10 to-orange-500/10", border: "#f59e0b" },
+        { name: "Panchang", img: "/features/panchang.png", link: "/panchang", color: "from-yellow-500/10 to-amber-500/10", border: "#eab308" },
+        { name: "Calculator", img: "/features/calculator.png", link: "/calculators", color: "from-red-500/10 to-pink-500/10", border: "#ef4444" },
+        { name: "Chadava", img: "/features/chadava.png", link: "/chadava", color: "from-purple-500/10 to-indigo-500/10", border: "#a855f7" },
+        { name: "Guru Ji AI", img: "/features/guru-ai.png", link: "/chat", color: "from-cyan-500/10 to-blue-500/10", border: "#06b6d4" }
+    ];
+
+    if (error || !data) {
+        return defaults;
     }
     
     try {
-        return typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        return (parsed && Array.isArray(parsed) && parsed.length > 0) ? parsed : defaults;
     } catch (e) {
         console.error("Failed to parse home_quick_access:", e);
-        return [];
+        return defaults;
     }
 };

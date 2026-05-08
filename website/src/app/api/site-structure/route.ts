@@ -1,19 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-// Initialize Supabase Admin client (Service Role)
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-        auth: {
-            persistSession: false
-        }
-    }
-);
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 export async function GET() {
     try {
+        const supabaseAdmin = getSupabaseAdmin();
+        if (!supabaseAdmin) throw new Error("Supabase client not initialized");
         // 1. Fetch categories
         const { data: categories, error: catError } = await supabaseAdmin
             .from('categories')
