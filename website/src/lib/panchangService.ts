@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { getSupabaseAdmin } from './supabaseServer';
@@ -69,11 +70,14 @@ export class PanchangService {
 
     static async getTodayPanchang(): Promise<PanchangData> {
         const today = new Date().toISOString().split('T')[0];
+        const supabase = this.getSupabase();
+
+        if (!supabase) {
+            // Fallback: return fresh but uncached data if DB unavailable during build
+            return await this.fetchPanchangFromAstroSage();
+        }
 
         // 1. Check DB cache
-        const supabase = this.getSupabase();
-        if (!supabase) throw new Error("Supabase not initialized");
-
         const { data: existing } = await supabase
             .from('panchangs')
             .select('*')

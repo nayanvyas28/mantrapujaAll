@@ -11,12 +11,15 @@ const getClient = (): SupabaseClient => {
     // If we're on the client (browser), always return the default client
     if (typeof window !== 'undefined') return defaultSupabase;
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
     // If we're on the server and have the service role key
-    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    if (serviceKey && supabaseUrl) {
         if (!serverSupabase) {
             serverSupabase = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.SUPABASE_SERVICE_ROLE_KEY,
+                supabaseUrl,
+                serviceKey,
                 { auth: { persistSession: false } }
             );
         }

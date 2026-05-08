@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { getSupabaseAdmin } from './supabaseServer';
@@ -235,10 +236,10 @@ export class HoroscopeService {
             referenceDateStr = now.toISOString().split('T')[0];
         }
 
-        // 1. Try DB cache first
         const supabase = this.getSupabase();
-        if (!supabase) return {} as any; // Fallback during build
+        if (!supabase) return { sign, period_type: period, content: 'Service temporarily unavailable.', reference_date: referenceDateStr };
 
+        // 1. Try DB cache first
         const { data: existing } = await supabase
             .from('horoscopes')
             .select('*')

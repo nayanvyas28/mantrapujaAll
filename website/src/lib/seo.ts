@@ -1,11 +1,12 @@
-import { getSupabaseAdmin } from '@/lib/supabaseServer';
+import { createClient } from '@supabase/supabase-js';
 import { Metadata } from 'next';
+import { getSupabaseAdmin } from './supabaseServer';
 
 export async function getSeoMetadata(path: string, defaultMetadata: Metadata): Promise<Metadata> {
-    const supabase = getSupabaseAdmin();
-    if (!supabase) return defaultMetadata;
-
     try {
+        const supabase = getSupabaseAdmin();
+        if (!supabase) return defaultMetadata;
+
         const { data, error } = await supabase
             .from('seo_metadata')
             .select('*')
