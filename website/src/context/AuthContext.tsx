@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         };
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
             console.log(`[AuthContext] Auth Event: ${event}`);
             setSession(session);
             setUser(session?.user ?? null);
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const handleProfileUpdate = () => {
             // We use a closure-safe way to get the latest user ID if needed, 
             // but for simple cases, we can check a ref or just rely on the event.
-            supabase.auth.getSession().then(({data: {session}}) => {
+            supabase.auth.getSession().then(({data: {session}}: any) => {
                 if (session?.user) fetchProfile(session.user.id);
             });
         };

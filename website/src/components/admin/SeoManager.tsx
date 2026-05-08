@@ -70,7 +70,7 @@ export default function SeoManager() {
             // 2. Fetch Categories (Dynamic)
             const { data: categories } = await supabase.from('categories').select('id, name, slug');
             if (categories) {
-                categories.forEach(cat => {
+                categories.forEach((cat: any) => {
                     allRoutes.push({
                         path: `/${cat.slug}`,
                         type: 'category',
@@ -84,8 +84,8 @@ export default function SeoManager() {
             // We need category slug for the path. We'll join in JS to be safe.
             const { data: pages } = await supabase.from('pages').select('id, title, slug, category_id');
             if (pages && categories) {
-                pages.forEach(page => {
-                    const cat = categories.find(c => c.id === page.category_id);
+                pages.forEach((page: any) => {
+                    const cat = categories.find((c: any) => c.id === page.category_id);
                     if (cat) {
                         allRoutes.push({
                             path: `/${cat.slug}/${page.slug}`,
@@ -100,7 +100,7 @@ export default function SeoManager() {
             // 4. Fetch Blog Posts
             const { data: blogs } = await supabase.from('Final_blog').select('id, title, slug').eq('published', true).eq('is_active', true);
             if (blogs) {
-                blogs.forEach(blog => {
+                blogs.forEach((blog: any) => {
                     allRoutes.push({
                         path: `/blog/${blog.slug}`,
                         type: 'blog',
@@ -116,7 +116,7 @@ export default function SeoManager() {
             // 6. Merge SEO Data
             if (seoEntries) {
                 // Map SEO entries to existing routes
-                seoEntries.forEach(seo => {
+                seoEntries.forEach((seo: any) => {
                     const existingRoute = allRoutes.find(r => r.path === seo.path);
                     if (existingRoute) {
                         existingRoute.seo = seo;
