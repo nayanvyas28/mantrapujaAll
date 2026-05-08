@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
+export const dynamic = 'force-dynamic';
+
 const URLS_PER_SITEMAP = 1000;
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
 
@@ -63,7 +65,7 @@ export async function GET(
                 .range(startIdx, endIdx);
 
             if (data) {
-                urls = data.map(blog => ({
+                urls = data.map((blog: any) => ({
                     url: `${SITE_URL}/blog/${blog.slug}`,
                     lastmod: blog.updated_at || new Date().toISOString(),
                     priority: '0.7',
@@ -77,7 +79,7 @@ export async function GET(
                 .range(startIdx, endIdx);
 
             if (data) {
-                urls = data.map(pooja => ({
+                urls = data.map((pooja: any) => ({
                     url: `${SITE_URL}/pooja-services/${pooja.slug}`,
                     lastmod: pooja.updated_at || new Date().toISOString(),
                     priority: '0.9',
@@ -91,7 +93,7 @@ export async function GET(
                 .range(startIdx, endIdx);
 
             if (data) {
-                urls = data.map(dest => ({
+                urls = data.map((dest: any) => ({
                     url: `${SITE_URL}/locations/${dest.slug}`,
                     lastmod: new Date().toISOString(),
                     priority: '0.8',

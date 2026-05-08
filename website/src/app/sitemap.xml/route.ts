@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from '@/lib/supabaseServer';
 const URLS_PER_SITEMAP = 1000;
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     const supabase = getSupabaseAdmin();
     if (!supabase) return new NextResponse('Supabase not configured', { status: 500 });
@@ -11,9 +13,9 @@ export async function GET() {
     try {
         // Get counts for dynamic content
         const [blogsCount, poojasCount, destinationsCount] = await Promise.all([
-            supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then(res => res.count || 0),
-            supabase.from('poojas').select('*', { count: 'exact', head: true }).then(res => res.count || 0),
-            supabase.from('destinations').select('*', { count: 'exact', head: true }).then(res => res.count || 0)
+            supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then((res: any) => res.count || 0),
+            supabase.from('poojas').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
+            supabase.from('destinations').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0)
         ]);
 
         // Calculate number of sitemaps needed for each type
