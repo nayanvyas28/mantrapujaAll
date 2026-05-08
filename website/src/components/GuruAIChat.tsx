@@ -161,7 +161,7 @@ export default function GuruAIChat() {
     // Queue Processor Effect with Self-Correction
     useEffect(() => {
         const checkQueue = () => {
-            if (queuedMessages.length > 0 && !messages.some(m => m.isStreaming)) {
+            if (queuedMessages.length > 0 && !messages.some((m: any) => m.isStreaming)) {
                 const nextMessage = queuedMessages[0];
                 setMessages(prev => [...prev, { ...nextMessage, isStreaming: true }]);
                 setQueuedMessages(prev => prev.slice(1));
@@ -644,7 +644,7 @@ YOUR TASK:
                             full_name: 'name',
                             place_of_birth: 'place'
                         };
-                        Object.entries(mapping).forEach(([jsonKey, stepKey]) => {
+                        Object.entries(mapping).forEach(([jsonKey, stepKey]: [string, any]) => {
                             if (updateData[jsonKey] && updateData[jsonKey] !== 'null') {
                                 currentCollected[stepKey] = updateData[jsonKey];
                                 if (stepKey === currentStep.id) fieldWasExtracted = true;
@@ -823,7 +823,7 @@ YOUR TASK:
             if (fetchErr) throw fetchErr;
 
             // 2. Duplicate Check (Name + DOB)
-            const isDuplicate = existingK?.find(k => 
+            const isDuplicate = existingK?.find((k: any) => 
                 k.full_name?.toLowerCase() === formData.name?.toLowerCase() &&
                 k.date_of_birth === formData.dob
             );
