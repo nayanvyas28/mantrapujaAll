@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 export async function POST(request: Request) {
     try {
+        const supabase = getSupabaseAdmin();
+        if (!supabase) throw new Error("Supabase client not initialized");
+
         const body = await request.json();
         const { sankalp_name, puja_name, puja_slug, package_name, price, user_id } = body;
 
@@ -20,7 +18,7 @@ export async function POST(request: Request) {
         }
 
         // Insert booking
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabase
             .from('puja_bookings')
             .insert([
                 {

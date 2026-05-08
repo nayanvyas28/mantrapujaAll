@@ -1,13 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 export async function POST(request: Request) {
     try {
+        const supabase = getSupabaseAdmin();
+        if (!supabase) throw new Error("Supabase client not initialized");
+
         const { name, email, message, subject, user_id } = await request.json();
 
         if (!email || !message) {

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 export async function GET(request: Request) {
     try {
@@ -17,17 +18,17 @@ export async function GET(request: Request) {
 
         // Fetch User Profile and Bookings first
         const [profileRes, bookingsRes] = await Promise.all([
-            supabaseAdmin.from('profiles').select('*').eq('id', userId).single(),
-            supabaseAdmin.from('puja_bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+            getAdmin().from('profiles').select('*').eq('id', userId).single(),
+            getAdmin().from('puja_bookings').select('*').eq('user_id', userId).order('created_at', { ascending: false })
         ]);
 
         const profile = profileRes.data;
         const bookings = bookingsRes.data || [];
 
         // Fetch Inquiries using both ID and Email from profile
-        let inquiries = [];
+        let inquiries: any[] = [];
         if (profile) {
-            const { data: inqData, error: inqError } = await supabaseAdmin
+            const { data: inqData, error: inqError } = await getAdmin()
                 .from('contact_inquiries')
                 .select('*')
                 .or(`user_id.eq.${userId},email.eq.${profile.email}`)
@@ -48,11 +49,11 @@ export async function GET(request: Request) {
 
         // Optimized Auto-Complete Logic: Single update for all past pending bookings
         const now = new Date().toISOString();
-        const pendingPastBookings = bookings.filter(b => b.status === 'pending' && b.scheduled_date && b.scheduled_date < now);
+        const pendingPastBookings = bookings.filter((b: any) => b.status === 'pending' && b.scheduled_date && b.scheduled_date < now);
         
         let finalBookings = bookings;
         if (pendingPastBookings.length > 0) {
-            const { error: updateError } = await supabaseAdmin
+            const { error: updateError } = await getAdmin()
                 .from('puja_bookings')
                 .update({ status: 'completed' })
                 .eq('user_id', userId)
@@ -61,7 +62,7 @@ export async function GET(request: Request) {
             
             if (!updateError) {
                 // Refresh bookings to reflect updates
-                const { data: refreshed } = await supabaseAdmin
+                const { data: refreshed } = await getAdmin()
                     .from('puja_bookings')
                     .select('*')
                     .eq('user_id', userId)
@@ -95,27 +96,25 @@ export async function PUT(request: Request) {
         if (address !== undefined) updates.address = address;
         if (preferences !== undefined) updates.preferences = preferences;
         if (full_name !== undefined) updates.full_name = full_name;
-        if (avatar_url !== undefined) updates.avatar_url = avatar_url; // Added this
+        if (avatar_url !== undefined) updates.avatar_url = avatar_url;
 
         // If updating Auth metadata directly (full_name or avatar_url)
         if (full_name !== undefined || avatar_url !== undefined) {
-             // FETCH CURRENT USER TO MERGE METADATA
-             const { data: { user: currentUser }, error: fetchError } = await supabaseAdmin.auth.admin.getUserById(userId);
+             const { data: { user: currentUser }, error: fetchError } = await getAdmin().auth.admin.getUserById(userId);
              
              if (!fetchError && currentUser) {
-                 const metadataUpdates: any = { ...currentUser.user_metadata };
-                 if (full_name !== undefined) metadataUpdates.full_name = full_name;
-                 if (avatar_url !== undefined) metadataUpdates.avatar_url = avatar_url;
-                 
-                 await supabaseAdmin.auth.admin.updateUserById(userId, {
-                     user_metadata: metadataUpdates
-                 });
+                  const metadataUpdates: any = { ...currentUser.user_metadata };
+                  if (full_name !== undefined) metadataUpdates.full_name = full_name;
+                  if (avatar_url !== undefined) metadataUpdates.avatar_url = avatar_url;
+                  
+                  await getAdmin().auth.admin.updateUserById(userId, {
+                      user_metadata: metadataUpdates
+                  });
              }
         }
 
         // Try to update profiles table. 
-        // Note: If avatar_url column doesn't exist yet, we might need a fallback or a separate migration.
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getAdmin()
             .from('profiles')
             .update(updates)
             .eq('id', userId)
@@ -127,7 +126,7 @@ export async function PUT(request: Request) {
             // If the error is due to missing column, try updating without avatar_url as fallback
             if (error.message.includes('column "avatar_url" of relation "profiles" does not exist')) {
                 delete updates.avatar_url;
-                const { data: fallbackData, error: fallbackError } = await supabaseAdmin
+                const { data: fallbackData, error: fallbackError } = await getAdmin()
                     .from('profiles')
                     .update(updates)
                     .eq('id', userId)

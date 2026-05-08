@@ -1,17 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-// Initialize Supabase Admin client (bypass RLS for automation)
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
-);
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 function generateSlug(name: string): string {
     return name
@@ -22,7 +16,7 @@ function generateSlug(name: string): string {
 
 export async function GET() {
     try {
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getAdmin()
             .from('poojas')
             .select('*, categories(*)')
             .eq('is_active', true)
@@ -63,7 +57,7 @@ export async function POST(request: Request) {
 
         // Webhook security
         if (!secret) {
-            await supabaseAdmin.from('system_logs').insert({
+            await getAdmin().from('system_logs').insert({
                 event_type: 'automation',
                 status: 'warning',
                 message: 'Pooja Webhook: Missing Secret',
@@ -73,7 +67,7 @@ export async function POST(request: Request) {
         }
 
         if (secret !== process.env.N8N_WEBHOOK_SECRET) {
-            await supabaseAdmin.from('system_logs').insert({
+            await getAdmin().from('system_logs').insert({
                 event_type: 'automation',
                 status: 'warning',
                 message: 'Pooja Webhook: Invalid Secret',
@@ -92,7 +86,7 @@ export async function POST(request: Request) {
             slug = generateSlug(name);
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getAdmin()
             .from('poojas')
             .upsert([
                 {
@@ -118,7 +112,7 @@ export async function POST(request: Request) {
 
         if (error) {
             console.error("Supabase Insert Error:", error);
-            await supabaseAdmin.from('system_logs').insert({
+            await getAdmin().from('system_logs').insert({
                 event_type: 'automation',
                 status: 'failed',
                 message: `Pooja Webhook Failed: ${error.message}`,
@@ -128,7 +122,7 @@ export async function POST(request: Request) {
         }
 
         // Log Success
-        await supabaseAdmin.from('system_logs').insert({
+        await getAdmin().from('system_logs').insert({
             event_type: 'automation',
             status: 'success',
             message: `Pooja Created/Updated via Webhook: ${name}`,

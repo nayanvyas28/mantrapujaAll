@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 const normalizePhone = (phone: string) => {
     let cleaned = phone.replace(/[^\d]/g, '');
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
         const authPhonePlussed = `+91${cleanPhone}`;
 
         // 1. Verify OTP
-        const { data: otpData, error: otpError } = await supabaseAdmin
+        const { data: otpData, error: otpError } = await getAdmin()
             .from('otps')
             .select('*')
             .eq('phone', cleanPhone)
@@ -48,16 +49,13 @@ export async function POST(req: Request) {
         if (new Date(otpData.expires_at) < new Date()) {
             return NextResponse.json({ error: 'OTP has expired' }, { status: 400 });
         }
-
-        // 2. Ensure Phone is not already in use by another REAL user
-        // We will skip this complex check and rely on supabase error catching.
         
         // 3. Update Supabase Auth User Identity - MERGING METADATA
-        const { data: { user: currentUser } } = await supabaseAdmin.auth.admin.getUserById(userId);
+        const { data: { user: currentUser } } = await getAdmin().auth.admin.getUserById(userId);
         const metadataUpdates: any = { ...(currentUser?.user_metadata || {}) };
         metadataUpdates.phone = cleanPhone;
 
-        const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        const { error: authError } = await getAdmin().auth.admin.updateUserById(userId, {
             phone: authPhonePlussed,
             phone_confirm: true,
             user_metadata: metadataUpdates
@@ -69,13 +67,13 @@ export async function POST(req: Request) {
         }
 
         // 4. Update Profiles Table
-        await supabaseAdmin
+        await getAdmin()
             .from('profiles')
             .update({ phone: cleanPhone })
             .eq('id', userId);
 
         // 5. Cleanup OTP
-        await supabaseAdmin.from('otps').delete().eq('id', otpData.id);
+        await getAdmin().from('otps').delete().eq('id', otpData.id);
 
         return NextResponse.json({ success: true, message: 'Phone number updated successfully' }, { status: 200 });
 

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 export async function GET(
     request: Request,
@@ -18,7 +19,7 @@ export async function GET(
         }
 
         // Fetch reviews from the new dedicated puja_reviews table
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getAdmin()
             .from('puja_reviews')
             .select(`
                 rating,
@@ -36,7 +37,7 @@ export async function GET(
         if (error) {
             console.error('Error fetching reviews:', error);
             // Fallback to puja_bookings for old data if puja_reviews is empty or fails
-            const { data: oldData, error: oldError } = await supabaseAdmin
+            const { data: oldData, error: oldError } = await getAdmin()
                 .from('puja_bookings')
                 .select(`
                     rating,

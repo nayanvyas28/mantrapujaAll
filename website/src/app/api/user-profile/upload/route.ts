@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 import { optimizeImage } from '@mantrapuja/image-optimizer';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 export async function POST(req: Request) {
     try {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
         const fileName = `${userId}_${Date.now()}.webp`;
 
         // 2. Upload to the dedicated 'avatars' bucket
-        const { error: uploadError } = await supabaseAdmin.storage
+        const { error: uploadError } = await getAdmin().storage
             .from('avatars')
             .upload(fileName, optimizedBuffer, {
                 contentType: 'image/webp',
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
         }
 
         // 3. Generate the public URL
-        const { data } = supabaseAdmin.storage
+        const { data } = getAdmin().storage
             .from('avatars')
             .getPublicUrl(fileName);
 

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 export async function POST(request: Request) {
     try {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
         }
 
         // Verify booking ownership and status
-        const { data: booking, error: fetchError } = await supabaseAdmin
+        const { data: booking, error: fetchError } = await getAdmin()
             .from('puja_bookings')
             .select('*')
             .eq('id', bookingId)
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
         }
 
         // Save review to the new dedicated table
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getAdmin()
             .from('puja_reviews')
             .insert([
                 {
@@ -56,10 +57,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to submit review' }, { status: 500 });
         }
 
-        // Also update the booking to mark it as reviewed (optional, but good for UI)
-        await supabaseAdmin
+        // Also update the booking to mark it as reviewed
+        await getAdmin()
             .from('puja_bookings')
-            .update({ rating, review_text }) // Keep for backward compatibility if needed
+            .update({ rating, review_text })
             .eq('id', bookingId);
 
         return NextResponse.json({ message: 'Review submitted successfully', review: data }, { status: 200 });
