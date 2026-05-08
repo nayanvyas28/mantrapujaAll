@@ -1,10 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseAdmin } from './supabaseServer';
 
 export interface HoroscopeRating {
     label: string;
@@ -25,6 +22,10 @@ export interface HoroscopeData {
 }
 
 export class HoroscopeService {
+
+    private static getSupabase() {
+        return getSupabaseAdmin();
+    }
 
     static buildUrl(sign: string, period: string): string {
         const s = sign.toLowerCase();
