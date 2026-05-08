@@ -26,7 +26,7 @@ async function getAuthor(slug: string) {
     if (!author) {
         const { data: allAuthors } = await supabase.from('blog_authors').select('*');
         if (allAuthors) {
-            author = allAuthors.find(a => 
+            author = allAuthors.find((a: any) => 
                 a.name.toLowerCase().replace(/ /g, '-') === decodedSlug ||
                 a.name.toLowerCase().replace(/ /g, '-') === slug
             );
