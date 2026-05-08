@@ -25,9 +25,9 @@ export async function GET() {
 
         if (error) throw error;
 
-        const templatesStr = data?.find(s => s.key === 'guru_ai_templates')?.value || '[]';
-        const greetingEn = data?.find(s => s.key === 'guru_ai_greeting_en')?.value || '';
-        const greetingHi = data?.find(s => s.key === 'guru_ai_greeting_hi')?.value || '';
+        const templatesStr = data?.find((s: any) => s.key === 'guru_ai_templates')?.value || '[]';
+        const greetingEn = data?.find((s: any) => s.key === 'guru_ai_greeting_en')?.value || '';
+        const greetingHi = data?.find((s: any) => s.key === 'guru_ai_greeting_hi')?.value || '';
         
         return NextResponse.json({ 
             templates: JSON.parse(templatesStr),
