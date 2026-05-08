@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabaseServer';
+import { createClient } from '@supabase/supabase-js';
 
 const URLS_PER_SITEMAP = 1000;
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 const STATIC_ROUTES = [
     '',
@@ -23,9 +28,6 @@ export async function GET(
     request: Request,
     { params }: { params: Promise<{ type: string; page: string }> }
 ) {
-    const supabase = getSupabaseAdmin();
-    if (!supabase) return new NextResponse('Supabase not configured', { status: 500 });
-
     try {
         // In Next.js 15+, params should be awaited or accessed correctly
         const resolvedParams = await Promise.resolve(params);

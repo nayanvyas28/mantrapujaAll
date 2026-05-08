@@ -1,14 +1,23 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-import { getSupabaseAdmin } from '@/lib/supabaseServer';
+let supabaseAdminInstance: any = null;
+
+function getSupabaseAdmin() {
+    if (!supabaseAdminInstance) {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        
+        if (!url || !key) {
+            throw new Error('Supabase URL or Service Role Key is missing');
+        }
+        
+        supabaseAdminInstance = createClient(url, key);
+    }
+    return supabaseAdminInstance;
+}
 
 const ADMIN_SECRET = 'mantrapuja-admin-keys';
-
-function getAdmin() {
-    const admin = getSupabaseAdmin();
-    if (!admin) throw new Error('Supabase URL or Service Role Key is missing');
-    return admin;
-}
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -53,7 +62,7 @@ export async function POST(req: Request) {
         ];
 
         for (const item of updates) {
-            const { error } = await getAdmin()
+            const { error } = await getSupabaseAdmin()
                 .from('settings')
                 .upsert(item, { onConflict: 'key' });
             
