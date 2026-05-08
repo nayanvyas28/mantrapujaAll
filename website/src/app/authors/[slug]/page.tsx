@@ -1,5 +1,4 @@
-
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import AuthorProfileClient from '@/components/authors/AuthorProfileClient';
 
@@ -7,10 +6,8 @@ import AuthorProfileClient from '@/components/authors/AuthorProfileClient';
 export const revalidate = 0;
 
 async function getAuthor(slug: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getSupabaseServer();
+    if (!supabase) return null;
 
     // Robust lookup: try ID, then try exact name, then try decoded name
     const decodedSlug = decodeURIComponent(slug);

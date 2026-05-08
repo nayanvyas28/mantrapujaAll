@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 const URLS_PER_SITEMAP = 1000;
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function GET() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return new NextResponse('Supabase not configured', { status: 500 });
+
     try {
         // Get counts for dynamic content
         const [blogsCount, poojasCount, destinationsCount] = await Promise.all([

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseServer } from '@/lib/supabaseServer';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import BlogDetailClient from '@/components/blog/BlogDetailClient';
@@ -8,10 +8,8 @@ export const revalidate = 60;
 
 // Helper to fetch blog by slug
 async function getBlog(slug: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getSupabaseServer();
+    if (!supabase) return null;
 
     // Try finding by the provided slug first
     console.log(`[getBlog] 1. Searching for slug: "${slug}"`);

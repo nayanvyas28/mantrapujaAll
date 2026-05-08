@@ -1,10 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseAdmin } from './supabaseServer';
 
 export interface PanchangData {
     reference_date: string;
@@ -18,6 +14,10 @@ export interface PanchangData {
 }
 
 export class PanchangService {
+    
+    private static getSupabase() {
+        return getSupabaseAdmin();
+    }
     
     static async fetchPanchangFromAstroSage(): Promise<PanchangData> {
         const url = 'https://panchang.astrosage.com/panchang/aajkapanchang?language=en';
@@ -71,6 +71,9 @@ export class PanchangService {
         const today = new Date().toISOString().split('T')[0];
 
         // 1. Check DB cache
+        const supabase = this.getSupabase();
+        if (!supabase) throw new Error("Supabase not initialized");
+
         const { data: existing } = await supabase
             .from('panchangs')
             .select('*')
