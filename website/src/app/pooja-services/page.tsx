@@ -227,7 +227,7 @@ export default function PoojaServicesPage() {
                 const { data: catData } = await supabase.from('categories').select('name').order('name');
                 if (catData && catData.length > 0) {
                     let allNames: string[] = [];
-                    catData.forEach(c => {
+                    catData.forEach((c: any) => {
                         if (c.name.includes('&')) {
                             allNames.push(...c.name.split('&').map((s: string) => s.trim()));
                         } else if (c.name.toLowerCase().includes(' and ')) {
