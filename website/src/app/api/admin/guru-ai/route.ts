@@ -28,10 +28,10 @@ export async function GET(req: Request) {
     }
 
     try {
-        const { data, error } = await getSupabaseAdmin()
+        const { data, error } = await (getSupabaseAdmin()
             .from('settings')
             .select('key, value')
-            .in('key', ['guru_ai_templates', 'guru_ai_instruction']);
+            .in('key', ['guru_ai_templates', 'guru_ai_instruction']) as any);
 
         if (error) throw error;
 

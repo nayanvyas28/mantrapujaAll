@@ -18,10 +18,10 @@ function getSupabaseAdmin() {
 export async function GET() {
     try {
         const adminClient = getSupabaseAdmin();
-        const { data, error } = await adminClient
+        const { data, error } = await (adminClient
             .from('settings')
             .select('key, value')
-            .in('key', ['guru_ai_templates', 'guru_ai_greeting_en', 'guru_ai_greeting_hi']);
+            .in('key', ['guru_ai_templates', 'guru_ai_greeting_en', 'guru_ai_greeting_hi']) as any);
 
         if (error) throw error;
 
