@@ -102,6 +102,7 @@ export async function POST(request: Request) {
                     author_name: author_name || 'MantraPuja AI',
                     category: category || 'Spirituality',
                     published: published ?? true,
+                    created_at: new Date().toISOString(), // Added to fix the 1970 date issue
                     updated_at: new Date().toISOString(),
                     is_active: true
                 }

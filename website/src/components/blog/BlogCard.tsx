@@ -42,7 +42,7 @@ export default function BlogCard({ blog }: { blog: BlogPost }) {
                 <div className="relative p-8 flex flex-col flex-1 z-10">
                     <div className="flex items-center gap-2 mb-4">
                         <span className="text-xs font-bold text-saffron dark:text-gold uppercase tracking-widest">
-                            {new Date(blog.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            {new Date(blog.created_at || blog.updated_at || new Date().toISOString()).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-muted-foreground/30"></span>
                         <span className="text-xs text-muted-foreground dark:text-slate-400">
