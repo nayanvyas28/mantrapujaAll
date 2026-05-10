@@ -19,7 +19,7 @@ function generateSlug(title: string): string {
 export async function GET() {
     try {
         const { data, error } = await getClient()
-            .from('blogs')
+            .from('Final_blog')
             .select('*')
             .eq('published', true)
             .order('created_at', { ascending: false });
@@ -35,17 +35,24 @@ export async function GET() {
     }
 }
 
+import crypto from 'crypto';
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        let { title, content, slug, image_url, tags, meta_title, meta_description, meta_tags, published, secret } = body;
+        let { title, content, slug, image_url, tags, meta_title, meta_description, meta_tags, published, secret, author_name, category } = body;
 
         if (!secret) {
+            console.warn('[Blog Webhook] Missing secret in request body');
             await getClient().from('system_logs').insert({ event_type: 'automation', status: 'warning', message: 'Blog Webhook: Missing Secret', details: { ip: 'unknown' } });
             return NextResponse.json({ error: 'Unauthorized: Secret is missing' }, { status: 401 });
         }
-        if (secret !== process.env.N8N_WEBHOOK_SECRET) {
-            await getClient().from('system_logs').insert({ event_type: 'automation', status: 'warning', message: 'Blog Webhook: Invalid Secret', details: { ip: 'unknown' } });
+        
+        const expectedSecret = process.env.N8N_WEBHOOK_SECRET;
+        
+        if (secret !== expectedSecret) {
+            console.error(`[Blog Webhook] Invalid Secret. Received: "${secret}", Expected: "${expectedSecret}"`);
+            await getClient().from('system_logs').insert({ event_type: 'automation', status: 'warning', message: 'Blog Webhook: Invalid Secret', details: { received: secret, expected: expectedSecret } });
             return NextResponse.json({ error: 'Unauthorized: Invalid Secret' }, { status: 401 });
         }
 
@@ -57,6 +64,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Bad Request: Missing content' }, { status: 400 });
         }
 
+        // Ensure JSONB fields are objects (if sent as strings by n8n)
+        const ensureObject = (val: any) => {
+            if (typeof val === 'string') {
+                try { return JSON.parse(val); } catch (e) { return val; }
+            }
+            return val;
+        };
+
+        const finalContent = ensureObject(content);
+        const finalTags = ensureObject(tags || []);
+        const finalMetaTags = ensureObject(meta_tags || []);
+
         // Auto-generate slug if missing
         if (!slug) {
             slug = generateSlug(title) + '-' + Date.now();
@@ -64,23 +83,27 @@ export async function POST(request: Request) {
 
         // Default image if missing
         if (!image_url) {
-            image_url = 'https://via.placeholder.com/800x400?text=' + encodeURIComponent(title);
+            image_url = '/logo.png';
         }
 
         const { data, error } = await getClient()
-            .from('blogs')
+            .from('Final_blog')
             .upsert([
                 {
+                    id: crypto.randomUUID(), // Required by your new schema (no default in DB)
                     title,
                     slug,
-                    content,
+                    content: finalContent,
                     image_url,
-                    tags: tags || [],
+                    tags: finalTags,
                     meta_title,
                     meta_description,
-                    meta_tags: meta_tags || [],
+                    meta_tags: finalMetaTags,
+                    author_name: author_name || 'MantraPuja AI',
+                    category: category || 'Spirituality',
                     published: published ?? true,
-                    updated_at: new Date().toISOString()
+                    updated_at: new Date().toISOString(),
+                    is_active: true
                 }
             ], { onConflict: 'slug' })
             .select();

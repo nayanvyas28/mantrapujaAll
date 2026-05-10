@@ -6,6 +6,49 @@ import BlogDetailClient from '@/components/blog/BlogDetailClient';
 // Revalidate every minute
 export const revalidate = 60;
 
+/**
+ * Pre-generate paths for the top 50 most important blogs.
+ * This improves initial load speed and SEO for popular content.
+ */
+export async function generateStaticParams() {
+    try {
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        // Fetch only slugs for the top 50 blogs based on priority:
+        // 1. Featured posts, 2. Most viewed, 3. Most recent
+        const { data, error } = await supabase
+            .from('Final_blog')
+            .select('slug')
+            .eq('published', true)
+            .eq('is_active', true)
+            .not('slug', 'is', null)
+            .order('is_featured', { ascending: false })
+            .order('views', { ascending: false })
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            console.error('[generateStaticParams] Database error:', error.message);
+            return [];
+        }
+
+        if (!data) return [];
+
+        // Clean, filter, and format the slugs for Next.js
+        return data
+            .filter(blog => blog.slug && typeof blog.slug === 'string' && blog.slug.trim() !== '')
+            .map((blog) => ({
+                slug: blog.slug.trim().toLowerCase(),
+            }));
+    } catch (e) {
+        console.error('[generateStaticParams] Critical error:', e);
+        return [];
+    }
+}
+
 // Helper to fetch blog by slug
 async function getBlog(slug: string) {
     const supabase = createClient(
