@@ -117,8 +117,8 @@ export async function GET(
 
             // Combine and Dedup
             const allAuthorNames = new Set<string>(personas);
-            dbAuthors?.forEach(a => allAuthorNames.add(a.name));
-            blogAuthors?.forEach(b => allAuthorNames.add(b.author_name));
+            dbAuthors?.forEach((a: any) => allAuthorNames.add(a.name));
+            blogAuthors?.forEach((b: any) => allAuthorNames.add(b.author_name));
 
             const authorList = Array.from(allAuthorNames);
             const paginatedAuthors = authorList.slice(startIdx, endIdx + 1);
