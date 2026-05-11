@@ -99,6 +99,8 @@ interface Puja extends UiConfig {
     special_offer_price?: number;
     is_featured?: boolean;
     hasCustomImage?: boolean;
+    badge?: string;
+    gradient?: string;
 }
 
 interface DatabasePooja {

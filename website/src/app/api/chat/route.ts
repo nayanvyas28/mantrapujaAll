@@ -355,12 +355,17 @@ ${rulebook}
         const decrypt = (encrypted: string) => {
             try {
                 const [ivHex, encryptedText] = encrypted.split(':');
-                if (!ivHex || !encryptedText) return null;
-                const decipher = crypto.createDecipheriv('aes-128-cbc', Buffer.from(encryptionKey), Buffer.from(ivHex, 'hex'));
+                if (!ivHex || !encryptedText || !encryptionKey) return null;
+                
+                // Use SHA-256 to hash the key into a fixed 16-byte buffer for AES-128
+                const key = crypto.createHash('sha256').update(encryptionKey).digest().slice(0, 16);
+                
+                const decipher = crypto.createDecipheriv('aes-128-cbc', key, Buffer.from(ivHex, 'hex'));
                 let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
                 decrypted += decipher.final('utf8');
                 return decrypted;
             } catch (e) {
+                console.error("Decryption Error:", e);
                 return null;
             }
         };

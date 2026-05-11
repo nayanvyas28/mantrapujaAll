@@ -32,8 +32,8 @@ import {
     HandHelping
 } from 'lucide-react';
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
-import { locations as staticLocations, Location } from '../../../data/spiritual-locations';
-import { locationDetails, getDetailsForLocation, LocationDetail } from '../../../data/location-details';
+import { locations as staticLocations, Location } from '@/data/spiritual-locations';
+import { locationDetails, getDetailsForLocation, LocationDetail } from '@/data/location-details';
 import { useLoading } from "@/context/LoadingContext";
 
 export default function DestinationDetailPage() {
@@ -160,7 +160,7 @@ export default function DestinationDetailPage() {
     }
 
     // Check if destination exists and is of an allowed type
-    const allowedTypes = ['Char Dham', 'Jyotirlinga', 'Shakti Peeth', 'Kumbh Mela'];
+    const allowedTypes = ['Char Dham', 'Jyotirlinga', 'Shakti Peeth', 'Kumbh Mela', 'Spiritual City', 'Sacred Destination'];
     const exists = baseLocation || locationDetails[slug] || dbDetail;
     const isAllowed = exists && allowedTypes.includes(fullDetails.type);
 

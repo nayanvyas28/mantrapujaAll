@@ -5,6 +5,8 @@ export interface PujaData {
     tagline: string;
     heroImage: string;
     themeColor: string; // e.g., 'saffron', 'gold', 'blue' - useful for subtle dynamic styling
+    badge?: string;
+    gradient?: string;
 
     // Hero Section Benefits
     heroBenefits: string[];

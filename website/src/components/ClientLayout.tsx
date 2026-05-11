@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ThemeTransitionOverlay } from "@/components/ui/ThemeTransitionOverlay";
@@ -16,21 +15,16 @@ import GuruAIChat from "@/components/GuruAIChat";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
     return (
-        <Suspense fallback={<LoadingScreen />}>
-            <LoadingProvider>
-                <LayoutContent>{children}</LayoutContent>
-            </LoadingProvider>
-        </Suspense>
+        <LoadingProvider>
+            <LayoutContent>{children}</LayoutContent>
+        </LoadingProvider>
     );
 }
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
     const [isMounted, setIsMounted] = useState(false);
     const { isLoading } = useLoading();
-    const { user } = useAuth();
-
     const pathname = usePathname();
-    const router = useRouter();
 
     useEffect(() => {
         setIsMounted(true);
@@ -40,12 +34,14 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         window.scrollTo(0, 0);
     }, [pathname]);
 
-    // Show loader for initial hydration OR global loading states
-    const showLoader = !isMounted || isLoading;
+    // Only show global loader if we are actually loading new data, 
+    // NOT just because the component is mounting. This prevents SSR blocking.
+    const showLoader = isLoading;
 
     return (
         <>
             <ThemeTransitionOverlay />
+            
             <AnimatePresence mode="wait">
                 {showLoader && (
                     <motion.div

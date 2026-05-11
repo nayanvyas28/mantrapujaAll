@@ -12,16 +12,18 @@ export async function GET() {
 
     try {
         // Get counts for dynamic content
-        const [blogsCount, poojasCount, destinationsCount] = await Promise.all([
+        const [blogsCount, poojasCount, destinationsCount, authorsCount] = await Promise.all([
             supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then((res: any) => res.count || 0),
             supabase.from('poojas').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
-            supabase.from('destinations').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0)
+            supabase.from('destinations').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
+            supabase.from('blog_authors').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0)
         ]);
 
         // Calculate number of sitemaps needed for each type
         const blogPacks = Math.ceil(blogsCount / URLS_PER_SITEMAP) || 1;
         const poojaPacks = Math.ceil(poojasCount / URLS_PER_SITEMAP) || 1;
         const destPacks = Math.ceil(destinationsCount / URLS_PER_SITEMAP) || 1;
+        const authorPacks = Math.ceil(authorsCount / URLS_PER_SITEMAP) || 1;
 
         // Generate sitemap index XML
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
@@ -33,7 +35,7 @@ export async function GET() {
         xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
         xml += `  </sitemap>\n`;
 
-        // Blogs sitemaps (blogsmap1.xml, blogsmap2.xml, etc.)
+        // Blogs sitemaps
         for (let i = 1; i <= blogPacks; i++) {
             xml += `  <sitemap>\n`;
             xml += `    <loc>${SITE_URL}/sitemaps/blog/${i}.xml</loc>\n`;
@@ -53,6 +55,14 @@ export async function GET() {
         for (let i = 1; i <= destPacks; i++) {
             xml += `  <sitemap>\n`;
             xml += `    <loc>${SITE_URL}/sitemaps/destination/${i}.xml</loc>\n`;
+            xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+            xml += `  </sitemap>\n`;
+        }
+
+        // Authors sitemaps
+        for (let i = 1; i <= authorPacks; i++) {
+            xml += `  <sitemap>\n`;
+            xml += `    <loc>${SITE_URL}/sitemaps/author/${i}.xml</loc>\n`;
             xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
             xml += `  </sitemap>\n`;
         }

@@ -40,7 +40,23 @@ import crypto from 'crypto';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        let { title, content, slug, image_url, tags, meta_title, meta_description, meta_tags, published, secret, author_name, category } = body;
+        let { 
+            title, 
+            content, 
+            slug, 
+            image_url, 
+            tags, 
+            meta_title, 
+            meta_description, 
+            meta_tags, 
+            published, 
+            secret, 
+            author_name, 
+            author_avatar,
+            author_role,
+            author_bio,
+            category 
+        } = body;
 
         if (!secret) {
             console.warn('[Blog Webhook] Missing secret in request body');
@@ -86,27 +102,63 @@ export async function POST(request: Request) {
             image_url = '/logo.png';
         }
 
+        // Author Profiles for Random Selection
+        const authorProfiles = [
+            { name: 'Mantra Guru Ji', role: 'Divine Guide', avatar: '/logo.png' },
+            { name: 'Aacharya Dr. Ram Ramanuj', role: 'Vedic Scholar', avatar: '/logo.png' },
+            { name: 'Pandit Ravi Shastri', role: 'Head Priest', avatar: '/logo.png' },
+            { name: 'Acharya Meera', role: 'Senior Astrologer', avatar: '/logo.png' }
+        ];
+
+        const selectedProfile = authorProfiles[Math.floor(Math.random() * authorProfiles.length)];
+
+        // 4. Map to new schema (Hybrid for legacy compatibility - Matched to DB Schema)
+        const newBlogEntry = {
+            id: crypto.randomUUID(),
+            // Title Sync
+            title: title,
+            blog_title: title,
+            // Slug & Identification
+            slug: slug,
+            excerpt: body.excerpt || "",
+            // Content Sync
+            content: finalContent,
+            blog_content: finalContent,
+            // Image Sync
+            featured_image_url: image_url,
+            image_url: image_url,
+            image_alt_text: body.image_alt_text || title,
+            // Metadata
+            category: category || 'Devta & Divine Knowledge',
+            tags: JSON.stringify(finalMetaTags),
+            reading_time: body.reading_time || "7",
+            language: 'en',
+            // Author Metadata (Randomized if not provided)
+            author_name: author_name || selectedProfile.name,
+            author_avatar: author_avatar || selectedProfile.avatar,
+            author_role: author_role || selectedProfile.role,
+            // Status
+            published: published ?? true,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            // SEO Sync
+            meta_title: meta_title || title,
+            meta_description: meta_description || "",
+            meta_tags: finalMetaTags,
+            seo: {
+                meta_title: meta_title || title,
+                meta_description: meta_description || "",
+                meta_tags: finalMetaTags,
+                og_title: meta_title || title,
+                og_description: meta_description || "",
+                canonical_url: `https://mantrapuja.com/blog/${slug}`
+            }
+        };
+
         const { data, error } = await getClient()
             .from('Final_blog')
-            .upsert([
-                {
-                    id: crypto.randomUUID(), // Required by your new schema (no default in DB)
-                    title,
-                    slug,
-                    content: finalContent,
-                    image_url,
-                    tags: finalTags,
-                    meta_title,
-                    meta_description,
-                    meta_tags: finalMetaTags,
-                    author_name: author_name || 'MantraPuja AI',
-                    category: category || 'Spirituality',
-                    published: published ?? true,
-                    created_at: new Date().toISOString(), // Added to fix the 1970 date issue
-                    updated_at: new Date().toISOString(),
-                    is_active: true
-                }
-            ], { onConflict: 'slug' })
+            .upsert([newBlogEntry], { onConflict: 'slug' })
             .select();
 
         if (error) {

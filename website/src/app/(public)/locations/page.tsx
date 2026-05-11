@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Map as MapIcon, Grid, List, Sun, ChevronDown, ArrowRight, Filter, IndianRupee, MapPin, Compass } from 'lucide-react';
-import IndiaMap from '../../components/IndiaMap';
+import IndiaMap from '@/components/IndiaMap';
 import { supabase } from '@/lib/supabaseClient';
 import { 
     MAP_OFFSET_X, 
@@ -12,8 +12,8 @@ import {
     MAP_WIDTH, 
     MAP_HEIGHT 
 } from '@/data/india-map-data';
-import { locations as staticLocations, Location, LocationType } from '../../data/spiritual-locations';
-import { MOCK_BLOGS } from '../../data/blog-data';
+import { locations as staticLocations, Location, LocationType } from '@/data/spiritual-locations';
+import { MOCK_BLOGS } from '@/data/blog-data';
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import { useLoading } from "@/context/LoadingContext";
 import { CustomDropdown } from '@/components/CustomDropdown';

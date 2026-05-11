@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import ClientLayout from "@/components/ClientLayout";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { LoadingProvider } from "@/context/LoadingContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,9 +20,6 @@ export const metadata: Metadata = {
   title: "Mantra Puja - Book Authentic Vedic Poojas",
   description: "Find and book the right Pooja for every purpose. Authentic Vedic rituals at your home.",
 };
-
-import { AuthProvider } from "@/context/AuthContext";
-import { LanguageProvider } from "@/context/LanguageContext";
 
 export default function RootLayout({
   children,
@@ -41,11 +39,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LanguageProvider>
-            <AuthProvider>
-              <ClientLayout>
-                {children}
-              </ClientLayout>
-            </AuthProvider>
+            <LoadingProvider>
+              {children}
+            </LoadingProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>
