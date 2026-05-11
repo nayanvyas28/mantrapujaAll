@@ -61,13 +61,7 @@ const Footer = () => {
                                 { Icon: Twitter, href: "https://x.com/mantrapuja" }
                             ].map((social, idx) => (
                                 <Link key={idx} href={social.href} target="_blank" className="w-12 h-12 rounded-full border border-saffron/20 flex items-center justify-center text-saffron hover:bg-saffron hover:text-white transition-all duration-300 hover:shadow-[0_0_15px_-3px_rgba(249,115,22,0.5)]">
-                                    {social.isTelegram ? (
-                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                                            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.62 4.49-.854 6.046-.1.663-.346 1.1-.588 1.123-.523.047-1.12-.234-1.624-.564l-2.483-1.547-1.2 1.156c-.132.127-.243.235-.49.235-.32 0-.256-.122-.256-.122l.526-2.5 1.543-1.4c.08-.073.18-.114.18-.114.004-.002-.123.018-.123.018l-3.328 2.094-2.42-.756s-.43-.134-.43-.46c0-.327.44-.457.44-.457l9.467-3.647c.18-.07.4-.085.553-.083z"/>
-                                        </svg>
-                                    ) : (
-                                        <social.Icon size={24} strokeWidth={2.5} />
-                                    )}
+                                    <social.Icon size={24} strokeWidth={2.5} />
                                 </Link>
                             ))}
                         </div>
