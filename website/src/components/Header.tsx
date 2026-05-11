@@ -77,6 +77,7 @@ const Header = () => {
                             <img
                                 src="/logo.png"
                                 alt="MantraPuja - Admin Dashboard Logo"
+                                loading="eager"
                                 className="h-14 w-auto group-hover:opacity-80 transition-opacity"
                             />
                         </Link>
@@ -146,6 +147,7 @@ const Header = () => {
                     <img
                         src="/logo.png"
                         alt="MantraPuja - Vedic Services Logo"
+                        loading="eager"
                         className="h-12 xs:h-14 md:h-18 w-auto group-hover:scale-105 transition-all duration-300"
                     />
                 </Link>

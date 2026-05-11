@@ -161,7 +161,7 @@ export function generateBlogDetailSchema(config: SchemaConfig) {
                     text: item.answer,
                 },
             })),
-        };
+        } as any;
     }
 
     // 7. WebPage Wrapper
