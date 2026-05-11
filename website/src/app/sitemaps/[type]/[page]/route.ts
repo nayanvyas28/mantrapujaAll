@@ -100,6 +100,35 @@ export async function GET(
                     changefreq: 'monthly',
                 }));
             }
+        } else if (type === 'author') {
+            const cleanSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+            
+            // 1. Predefined Personas
+            const personas = [
+                'Mantra Guru Ji', 'Aacharya Dr. Ram Ramanuj', 'Pandit Ravi Shastri', 
+                'Acharya Meera', 'Dr. Aryan Sharma'
+            ];
+
+            // 2. Fetch authors from blog_authors table
+            const { data: dbAuthors } = await supabase.from('blog_authors').select('name');
+            
+            // 3. Fetch "Ghost Authors" from Final_blog table
+            const { data: blogAuthors } = await supabase.from('Final_blog').select('author_name').not('author_name', 'is', null);
+
+            // Combine and Dedup
+            const allAuthorNames = new Set<string>(personas);
+            dbAuthors?.forEach(a => allAuthorNames.add(a.name));
+            blogAuthors?.forEach(b => allAuthorNames.add(b.author_name));
+
+            const authorList = Array.from(allAuthorNames);
+            const paginatedAuthors = authorList.slice(startIdx, endIdx + 1);
+
+            urls = paginatedAuthors.map((name: string) => ({
+                url: `${SITE_URL}/authors/${cleanSlug(name)}`,
+                lastmod: new Date().toISOString(),
+                priority: '0.6',
+                changefreq: 'monthly',
+            }));
         } else {
             return new NextResponse('Invalid sitemap type', { status: 404 });
         }

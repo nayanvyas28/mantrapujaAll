@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { BLOG_CATEGORIES, BlogCategory } from "@/data/blog-data";
 import { cn } from "@/lib/utils";
-import { getBlogCategoryStyle } from "@/lib/uiMapping";
+import { motion } from "framer-motion";
 
 interface BlogPost {
     id: number;
@@ -15,14 +16,25 @@ interface BlogPost {
     created_at: string;
 }
 
-interface BlogSidebarProps {
-    activeCategory: BlogCategory;
-    onSelectCategory: (category: BlogCategory) => void;
-}
+export default function BlogSidebar({ activeCategory: propActiveCategory }: { activeCategory?: BlogCategory }) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    
+    const activeCategory = (searchParams.get('category') as BlogCategory) || propActiveCategory || 'All';
 
-export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSidebarProps) {
     const [recentPosts, setRecentPosts] = useState<BlogPost[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const updateCategory = (category: BlogCategory) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (category === 'All') {
+            params.delete('category');
+        } else {
+            params.set('category', category);
+        }
+        params.set('page', '1');
+        router.push(`/blog?${params.toString()}`);
+    };
 
     useEffect(() => {
         async function fetchRecentBlogs() {
@@ -35,15 +47,7 @@ export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSi
                     .order('created_at', { ascending: false })
                     .limit(3);
 
-                if (error) {
-                    console.error('Error fetching recent blogs:', error);
-                    console.error('Error details:', JSON.stringify(error, null, 2));
-                } else if (data) {
-                    console.log('Fetched blogs:', data);
-                    setRecentPosts(data);
-                } else {
-                    console.log('No data returned from query');
-                }
+                if (data) setRecentPosts(data);
             } catch (error) {
                 console.error('Error in fetchRecentBlogs:', error);
             } finally {
@@ -55,8 +59,13 @@ export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSi
     }, []);
 
     return (
-        <aside className="w-full lg:w-80 shrink-0 space-y-6 lg:space-y-8 lg:sticky lg:top-32 h-fit mb-8 lg:mb-0">
-            {/* Categories */}
+        <motion.aside 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="w-full lg:w-80 shrink-0 space-y-6 lg:space-y-8 lg:sticky lg:top-32 h-fit mb-8 lg:mb-0"
+        >
+            {/* Categories Island */}
             <div className="bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border border-saffron/10 dark:border-gold/20 shadow-sm">
                 <h3 className="text-xl font-bold font-serif mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-saffron rounded-full"></span>
@@ -66,7 +75,7 @@ export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSi
                     {BLOG_CATEGORIES.map((category) => (
                         <li key={category} className="shrink-0">
                             <button
-                                onClick={() => onSelectCategory(category)}
+                                onClick={() => updateCategory(category)}
                                 className={cn(
                                     "w-full flex items-center justify-between transition-colors font-medium text-sm group text-left p-2 rounded-lg whitespace-nowrap gap-3",
                                     activeCategory === category
@@ -84,7 +93,7 @@ export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSi
                 </ul>
             </div>
 
-            {/* Recent Posts - Desktop Only */}
+            {/* Recent Posts - Client-Side Hydrated Island */}
             <div className="hidden lg:block bg-white dark:bg-slate-900/80 backdrop-blur-md rounded-3xl p-6 border border-saffron/10 dark:border-gold/20 shadow-sm">
                 <h3 className="text-xl font-bold font-serif mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-saffron rounded-full"></span>
@@ -92,38 +101,26 @@ export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSi
                 </h3>
                 <div className="space-y-6">
                     {loading ? (
-                        // Loading skeleton
                         [...Array(3)].map((_, i) => (
                             <div key={i} className="flex gap-4 animate-pulse">
                                 <div className="w-20 h-20 rounded-xl bg-saffron/10"></div>
                                 <div className="flex-1 space-y-2">
                                     <div className="h-4 bg-saffron/10 rounded w-3/4"></div>
-                                    <div className="h-3 bg-saffron/10 rounded w-1/2"></div>
                                 </div>
                             </div>
                         ))
-                    ) : recentPosts.length === 0 ? (
-                        // Empty state
-                        <div className="text-center py-8 text-muted-foreground text-sm">
-                            <p>No recent blogs available</p>
-                        </div>
                     ) : (
-                        // Blog posts
                         recentPosts.map((post) => (
                             <Link key={post.id} href={`/blog/${post.slug}`} className="flex gap-4 group">
                                 <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative bg-saffron/5 flex items-center justify-center">
                                     <img
-                                        src={(post.image_url && post.image_url.trim()) ? post.image_url : '/logo.png'}
+                                        src={post.image_url || '/logo.png'}
                                         alt={post.title}
                                         className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                                        onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.src = '/logo.png';
-                                        }}
                                     />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-sm leading-tight mb-2 line-clamp-2 group-hover:text-saffron dark:group-hover:text-gold transition-colors">
+                                    <h4 className="font-bold text-sm leading-tight mb-2 line-clamp-2 group-hover:text-saffron dark:group-hover:text-gold">
                                         {post.title}
                                     </h4>
                                     <span className="text-xs text-muted-foreground">
@@ -136,16 +133,14 @@ export default function BlogSidebar({ activeCategory, onSelectCategory }: BlogSi
                 </div>
             </div>
 
-            {/* Newsletter/ad placeholder - Desktop Only */}
-            <div className="hidden lg:block relative overflow-hidden rounded-3xl p-8 text-center bg-gradient-to-br from-saffron to-orange-600 text-white shadow-lg shadow-saffron/20">
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+            <div className="hidden lg:block relative overflow-hidden rounded-3xl p-8 text-center bg-gradient-to-br from-saffron to-orange-600 text-white shadow-lg">
                 <h3 className="text-2xl font-black font-serif mb-2 relative z-10">Divine Insights</h3>
                 <p className="text-white/90 text-sm mb-6 relative z-10">Get weekly Vedic wisdom delivered to your inbox.</p>
-                <button className="w-full py-3 rounded-xl bg-white text-saffron font-bold text-sm shadow-lg hover:shadow-xl hover:scale-105 transition-all relative z-10">
+                <button className="w-full py-3 rounded-xl bg-white text-saffron font-bold text-sm shadow-lg hover:scale-105 transition-all relative z-10">
                     Subscribe Free
                 </button>
             </div>
-        </aside>
+        </motion.aside>
     );
 }
 

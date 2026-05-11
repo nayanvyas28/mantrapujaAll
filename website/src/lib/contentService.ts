@@ -251,15 +251,38 @@ export interface Pooja {
 export interface Blog {
     id: string;
     title: string;
+    blog_title?: string;
     slug: string;
-    content: string;
+    content: any;
+    blog_content?: any;
     excerpt: string;
     image_url: string;
-    tags: string[];
+    featured_image_url?: string;
+    tags: any; // Can be string[] or jsonb
     published: boolean;
     is_featured: boolean;
+    is_active?: boolean;
     created_at?: string;
     updated_at?: string;
+    category?: string;
+    views?: number;
+    reading_time?: string;
+    seo?: any;
+    // SEO fields from schema
+    meta_title?: string;
+    meta_description?: string;
+    meta_tags?: any;
+    // Author fields from schema
+    author_name?: string;
+    author_role?: string;
+    author_avatar?: string;
+    author_id?: string;
+    author?: {
+        name: string;
+        avatar: string;
+        role: string;
+        bio: string;
+    };
 }
 
 // --- Location Types ---
@@ -419,7 +442,6 @@ export const getBlogs = async (): Promise<Blog[]> => {
 
     if (error) throw error;
 
-    // Implementation: Ensure all blogs have the Mantra Pooja logo if image is missing/placeholder
     return (data || []).map(blog => ({
         ...blog,
         image_url: (!blog.image_url ||
@@ -429,6 +451,123 @@ export const getBlogs = async (): Promise<Blog[]> => {
             ? '/logo.png'
             : blog.image_url
     }));
+};
+
+export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
+    try {
+        const supabase = getClient();
+        
+        // 1. Primary search
+        let { data: blog, error } = await supabase
+            .from('Final_blog')
+            .select('*')
+            .eq('slug', slug)
+            .eq('published', true)
+            .eq('is_active', true)
+            .single();
+
+        // 2. Robust Fallback (Decoded, NFC, NFD)
+        if (!blog) {
+            try {
+                const decodedSlug = decodeURIComponent(slug);
+                const candidates = new Set<string>();
+                candidates.add(decodedSlug);
+                candidates.add(decodedSlug.normalize('NFC'));
+                candidates.add(decodedSlug.normalize('NFD'));
+                candidates.delete(slug);
+
+                for (const candidate of candidates) {
+                    const { data: foundBlog } = await supabase
+                        .from('Final_blog')
+                        .select('*')
+                        .eq('slug', candidate)
+                        .eq('published', true)
+                        .eq('is_active', true)
+                        .single();
+
+                    if (foundBlog) {
+                        blog = foundBlog;
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.warn("[getBlogBySlug] Fallback failed", e);
+            }
+        }
+
+        if (!blog) return null;
+
+        return {
+            ...blog,
+            author: {
+                name: blog.author_name || "MantraPuja Team",
+                avatar: blog.author_avatar || "/logo.png",
+                role: blog.author_role || "Editor",
+                bio: ""
+            }
+        };
+    } catch (err) {
+        console.error('[getBlogBySlug] Critical fetch error:', err);
+        return null;
+    }
+};
+
+export const getPaginatedBlogs = async (
+    page: number = 1, 
+    limit: number = 12, 
+    category?: string, 
+    search?: string,
+    sort: string = 'newest'
+): Promise<{ blogs: Blog[], total: number, error?: boolean }> => {
+    try {
+        const supabase = getClient();
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        let query = supabase
+            .from('Final_blog')
+            .select('id, title, blog_title, slug, excerpt, image_url, category, author_name, author_avatar, author_role, created_at, views, is_featured, is_active, published', { count: 'exact' })
+            .eq('published', true)
+            .eq('is_active', true);
+
+        if (category && category !== 'All') {
+            query = query.eq('category', category);
+        }
+
+        if (search) {
+            query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`);
+        }
+
+        if (sort === 'oldest') {
+            query = query.order('created_at', { ascending: true });
+        } else if (sort === 'popular') {
+            query = query.order('views', { ascending: false });
+        } else {
+            query = query.order('created_at', { ascending: false });
+        }
+
+        const { data, error, count } = await query.range(from, to);
+
+        if (error) {
+            console.error('[getPaginatedBlogs] Supabase error:', error);
+            return { blogs: [], total: 0, error: true };
+        }
+
+        const blogs = (data || []).map(blog => ({
+            ...blog,
+            image_url: (!blog.image_url ||
+                blog.image_url.includes('placeholder') ||
+                blog.image_url.includes('placehold.co') ||
+                blog.image_url.includes('unsplash.com'))
+                ? '/logo.png'
+                : blog.image_url
+        }));
+
+        return { blogs, total: count || 0, error: false };
+    } catch (err) {
+        console.error('[getPaginatedBlogs] Critical fetch error:', err);
+        return { blogs: [], total: 0, error: true };
+    }
 };
 
 export const updateBlog = async (id: string, updates: Partial<Blog>): Promise<Blog | null> => {

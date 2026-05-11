@@ -2,7 +2,7 @@
 export interface UiConfig {
     id: string; // Sanity check to match DB ID if possible, but slug is safer
     slug: string;
-    gradient: string;
+    gradient?: string;
     badge?: string;
     emoji?: string;
     featured?: boolean;
