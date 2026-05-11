@@ -253,12 +253,12 @@ export interface Blog {
     title: string;
     blog_title?: string;
     slug: string;
-    content: any;
+    content?: any;
     blog_content?: any;
     excerpt: string;
     image_url: string;
     featured_image_url?: string;
-    tags: any; // Can be string[] or jsonb
+    tags?: any; // Can be string[] or jsonb
     published: boolean;
     is_featured: boolean;
     is_active?: boolean;
