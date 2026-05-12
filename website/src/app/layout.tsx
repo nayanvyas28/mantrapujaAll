@@ -28,6 +28,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('unhandledrejection', function(event) {
+                if (event.reason && event.reason.stack && event.reason.stack.includes('chrome-extension://')) {
+                  event.preventDefault();
+                  event.stopImmediatePropagation();
+                }
+              });
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-background text-foreground`}
         suppressHydrationWarning
