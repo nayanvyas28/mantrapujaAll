@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { Phone, AlertCircle, ArrowRight, MessageSquare, ShieldCheck, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 export default function LoginPage() {
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -139,7 +140,15 @@ export default function LoginPage() {
 
                     <div className="text-center mb-10">
                         <Link href="/" className="inline-block mb-8 hover:opacity-80 transition-opacity">
-                            <img src="/logo.png" alt="Mantra Puja" className="h-20 mx-auto drop-shadow-xl" />
+                            <Image 
+                                src="/logo.png" 
+                                alt="Mantra Puja" 
+                                width={80} 
+                                height={80}
+                                priority
+                                loading="eager"
+                                className="h-20 w-auto mx-auto drop-shadow-xl" 
+                            />
                         </Link>
                         <h1 className="text-4xl font-black font-serif text-foreground mb-3 tracking-tight">
                             {step === 'phone' ? 'Join Us' : 'Verify Identity'}
