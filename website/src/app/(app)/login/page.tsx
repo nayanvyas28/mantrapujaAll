@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { Phone, AlertCircle, ArrowRight, MessageSquare, ShieldCheck, Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 export default function LoginPage() {
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
@@ -140,7 +140,7 @@ export default function LoginPage() {
 
                     <div className="text-center mb-10">
                         <Link href="/" className="inline-block mb-8 hover:opacity-80 transition-opacity">
-                            <Image 
+                            <NextImage 
                                 src="/logo.png" 
                                 alt="Mantra Puja" 
                                 width={80} 
