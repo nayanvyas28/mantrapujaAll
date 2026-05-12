@@ -26,8 +26,7 @@ export async function GET(
                 review_text,
                 created_at,
                 profiles:user_id (
-                    full_name,
-                    avatar_url
+                    full_name
                 )
             `)
             .eq('puja_slug', slug)
@@ -44,8 +43,7 @@ export async function GET(
                     review_text,
                     created_at,
                     profiles:user_id (
-                        full_name,
-                        avatar_url
+                        full_name
                     )
                 `)
                 .eq('puja_slug', slug)

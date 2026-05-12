@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { ChevronRight, Check, Sun, MapPin, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
 export default function OnboardingPage() {
     const [step, setStep] = useState(1);
@@ -79,7 +80,15 @@ export default function OnboardingPage() {
             <div className="relative z-10 pt-8 pb-4 px-6 border-b border-border/40 backdrop-blur-md bg-background/50 sticky top-0">
                 <div className="max-w-2xl mx-auto">
                     <div className="flex justify-between items-center mb-4">
-                        <img src="/logo.png" alt="Mantra Puja" className="h-10" />
+                        <Image 
+                            src="/logo.png" 
+                            alt="Mantra Puja" 
+                            width={40} 
+                            height={40}
+                            priority
+                            loading="eager"
+                            className="h-10 w-auto" 
+                        />
                         <span className="text-sm font-bold text-muted-foreground">Step {step} of 3</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">

@@ -52,7 +52,8 @@ export async function generateStaticParams() {
 
 // Dynamic Metadata for SEO
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-    const { slug } = await params;
+    const { slug: rawSlug } = await params;
+    const slug = decodeURIComponent(rawSlug);
     const blog = await getBlogBySlug(slug);
 
     if (!blog) {
@@ -91,16 +92,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug: requestedSlug } = await params;
+    const { slug: rawSlug } = await params;
+    const requestedSlug = decodeURIComponent(rawSlug);
     const blog = await getBlogBySlug(requestedSlug);
 
     if (!blog) {
         notFound();
     }
 
-    // 🚀 SEO Redirect Logic:
-    if (requestedSlug !== blog.slug) {
-        permanentRedirect(`/blog/${blog.slug}`);
+    // 🚀 SEO Redirect Logic (Case-insensitive & Decode-aware):
+    if (requestedSlug.toLowerCase() !== blog.slug.toLowerCase()) {
+        permanentRedirect(`/blog/${encodeURIComponent(blog.slug)}`);
     }
 
     // 🛠️ Prepare Schema Config

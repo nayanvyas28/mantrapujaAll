@@ -129,8 +129,12 @@ export default function PromoPopup() {
                 console.log("[PromoPopup] Modal visible now");
             }, delay);
 
-        } catch (err) {
-            console.error("[PromoPopup] Critical error:", err);
+        } catch (err: any) {
+            if (err.message?.includes('fetch')) {
+                console.warn("[PromoPopup] Fetch was blocked (likely by an ad-blocker).");
+            } else {
+                console.error("[PromoPopup] Critical error:", err);
+            }
         }
     }, [pathname]);
 

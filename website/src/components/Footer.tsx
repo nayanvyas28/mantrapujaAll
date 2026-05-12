@@ -17,8 +17,13 @@ const Footer = () => {
             try {
                 const data = await getServingCities();
                 setCities(data.filter(c => c.is_active));
-            } catch (error) {
-                console.error("Failed to fetch serving cities:", error);
+            } catch (error: any) {
+                // Silently handle fetch errors (common with ad-blockers)
+                if (error.message?.includes('fetch')) {
+                    console.warn("Serving cities fetch was blocked or failed.");
+                } else {
+                    console.error("Failed to fetch serving cities:", error);
+                }
             } finally {
                 setLoading(false);
             }

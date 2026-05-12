@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
+import Link from 'next/link';
 import {
     LayoutDashboard,
     Grid3X3,
@@ -40,7 +42,6 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
-import Link from 'next/link';
 import { Plus, Trash2, History } from 'lucide-react';
 
 // 🖌️ Veda Local Chart Engine (North Indian Style)
@@ -1345,7 +1346,15 @@ export default function KundliPage() {
                         {/* Top Bar for Dashboard/Form View */}
                         <div className="flex justify-between items-center mb-12 bg-zinc-50 dark:bg-[#0c0c0c] p-4 md:p-6 rounded-3xl border border-zinc-200 dark:border-white/5 shadow-sm">
                             <Link href="/">
-                                <img src="/logo.png" alt="Mantra Puja Logo" className="w-24 md:w-32 h-auto hover:scale-105 transition-transform" />
+                                <Image 
+                                    src="/logo.png" 
+                                    alt="Mantra Puja Logo" 
+                                    width={128} 
+                                    height={40}
+                                    priority
+                                    loading="eager"
+                                    className="w-24 md:w-32 h-auto hover:scale-105 transition-transform" 
+                                />
                             </Link>
                             <Link 
                                 href="/"
@@ -1504,7 +1513,15 @@ export default function KundliPage() {
                                 </div>
                                 <div className="flex items-center gap-6 relative z-10">
                                     <Link href="/" className="bg-white dark:bg-black p-3 rounded-2xl shadow-sm border border-zinc-100 dark:border-white/10 hidden sm:block">
-                                        <img src="/logo.png" alt="Mantra Puja Logo" className="w-16 h-auto hover:scale-105 transition-transform" />
+                                        <Image 
+                                            src="/logo.png" 
+                                            alt="Mantra Puja Logo" 
+                                            width={64}
+                                            height={20}
+                                            priority
+                                            loading="eager"
+                                            className="w-16 h-auto hover:scale-105 transition-transform" 
+                                        />
                                     </Link>
                                     <div className="space-y-1">
                                         <h1 className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase leading-none">

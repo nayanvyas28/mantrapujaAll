@@ -363,7 +363,8 @@ export default function GuruAIChat() {
             if (data.otp && data.bhashConfig) {
                 const { user: bUser, pass, sender, template } = data.bhashConfig;
                 const bhashUrl = `https://bhashsms.com/api/sendmsg.php?user=${bUser}&pass=${pass}&sender=${sender}&phone=${data.phone}&text=${template}&priority=wa&stype=normal&Params=${data.otp},OTP`;
-                fetch(bhashUrl, { mode: 'no-cors' }).catch(e => console.warn("SMS Handshake (Non-Critical):", e.message));
+                // Background handshake for SMS/WhatsApp (No-CORS)
+                fetch(bhashUrl, { mode: 'no-cors' }).catch(() => {});
             }
 
             setMessages(prev => [...prev, { 
@@ -462,7 +463,7 @@ export default function GuruAIChat() {
                 if (data.otp && data.bhashConfig) {
                     const { user: bUser, pass, sender, template } = data.bhashConfig;
                     const bhashUrl = `https://bhashsms.com/api/sendmsg.php?user=${bUser}&pass=${pass}&sender=${sender}&phone=${data.phone}&text=${template}&priority=wa&stype=normal&Params=${data.otp},OTP`;
-                    fetch(bhashUrl, { mode: 'no-cors' }).catch(e => console.warn("SMS Handshake (Non-Critical):", e.message));
+                    fetch(bhashUrl, { mode: 'no-cors' }).catch(() => {});
                 }
 
                 setTempPhone(userMessage.trim());

@@ -384,6 +384,11 @@ ${rulebook}
             if (singleKey) keys.push(singleKey);
         }
 
+        if (keys.length === 0 && process.env.GEMINI_API_KEY) {
+            console.log("Chat API: Using fallback GEMINI_API_KEY from environment.");
+            keys.push(process.env.GEMINI_API_KEY);
+        }
+
         if (keys.length === 0) return NextResponse.json({ error: 'AI Not Configured' }, { status: 500 });
 
         let response: any = null;
