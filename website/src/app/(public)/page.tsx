@@ -71,9 +71,9 @@ export default async function Home() {
         tags: item.tags || []
     }));
 
-    const heroPujas = mappedPujas.filter(p => p.is_hero).slice(0, 3);
-    const featuredPujas = mappedPujas.filter(p => p.is_featured);
-    const popularPujas = featuredPujas.length > 0 ? featuredPujas.slice(0, 6) : mappedPujas.filter(p => !p.is_hero).slice(0, 6);
+    const heroPujas = mappedPujas.filter((p: any) => p.is_hero).slice(0, 3);
+    const featuredPujas = mappedPujas.filter((p: any) => p.is_featured);
+    const popularPujas = featuredPujas.length > 0 ? featuredPujas.slice(0, 6) : mappedPujas.filter((p: any) => !p.is_hero).slice(0, 6);
 
     // 3. Quick Access
     const quickAccess = await getHomeQuickAccess();
