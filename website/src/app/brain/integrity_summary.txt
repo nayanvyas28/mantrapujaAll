@@ -1,0 +1,35 @@
+◇ injected env (12) from .env.local // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+🔍 Launching Data Integrity Scanner (2,140 Blogs)...
+
+🛡️  DATA INTEGRITY REPORT
+━━━━━━━━━━━━━━━━━━━━━
+✅ Healthy Entries: 2018
+❌ Total Broken Entries: 122
+━━━━━━━━━━━━━━━━━━━━━
+- Missing Content: 0
+- Malformed/No Structure: 0
+- Missing Meta (Title/Slug): 0
+- Too Short (Incomplete): 122
+━━━━━━━━━━━━━━━━━━━━━
+
+🚩 FIRST 20 BROKEN ENTRIES:
+- [Content Too Short (< 150 chars)] How Bhairav Chalisa Commentaries Unveil Insights | Interpretations (how-bhairav-chalisa-commentaries-unveil-insights-interpretations)
+- [Content Too Short (< 150 chars)] How Artistic Elements Shine at Golden Temple Amritsar (how-artistic-elements-shine-at-golden-temple-amritsar)
+- [Content Too Short (< 150 chars)] History of Mahakali Temple (history-of-mahakali-temple)
+- [Content Too Short (< 150 chars)] How a Visit to Golden Temple Amritsar Transforms Lives | Golden Temple Amritsar (how-a-visit-to-golden-temple-amritsar-transforms-lives-golden-temple-amritsar)
+- [Content Too Short (< 150 chars)] How Architectural Influences Shape Golden Temple Amritsar (how-architectural-influences-shape-golden-temple-amritsar)
+- [Content Too Short (< 150 chars)] How Baglamukhi Chalisa Empowers Seekers: Unveiling the Mystery (how-baglamukhi-chalisa-empowers-seekers-unveiling-the-mystery)
+- [Content Too Short (< 150 chars)] How Baglamukhi Chalisa Enhances Protection Rituals (how-baglamukhi-chalisa-enhances-protection-rituals)
+- [Content Too Short (< 150 chars)] How Baglamukhi Chalisa Fosters Gratitude and Devotion (how-baglamukhi-chalisa-fosters-gratitude-and-devotion-2)
+- [Content Too Short (< 150 chars)] How Baglamukhi Chalisa Safeguards Devotees: Protection &amp; Victory (how-baglamukhi-chalisa-safeguards-devotees-protection-victory)
+- [Content Too Short (< 150 chars)] How Bhairav Chalisa Enhances Protection and Prosperity: Unveiling Its Ritualistic Significance (how-bhairav-chalisa-enhances-protection-and-prosperity-unveiling-its-ritualistic-significance)
+- [Content Too Short (< 150 chars)] How Bhairav Chalisa is Rediscovered: Modern Applications Unveiled (how-bhairav-chalisa-is-rediscovered-modern-applications-unveiled)
+- [Content Too Short (< 150 chars)] How Bhairav Chalisa Resonates Today: Modern Applications and Interpretations (how-bhairav-chalisa-resonates-today-modern-applications-and-interpretations)
+- [Content Too Short (< 150 chars)] How Bhairav Chalisa Verses Unveil Symbolism and Allegories (how-bhairav-chalisa-verses-unveil-symbolism-and-allegories)
+- [Content Too Short (< 150 chars)] How Deep Meditation on Hanuman Chalisa Unveils Spiritual Insights (how-deep-meditation-on-hanuman-chalisa-unveils-spiritual-insights)
+- [Content Too Short (< 150 chars)] How Deep Meditation on Hanuman Chalisa Unveils Spiritual Insights (how-deep-meditation-on-hanuman-chalisa-unveils-spiritual-insights-2)
+- [Content Too Short (< 150 chars)] How Devotees Circle the Golden Temple Amritsar: Sacred Circumambulation (how-devotees-circle-the-golden-temple-amritsar-sacred-circumambulation)
+- [Content Too Short (< 150 chars)] How Devotees Describe Baglamukhi Chalisa Experiences (how-devotees-describe-baglamukhi-chalisa-experiences)
+- [Content Too Short (< 150 chars)] How Devotion Unveils Miracles at Kashi Vishvanath: Stories Revealed (how-devotion-unveils-miracles-at-kashi-vishvanath-stories-revealed)
+- [Content Too Short (< 150 chars)] How Facilities for Pilgrims with Special Needs Enhance Golden Temple Amritsar (how-facilities-for-pilgrims-with-special-needs-enhance-golden-temple-amritsar)
+- [Content Too Short (< 150 chars)] How Golden Temple Amritsar Became the Heart of Sikh Faith (how-golden-temple-amritsar-became-the-heart-of-sikh-faith)

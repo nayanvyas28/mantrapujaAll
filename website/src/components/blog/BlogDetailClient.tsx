@@ -45,15 +45,19 @@ export default function BlogDetailClient({ blog, children, socialShare, toc, new
             {/* --- Hero Header Section --- */}
             <div className="relative min-h-[50vh] md:min-h-[65vh] w-full flex items-end pb-16 md:pb-24 overflow-hidden">
                 <div className="absolute inset-0 z-0">
-                    <Image 
-                        src={imageUrl} 
-                        alt={title}
-                        fill
-                        priority
-                        fetchPriority="high"
-                        className="w-full h-full object-cover scale-105"
-                        sizes="100vw"
-                    />
+                    {imageUrl && imageUrl.trim() !== "" ? (
+                        <Image 
+                            src={imageUrl} 
+                            alt={title}
+                            fill
+                            priority
+                            fetchPriority="high"
+                            className="w-full h-full object-cover scale-105"
+                            sizes="100vw"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-saffron/20 scale-105" />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
                     <div className="absolute inset-0 bg-black/20" />
                 </div>

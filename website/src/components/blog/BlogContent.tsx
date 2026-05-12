@@ -15,11 +15,14 @@ const prepareMarkdown = (content: string) => {
     if (!content) return '';
     
     return content
-        // Ensure headers start on a new line
+        // 1. Ensure headers start on a new line
         .replace(/([^\n])\s*(#{1,6}\s+)/g, '$1\n\n$2')
-        // Ensure list items start on a new line
+        // 2. Ensure text AFTER a header is on a new line (handles: "### Header Body")
+        // Matches a header line that has no trailing newline and is followed by text
+        .replace(/(#{1,6}\s+[^\n#]+?)(?=\s+[A-Z][a-z])/g, '$1\n\n')
+        // 3. Ensure list items start on a new line
         .replace(/([^\n])\s*(\n*[-*+]\s+)/g, '$1\n\n$2')
-        // Normalize multiple newlines
+        // 4. Normalize multiple newlines
         .replace(/\n{3,}/g, '\n\n');
 };
 
