@@ -120,7 +120,7 @@ export const pujas: PujaData[] = [
         slug: "kaal-sarp-dosh-puja",
         name: "Kaal Sarp Dosh Nivaran Puja",
         tagline: "Break Free from Life's Obstacles & Achieve Success",
-        heroImage: "/puja images/kaal sarp.png",
+        heroImage: "/pujaimages/kaal sarp.png",
         themeColor: "saffron",
         heroBenefits: [
             "Remove career & marriage blockages",

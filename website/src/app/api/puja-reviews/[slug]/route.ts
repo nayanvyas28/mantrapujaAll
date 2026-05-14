@@ -13,53 +13,35 @@ export async function GET(
 ) {
     try {
         const { slug } = await params;
+        if (!slug) return NextResponse.json({ error: 'Puja slug is required' }, { status: 400 });
 
-        if (!slug) {
-            return NextResponse.json({ error: 'Puja slug is required' }, { status: 400 });
-        }
+        console.log(`[ReviewsAPI] Fetching for slug: ${slug}`);
 
-        // Fetch reviews from the new dedicated puja_reviews table
+        // Try to fetch from puja_reviews first
         const { data, error } = await getAdmin()
             .from('puja_reviews')
-            .select(`
-                rating,
-                review_text,
-                created_at,
-                profiles:user_id (
-                    full_name
-                )
-            `)
+            .select('rating, review_text, created_at, profiles:user_id(full_name)')
             .eq('puja_slug', slug)
-            .eq('is_published', true)
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error('Error fetching reviews:', error);
-            // Fallback to puja_bookings for old data if puja_reviews is empty or fails
+            console.error('[ReviewsAPI] puja_reviews error:', error);
+            // Fallback to bookings
             const { data: oldData, error: oldError } = await getAdmin()
                 .from('puja_bookings')
-                .select(`
-                    rating,
-                    review_text,
-                    created_at,
-                    profiles:user_id (
-                        full_name
-                    )
-                `)
+                .select('rating, review_text, created_at, profiles:user_id(full_name)')
                 .eq('puja_slug', slug)
                 .not('rating', 'is', null)
                 .order('created_at', { ascending: false });
             
-            if (oldError) {
-                return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
-            }
-            return NextResponse.json({ reviews: formatReviews(oldData) }, { status: 200 });
+            if (oldError) return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 });
+            return NextResponse.json({ reviews: formatReviews(oldData || []) });
         }
 
-        return NextResponse.json({ reviews: formatReviews(data) }, { status: 200 });
+        return NextResponse.json({ reviews: formatReviews(data || []) });
 
     } catch (error: any) {
-        console.error('API Error:', error);
+        console.error('[ReviewsAPI] Critical Error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

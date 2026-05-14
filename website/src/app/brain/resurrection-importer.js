@@ -11,7 +11,14 @@ async function importResurrection() {
   console.log("🚀 Launching UPGRADED RESURRECTION IMPORTER (UUID + Upsert Mode)...");
   
   const brainDir = path.join(process.cwd(), 'src/app/brain');
-  const files = fs.readdirSync(brainDir).filter(f => f.startsWith('resurrection_batch_') && f.endsWith('.json'));
+  
+  let files = fs.readdirSync(brainDir).filter(f => f.startsWith('resurrection_batch_') && f.endsWith('.json'));
+
+  const specificBatch = process.argv[2];
+  if (specificBatch) {
+    files = files.filter(f => f === specificBatch);
+    console.log(`🎯 Targeted Mode: Only processing ${specificBatch}`);
+  }
 
   if (files.length === 0) {
     console.log("❌ No resurrection batches found.");

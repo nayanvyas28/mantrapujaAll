@@ -6,6 +6,7 @@ export interface UiConfig {
     badge?: string;
     emoji?: string;
     featured?: boolean;
+    image?: string;
 }
 
 export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
@@ -15,7 +16,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-orange-500 to-red-500',
         badge: 'Most Popular',
         emoji: '🕉️',
-        featured: true
+        featured: true,
+        image: '/pujaimages/satyanarayan.png'
     },
     'kaal-sarp-dosh-puja': {
         id: '2',
@@ -23,7 +25,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-indigo-500 to-purple-600',
         badge: 'Powerful',
         emoji: '🐍',
-        featured: true
+        featured: true,
+        image: '/pujaimages/kaalsarpdosh.png'
     },
     'ganesh-pooja': {
         id: '3',
@@ -31,7 +34,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-amber-400 to-orange-500',
         badge: 'Success',
         emoji: '🐘',
-        featured: true
+        featured: true,
+        image: '/pujaimages/ganeshpuja.png'
     },
     'rudra-abhishek': {
         id: '4',
@@ -39,7 +43,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-blue-500 to-indigo-600',
         badge: 'Sacred',
         emoji: '🔱',
-        featured: true
+        featured: true,
+        image: '/pujaimages/rudraabhishek.png'
     },
     'mahamrityunjaya-jaap': {
         id: '5',
@@ -47,7 +52,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-purple-500 to-indigo-500',
         badge: 'Healing',
         emoji: '🕉️',
-        featured: true
+        featured: true,
+        image: '/pujaimages/mahamrityunjaya.png'
     },
     'navagraha-shanti': {
         id: '6',
@@ -55,7 +61,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-slate-600 to-slate-900',
         badge: 'Destiny',
         emoji: '🪐',
-        featured: false
+        featured: false,
+        image: '/pujaimages/navagraha.png'
     },
     'griha-pravesh': {
         id: '7',
@@ -63,14 +70,16 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-emerald-500 to-teal-600',
         badge: 'New Home',
         emoji: '🏠',
-        featured: false
+        featured: false,
+        image: '/pujaimages/grihapravesh.png'
     },
     'lakshmi-puja': {
         id: '8',
         slug: 'lakshmi-puja',
         gradient: 'from-pink-500 to-rose-500',
         emoji: '🪷',
-        featured: false
+        featured: false,
+        image: '/pujaimages/lakshmipuja.png'
     },
     'durga-puja': {
         id: '9',
@@ -78,7 +87,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-red-600 to-rose-700',
         badge: 'Power',
         emoji: '🦁',
-        featured: false
+        featured: false,
+        image: '/pujaimages/durgapuja.png'
     },
     'saraswati-puja': {
         id: '10',
@@ -86,7 +96,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-yellow-400 to-amber-500',
         badge: 'Wisdom',
         emoji: '📚',
-        featured: false
+        featured: false,
+        image: '/pujaimages/saraswatipuja.png'
     },
     'mangal-dosh': {
         id: '11',
@@ -94,7 +105,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-red-500 to-red-800',
         badge: 'Marriage',
         emoji: '🔥',
-        featured: false
+        featured: false,
+        image: '/pujaimages/mangaldosh.png'
     },
     'pitra-dosh': {
         id: '12',
@@ -102,7 +114,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-stone-500 to-stone-700',
         badge: 'Ancestors',
         emoji: '🌳',
-        featured: false
+        featured: false,
+        image: '/pujaimages/pitradosh.png'
     },
     'ketu-shanti': {
         id: '13',
@@ -110,7 +123,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-gray-500 to-gray-700',
         badge: 'Clarity',
         emoji: '🌫️',
-        featured: false
+        featured: false,
+        image: '/diya.png'
     },
     'chandi-homam': {
         id: '14',
@@ -118,7 +132,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-orange-600 to-red-600',
         badge: 'Very Powerful',
         emoji: '🔥',
-        featured: true
+        featured: true,
+        image: '/pujaimages/chandihomam.png'
     },
     'sudarshana-homam': {
         id: '15',
@@ -126,7 +141,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-yellow-500 to-orange-500',
         badge: 'Protection',
         emoji: '☸️',
-        featured: false
+        featured: false,
+        image: '/pujaimages/sudarshana.png'
     },
     'annaprashan': {
         id: '16',
@@ -134,7 +150,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-pink-400 to-rose-400',
         badge: 'Kids',
         emoji: '👶',
-        featured: false
+        featured: false,
+        image: '/diya.png'
     },
     'namakaranam': {
         id: '17',
@@ -142,7 +159,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-blue-400 to-indigo-400',
         badge: 'Kids',
         emoji: '✒️',
-        featured: false
+        featured: false,
+        image: '/diya.png'
     },
     'upanayana': {
         id: '18',
@@ -150,7 +168,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-amber-500 to-yellow-600',
         badge: 'Tradition',
         emoji: '🧵',
-        featured: false
+        featured: false,
+        image: '/diya.png'
     },
     'vastu-shanti': {
         id: '19',
@@ -158,7 +177,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-green-500 to-emerald-600',
         badge: 'Harmony',
         emoji: '📐',
-        featured: false
+        featured: false,
+        image: '/pujaimages/vastushanti.png'
     },
     'office-opening': {
         id: '20',
@@ -166,7 +186,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-blue-600 to-indigo-700',
         badge: 'Business',
         emoji: '🏢',
-        featured: false
+        featured: false,
+        image: '/diya.png'
     },
     'bhai-dooj-puja': {
         id: '21',
@@ -174,7 +195,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-orange-400 to-red-500',
         badge: 'Brotherhood',
         emoji: '👦',
-        featured: true
+        featured: true,
+        image: '/diya.png'
     },
     'diwali-lakshmi-puja': {
         id: '22',
@@ -182,7 +204,8 @@ export const PUJA_UI_CONFIG: Record<string, UiConfig> = {
         gradient: 'from-orange-500 via-gold to-yellow-500',
         badge: 'Festive',
         emoji: '🪔',
-        featured: true
+        featured: true,
+        image: '/pujaimages/lakshmipuja.png'
     }
 };
 

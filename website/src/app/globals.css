@@ -107,6 +107,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-sans);
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
 }
 
 @layer utilities {
