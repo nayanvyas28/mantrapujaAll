@@ -149,12 +149,12 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                     slug: blog.slug
                 }}
                 socialShare={
-                    <div className="mt-16 pt-12 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div className="mt-16 pt-12 border-t border-border/50 dark:border-white/10 flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="flex flex-col md:flex-row items-center gap-6">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Share this Wisdom</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 dark:text-white/40">Share this Wisdom</span>
                             <SocialShare key="blog-social" url={canonicalUrl} title={blog.blog_title || blog.title} orientation="horizontal" />
                         </div>
-                        <Link href="/blog" className="text-[10px] font-black uppercase tracking-[0.2em] text-saffron hover:text-white transition-all flex items-center gap-2 group">
+                        <Link href="/blog" className="text-[10px] font-black uppercase tracking-[0.2em] text-saffron hover:text-orange-500 dark:hover:text-white transition-all flex items-center gap-2 group">
                             Explore More Articles
                             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </Link>

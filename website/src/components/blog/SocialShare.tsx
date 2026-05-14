@@ -51,10 +51,10 @@ export default function SocialShare({ url, title, orientation = 'vertical' }: So
     ];
 
     return (
-        <div className={`flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row'} gap-4 sticky top-40 h-fit p-3 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl`}>
+        <div className={`flex ${orientation === 'vertical' ? 'flex-col' : 'flex-row'} gap-4 sticky top-40 h-fit p-3 rounded-full bg-secondary/40 dark:bg-white/5 backdrop-blur-xl border border-border/50 dark:border-white/10 shadow-2xl`}>
             <button 
                 onClick={handleShare}
-                className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:border-saffron hover:text-saffron transition-all shadow-xl group text-white"
+                className="w-12 h-12 rounded-full bg-background/80 dark:bg-white/5 backdrop-blur-md border border-border/50 dark:border-white/10 flex items-center justify-center hover:border-saffron hover:text-saffron transition-all shadow-xl group text-foreground dark:text-white"
                 title="Share Article"
             >
                 <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -66,7 +66,7 @@ export default function SocialShare({ url, title, orientation = 'vertical' }: So
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center transition-all shadow-xl text-white ${social.color}`}
+                    className={`w-12 h-12 rounded-full bg-background/80 dark:bg-white/5 backdrop-blur-md border border-border/50 dark:border-white/10 flex items-center justify-center transition-all shadow-xl text-foreground dark:text-white ${social.color}`}
                     title={`Share on ${social.name}`}
                 >
                     <div className="group-hover:scale-110 transition-transform">
@@ -77,7 +77,7 @@ export default function SocialShare({ url, title, orientation = 'vertical' }: So
 
             <button 
                 onClick={handleCopy}
-                className="w-12 h-12 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:border-saffron transition-all shadow-xl group text-white"
+                className="w-12 h-12 rounded-full bg-background/80 dark:bg-white/5 backdrop-blur-md border border-border/50 dark:border-white/10 flex items-center justify-center hover:border-saffron transition-all shadow-xl group text-foreground dark:text-white"
                 title="Copy Link"
             >
                 {copied ? <Check className="w-5 h-5 text-green-500" /> : <LinkIcon className="w-5 h-5 group-hover:rotate-12 transition-transform" />}

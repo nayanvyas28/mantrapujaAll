@@ -182,8 +182,8 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                     </p>
                 </div>
 
-                {/* 1. New Search & Filter Console - Matching Screenshot */}
-                <div className="bg-[#1a222e]/60 backdrop-blur-2xl border border-white/5 rounded-2xl p-6 mb-16 shadow-2xl relative">
+                {/* 1. New Search & Filter Console - Theme Aware */}
+                <div className="bg-secondary/20 dark:bg-[#1a222e]/60 backdrop-blur-2xl border border-border/50 dark:border-white/5 rounded-2xl p-6 mb-16 shadow-2xl relative">
                     <div className="flex flex-col lg:flex-row gap-6 items-center justify-between mb-8">
                         {/* Search Bar */}
                         <div className="relative w-full lg:max-w-md group">
@@ -193,7 +193,7 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                             <input 
                                 type="text" 
                                 placeholder="Search divine rituals..." 
-                                className="block w-full bg-[#0f172a]/80 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all"
+                                className="block w-full bg-background/80 dark:bg-[#0f172a]/80 border border-border/50 dark:border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-foreground dark:text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -204,7 +204,7 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                             <div className="relative flex-1 lg:flex-none">
                                 <button 
                                     onClick={() => { setIsSortOpen(!isSortOpen); setIsPriceOpen(false); }}
-                                    className={`flex items-center justify-between gap-3 bg-[#0f172a]/80 border ${isSortOpen ? 'border-orange-500/50 ring-2 ring-orange-500/20' : 'border-white/10'} rounded-xl px-4 py-3 text-xs font-black text-slate-300 w-full hover:border-white/20 transition-all`}
+                                    className={`flex items-center justify-between gap-3 bg-background/80 dark:bg-[#0f172a]/80 border ${isSortOpen ? 'border-orange-500/50 ring-2 ring-orange-500/20' : 'border-border/50 dark:border-white/10'} rounded-xl px-4 py-3 text-xs font-black text-foreground dark:text-slate-300 w-full hover:border-orange-500/30 transition-all`}
                                 >
                                     <div className="flex items-center gap-2">
                                         <Sun className={`w-3.5 h-3.5 ${isSortOpen ? 'text-orange-500 animate-spin-slow' : 'text-orange-500'}`} />
@@ -219,13 +219,13 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#0f172a] border border-white/10 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl"
+                                            className="absolute top-full left-0 right-0 mt-2 z-50 bg-background dark:bg-[#0f172a] border border-border/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl"
                                         >
                                             {sortOptions.map((opt) => (
                                                 <button
                                                     key={opt}
                                                     onClick={() => { setSortBy(opt); setIsSortOpen(false); }}
-                                                    className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${sortBy === opt ? 'text-orange-500 bg-orange-500/5' : 'text-slate-400'}`}
+                                                    className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-orange-500/5 transition-colors ${sortBy === opt ? 'text-orange-500 bg-orange-500/10' : 'text-muted-foreground dark:text-slate-400'}`}
                                                 >
                                                     {opt}
                                                 </button>
@@ -238,7 +238,7 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                             <div className="relative flex-1 lg:flex-none">
                                 <button 
                                     onClick={() => { setIsPriceOpen(!isPriceOpen); setIsSortOpen(false); }}
-                                    className={`flex items-center justify-between gap-3 bg-[#0f172a]/80 border ${isPriceOpen ? 'border-orange-500/50 ring-2 ring-orange-500/20' : 'border-white/10'} rounded-xl px-4 py-3 text-xs font-black text-slate-300 w-full hover:border-white/20 transition-all`}
+                                    className={`flex items-center justify-between gap-3 bg-background/80 dark:bg-[#0f172a]/80 border ${isPriceOpen ? 'border-orange-500/50 ring-2 ring-orange-500/20' : 'border-border/50 dark:border-white/10'} rounded-xl px-4 py-3 text-xs font-black text-foreground dark:text-slate-300 w-full hover:border-orange-500/30 transition-all`}
                                 >
                                     <div className="flex items-center gap-2">
                                         <IndianRupee className="w-3.5 h-3.5 text-orange-500" />
@@ -253,13 +253,13 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                                             initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                            className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#0f172a] border border-white/10 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl"
+                                            className="absolute top-full left-0 right-0 mt-2 z-50 bg-background dark:bg-[#0f172a] border border-border/50 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden backdrop-blur-xl"
                                         >
                                             {priceOptions.map((opt) => (
                                                 <button
                                                     key={opt}
                                                     onClick={() => { setPriceFilter(opt); setIsPriceOpen(false); }}
-                                                    className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-colors ${priceFilter === opt ? 'text-orange-500 bg-orange-500/5' : 'text-slate-400'}`}
+                                                    className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest hover:bg-orange-500/5 transition-colors ${priceFilter === opt ? 'text-orange-500 bg-orange-500/10' : 'text-muted-foreground dark:text-slate-400'}`}
                                                 >
                                                     {opt}
                                                 </button>
@@ -275,7 +275,7 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                     <div className="flex flex-wrap items-center gap-2">
                         <button 
                             onClick={() => setActiveCategory('All')}
-                            className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${activeCategory === 'All' ? 'bg-gradient-to-r from-orange-600 to-orange-400 border-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white/5 border-white/10 hover:border-orange-500/50 text-slate-400 hover:text-white'}`}
+                            className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${activeCategory === 'All' ? 'bg-gradient-to-r from-orange-600 to-orange-400 border-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-secondary/50 dark:bg-white/5 border-border/50 dark:border-white/10 hover:border-orange-500/50 text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-white'}`}
                         >
                             All Pujas
                         </button>
@@ -283,7 +283,7 @@ export default function PoojaListingClient({ initialPujas, initialCategories, in
                             <button 
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
-                                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${activeCategory === cat ? 'bg-gradient-to-r from-orange-600 to-orange-400 border-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white/5 border-white/10 hover:border-orange-500/50 text-slate-400 hover:text-white'}`}
+                                className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${activeCategory === cat ? 'bg-gradient-to-r from-orange-600 to-orange-400 border-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-secondary/50 dark:bg-white/5 border-border/50 dark:border-white/10 hover:border-orange-500/50 text-muted-foreground dark:text-slate-400 hover:text-foreground dark:hover:text-white'}`}
                             >
                                 {cat}
                             </button>
