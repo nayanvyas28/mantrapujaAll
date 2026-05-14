@@ -1,0 +1,15 @@
+{
+  "total": 83,
+  "healthy": 6,
+  "broken": 72,
+  "missing_all": 5,
+  "type_counts": {
+    "External": 74,
+    "Local": 11
+  },
+  "status_counts": {
+    "BROKEN_URL": 62,
+    "MISSING_FILE": 11,
+    "VALID": 12
+  }
+}

@@ -35,7 +35,7 @@ export async function generateStaticParams() {
             .order('is_featured', { ascending: false })
             .order('views', { ascending: false })
             .order('created_at', { ascending: false })
-            .limit(50);
+            .limit(20);
 
         if (error || !data) return [];
 

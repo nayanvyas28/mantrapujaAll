@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { LoadingProvider } from "@/context/LoadingContext";
+import { ThemeTransitionOverlay } from "@/components/ui/ThemeTransitionOverlay";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,10 +51,10 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="light"
           enableSystem={false}
-          disableTransitionOnChange
         >
           <LanguageProvider>
             <LoadingProvider>
+              <ThemeTransitionOverlay />
               {children}
             </LoadingProvider>
           </LanguageProvider>

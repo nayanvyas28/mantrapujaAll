@@ -1,28 +1,45 @@
 import React from 'react';
-export const revalidate = 0; // Disable caching for dynamic data
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
-import PoojaDetailClient from './PoojaDetailClient';
+import { cache } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 import { getPujaBySlug, PujaData } from '@/lib/pujaData';
 
-interface PageProps {
-    params: {
-        slug: string;
-    };
+// Pre-generate paths for the top 50 most important pujas.
+export async function generateStaticParams() {
+    try {
+        const { data, error } = await supabase
+            .from('poojas')
+            .select('slug')
+            .eq('is_active', true)
+            .not('slug', 'is', null)
+            .order('is_featured', { ascending: false })
+            .order('is_special_offer', { ascending: false })
+            .limit(20);
+
+        if (error || !data) return [];
+
+        return (data as any[])
+            .filter((puja: any) => puja.slug && typeof puja.slug === 'string' && puja.slug.trim() !== '')
+            .map((puja: any) => ({
+                slug: puja.slug.trim(),
+            }));
+    } catch (e) {
+        console.error('[generateStaticParams] Critical error for pujas:', e);
+        return [];
+    }
 }
 
-// Initialize Supabase client on server
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const revalidate = 3600; // Revalidate every hour
 
 // Helper function to get puja by slug from Supabase OR fallback to hardcoded data
-async function getPujaData(rawSlug: string): Promise<PujaData | null> {
+// Wrapped in cache() to deduplicate calls between generateMetadata and the page body
+const getPujaData = cache(async (rawSlug: string): Promise<PujaData | null> => {
     const slug = decodeURIComponent(rawSlug);
+    console.log(`[getPujaData] Fetching for slug: "${slug}"`);
     try {
-        // First: Try to get from Supabase
+        const startTime = Date.now();
+        // First: Try to get from Supabase - Selecting ONLY required fields to thin the payload
         const { data, error } = await supabase
             .from('poojas')
             .select('*')
@@ -30,7 +47,15 @@ async function getPujaData(rawSlug: string): Promise<PujaData | null> {
             .eq('is_active', true)
             .single();
 
+        const dbTime = Date.now() - startTime;
+        console.log(`[getPujaData] DB Fetch for "${slug}" took ${dbTime}ms`);
+
+        if (error) {
+            console.error(`[getPujaData] Supabase error for "${slug}":`, error.message);
+        }
+
         if (data && !error) {
+            console.log(`[getPujaData] Found in Supabase: "${slug}"`);
             // Helper to transform string array steps to object array
             const transformSteps = (steps: any) => {
                 if (!steps || !Array.isArray(steps)) return [];
@@ -46,13 +71,40 @@ async function getPujaData(rawSlug: string): Promise<PujaData | null> {
                 });
             };
 
-            // Convert Supabase data format to PujaData format
+            const transformStart = Date.now();
+            // SANITIZE IMAGE URLS - ROBUST FALLBACK SYSTEM
+            let heroImage = '/diya.png';
+            
+            // 1. Try Supabase images array
+            if (data.images && Array.isArray(data.images) && data.images.length > 0 && data.images[0] && data.images[0].trim() !== '') {
+                heroImage = data.images[0].trim();
+            } 
+            // 2. Try legacy/dynamic field names defensively
+            else {
+                const legacyImage = (data as any).hero_image || (data as any).heroImage;
+                if (legacyImage && typeof legacyImage === 'string' && legacyImage.trim() !== '') {
+                    heroImage = legacyImage.trim();
+                }
+            }
+
+            // Sanitize the resolved URL
+            if (heroImage.startsWith('http://')) {
+                heroImage = heroImage.replace('http://', 'https://');
+            }
+            heroImage = heroImage.replace('/puja images/', '/pujaimages/');
+            if (heroImage.startsWith('/pujaimages/')) {
+                heroImage = heroImage.replace(/\.(webp|jpg|jpeg)$/, '.png');
+            }
+            
+            // Final safety
+            if (!heroImage || heroImage === '') heroImage = '/diya.png';
+
             const pujaData: PujaData = {
                 id: data.id,
                 slug: data.slug,
                 name: data.name,
                 tagline: data.tagline || data.description || 'Experience divine blessings',
-                heroImage: (data.images && data.images.length > 0) ? data.images[0] : '/diya.png',
+                heroImage: heroImage,
                 themeColor: data.theme_color || 'saffron',
                 heroBenefits: data.hero_benefits || data.benefits || [],
                 hero: {
@@ -114,16 +166,24 @@ async function getPujaData(rawSlug: string): Promise<PujaData | null> {
                 seoDescription: data.seo_description,
                 packages: data.packages || []
             };
+            const transformTime = Date.now() - transformStart;
+            console.log(`[getPujaData] Transform for "${slug}" took ${transformTime}ms`);
             return pujaData;
         }
     } catch (error) {
-        console.error('Error fetching from Supabase:', error);
+        console.error(`[getPujaData] Catch block for "${slug}":`, error);
     }
 
+    console.log(`[getPujaData] Not found in Supabase, checking fallback for: "${slug}"`);
     // Fallback: Check hardcoded data
     const hardcodedPuja = getPujaBySlug(slug);
+    if (hardcodedPuja) {
+        console.log(`[getPujaData] Found in Fallback: "${slug}"`);
+    } else {
+        console.log(`[getPujaData] NOT FOUND ANYWHERE: "${slug}"`);
+    }
     return hardcodedPuja || null;
-}
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
     const { slug: rawSlug } = await params;
@@ -213,65 +273,156 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
 }
 
+import { HeroSection } from './sections/HeroSection';
+import { AboutSection } from './sections/AboutSection';
+import { WhyPerformSection } from './sections/WhyPerformSection';
+import { ProcessSection } from './sections/ProcessSection';
+import { BenefitsSection } from './sections/BenefitsSection';
+import { TimingSection } from './sections/TimingSection';
+import { FAQSection } from './sections/FAQSection';
+import { ReviewSection } from './sections/ReviewSection';
+import { FinalCTASection } from './sections/FinalCTASection';
+import { BookingProvider } from './sections/BookingProvider';
+import { StickyBookingButton } from './sections/StickyBookingButton';
+import { UnifiedPujaBackground } from '@/components/UnifiedPujaBackground';
+import SpiritualFamilySection from '@/components/home/SpiritualFamilySection';
+
+import { Suspense } from 'react';
+
 export default async function PoojaDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug: rawSlug } = await params;
     const slug = decodeURIComponent(rawSlug);
     const puja = await getPujaData(slug);
 
     if (!puja) {
+        console.error(`[PoojaDetailPage] No puja data for slug: "${slug}", triggering notFound()`);
         notFound();
     }
 
-    // Generate JSON-LD structured data for rich snippets
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Service',
-        name: puja.name,
-        description: puja.about.description || puja.tagline,
-        provider: {
-            '@type': 'Organization',
-            name: 'MantraPuja',
-            url: 'https://mantrapuja.com',
-        },
-        serviceType: 'Vedic Puja Service',
-        areaServed: 'IN',
-        availableChannel: {
-            '@type': 'ServiceChannel',
-            serviceUrl: `https://mantrapuja.com/pooja-services/${slug}`,
-        },
-        offers: {
-            '@type': 'Offer',
-            availability: 'https://schema.org/InStock',
-            url: `https://mantrapuja.com/pooja-services/${slug}`,
-        },
-        image: puja.heroImage,
-        aggregateRating: puja.testimonials.reviews && puja.testimonials.reviews.length > 0 ? {
-            '@type': 'AggregateRating',
-            ratingValue: (puja.testimonials.reviews.reduce((sum: number, t: any) => sum + t.rating, 0) / puja.testimonials.reviews.length).toFixed(1),
-            reviewCount: puja.testimonials.reviews.length,
-        } : undefined,
-        review: puja.testimonials.reviews && puja.testimonials.reviews.length > 0 ? puja.testimonials.reviews.slice(0, 3).map((testimonial: any) => ({
-            '@type': 'Review',
-            author: {
-                '@type': 'Person',
-                name: testimonial.name,
+    // Generate multiple JSON-LD schemas for rich snippets
+    const jsonLd = [
+        {
+            '@context': 'https://schema.org',
+            '@type': 'Service',
+            name: puja.name,
+            description: puja.about.description || puja.tagline,
+            provider: {
+                '@type': 'Organization',
+                name: 'MantraPuja',
+                url: 'https://mantrapuja.com',
             },
-            reviewRating: {
-                '@type': 'Rating',
-                ratingValue: testimonial.rating,
-            },
-            reviewBody: testimonial.comment,
-        })) : undefined,
-    };
+            serviceType: 'Vedic Puja Service',
+            areaServed: 'IN',
+            image: puja.heroImage,
+            aggregateRating: (puja.testimonials.reviews && puja.testimonials.reviews.length > 0) ? {
+                '@type': 'AggregateRating',
+                ratingValue: (() => {
+                    const reviewsWithRating = puja.testimonials.reviews.filter((t: any) => t && typeof t.rating === 'number');
+                    if (reviewsWithRating.length === 0) return "5.0";
+                    return (reviewsWithRating.reduce((sum: number, t: any) => sum + t.rating, 0) / reviewsWithRating.length).toFixed(1);
+                })(),
+                reviewCount: puja.testimonials.reviews.length,
+            } : undefined,
+        },
+        {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: puja.faq.items.map((item: any) => ({
+                '@type': 'Question',
+                name: item.question,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: item.answer,
+                },
+            })),
+        },
+        {
+            '@context': 'https://schema.org',
+            '@type': 'HowTo',
+            name: `How to perform ${puja.name}`,
+            step: puja.process.steps.map((step: any, idx: number) => ({
+                '@type': 'HowToStep',
+                position: idx + 1,
+                name: step.title,
+                itemListElement: [{
+                    '@type': 'HowToDirection',
+                    text: step.description
+                }]
+            })),
+        },
+        {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                {
+                    '@type': 'ListItem',
+                    position: 1,
+                    name: 'Home',
+                    item: 'https://mantrapuja.com',
+                },
+                {
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: 'Puja Services',
+                    item: 'https://mantrapuja.com/pooja-services',
+                },
+                {
+                    '@type': 'ListItem',
+                    position: 3,
+                    name: puja.name,
+                    item: `https://mantrapuja.com/pooja-services/${slug}`,
+                },
+            ],
+        },
+    ];
 
     return (
-        <>
-            {/* JSON-LD Structured Data */}
+        <main className="min-h-screen bg-background text-foreground relative overflow-hidden transition-colors duration-300 font-sans">
+            {/* JSON-LD Structured Data - Visible in SSR View Source */}
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
-            <PoojaDetailClient puja={puja} />
-        </>
+            
+            <article>
+                {/* Background Layer - Client Component (Optimized in next step) */}
+                <UnifiedPujaBackground />
+
+                {/* Primary Interaction Shell (Hero + Booking Flow) */}
+                <BookingProvider puja={puja}>
+                    <HeroSection puja={{ ...puja, packages: puja.packages || [] }} />
+                    
+                    <AboutSection about={puja.about} />
+                    
+                    <WhyPerformSection whyPerform={puja.whyPerform} />
+                    
+                    <ProcessSection process={puja.process} />
+                    
+                    <BenefitsSection benefits={puja.benefits} />
+
+                    <TimingSection timing={puja.timing} />
+
+                    {/* Secondary Sections - Wrapped in Suspense for Progressive Streaming */}
+                    <Suspense fallback={<div className="h-40 animate-pulse bg-orange-500/5 rounded-3xl m-8" />}>
+                        <ReviewSection 
+                            pujaSlug={puja.slug} 
+                            initialTestimonials={puja.testimonials.reviews || []} 
+                            title={puja.testimonials.title}
+                        />
+                    </Suspense>
+
+                    <Suspense fallback={null}>
+                        <FAQSection faq={puja.faq} />
+                    </Suspense>
+
+                    <FinalCTASection puja={{ ...puja, packages: puja.packages || [] }} />
+                    
+                    {/* Mobile Client Island: Sticky CTA */}
+                    <StickyBookingButton />
+                </BookingProvider>
+                
+                <SpiritualFamilySection />
+            </article>
+        </main>
     );
 }

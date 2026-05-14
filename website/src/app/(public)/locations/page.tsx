@@ -13,7 +13,7 @@ import {
     MAP_HEIGHT 
 } from '@/data/india-map-data';
 import { locations as staticLocations, Location, LocationType } from '@/data/spiritual-locations';
-import { MOCK_BLOGS } from '@/data/blog-data';
+
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import { useLoading } from "@/context/LoadingContext";
 import { CustomDropdown } from '@/components/CustomDropdown';
@@ -120,10 +120,13 @@ export default function LocationsPage() {
                     setDynamicLocations([]);
                 }
 
-                // 2. Fetch Blogs
+                // 2. Fetch Blogs from Final_blog
                 const { data: bData } = await supabase
-                    .from('blogs')
-                    .select('*')
+                    .from('Final_blog')
+                    .select('id, title, slug, image_url, category, excerpt, tags, created_at')
+                    .eq('published', true)
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: false })
                     .limit(3);
 
                 if (bData) setDynamicBlogs(bData);
@@ -150,11 +153,7 @@ export default function LocationsPage() {
 
     const cityBlogs = useMemo(() => {
         if (dynamicBlogs.length > 0) return dynamicBlogs;
-        // Filter blogs that are in "Sacred Places & Yatra" category or have relevant tags
-        return MOCK_BLOGS.filter(blog =>
-            blog.category === "Sacred Places & Yatra" ||
-            blog.tags.some(tag => ["Char Dham", "Banaras", "Shiva", "Pilgrimage", "Ujjain", "Kedarnath", "Himalayas"].includes(tag))
-        ).slice(0, 3);
+        return [];
     }, [dynamicBlogs]);
 
     const mergedLocations = useMemo(() => {
