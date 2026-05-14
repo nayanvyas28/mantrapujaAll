@@ -108,18 +108,18 @@ export default function BlogDetailClient({ blog, children, socialShare, toc, new
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="max-w-4xl mx-auto bg-card/70 backdrop-blur-3xl rounded-[40px] md:rounded-[60px] p-8 md:p-20 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] border border-white/10 relative overflow-hidden"
+                    className="max-w-4xl mx-auto bg-card/95 dark:bg-card/70 backdrop-blur-3xl rounded-[40px] md:rounded-[60px] p-8 md:p-20 shadow-2xl border border-border/50 dark:border-white/10 relative overflow-hidden"
                 >
                     {/* Glowing Ornaments */}
                     <div className="absolute -top-20 -right-20 w-64 h-64 bg-saffron/10 rounded-full blur-[100px] pointer-events-none" />
                     <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-orange-600/5 rounded-full blur-[120px] pointer-events-none" />
 
-                    <div className="relative z-10 prose prose-invert prose-orange max-w-none prose-p:text-white/80 prose-headings:text-white">
+                    <div className="relative z-10 prose dark:prose-invert prose-orange max-w-none prose-p:text-foreground/80 dark:prose-p:text-white/80 prose-headings:text-foreground dark:prose-headings:text-white">
                         {children}
                     </div>
                     
                     {blog.author && (
-                        <div className="mt-20 p-8 md:p-12 rounded-[40px] bg-white/5 border border-white/10 flex flex-col md:flex-row items-center gap-8 group backdrop-blur-md">
+                        <div className="mt-20 p-8 md:p-12 rounded-[40px] bg-secondary/40 dark:bg-white/5 border border-border/50 dark:border-white/10 flex flex-col md:flex-row items-center gap-8 group backdrop-blur-md">
                             <div className="w-24 h-24 rounded-full border-4 border-saffron overflow-hidden shrink-0 transform group-hover:scale-105 transition-transform duration-500 shadow-2xl">
                                 <img src={blog.author.avatar || "/logo.png"} alt={blog.author.name} className="w-full h-full object-cover" />
                             </div>
@@ -128,11 +128,11 @@ export default function BlogDetailClient({ blog, children, socialShare, toc, new
                                     href={`/authors/${blog.author.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')}`}
                                     className="group/author"
                                 >
-                                    <h4 className="text-2xl font-serif font-black mb-2 text-white group-hover/author:text-saffron transition-colors">
+                                    <h4 className="text-2xl font-serif font-black mb-2 text-foreground dark:text-white group-hover/author:text-saffron transition-colors">
                                         {blog.author.name}
                                     </h4>
                                 </Link>
-                                <p className="text-white/60 leading-relaxed italic text-lg">
+                                <p className="text-muted-foreground dark:text-white/60 leading-relaxed italic text-lg">
                                     "{blog.author.bio || 'Sharing the light of Vedic wisdom to guide modern seekers on their spiritual journey.'}"
                                 </p>
                             </div>
