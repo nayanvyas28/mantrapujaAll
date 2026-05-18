@@ -25,20 +25,20 @@ const getClient = (): SupabaseClient => {
         }
         return serverSupabase;
     }
-    
+
     return defaultSupabase;
 };
 
 // --- Image Resolution Helper ---
 export const resolveImageUrl = (url: string | null | undefined): string => {
     if (!url) return '/logo.png';
-    
+
     // Broken legacy URLs
     if (url.includes('webroot/admin/upload') || url.includes('music_assets/puja_images')) return '/logo.png';
-    
+
     // External placeholders
     if (url.includes('placeholder') || url.includes('placehold.co') || url.includes('unsplash.com')) return '/logo.png';
-    
+
     // Fix common extension mismatches (e.g. webp -> png for local assets)
     if (url === '/pujaimages/krishnapuja.webp') return '/pujaimages/krishnapuja.png';
 
@@ -339,8 +339,8 @@ export const getPoojas = async (): Promise<Pooja[]> => {
     // Implementation: Ensure all poojas have at least the logo if no images are present
     return (data || []).map(pooja => ({
         ...pooja,
-        images: (!pooja.images || pooja.images.length === 0) 
-            ? ['/logo.png'] 
+        images: (!pooja.images || pooja.images.length === 0)
+            ? ['/logo.png']
             : pooja.images.map((img: string) => resolveImageUrl(img))
     }));
 };
@@ -469,7 +469,7 @@ export const getBlogs = async (): Promise<Blog[]> => {
 export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
     try {
         const supabase = getClient();
-        
+
         // 1. Primary search
         let { data: blog, error } = await supabase
             .from('Final_blog')
@@ -479,18 +479,28 @@ export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
             .eq('is_active', true)
             .single();
 
-        // 2. Robust Fallback (Decoded, NFC, NFD)
+        // 2. Robust Fallback (Decoded, NFC, NFD, and Percent-Encoded variations)
         if (!blog) {
             try {
                 const decodedSlug = decodeURIComponent(slug);
                 const candidates = new Set<string>();
+                
+                // Add decoded variations
                 candidates.add(decodedSlug);
                 candidates.add(decodedSlug.normalize('NFC'));
                 candidates.add(decodedSlug.normalize('NFD'));
+                
+                // Add encoded variations (for literal raw percent-encoded database values)
+                const encodedRaw = encodeURIComponent(decodedSlug);
+                candidates.add(encodedRaw);
+                candidates.add(encodedRaw.toLowerCase());
+                candidates.add(encodedRaw.toUpperCase());
+
+                // Remove original to skip redundancy
                 candidates.delete(slug);
 
                 for (const candidate of candidates) {
-                    const { data: foundBlog } = await supabase
+                    const { data: foundBlog, error: queryErr } = await supabase
                         .from('Final_blog')
                         .select('*')
                         .eq('slug', candidate)
@@ -510,6 +520,15 @@ export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
 
         if (!blog) return null;
 
+        // Force normalize slug to decodable representation to avoid double-encoding redirect loops
+        if (blog.slug) {
+            try {
+                blog.slug = decodeURIComponent(blog.slug);
+            } catch (e) {
+                console.error("[getBlogBySlug] Failed to decode slug:", blog.slug);
+            }
+        }
+
         return {
             ...blog,
             author: {
@@ -526,9 +545,9 @@ export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
 };
 
 export const getPaginatedBlogs = async (
-    page: number = 1, 
-    limit: number = 12, 
-    category?: string, 
+    page: number = 1,
+    limit: number = 12,
+    category?: string,
     search?: string,
     sort: string = 'newest'
 ): Promise<{ blogs: Blog[], total: number, error?: boolean }> => {
@@ -604,8 +623,8 @@ export const getLocations = async (): Promise<Location[]> => {
     // Implementation: Ensure all locations have at least the logo if no images are present
     return (data || []).map(location => ({
         ...location,
-        images: (!location.images || location.images.length === 0) 
-            ? ['/logo.png'] 
+        images: (!location.images || location.images.length === 0)
+            ? ['/logo.png']
             : location.images.map((img: string) => resolveImageUrl(img))
     }));
 };
@@ -641,7 +660,7 @@ export const getHomeQuickAccess = async (): Promise<any[]> => {
     if (error || !data) {
         return defaults;
     }
-    
+
     try {
         const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
         return (parsed && Array.isArray(parsed) && parsed.length > 0) ? parsed : defaults;
