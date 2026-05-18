@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Block query parameters to protect crawl budget and prevent duplicate content
+Disallow: /*?subject=*
+Disallow: /*?*
+
+# Explicit Sitemap Index Reference
+Sitemap: https://mantrapuja.com/sitemap.xml
