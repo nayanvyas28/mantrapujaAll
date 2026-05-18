@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['10.126.135.92'],
   images: {
+    unoptimized: true,
     remotePatterns: [
       { protocol: 'https', hostname: 's1.mantrapuja.com' },
       { protocol: 'https', hostname: 'mantrapuja.com' },
