@@ -10,7 +10,7 @@ export interface ResolvedImage {
 }
 
 const VALID_LOCAL_IMAGES = [
-    "hanumangarhisindoorpuja.png",
+    "HanumanGarhiSindoorPuja.png",
     "durgapuja.png",
     "ganeshpuja.png",
     "hanuman.png",
@@ -61,10 +61,10 @@ export function resolvePujaImage(rawPath: string | string[] | null | undefined):
     // Normalize path for check
     const filename = path.split('/').pop()?.toLowerCase();
     
-    // Check if the filename exists in our validated inventory
-    if (filename && VALID_LOCAL_IMAGES.includes(filename)) {
-        // Map any .webp request in DB to the actual .png we found in local audit
-        const actualFilename = VALID_LOCAL_IMAGES.find(f => f === filename);
+    // Check if the filename exists in our validated inventory case-insensitively
+    if (filename && VALID_LOCAL_IMAGES.map(f => f.toLowerCase()).includes(filename)) {
+        // Map any request in DB to the actual case-sensitive .png filename on the disk
+        const actualFilename = VALID_LOCAL_IMAGES.find(f => f.toLowerCase() === filename);
         return {
             url: `/pujaimages/${actualFilename}`,
             type: 'local',
