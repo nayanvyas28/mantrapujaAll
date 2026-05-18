@@ -630,12 +630,12 @@ export const getHomeQuickAccess = async (): Promise<any[]> => {
         .single();
 
     const defaults = [
-        { name: "Kundali", img: "/features/kundali.png", link: "/kundli", color: "from-orange-500/10 to-red-500/10", border: "#f97316" },
-        { name: "Rashifal", img: "/features/rashifal.png", link: "/horoscope", color: "from-amber-500/10 to-orange-500/10", border: "#f59e0b" },
-        { name: "Panchang", img: "/features/panchang.png", link: "/panchang", color: "from-yellow-500/10 to-amber-500/10", border: "#eab308" },
-        { name: "Calculator", img: "/features/calculator.png", link: "/calculators", color: "from-red-500/10 to-pink-500/10", border: "#ef4444" },
-        { name: "Chadava", img: "/features/chadava.png", link: "/chadava", color: "from-purple-500/10 to-indigo-500/10", border: "#a855f7" },
-        { name: "Guru Ji AI", img: "/features/guru-ai.png", link: "/chat", color: "from-cyan-500/10 to-blue-500/10", border: "#06b6d4" }
+        { name: "Kundali", img: "/features/kundali.webp", link: "/kundli", color: "from-orange-500/10 to-red-500/10", border: "#f97316" },
+        { name: "Rashifal", img: "/features/rashifal.webp", link: "/horoscope", color: "from-amber-500/10 to-orange-500/10", border: "#f59e0b" },
+        { name: "Panchang", img: "/features/panchang.webp", link: "/panchang", color: "from-yellow-500/10 to-amber-500/10", border: "#eab308" },
+        { name: "Calculator", img: "/features/calculator.webp", link: "/calculators", color: "from-red-500/10 to-pink-500/10", border: "#ef4444" },
+        { name: "Chadava", img: "/features/chadava.webp", link: "/chadava", color: "from-purple-500/10 to-indigo-500/10", border: "#a855f7" },
+        { name: "Guru Ji AI", img: "/features/guru-ai.webp", link: "/chat", color: "from-cyan-500/10 to-blue-500/10", border: "#06b6d4" }
     ];
 
     if (error || !data) {

@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getSeoMetadata } from "@/lib/seo";
 import { supabase } from "@/lib/supabaseClient";
 import { getHomeQuickAccess, resolveImageUrl } from '@/lib/contentService';
+import { resolvePujaImage } from '@/lib/imageResolver';
 import { Suspense } from "react";
 
 // Server Components
@@ -62,17 +63,20 @@ export default async function Home() {
         slug: l.slug
     }));
 
-    const mappedPujas = (pujasRes.data || []).map((p: any) => ({
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        image: resolveImageUrl(p.images?.[0] || '/logo.png'),
-        desc: p.description,
-        price: p.price,
-        is_special_offer: p.is_special_offer,
-        special_offer_price: p.special_offer_price,
-        tags: p.tags || []
-    }));
+    const mappedPujas = (pujasRes.data || []).map((p: any) => {
+        const resolved = resolvePujaImage(p.images);
+        return {
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            image: resolved.url,
+            desc: p.description,
+            price: p.price,
+            is_special_offer: p.is_special_offer,
+            special_offer_price: p.special_offer_price,
+            tags: p.tags || []
+        };
+    });
 
     // JSON-LD Schemas
     const orgSchema = {
