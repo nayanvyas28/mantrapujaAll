@@ -29,6 +29,22 @@ const getClient = (): SupabaseClient => {
     return defaultSupabase;
 };
 
+// --- Image Resolution Helper ---
+export const resolveImageUrl = (url: string | null | undefined): string => {
+    if (!url) return '/logo.png';
+    
+    // Broken legacy URLs
+    if (url.includes('webroot/admin/upload') || url.includes('music_assets/puja_images')) return '/logo.png';
+    
+    // External placeholders
+    if (url.includes('placeholder') || url.includes('placehold.co') || url.includes('unsplash.com')) return '/logo.png';
+    
+    // Fix common extension mismatches (e.g. webp -> png for local assets)
+    if (url === '/pujaimages/krishnapuja.webp') return '/pujaimages/krishnapuja.png';
+
+    return url;
+};
+
 // --- Categories ---
 
 export const getCategories = async (): Promise<Category[]> => {
@@ -323,7 +339,9 @@ export const getPoojas = async (): Promise<Pooja[]> => {
     // Implementation: Ensure all poojas have at least the logo if no images are present
     return (data || []).map(pooja => ({
         ...pooja,
-        images: (!pooja.images || pooja.images.length === 0) ? ['/logo.png'] : pooja.images
+        images: (!pooja.images || pooja.images.length === 0) 
+            ? ['/logo.png'] 
+            : pooja.images.map((img: string) => resolveImageUrl(img))
     }));
 };
 
@@ -444,12 +462,7 @@ export const getBlogs = async (): Promise<Blog[]> => {
 
     return (data || []).map(blog => ({
         ...blog,
-        image_url: (!blog.image_url ||
-            blog.image_url.includes('placeholder') ||
-            blog.image_url.includes('placehold.co') ||
-            blog.image_url.includes('unsplash.com'))
-            ? '/logo.png'
-            : blog.image_url
+        image_url: resolveImageUrl(blog.image_url)
     }));
 };
 
@@ -555,12 +568,7 @@ export const getPaginatedBlogs = async (
 
         const blogs = (data || []).map(blog => ({
             ...blog,
-            image_url: (!blog.image_url ||
-                blog.image_url.includes('placeholder') ||
-                blog.image_url.includes('placehold.co') ||
-                blog.image_url.includes('unsplash.com'))
-                ? '/logo.png'
-                : blog.image_url
+            image_url: resolveImageUrl(blog.image_url)
         }));
 
         return { blogs, total: count || 0, error: false };
@@ -596,7 +604,9 @@ export const getLocations = async (): Promise<Location[]> => {
     // Implementation: Ensure all locations have at least the logo if no images are present
     return (data || []).map(location => ({
         ...location,
-        images: (!location.images || location.images.length === 0) ? ['/logo.png'] : location.images
+        images: (!location.images || location.images.length === 0) 
+            ? ['/logo.png'] 
+            : location.images.map((img: string) => resolveImageUrl(img))
     }));
 };
 

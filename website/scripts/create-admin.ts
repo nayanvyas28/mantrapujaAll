@@ -1,7 +1,7 @@
 
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
+const { createClient } = require('@supabase/supabase-js');
+const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -17,7 +17,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createAdmin() {
-    const email = 'admin@mantrapooja.com';
+    const email = 'admin@mantrapuja.com';
     const password = 'secure_password_123'; // Change this!
     const username = 'SuperAdmin';
 

@@ -1,4 +1,4 @@
-# Project Requirements - Mantra-pooja Website
+# Project Requirements - MantraPuja Website
 
 ## Overview
 A web platform to categorize and book Hindu Poojas, featuring a spiritual and premium design.
@@ -10,7 +10,7 @@ A web platform to categorize and book Hindu Poojas, featuring a spiritual and pr
 
 ## Functional Requirements
 ### 1. Header
-- Logo: "Design Scratch" (placeholder) -> "Mantra Pooja".
+- Logo: "Design Scratch" (placeholder) -> "MantraPuja".
 - Navigation: Home, Poojas, Festivals, Locations, Dealers, Blog.
 - Action: "Book A Pooja" button.
 - User: Language/Currency selector, Profile/Login.

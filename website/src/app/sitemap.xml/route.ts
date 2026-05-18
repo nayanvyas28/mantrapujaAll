@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 const URLS_PER_SITEMAP = 1000;
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mantrapuja.com';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,7 @@ export async function GET() {
         const [blogsCount, poojasCount, destinationsCount, authorsCount] = await Promise.all([
             supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then((res: any) => res.count || 0),
             supabase.from('poojas').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
-            supabase.from('destinations').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
+            supabase.from('spiritual_places').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
             supabase.from('blog_authors').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0)
         ]);
 
@@ -24,6 +24,10 @@ export async function GET() {
         const poojaPacks = Math.ceil(poojasCount / URLS_PER_SITEMAP) || 1;
         const destPacks = Math.ceil(destinationsCount / URLS_PER_SITEMAP) || 1;
         const authorPacks = Math.ceil(authorsCount / URLS_PER_SITEMAP) || 1;
+
+        // Festivals (Special Handling for 2000+ records)
+        const { count: festivalsCount } = await supabase.from('festivals').select('*', { count: 'exact', head: true }).eq('is_active', true);
+        const festivalPacks = Math.ceil((festivalsCount || 0) / 500) || 1; // Chunking at 500 for festivals
 
         // Generate sitemap index XML
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
@@ -63,6 +67,14 @@ export async function GET() {
         for (let i = 1; i <= authorPacks; i++) {
             xml += `  <sitemap>\n`;
             xml += `    <loc>${SITE_URL}/sitemaps/author/${i}.xml</loc>\n`;
+            xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+            xml += `  </sitemap>\n`;
+        }
+
+        // Festival sitemaps
+        for (let i = 1; i <= festivalPacks; i++) {
+            xml += `  <sitemap>\n`;
+            xml += `    <loc>${SITE_URL}/sitemaps/festival/${i}.xml</loc>\n`;
             xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
             xml += `  </sitemap>\n`;
         }

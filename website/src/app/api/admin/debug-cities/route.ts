@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { locations as staticLocations } from '@/data/spiritual-locations';
+
 
 export async function GET() {
     try {
@@ -14,11 +14,12 @@ export async function GET() {
         const { data: cities } = await supabase.from('serving_cities').select('name').eq('is_active', true);
         
         // 2. Get all existing destinations
-        const { data: destinations } = await supabase.from('destinations').select('slug, name');
+        const { data: destinations, error } = await supabase
+            .from('spiritual_places')
+            .select('slug, name');
 
         const cityList = cities || [];
         const existingSlugs = new Set([
-            ...staticLocations.map(l => l.slug),
             ...(destinations || []).map(d => d.slug)
         ]);
 

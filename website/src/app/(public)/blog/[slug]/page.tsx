@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     }
 
     const seo = blog.seo || {};
-    const title = seo.meta_title || blog.blog_title || blog.title || `${blog.title} | Mantra Pooja`;
+    const title = seo.meta_title || blog.blog_title || blog.title || `${blog.title} | MantraPuja`;
     const description = seo.meta_description || blog.meta_description || blog.content?.introduction?.substring(0, 160) || "";
     const keywords = seo.meta_tags || blog.meta_tags || blog.tags || [];
     const imageUrl = blog.featured_image_url || blog.image_url || 'https://via.placeholder.com/1200x630';

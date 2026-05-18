@@ -1,0 +1,137 @@
+1. Agartala
+2. Ahmedabad
+3. Aizawl
+4. Alopi Devi (Prayagraj)
+5. Amarnath
+6. Amarnath Shakti
+7. Ambaji
+8. Amritsar
+9. Attahas
+10. Ayodhya
+11. Badrinath
+12. Baidyanath (Deoghar)
+13. Bakreshwar
+14. Bangalore
+15. Berhampur
+16. Bhimashankar
+17. Bhopal
+18. Biraja Devi
+19. Bramaramba (Srisailam)
+20. Chamundeshwari (Mysore)
+21. Chhinnamasta
+22. Chidambaram
+23. Chitrakoot
+24. Chittorgarh
+25. Coimbatore
+26. Cuttack
+27. Dakshayani (Mansarovar)
+28. Danteshwari
+29. Delhi
+30. Dwarka
+31. Fullara
+32. Gandaki Chandi
+33. Gangtok
+34. Gayatri (Pushkar)
+35. Grishneshwar (Aurangabad)
+36. Guhyeshwari
+37. Guruvayur
+38. Guwahati
+39. Hampi
+40. Haridwar
+41. Harsiddhi (Ujjain)
+42. Hinglaj Mata
+43. Hyderabad
+44. Imphal
+45. Indore
+46. Indrakshi (Sri Lanka)
+47. Jabalpur
+48. Jaipur
+49. Jashoreshwari
+50. Jayanti (Sylhet)
+51. Jogulamba (Alampur)
+52. Jwalaji (Kangra)
+53. Kalahasti
+54. Kalighat (Kolkata)
+55. Kalika Mata (Pavagadh)
+56. Kamakhya
+57. Kamakhya (Guwahati)
+58. Kamakshi (Kanchipuram)
+59. Kanpur
+60. Kanyashram
+61. Karavipur
+62. Kashi Vishwanath (Varanasi)
+63. Kedarnath
+64. Kohima
+65. Kolkata
+66. Kolkata Kali
+67. Kollam
+68. Kukke Subramanya
+69. Kurukulla
+70. Leh
+71. Lucknow
+72. Mahakaleshwar (Ujjain)
+73. Mahalakshmi (Kolhapur)
+74. Mahalaxmi (Sylhet)
+75. Mallikarjuna (Srisailam)
+76. Mangala Gauri (Gaya)
+77. Mangaluru
+78. Manikyamba
+79. Mathura
+80. Meenakshi (Chennai)
+81. Meenakshi (Madurai)
+82. Mount Abu
+83. Mumbai
+84. Mumbai (Mumbadevi)
+85. Mysuru
+86. Nageshwar (Dwarka)
+87. Nagpur
+88. Naina Devi
+89. Nalhati
+90. Nartiang Durga
+91. Nashik
+92. Nashik (Shakti)
+93. Omkareshwar
+94. Patna
+95. Port Blair
+96. Prayagraj
+97. Pune
+98. Puri
+99. Rajgir
+100. Rameshwaram
+101. Rameswaram
+102. Rameswaram (Shakti)
+103. Rameswaram Jyotirlinga
+104. Ranchi
+105. Renuka Devi
+106. Rewa
+107. Rishikesh
+108. Sarnath
+109. Savirtri (Pushkar)
+110. Shimla
+111. Shirdi
+112. Shrinkala Devi
+113. Somnath
+114. Srikakulam
+115. Srinagar
+116. Sugandha
+117. Surat
+118. Tara Tarini
+119. Thiruvananthapuram
+120. Thrissur
+121. Tirupati
+122. Trimbakeshwar (Nashik)
+123. Tripura Sundari (Udaipur)
+124. Tulja Bhavani
+125. Udaipur
+126. Udupi
+127. Ujjain
+128. Vadodara
+129. Vaishno Devi
+130. Varanasi
+131. Vijayawada
+132. Vimala (Puri)
+133. Vindhyavasinidestinations we have I 
+134. Vishalakshi (Varanasi)
+135. Vrindavan
+136. Warangal
+137. Yugadya

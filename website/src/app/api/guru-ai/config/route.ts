@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+let configCache: { data: any; timestamp: number } | null = null;
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
-// Lazy initialization to avoid instantiating if not needed, and to reuse across requests
 function getSupabaseAdmin() {
     if (!supabaseAdmin) {
         supabaseAdmin = createClient(
@@ -17,6 +18,11 @@ function getSupabaseAdmin() {
 
 export async function GET() {
     try {
+        const now = Date.now();
+        if (configCache && (now - configCache.timestamp < CACHE_TTL)) {
+            return NextResponse.json(configCache.data);
+        }
+
         const adminClient = getSupabaseAdmin();
         const { data, error } = await (adminClient
             .from('settings')
@@ -29,12 +35,17 @@ export async function GET() {
         const greetingEn = data?.find((s: any) => s.key === 'guru_ai_greeting_en')?.value || '';
         const greetingHi = data?.find((s: any) => s.key === 'guru_ai_greeting_hi')?.value || '';
         
-        return NextResponse.json({ 
+        const responseData = { 
             templates: JSON.parse(templatesStr),
             greetingEn,
             greetingHi
-        });
+        };
+
+        configCache = { data: responseData, timestamp: now };
+        
+        return NextResponse.json(responseData);
     } catch (err: any) {
+        console.error("[GuruAI Config] Error:", err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }

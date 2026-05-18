@@ -75,7 +75,7 @@ export const systemComponents: SavedComponent[] = [
         category: "Content",
         content: `
             <div class="prose dark:prose-invert max-w-none p-6">
-                <h2 class="text-3xl font-bold mb-4">About Mantra Pooja</h2>
+                <h2 class="text-3xl font-bold mb-4">About MantraPuja</h2>
                 <p class="text-lg leading-relaxed text-gray-600 dark:text-gray-300">
                     We are dedicated to bringing authentic Vedic rituals to your doorstep. Our mission is to preserve the sanctity of ancient traditions while making them accessible to the modern world.
                 </p>

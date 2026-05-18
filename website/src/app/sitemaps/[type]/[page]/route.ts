@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseServer';
 export const dynamic = 'force-dynamic';
 
 const URLS_PER_SITEMAP = 1000;
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mantrapuja.com';
 
 const STATIC_ROUTES = [
     '',
@@ -14,11 +14,25 @@ const STATIC_ROUTES = [
     '/locations',
     '/festivals',
     '/blog',
+    '/kundli',
+    '/horoscope',
+    '/panchang',
+    '/calculators',
     '/privacy-policy',
     '/terms-of-service',
     '/refund-policy',
-    '/login',
-    '/signup',
+];
+
+const ZODIAC_SIGNS = [
+    'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 
+    'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'
+];
+
+const CALCULATOR_TYPES = [
+    'love', 'friendship', 'flames', 'sun-sign', 'moon-sign', 'moon-phase', 
+    'birth-chart', 'ascendant', 'nakshatra', 'dasha', 'transit', 
+    'mangal-dosha', 'sade-sati', 'kaal-sarp', 'numerology', 'lo-shu', 
+    'lucky-vehicle', 'ishta-devata', 'karaka'
 ];
 
 export async function GET(
@@ -49,12 +63,26 @@ export async function GET(
         if (type === 'static') {
             if (page === 1) {
                 // Only serve static routes on page 1
-                urls = STATIC_ROUTES.map(route => ({
-                    url: `${SITE_URL}${route}`,
-                    lastmod: new Date().toISOString(),
-                    priority: route === '' ? '1.0' : '0.8',
-                    changefreq: route === '' ? 'daily' : 'weekly',
-                }));
+                urls = [
+                    ...STATIC_ROUTES.map(route => ({
+                        url: `${SITE_URL}${route}`,
+                        lastmod: new Date().toISOString(),
+                        priority: route === '' ? '1.0' : '0.8',
+                        changefreq: route === '' ? 'daily' : 'weekly',
+                    })),
+                    ...ZODIAC_SIGNS.map(sign => ({
+                        url: `${SITE_URL}/horoscope/${sign}`,
+                        lastmod: new Date().toISOString(),
+                        priority: '0.7',
+                        changefreq: 'daily',
+                    })),
+                    ...CALCULATOR_TYPES.map(type => ({
+                        url: `${SITE_URL}/calculators/${type}`,
+                        lastmod: new Date().toISOString(),
+                        priority: '0.7',
+                        changefreq: 'monthly',
+                    }))
+                ];
             }
         } else if (type === 'blog') {
             const { data } = await supabase
@@ -88,7 +116,7 @@ export async function GET(
             }
         } else if (type === 'destination') {
             const { data } = await supabase
-                .from('destinations')
+                .from('spiritual_places')
                 .select('slug')
                 .range(startIdx, endIdx);
 
@@ -129,6 +157,25 @@ export async function GET(
                 priority: '0.6',
                 changefreq: 'monthly',
             }));
+        } else if (type === 'festival') {
+            const festLimit = 500;
+            const festStart = (page - 1) * festLimit;
+            const festEnd = festStart + festLimit - 1;
+
+            const { data } = await supabase
+                .from('festivals')
+                .select('slug, updated_at')
+                .eq('is_active', true)
+                .range(festStart, festEnd);
+
+            if (data) {
+                urls = data.map((fest: any) => ({
+                    url: `${SITE_URL}/festivals/${fest.slug}`,
+                    lastmod: fest.updated_at || new Date().toISOString(),
+                    priority: '0.8',
+                    changefreq: 'weekly',
+                }));
+            }
         } else {
             return new NextResponse('Invalid sitemap type', { status: 404 });
         }

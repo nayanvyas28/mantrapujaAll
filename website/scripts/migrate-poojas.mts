@@ -131,8 +131,8 @@ async function migratePoojas() {
       let rawDesc = unescapeSqlString(columnsArray[7] || '');
       rawDesc = rawDesc.replace(/<br\s*\/?>/gi, ' ').replace(/<\/?p>/gi, ' ').replace(/<\/?div>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
 
-      const rawPrice = parseFloat(columnsArray[15]) || 0;
-      const rawImg = unescapeSqlString(columnsArray[19]);
+      const rawPrice = parseFloat(columnsArray[15] || '0') || 0;
+      const rawImg = unescapeSqlString(columnsArray[19] || '');
       const images = rawImg && rawImg !== 'NULL' ? [rawImg] : ['/logo.png'];
 
       let metaTitle = unescapeSqlString(rawTitle);
@@ -194,7 +194,7 @@ async function migratePoojas() {
           { icon: '📦', title: 'Receive Blessings', description: 'Get the video recording and sacred Prasad delivered.' }
         ],
         testimonials_list: [
-          { name: "Suresh P.", avatar: "SP", rating: 5, comment: "This puja performed by Mantra Pooja pandits brought immense peace and stability to my business. Highly recommended.", location: "Mumbai" },
+          { name: "Suresh P.", avatar: "SP", rating: 5, comment: "This puja performed by MantraPuja pandits brought immense peace and stability to my business. Highly recommended.", location: "Mumbai" },
           { name: "Anita R.", avatar: "AR", rating: 5, comment: "The detailed explanation of every ritual step made me feel deeply connected. Exceptional service.", location: "Delhi" }
         ],
         faq_list: [

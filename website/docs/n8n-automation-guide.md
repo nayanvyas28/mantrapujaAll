@@ -1,6 +1,6 @@
-# n8n Blog Automation Workflow for Mantra Pooja
+# n8n Blog Automation Workflow for MantraPuja
 
-This workflow automates the creation of high-quality, SEO-optimized blog posts for the Mantra Pooja website. It leverages Google Trends for topic discovery, Gemini AI for content and image generation, and the Mantra Pooja API for publishing.
+This workflow automates the creation of high-quality, SEO-optimized blog posts for the MantraPuja website. It leverages Google Trends for topic discovery, Gemini AI for content and image generation, and the MantraPuja API for publishing.
 
 ## Workflow Overview
 
@@ -12,7 +12,7 @@ The process follows these steps:
 5.  **Image Generation**: Creates a featured image using Gemini.
 6.  **Publishing**:
     *   Uploads the generated image to the server.
-    *   Posts the final blog content (title, body, meta tags, image URL) to the Mantra Pooja API.
+    *   Posts the final blog content (title, body, meta tags, image URL) to the MantraPuja API.
 
 ## detailed Configuration
 
@@ -69,10 +69,10 @@ The process follows these steps:
     *   Connect your Google Gemini (PaLM) API account.
     *   Connect SerpApi (if using Google Trends node requiring it).
 3.  **Set Environment Variables**:
-    *   Update the API URLs in `Image_Upload` and `HTTP Request` nodes to point to your live server (e.g., `https://mantrapooja.com/api/...`).
+    *   Update the API URLs in `Image_Upload` and `HTTP Request` nodes to point to your live server (e.g., `https://mantrapuja.com/api/...`).
     *   Update the `x-webhook-secret` to match the `N8N_WEBHOOK_SECRET` in your server's `.env.local`.
 4.  **Run**: Click **"Test Workflow"** or manually execute the nodes step-by-step.
 
 ## Expected Result
-*   A new blog post will appear in your Mantra Pooja Admin Dashboard and on the `/blogs` page.
+*   A new blog post will appear in your MantraPuja Admin Dashboard and on the `/blogs` page.
 *   The post will have a unique AI-generated cover image, SEO metadata, and structured content.

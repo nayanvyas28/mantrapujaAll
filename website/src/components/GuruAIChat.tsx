@@ -132,6 +132,8 @@ export default function GuruAIChat() {
     const [isFullScreen, setIsFullScreen] = useState(false);
     const [showInvite, setShowInvite] = useState(false);
     const [dynamicTemplates, setDynamicTemplates] = useState<ChatTemplate[]>([]);
+    const [guruConfig, setGuruConfig] = useState<{ greetingEn: string; greetingHi: string } | null>(null);
+    const [isConfigLoading, setIsConfigLoading] = useState(false);
     
     // Auth State for Chat
     const [authStep, setAuthStep] = useState<null | 'phone' | 'otp'>(null);
@@ -180,29 +182,40 @@ export default function GuruAIChat() {
 
     const lastActionRef = useRef<{ content: string; time: number } | null>(null);
 
-    // Initial greeting & Database Check
+    // Unified Config & Greeting Fetcher
+    useEffect(() => {
+        const fetchGuruConfig = async () => {
+            if (isConfigLoading || guruConfig) return;
+            setIsConfigLoading(true);
+            try {
+                const res = await fetch('/api/guru-ai/config');
+                const data = await res.json();
+                if (data.templates) setDynamicTemplates(data.templates);
+                if (data.greetingHi || data.greetingEn) {
+                    setGuruConfig({
+                        greetingEn: data.greetingEn || '',
+                        greetingHi: data.greetingHi || ''
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch Guru AI config:", err);
+            } finally {
+                setIsConfigLoading(false);
+            }
+        };
+        fetchGuruConfig();
+    }, []);
+
+    // Initial greeting logic
     useEffect(() => {
         const initializeChat = async () => {
-            if (messages.length === 0) {
-                // Default fallback greetings
+            // Only greet if chat is empty and config is ready
+            if (messages.length === 0 && guruConfig) {
                 let baseGreetingHi = "Mantra Puja में आपका स्वागत है। नमस्ते! मैं आपका आध्यात्मिक गुरु हूँ।";
                 let baseGreetingEn = "Welcome to Mantra Puja. Namaste! I am Guru Ji, your spiritual guide.";
                 let dataTextHi = " आज मैं आपकी दिव्य यात्रा में कैसे सहायता कर सकता हूँ?";
                 let dataTextEn = " How may I assist you on your divine path today?";
                 
-                let adminGreetingHi = '';
-                let adminGreetingEn = '';
-
-                // 1. Fetch Admin Custom Greetings
-                try {
-                    const res = await fetch('/api/guru-ai/config');
-                    const configData = await res.json();
-                    if (configData.greetingHi) adminGreetingHi = configData.greetingHi;
-                    if (configData.greetingEn) adminGreetingEn = configData.greetingEn;
-                } catch (err) {
-                    console.error("Failed to fetch custom greeting config:", err);
-                }
-
                 // 2. Fetch User Context
                 let userName = '';
                 if (user) {
@@ -215,6 +228,8 @@ export default function GuruAIChat() {
                             
                         if (profile?.full_name) {
                             userName = profile.full_name;
+                            baseGreetingHi = `हर हर महादेव ${userName} जी! मैं आपका आध्यात्मिक गुरु हूँ।`;
+                            baseGreetingEn = `Har Har Mahadev ${userName} ji! I am Guru Ji, your spiritual guide.`;
                         }
 
                         const { data: vedicProfile } = await supabase
@@ -222,11 +237,6 @@ export default function GuruAIChat() {
                             .select('rashi')
                             .eq('user_id', user.id)
                             .single();
-
-                        if (userName) {
-                            baseGreetingHi = `हर हर महादेव ${userName} जी! मैं आपका आध्यात्मिक गुरु हूँ।`;
-                            baseGreetingEn = `Har Har Mahadev ${userName} ji! I am Guru Ji, your spiritual guide.`;
-                        }
 
                         if (vedicProfile) {
                             dataTextHi = ` मैंने आपके जन्म विवरण और ${vedicProfile.rashi || 'कुंडली'} का अध्ययन कर लिया है। आपके ग्रहों के अनुसार मैं आपको सटीक मार्गदर्शन देने के लिए तैयार हूँ।`;
@@ -251,19 +261,14 @@ export default function GuruAIChat() {
 
                 // 3. Assemble Final Greeting
                 let finalWelcomeText = '';
-                
                 if (chatLanguage === 'hi') {
-                    if (adminGreetingHi) {
-                        finalWelcomeText = adminGreetingHi.replace('{name}', userName ? `${userName} जी` : '');
-                    } else {
-                        finalWelcomeText = baseGreetingHi + dataTextHi;
-                    }
+                    finalWelcomeText = guruConfig.greetingHi 
+                        ? guruConfig.greetingHi.replace('{name}', userName ? `${userName} जी` : '')
+                        : baseGreetingHi + dataTextHi;
                 } else {
-                    if (adminGreetingEn) {
-                        finalWelcomeText = adminGreetingEn.replace('{name}', userName ? userName : '');
-                    } else {
-                        finalWelcomeText = baseGreetingEn + dataTextEn;
-                    }
+                    finalWelcomeText = guruConfig.greetingEn
+                        ? guruConfig.greetingEn.replace('{name}', userName ? userName : '')
+                        : baseGreetingEn + dataTextEn;
                 }
 
                 setQueuedMessages([{ role: 'model', content: finalWelcomeText.trim() }]);
@@ -271,7 +276,7 @@ export default function GuruAIChat() {
         };
 
         initializeChat();
-    }, [chatLanguage, messages.length, user]);
+    }, [chatLanguage, messages.length, user, guruConfig]);
 
     // Reset Chat on Logout (Transition based)
     const prevUserRef = useRef(user);
@@ -386,20 +391,6 @@ export default function GuruAIChat() {
         }
     };
 
-    useEffect(() => {
-        const fetchTemplates = async () => {
-            try {
-                const res = await fetch('/api/guru-ai/config');
-                const data = await res.json();
-                if (data.templates) {
-                    setDynamicTemplates(data.templates);
-                }
-            } catch (err) {
-                console.error("Failed to fetch Guru AI templates:", err);
-            }
-        };
-        fetchTemplates();
-    }, []);
 
     const handleSend = async (e?: React.FormEvent, overrideMessage?: string, skipAuth = false, templateInstruction?: string) => {
         if (e) e.preventDefault();
