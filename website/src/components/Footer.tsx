@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Facebook, Instagram, Twitter, Youtube, Loader2 } from "lucide-react";
 import { getServingCities, ServingCity } from "@/lib/contentService";
@@ -49,11 +50,15 @@ const Footer = () => {
                     {/* Brand */}
                     <div className="space-y-6">
                         <Link href="/" className="inline-block group">
-                            <img
-                                src="/logo.png"
-                                alt="MantraPuja - Trusted Vedic Services"
-                                className="h-20 w-auto group-hover:scale-105 transition-transform duration-300"
-                            />
+                            <div className="relative h-20 w-40 group-hover:scale-105 transition-transform duration-300">
+                                <Image
+                                    src="/logo.png"
+                                    alt="MantraPuja - Trusted Vedic Services"
+                                    fill
+                                    sizes="160px"
+                                    className="object-contain"
+                                />
+                            </div>
                         </Link>
                         <p className="text-sm leading-relaxed text-muted-foreground/80 font-light">
                             Your trusted partner for authentic Vedic Poojas and rituals. Connecting you with divine energy through experienced Pandits and sacred traditions.
@@ -142,9 +147,9 @@ const Footer = () => {
                         ) : cities.length > 0 ? (
                             cities.map((city, i) => {
                                 const slugMap: Record<string, string> = {
-                                    "Varanasi": "kashi-vishwanath",
-                                    "Ujjain": "mahakaleshwar",
-                                    "Nashik": "trimbakeshwar",
+                                    "Varanasi": "varanasi",
+                                    "Ujjain": "ujjain",
+                                    "Nashik": "nashik",
                                     "Deoghar": "baidyanath",
                                     "Aurangabad": "grishneshwar",
                                     "Srisailam": "mallikarjuna",
@@ -177,9 +182,9 @@ const Footer = () => {
                                 "Ujjain", "Nashik", "Kedarnath", "Badrinath", "Somnath", "Shirdi", "Vaishno Devi", "Amarnath", "Bodh Gaya", "Sarnath"
                             ].map((city, i, arr) => {
                                 const slugMap: Record<string, string> = {
-                                    "Varanasi": "kashi-vishwanath",
-                                    "Ujjain": "mahakaleshwar",
-                                    "Nashik": "trimbakeshwar",
+                                    "Varanasi": "varanasi",
+                                    "Ujjain": "ujjain",
+                                    "Nashik": "nashik",
                                     "Deoghar": "baidyanath",
                                     "Aurangabad": "grishneshwar",
                                     "Srisailam": "mallikarjuna",

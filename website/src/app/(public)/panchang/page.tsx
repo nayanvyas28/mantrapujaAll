@@ -2,8 +2,15 @@ import PanchangSection from '@/components/home/PanchangSection';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Today\'s Panchang - Vedic Daily Calendar | Mantra Puja',
+  title: 'Today\'s Panchang - Vedic Daily Calendar | MantraPuja',
   description: 'Get accurate daily Vedic Panchang including Tithi, Nakshatra, Yoga, Karana, and auspicious/inauspicious timings for your location.',
+  alternates: {
+    canonical: 'https://mantrapuja.com/panchang',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  }
 };
 
 export default function PanchangPage() {

@@ -8,6 +8,9 @@ export const metadata: Metadata = {
     title: 'Vedic Pooja Services | Online Puja Booking | MantraPuja',
     description: 'Book authentic Vedic Pujas performed by certified Pandits. Experience divine rituals for health, wealth, and prosperity from the comfort of your home.',
     keywords: ['Online Puja', 'Vedic Rituals', 'Pandit Booking', 'Hindu Puja', 'MantraPuja'],
+    alternates: {
+        canonical: 'https://mantrapuja.com/pooja-services',
+    },
 };
 
 interface DatabasePooja {

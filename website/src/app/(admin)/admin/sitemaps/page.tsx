@@ -5,7 +5,7 @@ import { FileCode, Globe, Copy, CheckCircle, ExternalLink } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 const URLS_PER_SITEMAP = 1000;
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mantrapuja.com';
 
 async function getSitemapData() {
     const supabase = getSupabaseAdmin();
@@ -14,7 +14,7 @@ async function getSitemapData() {
     const [blogsCount, poojasCount, destinationsCount] = await Promise.all([
         supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then((res: any) => res.count || 0),
         supabase.from('poojas').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
-        supabase.from('destinations').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0)
+        supabase.from('spiritual_places').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0)
     ]);
 
     return {

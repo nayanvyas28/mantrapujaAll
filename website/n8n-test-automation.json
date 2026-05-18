@@ -27,7 +27,7 @@
                 },
                 "sendBody": true,
                 "specifyBody": "json",
-                "jsonBody": "={{ JSON.stringify({\n  title: 'Connection Test ' + new Date().toISOString(),\n  content: '<h2>It Works!</h2><p>This post confirms that n8n can successfully talk to your Mantra Pooja App.</p>',\n  secret: 'your_n8n_secret_here',\n  tags: ['test', 'automation'],\n  published: true\n}) }}",
+                "jsonBody": "={{ JSON.stringify({\n  title: 'Connection Test ' + new Date().toISOString(),\n  content: '<h2>It Works!</h2><p>This post confirms that n8n can successfully talk to your MantraPuja App.</p>',\n  secret: 'your_n8n_secret_here',\n  tags: ['test', 'automation'],\n  published: true\n}) }}",
                 "options": {}
             },
             "id": "post_app",

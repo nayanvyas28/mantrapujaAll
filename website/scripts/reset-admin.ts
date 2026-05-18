@@ -1,7 +1,7 @@
 
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
+const { createClient } = require('@supabase/supabase-js');
+const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables from .env.local
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -17,7 +17,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function forceCreateAdmin() {
-    const email = 'admin@mantrapooja.com';
+    const email = 'admin@mantrapuja.com';
     const password = 'admin123';
 
     console.log(`Checking admin user: ${email}`);
@@ -31,7 +31,7 @@ async function forceCreateAdmin() {
         return;
     }
 
-    const existingUser = users.find(u => u.email === email);
+    const existingUser = users.find((u: any) => u.email === email);
     if (existingUser) {
         console.log(`User exists (ID: ${existingUser.id}). Deleting to recreate...`);
         const { error: delError } = await supabase.auth.admin.deleteUser(existingUser.id);

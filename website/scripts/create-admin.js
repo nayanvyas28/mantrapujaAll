@@ -33,7 +33,7 @@ async function main() {
             }
         });
 
-        const email = 'admin@mantrapooja.com';
+        const email = 'admin@mantrapuja.com';
         const password = 'ChangeMe123!';
 
         console.log(`Creating admin user: ${email}`);

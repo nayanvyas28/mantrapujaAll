@@ -1,0 +1,3 @@
+-- BATCH 32: ALREADY INGESTED - DO NOT RE-RUN
+-- Both Jwala Devi (Mussoorie) and Shanti Kunj (Haridwar) already exist in the database.
+-- This file is kept for reference only.

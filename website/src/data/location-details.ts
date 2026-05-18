@@ -1,4 +1,4 @@
-import { Location } from './spiritual-locations';
+import { Location } from '@/lib/contentService';
 
 export interface LocationDetail extends Location {
     significance: string;

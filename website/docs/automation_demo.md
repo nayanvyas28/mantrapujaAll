@@ -1,6 +1,6 @@
-# Mantra Pooja Automation Demo
+# MantraPuja Automation Demo
 
-This document consolidates all resources related to the blog automation workflow for Mantra Pooja. It includes the n8n workflow configuration, the testing script, and usage instructions.
+This document consolidates all resources related to the blog automation workflow for MantraPuja. It includes the n8n workflow configuration, the testing script, and usage instructions.
 
 ## 1. The Automation Workflow (n8n JSON)
 Copy this JSON and import it into your n8n instance to set up the blog generation pipeline.
@@ -509,13 +509,13 @@ To make this automation a success, follow these steps for each key node in n8n.
 This is the most critical part to connect n8n to your deployed website.
  
 #### Node: `Image_Upload`
-*   **URL**: Change `http://localhost:3000` to your **Live Domain** (e.g., `https://mantrapooja.railway.app/api/webhook/upload-image`).
+*   **URL**: Change `http://localhost:3000` to your **Live Domain** (e.g., `https://mantrapuja.com/api/webhook/upload-image`).
 *   **Header Parameter**:
     *   Name: `x-webhook-secret`
     *   Value: Copy the `N8N_WEBHOOK_SECRET` from your website's Environment Variables.
 
 #### Node: `HTTP Request` (Final Publish)
-*   **URL**: Change `http://localhost:3000` to your **Live Domain** (e.g., `https://mantrapooja.railway.app/api/blogs`).
+*   **URL**: Change `http://localhost:3000` to your **Live Domain** (e.g., `https://mantrapuja.com/api/blogs`).
 *   **Header Parameter**:
     *   Name: `x-webhook-secret`
     *   Value: Same secret as above.

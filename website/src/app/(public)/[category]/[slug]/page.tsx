@@ -16,6 +16,9 @@ export async function generateMetadata({ params }: { params: { category: string;
     return {
         title: page.seo_title || page.title,
         description: page.seo_description || `Read about ${page.title}`,
+        alternates: {
+            canonical: `https://mantrapuja.com/${categorySlug}/${pageSlug}`,
+        },
     };
 }
 
@@ -42,9 +45,9 @@ export default async function PageDetails({ params }: { params: { category: stri
             slug: category.slug
         },
         global: {
-            siteName: "Mantra Pooja",
+            siteName: "MantraPuja",
             phone: "+91 99999 99999", // TODO: Fetch from Global Settings
-            email: "contact@mantrapooja.com"
+            email: "contact@mantrapuja.com"
         }
     };
 

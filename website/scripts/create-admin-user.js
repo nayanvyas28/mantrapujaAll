@@ -13,7 +13,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 
 async function createAdmin() {
-    const email = 'admin@mantrapooja.com';
+    const email = 'admin@mantrapuja.com';
     const password = 'admin'; // Simple password for local dev
 
     console.log(`Creating/Updating admin user: ${email}`);

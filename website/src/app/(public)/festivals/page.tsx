@@ -1,235 +1,201 @@
-"use client";
-
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Calendar, ChevronRight, ArrowRight, Clock } from 'lucide-react';
+import { Metadata } from 'next';
+import { getSupabaseServer } from '@/lib/supabaseServer';
+import { getUpcomingFestivals, Festival } from '@/lib/festivalData';
 import EnhancedBackground from '@/components/EnhancedBackground';
-import { FestivalCalendar } from '@/components/festivals/FestivalCalendar';
-import { supabase } from '@/lib/supabaseClient';
+import FestivalListingClient from './FestivalListingClient';
+import Link from 'next/link';
+import { ArrowRight, Clock } from 'lucide-react';
+import Script from 'next/script';
+import { resolveFestivalHeroImage } from '@/utils/festivalUtils';
 
-export default function FestivalPage() {
-    const [mounted, setMounted] = useState(false);
-    const [allFestivals, setAllFestivals] = useState<any[]>([]);
-    const [displayFestivals, setDisplayFestivals] = useState<any[]>([]);
-    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
-    const [blogs, setBlogs] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+export const revalidate = 3600; // Revalidate every hour
 
-    const fetchFestivalsForMonth = async (date: Date) => {
-        setLoading(true);
-        try {
-            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-            const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-            
-            const startStr = `${firstDay.getFullYear()}-${(firstDay.getMonth() + 1).toString().padStart(2, '0')}-01`;
-            const endStr = `${lastDay.getFullYear()}-${(lastDay.getMonth() + 1).toString().padStart(2, '0')}-${lastDay.getDate().toString().padStart(2, '0')}`;
+export const metadata: Metadata = {
+    title: 'Hindu Festival Calendar 2024-2025 | Auspicious Tithis & Rituals',
+    description: 'Explore the complete Hindu festival calendar. Find dates, Vedic significance, and sacred rituals for Ekadashi, Purnima, Sankranti, and major festivals.',
+    openGraph: {
+        title: 'Hindu Festival Calendar | Auspicious Tithis & Rituals',
+        description: 'Discover the divine significance and sacred rituals of upcoming Hindu festivals.',
+        images: ['/logo.png'],
+    },
+    alternates: {
+        canonical: 'https://mantrapuja.com/festivals',
+    },
+};
 
-            const { data: festivalData } = await supabase
-                .from('festivals')
-                .select('*')
-                .gte('date', startStr)
-                .lte('date', endStr)
-                .order('date', { ascending: true });
+async function getFestivalPageData() {
+    try {
+        const supabase = getSupabaseServer();
+        if (!supabase) return { festivals: [], blogs: [] };
 
-            if (festivalData) {
-                setAllFestivals(festivalData);
-                
-                // If it's current month, show festivals from today onwards by default
-                const now = new Date();
-                if (date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) {
-                    const todayStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
-                    const upcoming = festivalData.filter((f: any) => f.date >= todayStr);
-                    setDisplayFestivals(upcoming.slice(0, 4));
-                } else {
-                    setDisplayFestivals(festivalData.slice(0, 4));
-                }
-            }
-        } catch (err) {
-            console.error("Fetch error:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        // Fetch festivals and blogs in parallel
+        const [festivals, blogResult] = await Promise.all([
+            getUpcomingFestivals(12),
+            supabase
+                .from('Final_blog')
+                .select('id, title, slug, image_url, category, excerpt, tags, created_at')
+                .eq('published', true)
+                .order('created_at', { ascending: false })
+                .limit(3)
+        ]);
 
-    useEffect(() => {
-        setMounted(true);
-        const fetchData = async () => {
-            await fetchFestivalsForMonth(new Date());
-            
-            try {
-                // 2. Fetch Blogs
-                const { data: blogData } = await supabase
-                    .from('blogs')
-                    .select('*')
-                    .eq('published', true)
-                    .order('created_at', { ascending: false })
-                    .limit(3);
-
-                if (blogData) setBlogs(blogData);
-            } catch (err) {
-                console.error("Fetch error:", err);
-            }
+        return { 
+            festivals, 
+            blogs: blogResult.data || [] 
         };
-        fetchData();
-    }, []);
+    } catch (error) {
+        console.error("Failed to fetch festival page data:", error);
+        return { festivals: [], blogs: [] };
+    }
+}
 
-    const handleDateSelect = (date: Date) => {
-        setSelectedDate(date);
-        
-        // Use local date parts to build YYYY-MM-DD string to avoid timezone shifts
-        const y = date.getFullYear();
-        const m = (date.getMonth() + 1).toString().padStart(2, '0');
-        const d = date.getDate().toString().padStart(2, '0');
-        const selStr = `${y}-${m}-${d}`;
+export default async function FestivalPage() {
+    const { festivals, blogs } = await getFestivalPageData();
 
-        // 1. Exact matches for this date
-        const onDate = allFestivals.filter(f => f.date === selStr);
-
-        // 2. Upcoming events after this date
-        const upcoming = allFestivals.filter(f => f.date > selStr);
-
-        const combined = [...onDate, ...upcoming].slice(0, 4);
-
-        if (combined.length > 0) {
-            setDisplayFestivals(combined);
-        } else {
-            setDisplayFestivals(allFestivals.slice(-4));
+    // --- PHASES 3: SEMANTIC & SCHEMA OVERHAUL (AI-SEARCH OPTIMIZATION) ---
+    const baseUrl = 'https://mantrapuja.com';
+    
+    const schemas = [
+        // 1. Collection Page & Event List
+        {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": "Hindu Festival Calendar 2024-2025",
+            "description": "A comprehensive guide to upcoming Hindu festivals, their auspicious timings, and sacred rituals.",
+            "url": `${baseUrl}/festivals`,
+            "publisher": {
+                "@type": "Organization",
+                "name": "MantraPuja",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": `${baseUrl}/logo.png`
+                }
+            },
+            "mainEntity": {
+                "@type": "ItemList",
+                "numberOfItems": festivals.length,
+                "itemListElement": festivals.map((fest, idx) => {
+                    const heroImage = resolveFestivalHeroImage(fest.name, (fest as any).heroImage);
+                    return {
+                        "@type": "ListItem",
+                        "position": idx + 1,
+                        "item": {
+                            "@type": "Event",
+                            "name": fest.name,
+                            "startDate": fest.date.toISOString().split('T')[0],
+                            "description": fest.shortDesc,
+                            "url": `${baseUrl}/festivals/${fest.slug}`,
+                            "image": [heroImage, `${baseUrl}/logo.png`],
+                            "eventStatus": "https://schema.org/EventScheduled",
+                            "eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode",
+                            "location": {
+                                "@type": "VirtualLocation",
+                                "url": `${baseUrl}/festivals/${fest.slug}`
+                            }
+                        }
+                    };
+                })
+            }
+        },
+        // 2. Breadcrumb Schema
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Home",
+                    "item": baseUrl
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Festivals",
+                    "item": `${baseUrl}/festivals`
+                }
+            ]
         }
-    };
-
-    if (!mounted) return null;
+    ];
 
     return (
-        <div className="min-h-screen bg-background relative">
+        <main className="min-h-screen bg-background relative overflow-x-hidden">
+            <Script
+                id="festivals-listing-rich-results"
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+            />
+            
             <EnhancedBackground />
 
-            {/* Hero Section */}
-            <div className="relative pt-10 pb-4 px-4 z-10">
-                <h1 className="text-4xl md:text-6xl font-black mb-2 text-foreground font-serif leading-snug text-center">
-                    Hindu Festival <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 py-2">Calendar</span>
-                </h1>
-                
-                <div className="w-full mt-12 relative z-10">
-                    <div className="flex flex-col lg:flex-row gap-12 max-w-[1600px] mx-auto items-start">
-                        {/* Calendar - Single Source of Truth */}
-                        <div className="lg:w-7/12 w-full">
-                            <FestivalCalendar
-                                festivals={allFestivals.map(f => ({ ...f, date: new Date(f.date) }))}
-                                selectedDate={selectedDate}
-                                onDateSelect={handleDateSelect}
-                                onMonthChange={(date) => fetchFestivalsForMonth(date)}
-                            />
-                        </div>
-
-                        {/* Event List - Direct from Database */}
-                        <div className="lg:w-5/12 w-full sticky top-28 self-start">
-                            <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl rounded-[2.5rem] border border-zinc-200 dark:border-zinc-800 p-8 shadow-xl">
-                                <h2 className="text-2xl md:text-3xl font-black font-serif mb-8 flex items-center gap-4">
-                                    <span className="w-8 h-1 bg-saffron rounded-full"></span>
-                                    {selectedDate ? `Festivals for ${selectedDate.toLocaleDateString('default', { day: 'numeric', month: 'short' })}` : "Upcoming Festivals"}
-                                </h2>
-
-                                <div className="space-y-5">
-                                    {displayFestivals.map((fest, idx) => {
-                                        // Simple string parsing for display
-                                        const [y, m, d] = fest.date.split('-');
-                                        const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-                                        const monthLabel = months[parseInt(m) - 1];
-                                        
-                                        const isSelected = selectedDate && 
-                                            parseInt(d) === selectedDate.getDate() && 
-                                            (parseInt(m) - 1) === selectedDate.getMonth() &&
-                                            parseInt(y) === selectedDate.getFullYear();
-
-                                        return (
-                                            <Link
-                                                key={`${fest.id}-${idx}`}
-                                                href={`/festivals/${fest.slug}`}
-                                                className={`group flex gap-5 p-5 rounded-3xl transition-all duration-300 border ${
-                                                    isSelected 
-                                                    ? 'bg-saffron/5 border-saffron shadow-md' 
-                                                    : 'bg-white dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-700 hover:border-saffron/30'
-                                                }`}
-                                            >
-                                                {/* Date Visual from Database String */}
-                                                <div className="flex-shrink-0 flex flex-col items-center justify-center w-14 h-18 rounded-xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-                                                    <div className="w-full bg-saffron text-white py-0.5 text-[8px] font-black uppercase text-center">
-                                                        {monthLabel}
-                                                    </div>
-                                                    <div className="flex-grow flex items-center justify-center text-xl font-black text-zinc-800 dark:text-zinc-100 font-serif">
-                                                        {parseInt(d)}
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex-grow">
-                                                    <h3 className="text-xl font-black text-zinc-900 dark:text-zinc-100 font-serif group-hover:text-saffron transition-colors">
-                                                        {fest.name}
-                                                    </h3>
-                                                    <p className="text-zinc-500 dark:text-zinc-400 text-[11px] line-clamp-1 mt-1">
-                                                        {fest.short_desc || "Explore the divine significance."}
-                                                    </p>
-                                                    {isSelected && (
-                                                        <div className="mt-2 px-2 py-0.5 inline-block rounded-full bg-saffron text-white text-[8px] font-black uppercase">
-                                                            Selected
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            {/* Hero Section - Rendered on Server */}
+            <header className="relative pt-24 pb-12 px-4 z-10">
+                <div className="max-w-4xl mx-auto text-center">
+                    <span className="inline-block px-4 py-1.5 rounded-full bg-saffron/10 text-saffron text-xs font-bold uppercase tracking-[0.2em] mb-6 border border-saffron/20 backdrop-blur-sm">
+                        Sacred Time & Traditions
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-black mb-6 text-foreground font-serif leading-tight">
+                        Hindu Festival <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500 py-2">Calendar</span>
+                    </h1>
+                    <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+                        Navigate the auspicious cycles of the cosmic calendar. Discover the Vedic wisdom, rituals, and significance behind every sacred occasion.
+                    </p>
                 </div>
-            </div>
+            </header>
 
-            {/* Blogs Section */}
-            <div className="max-w-7xl mx-auto px-4 py-24 relative z-10 border-t border-border/50">
+            {/* Interactive Calendar Section - Hybrid */}
+            <section className="relative z-20 px-4 pb-20">
+                <FestivalListingClient initialFestivals={festivals} />
+            </section>
+
+            {/* Blogs Section - Fully Server Rendered */}
+            <section className="max-w-7xl mx-auto px-4 py-24 relative z-10 border-t border-border/50">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                    <h2 className="text-3xl md:text-5xl font-black font-serif">Spiritual <span className="text-saffron">Wisdom</span></h2>
-                    <Link href="/blog" className="text-saffron font-bold hover:underline flex items-center gap-2 text-lg">
-                        View All <ArrowRight className="w-5 h-5" />
+                    <h2 className="text-4xl md:text-5xl font-black font-serif">Spiritual <span className="text-saffron">Wisdom</span></h2>
+                    <Link href="/blog" className="text-saffron font-bold hover:underline flex items-center gap-2 text-lg group">
+                        Explore Knowledge <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
                 </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {blogs.map((blog, idx) => {
-                        const icon = blog.icon || "🕉️";
-                        const gradient = blog.gradient || ["from-orange-500 to-red-600", "from-blue-500 to-indigo-600", "from-green-500 to-emerald-600"][idx % 3];
-                        const readTime = blog.readTime || "5 min read";
+                    {blogs.map((blog: any, idx: number) => {
+                        const gradient = ["from-orange-500 to-red-600", "from-blue-500 to-indigo-600", "from-green-500 to-emerald-600"][idx % 3];
                         return (
                             <Link
                                 key={blog.id || idx}
                                 href={`/blogs/${blog.slug}`}
-                                className="group relative bg-card rounded-[24px] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-border/50 hover:border-saffron/50 block cursor-pointer"
+                                className="group relative bg-card rounded-[32px] overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-border/50 hover:border-saffron/50 flex flex-col h-full"
                             >
                                 <div className={`h-2 bg-gradient-to-r ${gradient}`}></div>
-                                <div className="p-8">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <span className="text-4xl group-hover:scale-110 transition-transform duration-300">{icon}</span>
-                                        <span className="px-3 py-1 rounded-full bg-saffron/10 text-saffron text-xs font-bold uppercase tracking-wider">{blog.category || "Wisdom"}</span>
+                                <div className="p-8 flex flex-col flex-grow">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <div className="w-12 h-12 rounded-2xl bg-saffron/10 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                            🕉️
+                                        </div>
+                                        <span className="px-3 py-1 rounded-full bg-saffron/10 text-saffron text-[10px] font-black uppercase tracking-wider">
+                                            {blog.category || "Wisdom"}
+                                        </span>
                                     </div>
-                                    <h3 className="text-xl font-bold text-foreground mb-3 leading-tight group-hover:text-saffron transition-colors duration-300 font-serif line-clamp-2">
+                                    <h3 className="text-2xl font-black text-foreground mb-3 leading-tight group-hover:text-saffron transition-colors duration-300 font-serif line-clamp-2">
                                         {blog.title}
                                     </h3>
-                                    <p className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-2">
+                                    <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-2 flex-grow text-sm">
                                         {blog.excerpt}
                                     </p>
-                                    <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                                        <span className="text-xs text-muted-foreground font-medium flex items-center gap-2">
-                                            <Clock className="w-4 h-4" /> {readTime}
+                                    <div className="flex items-center justify-between pt-6 border-t border-border/50">
+                                        <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest flex items-center gap-2">
+                                            <Clock className="w-4 h-4 text-saffron" /> 5 MIN READ
                                         </span>
-                                        <span className="text-saffron font-bold text-sm flex items-center gap-2 group-hover:gap-3 transition-all">
-                                            Read More <ArrowRight className="w-4 h-4" />
+                                        <span className="text-saffron font-black text-xs uppercase tracking-widest flex items-center gap-2 group-hover:gap-3 transition-all">
+                                            Read <ArrowRight className="w-4 h-4" />
                                         </span>
                                     </div>
                                 </div>
-                                <div className="absolute inset-0 bg-gradient-to-t from-saffron/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                             </Link>
                         )
                     })}
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     );
 }

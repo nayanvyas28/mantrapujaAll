@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TempleIcon, LingamIcon, TrishulIcon, KalashIcon } from './icons/SpiritualIcons';
-import { Location } from '../data/spiritual-locations';
+import { Location } from '@/lib/queries/destinations';
 import { 
     INDIA_MAP_PATHS, 
     INDIA_MAP_VIEWBOX,
@@ -237,7 +237,8 @@ const IndiaMap = ({ locations, activeFilter, selectedStateId, onLocationClick }:
                                         exit={{ scale: 0, opacity: 0, z: 0 }}
                                         transition={{
                                             type: "spring", stiffness: 300, damping: 20,
-                                            delay: loc.id * 0.002
+                                            delay: (typeof loc.id === 'number' ? loc.id : 0) * 0.002
+
                                         }}
                                         style={{
                                             left: `${xPercent}%`,

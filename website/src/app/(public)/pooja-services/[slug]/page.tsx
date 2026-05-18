@@ -220,6 +220,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
         title: fullTitle,
         description: fullDescription,
         keywords: keywords,
+        alternates: {
+            canonical: canonicalUrl,
+        },
 
         // Open Graph (for Facebook, LinkedIn, etc.)
         openGraph: {
@@ -247,11 +250,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             images: [puja.heroImage],
             creator: '@mantrapuja',
             site: '@mantrapuja',
-        },
-
-        // Canonical URL
-        alternates: {
-            canonical: canonicalUrl,
         },
 
         // Robots
