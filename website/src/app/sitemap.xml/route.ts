@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabaseServer';
 const URLS_PER_SITEMAP = 1000;
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mantrapuja.com';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // Cache sitemap index for 1 hour (ISR Caching)
 
 export async function GET() {
     const supabase = getSupabaseAdmin();

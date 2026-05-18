@@ -17,14 +17,22 @@ export function proxy(request: NextRequest) {
     }
 
     const targetHost = 'mantrapuja.com';
+    let pathname = url.pathname;
+    let needsSlashRedirect = false;
 
-    // 2. Determine if redirection is required
+    // 2. Trailing slash normalization (e.g. /blog/post/ -> /blog/post)
+    if (pathname.length > 1 && pathname.endsWith('/')) {
+        pathname = pathname.slice(0, -1);
+        needsSlashRedirect = true;
+    }
+
+    // 3. Determine if redirection is required
     const needsHostRedirect = host !== targetHost;
     const needsProtoRedirect = proto === 'http';
 
-    if (needsHostRedirect || needsProtoRedirect) {
+    if (needsHostRedirect || needsProtoRedirect || needsSlashRedirect) {
         // Construct the clean normalized URL preserving pathname and search queries
-        const destination = `https://${targetHost}${url.pathname}${url.search}`;
+        const destination = `https://${targetHost}${pathname}${url.search}`;
         
         return NextResponse.redirect(destination, 301);
     }

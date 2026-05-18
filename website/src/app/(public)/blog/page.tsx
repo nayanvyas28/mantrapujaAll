@@ -8,21 +8,27 @@ import BlogSidebar from '@/components/blog/BlogSidebar';
 import { BlogCategory } from '@/data/blog-data';
 import SpiritualFamilySection from '@/components/home/SpiritualFamilySection';
 
-export const metadata: Metadata = {
-    title: 'Spiritual Knowledge & Divine Insights | MantraPuja Blog',
-    description: 'Explore our collection of articles on Vedic rituals, astrology, and spiritual growth. Discover ancient wisdom for modern life.',
-    keywords: ['Vedic Blog', 'Astrology', 'Mantra Science', 'Spiritual Guidance', 'Hindu Rituals', 'Puja Guide'],
-    alternates: {
-        canonical: 'https://mantrapuja.com/blog',
-    },
-    openGraph: {
-        title: 'MantraPuja Blog - Spiritual Knowledge & Divine Insights',
-        description: 'Explore our collection of articles on Vedic rituals, astrology, and spiritual growth.',
-        url: 'https://mantrapuja.com/blog',
-        siteName: 'MantraPuja',
-        type: 'website',
-    }
-};
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+    const params = await searchParams;
+    const page = Number(params.page) || 1;
+    const canonicalUrl = `https://mantrapuja.com/blog${page > 1 ? `?page=${page}` : ''}`;
+
+    return {
+        title: 'Spiritual Knowledge & Divine Insights | MantraPuja Blog',
+        description: 'Explore our collection of articles on Vedic rituals, astrology, and spiritual growth. Discover ancient wisdom for modern life.',
+        keywords: ['Vedic Blog', 'Astrology', 'Mantra Science', 'Spiritual Guidance', 'Hindu Rituals', 'Puja Guide'],
+        alternates: {
+            canonical: canonicalUrl,
+        },
+        openGraph: {
+            title: 'MantraPuja Blog - Spiritual Knowledge & Divine Insights',
+            description: 'Explore our collection of articles on Vedic rituals, astrology, and spiritual growth.',
+            url: canonicalUrl,
+            siteName: 'MantraPuja',
+            type: 'website',
+        }
+    };
+}
 
 export const revalidate = 60; // Cache for 1 minute
 

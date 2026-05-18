@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600; // Cache sitemaps for 1 hour (ISR Caching)
 
 const URLS_PER_SITEMAP = 1000;
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mantrapuja.com';
@@ -34,6 +34,35 @@ const CALCULATOR_TYPES = [
     'mangal-dosha', 'sade-sati', 'kaal-sarp', 'numerology', 'lo-shu', 
     'lucky-vehicle', 'ishta-devata', 'karaka'
 ];
+
+// Helper to escape special XML characters securely
+function escapeXml(unsafeStr: string): string {
+    return unsafeStr.replace(/[<>&'"]/g, (c) => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            default: return c;
+        }
+    });
+}
+
+// Helper to percent-encode Hindi and Unicode characters safely (zero-double-encoding bug)
+function normalizeUrl(urlStr: string): string {
+    try {
+        const parsed = new URL(urlStr);
+        const encodedPath = parsed.pathname
+            .split('/')
+            .map(segment => encodeURIComponent(decodeURIComponent(segment)))
+            .join('/');
+        
+        return `${parsed.protocol}//${parsed.host}${encodedPath}`;
+    } catch {
+        return urlStr;
+    }
+}
 
 export async function GET(
     request: Request,
@@ -186,10 +215,10 @@ export async function GET(
 
         for (const item of urls) {
             xml += `  <url>\n`;
-            xml += `    <loc>${item.url}</loc>\n`;
-            xml += `    <lastmod>${item.lastmod}</lastmod>\n`;
-            xml += `    <changefreq>${item.changefreq}</changefreq>\n`;
-            xml += `    <priority>${item.priority}</priority>\n`;
+            xml += `    <loc>${escapeXml(normalizeUrl(item.url))}</loc>\n`;
+            xml += `    <lastmod>${escapeXml(item.lastmod)}</lastmod>\n`;
+            xml += `    <changefreq>${escapeXml(item.changefreq)}</changefreq>\n`;
+            xml += `    <priority>${escapeXml(item.priority)}</priority>\n`;
             xml += `  </url>\n`;
         }
 
