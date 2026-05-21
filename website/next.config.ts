@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
         destination: '/blog/:slug',
         permanent: true,
       },
+      {
+        source: '/author/:slug',
+        destination: '/authors/:slug',
+        permanent: true,
+      },
     ];
   },
 };

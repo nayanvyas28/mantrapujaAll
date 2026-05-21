@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
+import { Metadata } from 'next';
 import AuthorProfileClient from '@/components/authors/AuthorProfileClient';
 
 // Disable caching for real-time updates during development
@@ -72,6 +73,52 @@ async function getAuthor(slug: string) {
     return {
         ...author,
         blogs: blogs || []
+    };
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params;
+    const author = await getAuthor(slug);
+
+    if (!author) {
+        return {
+            title: 'Author Not Found | Mantra Puja',
+        };
+    }
+
+    const title = `${author.name} - ${author.role} | Mantra Puja`;
+    const description = author.bio || `Read articles and spiritual wisdom by ${author.name}, a distinguished ${author.role} at Mantra Puja.`;
+    const imageUrl = author.avatar || 'https://mantrapuja.com/logo.png';
+    const cleanDecodedSlug = decodeURIComponent(slug).toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            images: [imageUrl],
+            type: 'profile',
+            username: author.name,
+        },
+        twitter: {
+            card: 'summary',
+            title,
+            description,
+            images: [imageUrl],
+        },
+        alternates: {
+            canonical: `https://mantrapuja.com/authors/${cleanDecodedSlug}`,
+        },
+        robots: {
+            index: true,
+            follow: true,
+            nocache: false,
+            googleBot: {
+                index: true,
+                follow: true,
+            }
+        }
     };
 }
 
