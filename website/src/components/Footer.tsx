@@ -153,7 +153,7 @@ const Footer = () => {
                                     "Deoghar": "baidyanath",
                                     "Aurangabad": "grishneshwar",
                                     "Srisailam": "mallikarjuna",
-                                    "Bodh Gaya": "gaya",
+                                    "Bodh Gaya": "mahabodhi-bodh-gaya",
                                     "Prayagraj": "prayagraj",
                                     "Haridwar": "haridwar",
                                     "Badrinath": "badrinath",
@@ -162,8 +162,18 @@ const Footer = () => {
                                     "Dwarka": "dwarka",
                                     "Puri": "puri",
                                     "Rameswaram": "rameswaram",
+                                    "Rameshwaram": "rameswaram",
                                     "Tirupati": "tirupati",
-                                    "Vaishno Devi": "vaishno-devi"
+                                    "Vaishno Devi": "vaishno-devi",
+                                    "Shirdi": "shirdi-sai-baba",
+                                    "Kolkata": "kalighat",
+                                    "Gaya": "gaya-vishnupad",
+                                    "Chidambaram": "chidambaram-nataraja",
+                                    "Guwahati": "kamakhya",
+                                    "Madurai": "madurai-meenakshi",
+                                    "Mount Abu": "mount-abu-dilwara",
+                                    "Mumbai": "siddhivinayak",
+                                    "Patna": "patna-sahib"
                                 };
                                 const slug = slugMap[city.name] || city.name.toLowerCase().replace(/\s+/g, '-');
                                 return (
@@ -188,8 +198,11 @@ const Footer = () => {
                                     "Deoghar": "baidyanath",
                                     "Aurangabad": "grishneshwar",
                                     "Srisailam": "mallikarjuna",
-                                    "Bodh Gaya": "gaya",
-                                    "Vaishno Devi": "vaishno-devi"
+                                    "Bodh Gaya": "mahabodhi-bodh-gaya",
+                                    "Vaishno Devi": "vaishno-devi",
+                                    "Shirdi": "shirdi-sai-baba",
+                                    "Rameswaram": "rameswaram",
+                                    "Rameshwaram": "rameswaram"
                                 };
                                 const slug = slugMap[city] || city.toLowerCase().replace(/\s+/g, '-');
                                 return (
