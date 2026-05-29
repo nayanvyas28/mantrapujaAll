@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 interface LoadingContextType {
@@ -12,37 +12,43 @@ interface LoadingContextType {
 
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
 
+// 🔍 Sub-component to handle search params without blocking the provider's SSR
+function SearchParamsWatcher({ onChange }: { onChange: () => void }) {
+    const searchParams = useSearchParams();
+    useEffect(() => {
+        onChange();
+    }, [searchParams, onChange]);
+    return null;
+}
+
 export const LoadingProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
     const pathname = usePathname();
-    const searchParams = useSearchParams();
 
-    // Trigger loader on route changes
-    useEffect(() => {
+    const triggerLoading = () => {
         setIsLoading(true);
         const timer = setTimeout(() => {
             setIsLoading(false);
-        }, 500); // Shorter transition for route changes
-
+        }, 500);
         return () => clearTimeout(timer);
-    }, [pathname, searchParams]);
+    };
+
+    // Trigger loader on pathname changes
+    useEffect(() => {
+        return triggerLoading();
+    }, [pathname]);
 
     const performThemeTransition = (newTheme: string, setTheme: (t: string) => void) => {
         setIsThemeTransitioning(true);
-
-        // Wait for the animation to reach its peak before switching the theme
         setTimeout(() => {
             setTheme(newTheme);
-            // Manual class update for immediate feedback
             if (newTheme === 'dark') {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
             }
-        }, 600); // Peak of the arc
-
-        // Cleanup the transition state after full animation
+        }, 600);
         setTimeout(() => {
             setIsThemeTransitioning(false);
         }, 1200);
@@ -50,6 +56,9 @@ export const LoadingProvider = ({ children }: { children: React.ReactNode }) => 
 
     return (
         <LoadingContext.Provider value={{ isLoading, setIsLoading, isThemeTransitioning, performThemeTransition }}>
+            <Suspense fallback={null}>
+                <SearchParamsWatcher onChange={triggerLoading} />
+            </Suspense>
             {children}
         </LoadingContext.Provider>
     );

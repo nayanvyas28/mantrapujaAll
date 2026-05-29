@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
+
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
+
 
 const normalizePhone = (phone: string) => {
     let cleaned = phone.replace(/[^\d]/g, '');
@@ -33,7 +37,7 @@ export async function POST(req: Request) {
         }
 
         // 1. Check OTP in table (RE-ADDED)
-        const { data: otpData, error: otpError } = await supabaseAdmin
+        const { data: otpData, error: otpError } = await getAdmin()
             .from('otps')
             .select('*')
             .eq('phone', cleanPhone)
@@ -63,10 +67,10 @@ export async function POST(req: Request) {
         const authPhonePlussed = `+91${cleanPhone}`;
         
         // Find existing user (checking both formats)
-        const { data: { users: userList } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+        const { data: { users: userList } } = await getAdmin().auth.admin.listUsers({ perPage: 1000 });
         console.log('Search List Count:', userList?.length || 0);
         
-        const existingUser = userList?.find(u => 
+        const existingUser = userList?.find((u: any) => 
             u.phone === authPhonePlussed || 
             u.phone === formattedPhone || 
             u.user_metadata?.phone === formattedPhone ||
@@ -78,7 +82,7 @@ export async function POST(req: Request) {
 
         if (!existingUser) {
             console.log('User Not Found. Creating new account...');
-            const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            const { data: newUser, error: createError } = await getAdmin().auth.admin.createUser({
                 phone: authPhonePlussed,
                 password: bridgePassword,
                 phone_confirm: true,
@@ -97,7 +101,7 @@ export async function POST(req: Request) {
             console.log('Existing User Found:', userId, 'Stored Phone Format:', finalAuthPhone);
 
             // Force update password to bridge key
-            const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+            const { error: updateError } = await getAdmin().auth.admin.updateUserById(userId, {
                 password: bridgePassword,
                 phone_confirm: true
             });
@@ -105,7 +109,7 @@ export async function POST(req: Request) {
         }
 
         // 4. Update Profile
-        const { error: profileError } = await supabaseAdmin
+        const { error: profileError } = await getAdmin()
             .from('profiles')
             .upsert({
                 id: userId,
@@ -117,7 +121,7 @@ export async function POST(req: Request) {
         if (profileError) console.error('Profile sync error:', profileError);
 
         // 5. Cleanup OTP
-        await supabaseAdmin.from('otps').delete().eq('id', otpData.id);
+        await getAdmin().from('otps').delete().eq('id', otpData.id);
 
         console.log('Verification Success for userId:', userId, 'Using for login:', finalAuthPhone);
         return NextResponse.json({ 

@@ -5,15 +5,44 @@ import { Category, Page } from '@/types/content';
 // --- Robust Client Selection ---
 // On the server, we use the Service Role key to bypass RLS issues for public data.
 // On the client, we use the default (Anon/Auth) client.
+let serverSupabase: SupabaseClient | null = null;
+
 const getClient = (): SupabaseClient => {
-    if (typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        return createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY,
-            { auth: { persistSession: false } }
-        );
+    // If we're on the client (browser), always return the default client
+    if (typeof window !== 'undefined') return defaultSupabase;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    // If we're on the server and have the service role key
+    if (serviceKey && supabaseUrl) {
+        if (!serverSupabase) {
+            serverSupabase = createClient(
+                supabaseUrl,
+                serviceKey,
+                { auth: { persistSession: false } }
+            );
+        }
+        return serverSupabase;
     }
+
     return defaultSupabase;
+};
+
+// --- Image Resolution Helper ---
+export const resolveImageUrl = (url: string | null | undefined): string => {
+    if (!url) return '/logo.png';
+
+    // Broken legacy URLs
+    if (url.includes('webroot/admin/upload') || url.includes('music_assets/puja_images')) return '/logo.png';
+
+    // External placeholders
+    if (url.includes('placeholder') || url.includes('placehold.co') || url.includes('unsplash.com')) return '/logo.png';
+
+    // Fix common extension mismatches (e.g. webp -> png for local assets)
+    if (url === '/pujaimages/krishnapuja.webp') return '/pujaimages/krishnapuja.png';
+
+    return url;
 };
 
 // --- Categories ---
@@ -238,15 +267,38 @@ export interface Pooja {
 export interface Blog {
     id: string;
     title: string;
+    blog_title?: string;
     slug: string;
-    content: string;
+    content?: any;
+    blog_content?: any;
     excerpt: string;
     image_url: string;
-    tags: string[];
+    featured_image_url?: string;
+    tags?: any; // Can be string[] or jsonb
     published: boolean;
     is_featured: boolean;
+    is_active?: boolean;
     created_at?: string;
     updated_at?: string;
+    category?: string;
+    views?: number;
+    reading_time?: string;
+    seo?: any;
+    // SEO fields from schema
+    meta_title?: string;
+    meta_description?: string;
+    meta_tags?: any;
+    // Author fields from schema
+    author_name?: string;
+    author_role?: string;
+    author_avatar?: string;
+    author_id?: string;
+    author?: {
+        name: string;
+        avatar: string;
+        role: string;
+        bio: string;
+    };
 }
 
 // --- Location Types ---
@@ -287,7 +339,9 @@ export const getPoojas = async (): Promise<Pooja[]> => {
     // Implementation: Ensure all poojas have at least the logo if no images are present
     return (data || []).map(pooja => ({
         ...pooja,
-        images: (!pooja.images || pooja.images.length === 0) ? ['/logo.png'] : pooja.images
+        images: (!pooja.images || pooja.images.length === 0)
+            ? ['/logo.png']
+            : pooja.images.map((img: string) => resolveImageUrl(img))
     }));
 };
 
@@ -406,16 +460,141 @@ export const getBlogs = async (): Promise<Blog[]> => {
 
     if (error) throw error;
 
-    // Implementation: Ensure all blogs have the Mantra Pooja logo if image is missing/placeholder
     return (data || []).map(blog => ({
         ...blog,
-        image_url: (!blog.image_url ||
-            blog.image_url.includes('placeholder') ||
-            blog.image_url.includes('placehold.co') ||
-            blog.image_url.includes('unsplash.com'))
-            ? '/logo.png'
-            : blog.image_url
+        image_url: resolveImageUrl(blog.image_url)
     }));
+};
+
+export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
+    try {
+        const supabase = getClient();
+
+        // 1. Primary search
+        let { data: blog, error } = await supabase
+            .from('Final_blog')
+            .select('*')
+            .eq('slug', slug)
+            .eq('published', true)
+            .eq('is_active', true)
+            .single();
+
+        // 2. Robust Fallback (Decoded, NFC, NFD, and Percent-Encoded variations)
+        if (!blog) {
+            try {
+                const decodedSlug = decodeURIComponent(slug);
+                const candidates = new Set<string>();
+                
+                // Add decoded variations
+                candidates.add(decodedSlug);
+                candidates.add(decodedSlug.normalize('NFC'));
+                candidates.add(decodedSlug.normalize('NFD'));
+                
+                // Add encoded variations (for literal raw percent-encoded database values)
+                const encodedRaw = encodeURIComponent(decodedSlug);
+                candidates.add(encodedRaw);
+                candidates.add(encodedRaw.toLowerCase());
+                candidates.add(encodedRaw.toUpperCase());
+
+                // Remove original to skip redundancy
+                candidates.delete(slug);
+
+                for (const candidate of candidates) {
+                    const { data: foundBlog, error: queryErr } = await supabase
+                        .from('Final_blog')
+                        .select('*')
+                        .eq('slug', candidate)
+                        .eq('published', true)
+                        .eq('is_active', true)
+                        .single();
+
+                    if (foundBlog) {
+                        blog = foundBlog;
+                        break;
+                    }
+                }
+            } catch (e) {
+                console.warn("[getBlogBySlug] Fallback failed", e);
+            }
+        }
+
+        if (!blog) return null;
+
+        // Force normalize slug to decodable representation to avoid double-encoding redirect loops
+        if (blog.slug) {
+            try {
+                blog.slug = decodeURIComponent(blog.slug);
+            } catch (e) {
+                console.error("[getBlogBySlug] Failed to decode slug:", blog.slug);
+            }
+        }
+
+        return {
+            ...blog,
+            author: {
+                name: blog.author_name || "MantraPuja Team",
+                avatar: blog.author_avatar || "/logo.png",
+                role: blog.author_role || "Editor",
+                bio: ""
+            }
+        };
+    } catch (err) {
+        console.error('[getBlogBySlug] Critical fetch error:', err);
+        return null;
+    }
+};
+
+export const getPaginatedBlogs = async (
+    page: number = 1,
+    limit: number = 12,
+    category?: string,
+    search?: string,
+    sort: string = 'newest'
+): Promise<{ blogs: Blog[], total: number, error?: boolean }> => {
+    try {
+        const supabase = getClient();
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        let query = supabase
+            .from('Final_blog')
+            .select('id, title, blog_title, slug, excerpt, image_url, category, author_name, author_avatar, author_role, created_at, views, is_featured, is_active, published', { count: 'exact' })
+            .eq('published', true)
+            .eq('is_active', true);
+
+        if (category && category !== 'All') {
+            query = query.eq('category', category);
+        }
+
+        if (search) {
+            query = query.or(`title.ilike.%${search}%,excerpt.ilike.%${search}%`);
+        }
+
+        if (sort === 'oldest') {
+            query = query.order('created_at', { ascending: true });
+        } else if (sort === 'popular') {
+            query = query.order('views', { ascending: false });
+        } else {
+            query = query.order('created_at', { ascending: false });
+        }
+
+        const { data, error, count } = await query.range(from, to);
+
+        if (error) {
+            console.error('[getPaginatedBlogs] Supabase error:', error);
+            return { blogs: [], total: 0, error: true };
+        }
+
+        const blogs = (data || []).map(blog => ({
+            ...blog,
+            image_url: resolveImageUrl(blog.image_url)
+        }));
+
+        return { blogs, total: count || 0, error: false };
+    } catch (err) {
+        console.error('[getPaginatedBlogs] Critical fetch error:', err);
+        return { blogs: [], total: 0, error: true };
+    }
 };
 
 export const updateBlog = async (id: string, updates: Partial<Blog>): Promise<Blog | null> => {
@@ -444,7 +623,9 @@ export const getLocations = async (): Promise<Location[]> => {
     // Implementation: Ensure all locations have at least the logo if no images are present
     return (data || []).map(location => ({
         ...location,
-        images: (!location.images || location.images.length === 0) ? ['/logo.png'] : location.images
+        images: (!location.images || location.images.length === 0)
+            ? ['/logo.png']
+            : location.images.map((img: string) => resolveImageUrl(img))
     }));
 };
 
@@ -467,15 +648,24 @@ export const getHomeQuickAccess = async (): Promise<any[]> => {
         .eq('key', 'home_quick_access')
         .single();
 
-    if (error) {
-        console.warn("home_quick_access not found in settings, using defaults");
-        return [];
+    const defaults = [
+        { name: "Kundali", img: "/features/kundali.webp", link: "/kundli", color: "from-orange-500/10 to-red-500/10", border: "#f97316" },
+        { name: "Rashifal", img: "/features/rashifal.webp", link: "/horoscope", color: "from-amber-500/10 to-orange-500/10", border: "#f59e0b" },
+        { name: "Panchang", img: "/features/panchang.webp", link: "/panchang", color: "from-yellow-500/10 to-amber-500/10", border: "#eab308" },
+        { name: "Calculator", img: "/features/calculator.webp", link: "/calculators", color: "from-red-500/10 to-pink-500/10", border: "#ef4444" },
+        { name: "Chadava", img: "/features/chadava.webp", link: "/chadava", color: "from-purple-500/10 to-indigo-500/10", border: "#a855f7" },
+        { name: "Guru Ji AI", img: "/features/guru-ai.webp", link: "/chat", color: "from-cyan-500/10 to-blue-500/10", border: "#06b6d4" }
+    ];
+
+    if (error || !data) {
+        return defaults;
     }
-    
+
     try {
-        return typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        const parsed = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+        return (parsed && Array.isArray(parsed) && parsed.length > 0) ? parsed : defaults;
     } catch (e) {
         console.error("Failed to parse home_quick_access:", e);
-        return [];
+        return defaults;
     }
 };

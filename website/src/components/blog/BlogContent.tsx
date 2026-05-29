@@ -1,237 +1,316 @@
-"use client";
+import React from 'react';
+import { Sun, BookOpen, MessageSquare } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-import { useState, useEffect, useCallback } from "react";
-import { MOCK_BLOGS, BlogCategory, BlogPost } from "@/data/blog-data";
-import BlogHero from "./BlogHero";
-import BlogCard from "./BlogCard";
-import BlogSidebar from "./BlogSidebar";
-import SpiritualFamilySection from "../home/SpiritualFamilySection";
-import { AnimatePresence, motion } from "framer-motion";
-import { supabase } from "@/lib/supabaseClient";
-import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+interface BlogContentProps {
+    blog: any;
+}
 
-const PAGE_SIZE = 9;
+/**
+ * Smartly pre-processes markdown content to ensure headers and lists are properly spaced.
+ * This fixes issues where content is "written together" without necessary newlines.
+ */
+const prepareMarkdown = (content: string) => {
+    if (!content) return '';
+    
+    return content
+        // 1. Ensure headers start on a new line
+        .replace(/([^\n])\s*(#{1,6}\s+)/g, '$1\n\n$2')
+        // 2. Ensure text AFTER a header is on a new line (handles: "### Header Body")
+        // Matches a header line that has no trailing newline and is followed by text
+        .replace(/(#{1,6}\s+[^\n#]+?)(?=\s+[A-Z][a-z])/g, '$1\n\n')
+        // 3. Ensure list items start on a new line
+        .replace(/([^\n])\s*(\n*[-*+]\s+)/g, '$1\n\n$2')
+        // 4. Normalize multiple newlines
+        .replace(/\n{3,}/g, '\n\n');
+};
 
-export default function BlogContent() {
-    const [activeCategory, setActiveCategory] = useState<BlogCategory>("All");
-    const [searchTerm, setSearchTerm] = useState("");
-    const [blogs, setBlogs] = useState<BlogPost[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [page, setPage] = useState(0);
-    const [hasMore, setHasMore] = useState(true);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [sortBy, setSortBy] = useState("newest");
-    const [timeFilter, setTimeFilter] = useState("all");
-    const [fetchError, setFetchError] = useState<string | null>(null);
+function checkIfLineIsHeading(line: string, i: number, lines: string[]): boolean {
+    if (!line) return false;
+    return line.startsWith('#') || 
+        (line.length < 100 && 
+         !line.endsWith('.') && 
+         !line.endsWith('!') && 
+         !line.startsWith('-') && 
+         !line.startsWith('*') && 
+         !line.startsWith('•') &&
+         !/^\d+$/.test(line) && // Not just a number
+         (i === 0 || lines[i - 1].trim() === ''));
+}
 
-    // Fetch Blogs function
-    const fetchBlogs = useCallback(async (pageToFetch: number, isNewSearch: boolean = false) => {
-        try {
-            setFetchError(null);
-
-            // 1. Fetch Authors Safely
-            let authorsData: any[] = [];
-            try {
-                const { data: aData } = await supabase.from('blog_authors').select('*');
-                authorsData = aData || [];
-            } catch (aErr) {
-                console.warn("Authors fetch failed:", aErr);
-            }
-
-            const authorIdMap = new Map();
-            const authorNameMap = new Map();
-            authorsData.forEach(a => {
-                if (a && a.id) authorIdMap.set(a.id, a);
-                if (a && a.name) authorNameMap.set(a.name.trim().toLowerCase(), a);
-            });
-
-            // 2. Build Query
-            let query = supabase
-                .from('Final_blog')
-                .select('*')
-                .eq('published', true)
-                .eq('is_active', true) // Added is_active check from new schema
-                .neq('slug', 'cache-buster-' + Date.now()); // Safe string-based cache buster
-
-            // Apply Sorting
-            if (sortBy === "popular") {
-                query = query.order('views', { ascending: false });
-            } else if (sortBy === "oldest") {
-                query = query.order('created_at', { ascending: true });
-            } else {
-                query = query.order('created_at', { ascending: false });
-            }
-
-            // Apply Time Filter
-            if (timeFilter !== "all") {
-                const now = new Date();
-                let filterDate = new Date();
-                if (timeFilter === "today") filterDate.setHours(0, 0, 0, 0);
-                else if (timeFilter === "week") filterDate.setDate(now.getDate() - 7);
-                else if (timeFilter === "month") filterDate.setMonth(now.getMonth() - 1);
-                query = query.gte('created_at', filterDate.toISOString());
-            }
-
-            // Apply Category
-            if (activeCategory !== "All") {
-                query = query.eq('category', activeCategory);
-            }
-
-            // Apply Smart Search
-            if (searchTerm) {
-                const words = searchTerm.trim().split(/\s+/).filter(w => w.length > 0);
-                if (words.length > 0) {
-                    // Create an OR filter for each word across multiple columns
-                    const orFilters = words.map(word => 
-                        `title.ilike.%${word}%,excerpt.ilike.%${word}%,category.ilike.%${word}%`
-                    ).join(',');
-                    query = query.or(orFilters);
+function parseRawContentToStructured(content: string) {
+    const lines = content.split('\n');
+    const sections: any[] = [];
+    let introduction = "";
+    let conclusion = "";
+    const faq: any[] = [];
+    
+    let currentSection: any = null;
+    let introDone = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
+        
+        const isHeading = checkIfLineIsHeading(line, i, lines);
+             
+        if (isHeading) {
+            const headingText = line.replace(/^#+\s*/, '').trim();
+            
+            // Conclusion
+            if (headingText.toLowerCase().includes('conclusion') || headingText.toLowerCase().includes('conclusion —') || headingText.toLowerCase().includes('निष्कर्ष') || headingText.toLowerCase().includes('summary')) {
+                let conclLines = [];
+                for (let j = i + 1; j < lines.length; j++) {
+                    conclLines.push(lines[j]);
                 }
+                conclusion = conclLines.join('\n').trim();
+                break;
             }
-
-            // Pagination
-            const from = pageToFetch * PAGE_SIZE;
-            const to = from + PAGE_SIZE - 1;
-            query = query.range(from, to);
-
-            const { data, error } = await query;
-
-            if (error) {
-                setFetchError(error.message);
-                throw error;
-            }
-
-            if (data) {
-                const mappedBlogs: BlogPost[] = data.map((b: any) => {
-                    return {
-                        id: b.id,
-                        title: b.title,
-                        excerpt: b.excerpt || b.meta_description || "Read this amazing article on MantraPuja.",
-                        slug: b.slug,
-                        image_url: b.image_url || "https://images.unsplash.com/photo-1605218453416-59e3c9c94494?q=80&w=1200",
-                        created_at: b.created_at,
-                        category: (b.category as BlogCategory) || "Scriptures & Ancient Wisdom",
-                        tags: b.tags || [],
-                        views: b.views || 0,
-                        author: {
-                            name: b.author_name || "MantraPuja Team",
-                            avatar: b.author_avatar || "/logo.png",
-                            role: b.author_role || "Editor"
+            
+            // FAQ
+            if (headingText.toLowerCase().includes('faq') || headingText.toLowerCase().includes('frequently asked') || headingText.toLowerCase().includes('question')) {
+                let currentQ = "";
+                let currentA = "";
+                for (let j = i + 1; j < lines.length; j++) {
+                    const faqLine = lines[j].trim();
+                    if (!faqLine) continue;
+                    
+                    const isFaqHeading = checkIfLineIsHeading(faqLine, j, lines);
+                         
+                    if (isFaqHeading) {
+                        i = j - 1;
+                        break;
+                    }
+                    
+                    const lowerFaqLine = faqLine.toLowerCase();
+                    if (lowerFaqLine.startsWith('q:') || lowerFaqLine.startsWith('q.') || faqLine.startsWith('प्रश्न') || faqLine.includes('?')) {
+                        if (currentQ && currentA) {
+                            faq.push({ question: currentQ, answer: currentA });
                         }
-                    };
-                });
-
-                setBlogs(prev => isNewSearch ? mappedBlogs : [...prev, ...mappedBlogs]);
-                setHasMore(data.length === PAGE_SIZE);
+                        
+                        const qMarkIndex = faqLine.indexOf('?');
+                        if (qMarkIndex !== -1 && qMarkIndex < faqLine.length - 1) {
+                            currentQ = faqLine.substring(0, qMarkIndex + 1).replace(/^(q:|q\.|प्रश्न)\s*/i, '').trim();
+                            currentA = faqLine.substring(qMarkIndex + 1).trim();
+                        } else {
+                            currentQ = faqLine.replace(/^(q:|q\.|प्रश्न)\s*/i, '').trim();
+                            currentA = "";
+                        }
+                    } else if (lowerFaqLine.startsWith('a:') || lowerFaqLine.startsWith('a.') || faqLine.startsWith('उत्तर')) {
+                        currentA = faqLine.replace(/^(a:|a\.|उत्तर)\s*/i, '').trim();
+                    } else {
+                        if (currentA) {
+                            currentA += "\n" + faqLine;
+                        } else if (currentQ) {
+                            currentA = faqLine;
+                        }
+                    }
+                }
+                if (currentQ && currentA) {
+                    faq.push({ question: currentQ, answer: currentA });
+                }
+                if (currentSection) {
+                    sections.push(currentSection);
+                    currentSection = null;
+                }
+                introDone = true;
+                continue;
             }
-        } catch (err: any) {
-            console.error("Critical: Failed to fetch blogs:", err);
-            setFetchError(err.message || "Unknown error occurred");
-        } finally {
-            setIsLoading(false);
-            setIsLoadingMore(false);
+            
+            if (currentSection) {
+                sections.push(currentSection);
+            }
+            
+            currentSection = {
+                heading: headingText,
+                content: "",
+                key_points: []
+            };
+            introDone = true;
+        } else {
+            if (!introDone) {
+                if (introduction) introduction += "\n\n";
+                introduction += line;
+            } else if (currentSection) {
+                if (line.startsWith('-') || line.startsWith('*') || line.startsWith('•')) {
+                    const point = line.replace(/^[-*•]\s*/, '').trim();
+                    currentSection.key_points.push(point);
+                } else {
+                    if (currentSection.content) currentSection.content += "\n\n";
+                    currentSection.content += line;
+                }
+            } else {
+                if (introduction) introduction += "\n\n";
+                introduction += line;
+            }
         }
-    }, [activeCategory, searchTerm, sortBy, timeFilter]);
-
-    const [isFirstLoad, setIsFirstLoad] = useState(true);
-
-    // Initial Load & Filter Changes
-    useEffect(() => {
-        setIsLoading(true);
-        setPage(0);
-        // We don't clear blogs here to keep the "Direct" feel during search
-        fetchBlogs(0, true).then(() => {
-            setIsFirstLoad(false);
-        });
-    }, [activeCategory, searchTerm, sortBy, timeFilter, fetchBlogs]);
-
-    const handleLoadMore = () => {
-        if (!hasMore || isLoadingMore) return;
-        setIsLoadingMore(true);
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchBlogs(nextPage, false);
+    }
+    
+    if (currentSection) {
+        sections.push(currentSection);
+    }
+    
+    // Promote first section to introduction if it's named 'Introduction' and intro is empty
+    if (sections.length > 0 && (!introduction || !introduction.trim())) {
+        const firstSec = sections[0];
+        const h = firstSec.heading.toLowerCase();
+        if (h === 'introduction' || h === 'intro' || h === 'प्रस्तावना' || h === 'भूमिका' || h === 'prastavana') {
+            introduction = firstSec.content;
+            sections.shift();
+        }
+    }
+    
+    // Auto-structure simple plain text if no sections were parsed
+    if (sections.length === 0) {
+        const paragraphs = content.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+        if (paragraphs.length > 0) {
+            if (!introduction || !introduction.trim()) {
+                introduction = paragraphs[0];
+                if (paragraphs.length > 1) {
+                    sections.push({
+                        heading: "Divine Wisdom",
+                        content: paragraphs.slice(1).join('\n\n'),
+                        key_points: []
+                    });
+                }
+            } else {
+                sections.push({
+                    heading: "Divine Wisdom",
+                    content: paragraphs.join('\n\n'),
+                    key_points: []
+                });
+            }
+        }
+    }
+    
+    return {
+        introduction,
+        sections,
+        faq,
+        conclusion
     };
+}
 
-    return (
-        <div className="min-h-screen bg-background transition-colors duration-500 relative">
-            <UnifiedPujaBackground />
+export default function BlogContent({ blog }: BlogContentProps) {
+    if (!blog) return null;
 
-            {/* Only show full loading screen on absolute first visit */}
-            {isFirstLoad && isLoading && <LoadingScreen />}
+    const rawContent = blog.blog_content || blog.content;
 
-            <BlogHero onSearch={setSearchTerm} onSort={setSortBy} onFilter={setTimeFilter} />
+    let structuredContent = null;
+    try {
+        if (rawContent) {
+            structuredContent = (typeof rawContent === 'object') ? rawContent : JSON.parse(rawContent);
+        }
+    } catch (e) {
+        // Not JSON - will fallback to raw renderer
+    }
 
-            <div className="container mx-auto px-4 pb-24 -mt-10 relative z-20">
+    // Fallback: If not structured JSON, try to auto-structure the plain text / markdown content
+    if (!structuredContent && typeof rawContent === 'string' && rawContent.trim()) {
+        const parsed = parseRawContentToStructured(rawContent);
+        if (parsed.sections.length > 0) {
+            structuredContent = parsed;
+        }
+    }
 
-                <div className="flex flex-col lg:flex-row gap-12">
-                    {/* Sidebar */}
-                    <BlogSidebar
-                        activeCategory={activeCategory}
-                        onSelectCategory={setActiveCategory}
-                    />
+    const hasStructuredData = structuredContent && (
+        (structuredContent.sections && Array.isArray(structuredContent.sections) && structuredContent.sections.length > 0) || 
+        structuredContent.introduction || 
+        (structuredContent.faq && Array.isArray(structuredContent.faq) && structuredContent.faq.length > 0) ||
+        structuredContent.conclusion
+    );
 
-                    {/* Main Content Grid */}
-                    <div className="flex-1">
-                        {/* Debug Info */}
-                        {!isLoading && blogs.length === 0 && (
-                            <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 text-xs font-mono">
-                                Debug: Blogs=0 | Category={activeCategory} | Search={searchTerm} | Status=Loaded
+    if (hasStructuredData) {
+        return (
+            <div className="space-y-20 relative z-10">
+                {/* Introduction */}
+                {structuredContent.introduction && (
+                    <section className="border-l-4 border-saffron pl-8">
+                        <div className="text-xl md:text-2xl leading-relaxed font-serif font-medium text-foreground/90 italic prose dark:prose-invert max-w-none prose-p:mt-4 first:prose-p:mt-0">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {prepareMarkdown(structuredContent.introduction)}
+                            </ReactMarkdown>
+                        </div>
+                    </section>
+                )}
+
+                {/* Sections */}
+                <div className="space-y-24">
+                    {structuredContent.sections?.map((section: any, idx: number) => (
+                        <section key={idx}>
+                            <h2 
+                                id={`section-${idx + 1}`}
+                                className="text-3xl md:text-5xl font-black font-serif mb-8 flex items-center gap-4 scroll-mt-32"
+                            >
+                                <span className="w-10 h-10 rounded-xl bg-saffron/10 flex items-center justify-center text-saffron text-xl">
+                                    {idx + 1}
+                                </span>
+                                {section.heading}
+                            </h2>
+                            <div className="text-lg md:text-xl leading-relaxed text-foreground/80 prose prose-lg md:prose-xl dark:prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-serif prose-headings:text-foreground prose-a:text-saffron">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {prepareMarkdown(section.content || '')}
+                                </ReactMarkdown>
                             </div>
-                        )}
-
-                        <div className={`transition-all duration-500 ${isLoading ? "opacity-60 blur-[1px] pointer-events-none" : "opacity-100"}`}>
-                            {blogs.length > 0 ? (
-                             <>
-                                <motion.div
-                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                                >
-                                    <AnimatePresence mode="popLayout">
-                                        {blogs.map((blog, index) => (
-                                            <BlogCard key={`${blog.id}-${index}`} blog={blog} />
-                                        ))}
-                                    </AnimatePresence>
-                                </motion.div>
-
-                                {/* Load More Button */}
-                                {hasMore && (
-                                    <div className="flex justify-center mt-12">
-                                        <button
-                                            onClick={handleLoadMore}
-                                            disabled={isLoadingMore}
-                                            className="px-8 py-3 rounded-full bg-saffron text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                        >
-                                            {isLoadingMore ? (
-                                                <>
-                                                    <img
-                                                        src="/om1.png"
-                                                        alt="Loading"
-                                                        className="w-5 h-5 animate-spin invert brightness-0"
-                                                    />
-                                                    Loading...
-                                                </>
-                                            ) : (
-                                                "Load More Articles"
-                                            )}
-                                        </button>
-                                    </div>
-                                )}
-                             </>
-                            ) : (
-                                !isLoading && (
-                                    <div className="text-center py-20 bg-card/30 rounded-[2.5rem] border border-border border-dashed">
-                                        <h3 className="text-2xl font-bold mb-2">No wisdom found</h3>
-                                        <p className="text-muted-foreground">Try adjusting your search or category.</p>
-                                    </div>
-                                )
+                            {section.key_points?.length > 0 && (
+                                <ul className="mt-10 grid gap-4 bg-secondary/30 p-8 md:p-12 rounded-[40px] border border-border/40">
+                                    {section.key_points.map((point: string, kIdx: number) => (
+                                        <li key={kIdx} className="flex items-start gap-4">
+                                            <div className="mt-2.5 w-2 h-2 rounded-full bg-saffron shrink-0 shadow-lg shadow-saffron/50"></div>
+                                            <span className="text-base md:text-lg font-medium">{point}</span>
+                                        </li>
+                                    ))}
+                                </ul>
                             )}
+                        </section>
+                    ))}
+                </div>
+
+                {/* FAQ Section */}
+                {structuredContent.faq?.length > 0 && (
+                    <section className="bg-gradient-to-br from-saffron/5 to-orange-600/5 rounded-[48px] p-8 md:p-16 border border-saffron/10">
+                        <h2 className="text-3xl md:text-4xl font-black font-serif mb-12 flex items-center gap-4">
+                            <MessageSquare className="text-saffron w-8 h-8" />
+                            Divine Inquiries (FAQ)
+                        </h2>
+                        <div className="space-y-12">
+                            {structuredContent.faq.map((item: any, fIdx: number) => (
+                                <div key={fIdx} className="group/faq">
+                                    <h3 className="text-xl md:text-2xl font-black mb-4 flex gap-4 text-foreground group-hover/faq:text-saffron transition-colors">
+                                        <span className="text-saffron italic opacity-50 font-serif" aria-hidden="true">Q.</span>
+                                        {item.question}
+                                    </h3>
+                                    <div className="pl-10 text-lg text-foreground/70 border-l-2 border-saffron/20 group-hover/faq:border-saffron/50 ml-4 py-1 transition-colors prose-sm md:prose-base dark:prose-invert">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {prepareMarkdown(item.answer)}
+                                        </ReactMarkdown>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* Conclusion */}
+                {structuredContent.conclusion && (
+                    <div className="text-center py-16 px-8 bg-saffron/5 rounded-[40px] border border-saffron/10">
+                        <div className="text-2xl md:text-3xl font-serif font-black italic text-foreground leading-snug">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {prepareMarkdown(structuredContent.conclusion)}
+                            </ReactMarkdown>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
+        );
+    }
 
-            <SpiritualFamilySection />
+    return (
+        <div className="prose prose-xl dark:prose-invert max-w-none prose-headings:font-serif prose-p:leading-relaxed prose-a:text-saffron">
+             <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {prepareMarkdown(typeof rawContent === 'string' ? rawContent : '')}
+             </ReactMarkdown>
         </div>
     );
 }

@@ -1,36 +1,35 @@
-
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables')
-}
+// Helper to check if we have the required variables
+const hasVars = supabaseUrl && supabaseKey;
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Create the client only if we have the vars, otherwise export a placeholder/null
+// This prevents the build from crashing when env vars are missing
+export const supabase = hasVars 
+    ? createClient(supabaseUrl, supabaseKey) 
+    : (null as any); 
 
 /**
  * Utility to clear existing session from local storage.
- * Useful when hit with "AuthApiError: Invalid Refresh Token"
  */
 export const clearSession = async () => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && supabase) {
         const keys = Object.keys(localStorage);
         keys.forEach(key => {
             if (key.includes('sb-') && key.includes('-auth-token')) {
                 localStorage.removeItem(key);
             }
         });
-        // Also call signOut to be sure
         await supabase.auth.signOut();
     }
 }
 
 // Global listener to detect refresh token errors
-if (typeof window !== 'undefined') {
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        // If we get an error or a state that indicates token failure
-        // we can proactively clear or alert.
+if (typeof window !== 'undefined' && supabase) {
+    supabase.auth.onAuthStateChange(async (event: any, session: any) => {
+        // Auth state logic
     });
 }

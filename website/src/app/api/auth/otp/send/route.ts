@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 // Setup Supabase Admin
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
+
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
+
 
 /**
  * Normalizes phone number to 10 digits
@@ -39,7 +43,7 @@ export async function POST(req: Request) {
         // constraint only allows 'REGISTER' currently.
         const effectivePurpose = 'REGISTER'; 
         
-        const { error: otpError } = await supabaseAdmin
+        const { error: otpError } = await getAdmin()
             .from('otps')
             .upsert({
                 phone: cleanPhone,

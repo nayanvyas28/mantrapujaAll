@@ -1,27 +1,33 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
 const URLS_PER_SITEMAP = 1000;
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mantrapuja.com';
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const revalidate = 3600; // Cache sitemap index for 1 hour (ISR Caching)
 
 export async function GET() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return new NextResponse('Supabase not configured', { status: 500 });
+
     try {
         // Get counts for dynamic content
-        const [blogsCount, poojasCount, destinationsCount] = await Promise.all([
-            supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then(res => res.count || 0),
-            supabase.from('poojas').select('*', { count: 'exact', head: true }).then(res => res.count || 0),
-            supabase.from('destinations').select('*', { count: 'exact', head: true }).then(res => res.count || 0)
+        const [blogsCount, poojasCount, destinationsCount, authorsCount] = await Promise.all([
+            supabase.from('Final_blog').select('*', { count: 'exact', head: true }).eq('published', true).eq('is_active', true).then((res: any) => res.count || 0),
+            supabase.from('poojas').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
+            supabase.from('spiritual_places').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0),
+            supabase.from('blog_authors').select('*', { count: 'exact', head: true }).then((res: any) => res.count || 0)
         ]);
 
         // Calculate number of sitemaps needed for each type
         const blogPacks = Math.ceil(blogsCount / URLS_PER_SITEMAP) || 1;
         const poojaPacks = Math.ceil(poojasCount / URLS_PER_SITEMAP) || 1;
         const destPacks = Math.ceil(destinationsCount / URLS_PER_SITEMAP) || 1;
+        const authorPacks = Math.ceil(authorsCount / URLS_PER_SITEMAP) || 1;
+
+        // Festivals (Special Handling for 2000+ records)
+        const { count: festivalsCount } = await supabase.from('festivals').select('*', { count: 'exact', head: true }).eq('is_active', true);
+        const festivalPacks = Math.ceil((festivalsCount || 0) / 500) || 1; // Chunking at 500 for festivals
 
         // Generate sitemap index XML
         let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
@@ -33,7 +39,7 @@ export async function GET() {
         xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
         xml += `  </sitemap>\n`;
 
-        // Blogs sitemaps (blogsmap1.xml, blogsmap2.xml, etc.)
+        // Blogs sitemaps
         for (let i = 1; i <= blogPacks; i++) {
             xml += `  <sitemap>\n`;
             xml += `    <loc>${SITE_URL}/sitemaps/blog/${i}.xml</loc>\n`;
@@ -53,6 +59,22 @@ export async function GET() {
         for (let i = 1; i <= destPacks; i++) {
             xml += `  <sitemap>\n`;
             xml += `    <loc>${SITE_URL}/sitemaps/destination/${i}.xml</loc>\n`;
+            xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+            xml += `  </sitemap>\n`;
+        }
+
+        // Authors sitemaps
+        for (let i = 1; i <= authorPacks; i++) {
+            xml += `  <sitemap>\n`;
+            xml += `    <loc>${SITE_URL}/sitemaps/author/${i}.xml</loc>\n`;
+            xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
+            xml += `  </sitemap>\n`;
+        }
+
+        // Festival sitemaps
+        for (let i = 1; i <= festivalPacks; i++) {
+            xml += `  <sitemap>\n`;
+            xml += `    <loc>${SITE_URL}/sitemaps/festival/${i}.xml</loc>\n`;
             xml += `    <lastmod>${new Date().toISOString()}</lastmod>\n`;
             xml += `  </sitemap>\n`;
         }

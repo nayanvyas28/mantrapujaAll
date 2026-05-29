@@ -27,7 +27,7 @@ export default function AssetManager({ onSelect }: { onSelect?: (url: string) =>
         if (error) {
             console.error("Error loading assets:", error);
         } else {
-            const loadedAssets = data?.map(file => {
+            const loadedAssets = data?.map((file: any) => {
                 const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(file.name);
                 return {
                     name: file.name,

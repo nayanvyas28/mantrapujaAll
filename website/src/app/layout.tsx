@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import ClientLayout from "@/components/ClientLayout";
+import { LanguageProvider } from "@/context/LanguageContext";
+import { LoadingProvider } from "@/context/LoadingContext";
+import { ThemeTransitionOverlay } from "@/components/ui/ThemeTransitionOverlay";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,12 +17,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://mantrapuja.com'),
   title: "Mantra Puja - Book Authentic Vedic Poojas",
   description: "Find and book the right Pooja for every purpose. Authentic Vedic rituals at your home.",
 };
-
-import { AuthProvider } from "@/context/AuthContext";
-import { LanguageProvider } from "@/context/LanguageContext";
 
 export default function RootLayout({
   children,
@@ -29,6 +29,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('unhandledrejection', function(event) {
+                if (event.reason && event.reason.stack && event.reason.stack.includes('chrome-extension://')) {
+                  event.preventDefault();
+                  event.stopImmediatePropagation();
+                }
+              });
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-background text-foreground`}
         suppressHydrationWarning
@@ -37,14 +51,12 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="light"
           enableSystem={false}
-          disableTransitionOnChange
         >
           <LanguageProvider>
-            <AuthProvider>
-              <ClientLayout>
-                {children}
-              </ClientLayout>
-            </AuthProvider>
+            <LoadingProvider>
+              <ThemeTransitionOverlay />
+              {children}
+            </LoadingProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

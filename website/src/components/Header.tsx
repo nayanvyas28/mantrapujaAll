@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LogOut, User as UserIcon, LogIn, ChevronDown, Calendar, Settings, MapPin, Search, X, Compass, Calculator, MessageSquare, Scroll, ChevronRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -73,13 +74,16 @@ const Header = () => {
             <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl shadow-sm border-b border-border py-4">
                 <div className="container mx-auto px-4 flex items-center justify-between">
                     <div className="flex items-center gap-8">
-                        <Link href="/" className="flex items-center space-x-2 group">
-                            <img
-                                src="/logo.png"
-                                alt="MantraPuja - Admin Dashboard Logo"
-                                className="h-14 w-auto group-hover:opacity-80 transition-opacity"
-                            />
-                        </Link>
+                            <div className="relative h-14 w-28 group-hover:opacity-80 transition-opacity">
+                                <Image
+                                    src="/logo.png"
+                                    alt="MantraPuja - Admin Dashboard Logo"
+                                    fill
+                                    priority
+                                    sizes="112px"
+                                    className="object-contain"
+                                />
+                            </div>
                         <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1 border border-border overflow-x-auto no-scrollbar max-w-[200px] sm:max-w-none">
                             {[
                                 { name: 'Visual Editor', view: null, icon: '🎨' },
@@ -143,11 +147,16 @@ const Header = () => {
             <div className="max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12 flex items-center justify-between py-3">
                 {/* Logo */}
                 <Link href="/" className="flex items-center space-x-2 group relative z-50">
-                    <img
-                        src="/logo.png"
-                        alt="MantraPuja - Vedic Services Logo"
-                        className="h-12 xs:h-14 md:h-18 w-auto group-hover:scale-105 transition-all duration-300"
-                    />
+                    <div className="relative h-12 xs:h-14 md:h-18 w-24 xs:w-28 md:w-36 group-hover:scale-105 transition-all duration-300">
+                        <Image
+                            src="/logo.png"
+                            alt="MantraPuja - Vedic Services Logo"
+                            fill
+                            priority
+                            sizes="(max-width: 768px) 112px, 144px"
+                            className="object-contain"
+                        />
+                    </div>
                 </Link>
 
                 {/* Desktop Navigation */}

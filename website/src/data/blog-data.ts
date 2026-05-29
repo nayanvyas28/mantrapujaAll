@@ -16,16 +16,19 @@ export interface Author {
 }
 
 export interface BlogPost {
-    id: number;
+    id: string | number;
     title: string;
     excerpt: string;
     slug: string;
     image_url: string;
     created_at: string;
+    updated_at?: string;
     category: BlogCategory;
     tags: string[];
     views: number;
     author: Author;
+    is_active?: boolean;
+    is_featured?: boolean;
 }
 
 export const BLOG_CATEGORIES: BlogCategory[] = [
@@ -47,6 +50,7 @@ export const MOCK_BLOGS: BlogPost[] = [
         slug: "science-behind-vedic-mantras",
         image_url: "https://images.unsplash.com/photo-1605218453416-59e3c9c94494?q=80&w=600&auto=format&fit=crop",
         created_at: "2024-03-15T09:00:00Z",
+        updated_at: "2024-03-15T09:00:00Z",
         category: "Scriptures & Ancient Wisdom",
         tags: ["Vedic Science", "Mantras", "Wellness"],
         views: 1250,

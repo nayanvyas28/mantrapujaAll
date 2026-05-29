@@ -1,6 +1,22 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['10.126.135.92'],
+  images: {
+    unoptimized: true,
+    remotePatterns: [
+      { protocol: 'https', hostname: 's1.mantrapuja.com' },
+      { protocol: 'https', hostname: 'mantrapuja.com' },
+      { protocol: 'http', hostname: 'mantrapuja.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'ui-avatars.com' },
+      { protocol: 'https', hostname: 'placehold.co' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: '*.supabase.co' },
+      { protocol: 'https', hostname: '**.supabase.co' },
+    ],
+  },
   async redirects() {
     return [
       {
@@ -11,6 +27,11 @@ const nextConfig: NextConfig = {
       {
         source: '/blogs/:slug',
         destination: '/blog/:slug',
+        permanent: true,
+      },
+      {
+        source: '/author/:slug',
+        destination: '/authors/:slug',
         permanent: true,
       },
     ];

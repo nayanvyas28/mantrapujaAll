@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
+
+export const revalidate = 3600; // Cache sitemaps for 1 hour (ISR Caching)
 
 const URLS_PER_SITEMAP = 1000;
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://www.mantrapuja.com';
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mantrapuja.com';
 
 const STATIC_ROUTES = [
     '',
@@ -17,17 +14,63 @@ const STATIC_ROUTES = [
     '/locations',
     '/festivals',
     '/blog',
+    '/kundli',
+    '/horoscope',
+    '/panchang',
+    '/calculators',
     '/privacy-policy',
     '/terms-of-service',
     '/refund-policy',
-    '/login',
-    '/signup',
 ];
+
+const ZODIAC_SIGNS = [
+    'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 
+    'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces'
+];
+
+const CALCULATOR_TYPES = [
+    'love', 'friendship', 'flames', 'sun-sign', 'moon-sign', 'moon-phase', 
+    'birth-chart', 'ascendant', 'nakshatra', 'dasha', 'transit', 
+    'mangal-dosha', 'sade-sati', 'kaal-sarp', 'numerology', 'lo-shu', 
+    'lucky-vehicle', 'ishta-devata', 'karaka'
+];
+
+// Helper to escape special XML characters securely
+function escapeXml(unsafeStr: string): string {
+    return unsafeStr.replace(/[<>&'"]/g, (c) => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            default: return c;
+        }
+    });
+}
+
+// Helper to percent-encode Hindi and Unicode characters safely (zero-double-encoding bug)
+function normalizeUrl(urlStr: string): string {
+    try {
+        const parsed = new URL(urlStr);
+        const encodedPath = parsed.pathname
+            .split('/')
+            .map(segment => encodeURIComponent(decodeURIComponent(segment)))
+            .join('/');
+        
+        return `${parsed.protocol}//${parsed.host}${encodedPath}`;
+    } catch {
+        return urlStr;
+    }
+}
 
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ type: string; page: string }> }
 ) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) return new NextResponse('Supabase not configured', { status: 500 });
+
     try {
         // In Next.js 15+, params should be awaited or accessed correctly
         const resolvedParams = await Promise.resolve(params);
@@ -49,12 +92,26 @@ export async function GET(
         if (type === 'static') {
             if (page === 1) {
                 // Only serve static routes on page 1
-                urls = STATIC_ROUTES.map(route => ({
-                    url: `${SITE_URL}${route}`,
-                    lastmod: new Date().toISOString(),
-                    priority: route === '' ? '1.0' : '0.8',
-                    changefreq: route === '' ? 'daily' : 'weekly',
-                }));
+                urls = [
+                    ...STATIC_ROUTES.map(route => ({
+                        url: `${SITE_URL}${route}`,
+                        lastmod: new Date().toISOString(),
+                        priority: route === '' ? '1.0' : '0.8',
+                        changefreq: route === '' ? 'daily' : 'weekly',
+                    })),
+                    ...ZODIAC_SIGNS.map(sign => ({
+                        url: `${SITE_URL}/horoscope/${sign}`,
+                        lastmod: new Date().toISOString(),
+                        priority: '0.7',
+                        changefreq: 'daily',
+                    })),
+                    ...CALCULATOR_TYPES.map(type => ({
+                        url: `${SITE_URL}/calculators/${type}`,
+                        lastmod: new Date().toISOString(),
+                        priority: '0.7',
+                        changefreq: 'monthly',
+                    }))
+                ];
             }
         } else if (type === 'blog') {
             const { data } = await supabase
@@ -65,7 +122,7 @@ export async function GET(
                 .range(startIdx, endIdx);
 
             if (data) {
-                urls = data.map(blog => ({
+                urls = data.map((blog: any) => ({
                     url: `${SITE_URL}/blog/${blog.slug}`,
                     lastmod: blog.updated_at || new Date().toISOString(),
                     priority: '0.7',
@@ -79,7 +136,7 @@ export async function GET(
                 .range(startIdx, endIdx);
 
             if (data) {
-                urls = data.map(pooja => ({
+                urls = data.map((pooja: any) => ({
                     url: `${SITE_URL}/pooja-services/${pooja.slug}`,
                     lastmod: pooja.updated_at || new Date().toISOString(),
                     priority: '0.9',
@@ -88,16 +145,64 @@ export async function GET(
             }
         } else if (type === 'destination') {
             const { data } = await supabase
-                .from('destinations')
+                .from('spiritual_places')
                 .select('slug')
                 .range(startIdx, endIdx);
 
             if (data) {
-                urls = data.map(dest => ({
+                urls = data.map((dest: any) => ({
                     url: `${SITE_URL}/locations/${dest.slug}`,
                     lastmod: new Date().toISOString(),
                     priority: '0.8',
                     changefreq: 'monthly',
+                }));
+            }
+        } else if (type === 'author') {
+            const cleanSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+            
+            // 1. Predefined Personas
+            const personas = [
+                'Mantra Guru Ji', 'Aacharya Dr. Ram Ramanuj', 'Pandit Ravi Shastri', 
+                'Acharya Meera', 'Dr. Aryan Sharma'
+            ];
+
+            // 2. Fetch authors from blog_authors table
+            const { data: dbAuthors } = await supabase.from('blog_authors').select('name');
+            
+            // 3. Fetch "Ghost Authors" from Final_blog table
+            const { data: blogAuthors } = await supabase.from('Final_blog').select('author_name').not('author_name', 'is', null);
+
+            // Combine and Dedup
+            const allAuthorNames = new Set<string>(personas);
+            dbAuthors?.forEach((a: any) => allAuthorNames.add(a.name));
+            blogAuthors?.forEach((b: any) => allAuthorNames.add(b.author_name));
+
+            const authorList = Array.from(allAuthorNames);
+            const paginatedAuthors = authorList.slice(startIdx, endIdx + 1);
+
+            urls = paginatedAuthors.map((name: string) => ({
+                url: `${SITE_URL}/authors/${cleanSlug(name)}`,
+                lastmod: new Date().toISOString(),
+                priority: '0.6',
+                changefreq: 'monthly',
+            }));
+        } else if (type === 'festival') {
+            const festLimit = 500;
+            const festStart = (page - 1) * festLimit;
+            const festEnd = festStart + festLimit - 1;
+
+            const { data } = await supabase
+                .from('festivals')
+                .select('slug, updated_at')
+                .eq('is_active', true)
+                .range(festStart, festEnd);
+
+            if (data) {
+                urls = data.map((fest: any) => ({
+                    url: `${SITE_URL}/festivals/${fest.slug}`,
+                    lastmod: fest.updated_at || new Date().toISOString(),
+                    priority: '0.8',
+                    changefreq: 'weekly',
                 }));
             }
         } else {
@@ -110,10 +215,10 @@ export async function GET(
 
         for (const item of urls) {
             xml += `  <url>\n`;
-            xml += `    <loc>${item.url}</loc>\n`;
-            xml += `    <lastmod>${item.lastmod}</lastmod>\n`;
-            xml += `    <changefreq>${item.changefreq}</changefreq>\n`;
-            xml += `    <priority>${item.priority}</priority>\n`;
+            xml += `    <loc>${escapeXml(normalizeUrl(item.url))}</loc>\n`;
+            xml += `    <lastmod>${escapeXml(item.lastmod)}</lastmod>\n`;
+            xml += `    <changefreq>${escapeXml(item.changefreq)}</changefreq>\n`;
+            xml += `    <priority>${escapeXml(item.priority)}</priority>\n`;
             xml += `  </url>\n`;
         }
 

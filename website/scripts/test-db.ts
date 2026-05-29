@@ -1,8 +1,8 @@
 
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
+const { createClient } = require('@supabase/supabase-js');
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
 
 // Load environment variables from .env.local
 const envPath = path.resolve(process.cwd(), '.env.local');
@@ -51,7 +51,7 @@ async function testAuthAndTables() {
 
     // 2. Login
     log('--- Attempting Login ---');
-    const email = 'admin@mantrapooja.com';
+    const email = 'admin@mantrapuja.com';
     const password = 'admin123';
 
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({

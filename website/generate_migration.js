@@ -83,9 +83,9 @@ dbSlugs.forEach(slug => {
 
     const content = JSON.stringify(locDetail).replace(/'/g, "''");
     const tagline = "Discover the Divine Essence of " + nameFormatted;
-    const seoTitle = nameFormatted + " - Sacred Spiritual Destination | Mantra Pooja";
+    const seoTitle = nameFormatted + " - Sacred Spiritual Destination | MantraPuja";
     const seoDesc = "Explore the spiritual significance, history, rituals, and travel information for " + nameFormatted + ". Book authentic Vedic services online.";
-    const seoKeywords = slug.replace(/-/g, ', ') + ", spiritual, yatra, pilgrimage, mantra pooja";
+    const seoKeywords = slug.replace(/-/g, ', ') + ", spiritual, yatra, pilgrimage, mantrapuja";
 
     sql += `UPDATE public.destinations 
 SET 

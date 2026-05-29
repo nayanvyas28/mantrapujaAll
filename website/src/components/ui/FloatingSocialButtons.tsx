@@ -29,7 +29,7 @@ const socialLinks = [
         name: "Instagram",
         icon: <Instagram className="w-6 h-6" />,
         color: "bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7]",
-        href: "https://www.instagram.com/mantrapujaa/",
+        href: "https://www.instagram.com/mantrapujaa",
         pulseColor: "rgba(238, 42, 123, 0.4)",
     },
     {

@@ -1,0 +1,1339 @@
+[
+  {
+    "id": "5419d10c-f261-417e-8758-c8d2b440cd9f",
+    "name": "accomplishment experiment",
+    "slug": "work-experiment",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/02-Aug-2018_product_thumb_img_894404615.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "7cd4aa5b-fa11-42be-a781-20816aaf982a",
+    "name": "Aishwarya Lakshmi Pooja",
+    "slug": "ऐश्वर्या-लक्ष्मी-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_861596135.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "9ce81fe6-6dd1-4140-a034-8ca91d59c9cf",
+    "name": "All Planet Pain Killer Use",
+    "slug": "sarv-grah-peeda-naashak-prayog",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/13-Feb-2018_product_thumb_img_442256530.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "fd42704b-3159-4fc5-a66c-9305114971c8",
+    "name": "Angareshwar Mahadev Puja",
+    "slug": "अंगारेश्वर-महादेव-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_473060790.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "0a2efbad-5b7b-4321-addc-5416f960d6f8",
+    "name": "Ati Rudra Mahayagna",
+    "slug": "अती-रुद्र-महायज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1304546046.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "bfac361b-3bdd-4167-bebc-e68164bd58aa",
+    "name": "ayush homam",
+    "slug": "आयुष-होमैम",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1306316924.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "e72ea75b-075b-4272-a700-12ff9e2f50b5",
+    "name": "Baglamukhi Sadhana and Siddhi Puja",
+    "slug": "बागलामुखी-साधना-और-सिद्धि-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1843013027.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "5d5d11ed-b401-475a-a014-27c1a6c34916",
+    "name": "Balancing Heart Anahata Chakra Pooja and Yagya",
+    "slug": "दिल-अनहता-चक्र-पूजा-और-यज्ञ-संतुलन",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_2147439421.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "c67b348c-0440-4bbf-9e8a-649e157778a2",
+    "name": "barrier breaking experiment",
+    "slug": "baadha-naashak-prayog",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/13-Feb-2018_product_thumb_img_1519142540.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "cfeda32a-330b-44ec-9ffb-6bb39273cae6",
+    "name": "Buddha Shanti Puja",
+    "slug": "budh-shanti-remedy",
+    "is_active": true,
+    "validation": [],
+    "status": "MISSING_ALL"
+  },
+  {
+    "id": "be56cdfc-a34e-4b74-8765-53e870f50acf",
+    "name": "business growth experiment",
+    "slug": "vyaapaar-vaddhi-bikree-badhaane-prayoga",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_878718561.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "d25beeab-b461-4ca1-b1c1-10ed3a6e3d62",
+    "name": "Business Growth (Lakshmi Mantra) Experiment",
+    "slug": "vyaapaar-vaddhi-lakshmee-mantr-prayoga",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/13-Feb-2018_product_thumb_img_761994142.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "c0fe5375-35a3-40ed-b13b-98797f38847f",
+    "name": "business promotion experiment",
+    "slug": "vyaapaar-vrddhi-prayog",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1880929173.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "13ea2e63-e4cf-4cb1-a539-80babded8569",
+    "name": "Chandra Shanti Puja",
+    "slug": "chandra-shanti-remedy",
+    "is_active": true,
+    "validation": [],
+    "status": "MISSING_ALL"
+  },
+  {
+    "id": "38e12796-c0d2-4e51-83d2-c462442bf272",
+    "name": "Cow grazing land donation/land for cow grazing",
+    "slug": "गायचर-भूमि-दान-गाय-चराई-के-लिए-भूमि",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1939598655.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "8201aa59-7308-448e-88e1-94766fe711b9",
+    "name": "dead lifesaving experiment",
+    "slug": "dead-sanjivani-experiment",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-Jul-2018_product_thumb_img_541801831.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "8d730f7f-3162-4e78-9938-114daceaed6f",
+    "name": "Dhanad Lakshmi experiment",
+    "slug": "dhanad-lakshmee-prayog",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/11-May-2018_product_thumb_img_873580422.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "0d757712-e2ea-44e7-a28d-c7a4a2cc3e5d",
+    "name": "Durga Puja",
+    "slug": "durga-puja-deity",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/durgapuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "42f2a487-6926-4ce4-a045-346769950466",
+    "name": "Durga Sahasranama",
+    "slug": "दुर्गा-सहस्रनाम",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1244128750.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "fdf32f52-80ca-40de-add8-389de8afb4bc",
+    "name": "Experiment to open tied business",
+    "slug": "bandha-vyapar-kholne-hetu-prayog",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/13-Feb-2018_product_thumb_img_711741891.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "bdbedf52-42ff-4842-b7d0-98fc074bc9ac",
+    "name": "Ganesh Puja",
+    "slug": "ganesh-puja-deity",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/ganeshpuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "14fa64fa-4334-40d4-8937-6fb59be093fe",
+    "name": "Ganesh Puja",
+    "slug": "गणेश-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1038177898.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "58106d7e-ac3a-4dbe-a2f2-2961223ec643",
+    "name": "Ganpati experiment",
+    "slug": "ganapati-prayog1",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/10-May-2018_product_thumb_img_1730464757.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "95bba3dd-3b5f-460f-90c0-b00bb871d302",
+    "name": "goddess kamkshi",
+    "slug": "देवी-कामक्षी",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_306643094.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "3dac1515-e39e-4377-8daa-fe9bcf53a95f",
+    "name": "Graha Shanti Puja",
+    "slug": "graha-shanti-universal",
+    "is_active": true,
+    "validation": [],
+    "status": "MISSING_ALL"
+  },
+  {
+    "id": "e7f00a5a-e7ee-4431-a080-6a158c0ec36f",
+    "name": "Guru Purnima Puja and Yagya",
+    "slug": "गुरु-पूर्णिमा-पूजा-और-यज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_580509827.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "32caf085-15bd-45c2-9e1a-bf1659df2425",
+    "name": "Guru Shanti Puja",
+    "slug": "guru-shanti-remedy",
+    "is_active": true,
+    "validation": [],
+    "status": "MISSING_ALL"
+  },
+  {
+    "id": "7ab3ec0e-3bd6-4b23-8f1a-5f260332f680",
+    "name": "Hanuman Garhi Sindoor Pooja",
+    "slug": "hanuman-garhi-sindoor",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/HanumanGarhiSindoorPuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "bfdc2fa0-f73c-4379-aa5f-cc9193c66e6d",
+    "name": "Hanuman Puja",
+    "slug": "hanuman-puja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/hanuman.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "a080640e-63b6-437f-9b21-fb05da0e35f7",
+    "name": "house warming puja",
+    "slug": "गृह-प्रवेश-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_498587534.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "bdddb475-7f46-44e8-a315-3d77f2ace15c",
+    "name": "Kaalsarp Dosh",
+    "slug": "kalsarp-dosh",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/24-Nov-2018_product_thumb_img_1311263190.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "13d2df82-130b-426f-a055-65442e0d10d0",
+    "name": "Kaal Sarp Dosh Puja",
+    "slug": "kaal-sarp-dosh",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1777117754519_lo608.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      },
+      {
+        "source": "image_url",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1777117754519_lo608.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      }
+    ],
+    "status": "HEALTHY"
+  },
+  {
+    "id": "d7984dae-0e9a-436d-bb34-0f3d769b42f0",
+    "name": "Kali Puja",
+    "slug": "kali-puja-deity",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/kalipuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "1001110a-fb14-4914-8524-78e7f0ad67b6",
+    "name": "Kali Puja and Yagya",
+    "slug": "काली-पूजा-और-यज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_2110655307.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "f5efcf8f-0bce-4bf4-a748-449130762493",
+    "name": "Krishna Puja",
+    "slug": "krishna-puja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/krishnapuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "9d3e0966-2291-4ed7-9d63-5717aec0b8e6",
+    "name": "Lakshmi Pooja",
+    "slug": "lakshmi-puja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/lakshmipuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "b1a75e53-55f8-44ca-bd8e-071e1f73dba7",
+    "name": "Lakshmi Prapti Experiment",
+    "slug": "lakshmee-praaptee-prayoga",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/13-Feb-2018_product_thumb_img_1412970218.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "f32f3227-a4a5-4cbb-b3e7-7257145e6fbb",
+    "name": "Lalita Sahasranam",
+    "slug": "ललिता-सहस्रानम",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_2025371096.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "1d3f7631-0108-421c-a5d9-2a5a0658f14f",
+    "name": "machine manufacturing",
+    "slug": "yantra-nirmaan",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/10-May-2018_product_thumb_img_1447771033.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "8988e0b8-89c5-4616-b00c-1b42b3c0fb8d",
+    "name": "Magazine production (by computer)",
+    "slug": "patrika-nirmaan",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/10-May-2018_product_thumb_img_1038043840.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "d16a1ff3-0e18-4790-b6fb-73eb03fce708",
+    "name": "magazine reading",
+    "slug": "patrika-vaachan",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/10-May-2018_product_thumb_img_88454432.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "90d7b32a-a501-4719-b3bc-da45e1799f35",
+    "name": "mahakal temple puja",
+    "slug": "महाकाल-मंदिर-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_829140744.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "eaef742c-5a7e-48d4-9d4e-7bcb5f453755",
+    "name": "Mahamrityunjaya mantra chanting",
+    "slug": "महामृत्यंजय-मंत्र-जप",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1530641381.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "f8c96f3a-3b22-4419-b61e-1aba0273edd2",
+    "name": "Mangal Dosh Nivaran",
+    "slug": "mangal-dosh-nivaran",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1776950502547_mbdhq.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      },
+      {
+        "source": "image_url",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1776950502547_mbdhq.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      }
+    ],
+    "status": "HEALTHY"
+  },
+  {
+    "id": "e24e340e-8a70-45eb-bcda-093b25f8f297",
+    "name": "Navagraha Puja",
+    "slug": "नवग्रह-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1401957321.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "fc9adfbc-d99b-462f-8f08-6c400abfcd15",
+    "name": "Navagraha Puja",
+    "slug": "navagraha-shanti-remedy",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/blog-assets/uploads/1777190386360-yzyewa.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      },
+      {
+        "source": "image_url",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/blog-assets/uploads/1777190386360-yzyewa.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      }
+    ],
+    "status": "HEALTHY"
+  },
+  {
+    "id": "aeb2fcff-c80a-4f45-924d-f919a1b26ced",
+    "name": "North facing Hanuman Puja",
+    "slug": "उत्तरमुखी-हनुमान-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_184586448.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "aab2dd35-d5c3-42e0-94ac-8564baf765d9",
+    "name": "Pacification of Mars defect by worshiping rice",
+    "slug": "भात-पूजन-द्वारा-मंगल-ग्रह-दोष-की-शांति",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_643662608.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "d469d42f-5f18-4b15-abb4-1a93307140f7",
+    "name": "Parthiv Shivlinga Puja",
+    "slug": "पार्थिव-शिवलिंग-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1857096348.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "fd2abc53-bced-43e8-91b1-cb504d577e29",
+    "name": "Pitru Dosha Nivaran Pooja",
+    "slug": "पितृ-दोष-निवारण-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1181019127.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "4ecc52ba-33bd-46d6-839b-5cccf1087a35",
+    "name": "Pitru Dosh Puja",
+    "slug": "pitru-dosh-parihara",
+    "is_active": true,
+    "validation": [],
+    "status": "MISSING_ALL"
+  },
+  {
+    "id": "10400aa2-eebc-4fb6-bf92-797a62f29e55",
+    "name": "Rahu Ketu Shanti",
+    "slug": "rahu-ketu-shanti",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1777118125786_tpb59.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      },
+      {
+        "source": "image_url",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1777118125786_tpb59.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      }
+    ],
+    "status": "HEALTHY"
+  },
+  {
+    "id": "d9a06b55-4934-4ae1-b0e8-f9ab98e30077",
+    "name": "Ram Mahayagya",
+    "slug": "राम-महायज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/music_assets/puja_images/0lglb2zf9btg.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      },
+      {
+        "source": "image_url",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/music_assets/puja_images/0lglb2zf9btg.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "0ead2de8-5082-4f53-b046-13567f989180",
+    "name": "Ram Puja",
+    "slug": "ram-puja-deity",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/rampuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "da158b26-954f-411a-a94d-d44df59ee49f",
+    "name": "Rin mukti puja",
+    "slug": "rin-mukti-puja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1776950599243_brmlr.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      },
+      {
+        "source": "image_url",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/pujas/puja_1776950599243_brmlr.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      }
+    ],
+    "status": "HEALTHY"
+  },
+  {
+    "id": "33d43e36-322e-4b77-b739-fa33d7016c1c",
+    "name": "Rudra ritual",
+    "slug": "rudra-ritual",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1381133229.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "490d07af-8323-4f56-9313-d75aa2747807",
+    "name": "Saptashati or Chandi Path and Yagya",
+    "slug": "सप्तशती-या-चांडी-पाठ-और-यज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1799969009.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "1311a291-a01e-4e8f-904c-9cab14faf4a8",
+    "name": "Saraswati Puja",
+    "slug": "सरस्वती-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_2073641831.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "f4e9ff32-0704-4d88-a19e-e1bdeeab9107",
+    "name": "Saraswati Puja",
+    "slug": "saraswati-puja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/saraswatipuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "bfa88dc1-6536-4c9d-be8a-b4832ddc666c",
+    "name": "Satyanarayan Puja and Story",
+    "slug": "सत्यनारायण-पूजा-और-कथा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_756223817.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "3d9194ef-f683-4e40-8146-2aecebfe7aba",
+    "name": "shabar penis experiment",
+    "slug": "shaabar-leeng-prayoga",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/13-Feb-2018_product_thumb_img_1709096909.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "b69e19d1-e501-4f75-a0f9-da007bddac1e",
+    "name": "Shani Shanti Puja",
+    "slug": "शनि-शांति-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1208758323.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "95498e00-82d5-4a5d-8906-3ac3d28daac5",
+    "name": "Shani Shanti Puja",
+    "slug": "shani-shanti-remedy",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/blog-assets/uploads/1777190347575-lv0js4.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      },
+      {
+        "source": "image_url",
+        "original": "https://s1.mantrapuja.com/storage/v1/object/public/blog-assets/uploads/1777190347575-lv0js4.webp",
+        "type": "External",
+        "status": "VALID",
+        "exists": true
+      }
+    ],
+    "status": "HEALTHY"
+  },
+  {
+    "id": "7bae4bf4-ea86-4799-9082-4eb6d5e83507",
+    "name": "Shani Vedic mantra chanting and yagya",
+    "slug": "शनि-वैदिक-मंत्र-जपा-और-यज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_381836289.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "a203c3f8-cf72-4c66-89f3-e4792196d564",
+    "name": "Shiva Mahapurana",
+    "slug": "शिव-महापुराण",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_120232264.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "770b56ef-d1f5-49df-a8c6-87690cef4d02",
+    "name": "Shiva Mahima Stotra",
+    "slug": "शिव-महिमा-स्तोत्र",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_298960378.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "7723c948-e775-4ecd-b3bf-e5c16b45938c",
+    "name": "Shiva Tandava Stotram",
+    "slug": "शिव-तांडव-स्तोत्रम",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_209679834.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "824f27e9-1b0c-42a0-879b-0d4158ac5178",
+    "name": "shiv family puja",
+    "slug": "शिव-परिवार-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1365869052.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "45b8b578-c4dc-413d-a019-9969c864b3a0",
+    "name": "Shiv Pooja",
+    "slug": "shiv-puja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/shivpuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "265cfb06-b546-47bb-bd0d-4d5497c5fd8a",
+    "name": "Shri Ashta Lakshmi Mahayagya",
+    "slug": "श्री-अष्ट-लक्ष्मी-महायज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_455268896.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "91fee10a-4853-46c6-be48-8e653da218d4",
+    "name": "Shri Hanuman Puja and Yagya",
+    "slug": "श्री-हनुमान-पूजन-और-यज्ञ",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_607784084.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "81e458eb-d451-4237-a336-8a02c1d1b629",
+    "name": "Shri Mrit Sanjivani Pooja",
+    "slug": "shri-mrit-sanjivani-pooja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/02-Aug-2018_product_thumb_img_1542003881.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "65767df5-154b-4915-a6cc-1af3698bb5eb",
+    "name": "Shri Ram Katha",
+    "slug": "श्री-राम-कथा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1740100577.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "17bf64af-ff0e-4b8e-aaed-9becce505211",
+    "name": "Shri Rankeshwar Dham Temple Pooja",
+    "slug": "shri-rankeshwar-dhaam",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/10-May-2018_product_thumb_img_1786148126.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "e0985ada-3662-4333-a75f-20c7d079b10d",
+    "name": "Silver and Gold Cow Service",
+    "slug": "रजत-और-गोल्ड-गाय-सेवा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_762106139.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "aceceff7-9c29-4711-9e2a-40a9ba66886d",
+    "name": "Sri Ramaraksha Stotra",
+    "slug": "श्री-रामरक्षा-स्तोत्र",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1542936310.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "028aa367-af1e-4950-bc1d-c8d846678e07",
+    "name": "Swarnakarshan Bhairava Mantra Usage",
+    "slug": "svarnaakarshan-bhairav-mantr-prayoga",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/10-May-2018_product_thumb_img_1891965227.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "210365ad-c121-4ebd-85cc-5c1c2c6ddafa",
+    "name": "task accomplishment experiment",
+    "slug": "work-accomplishment-experiment",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-Jul-2018_product_thumb_img_1664635228.gif",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "2afb5374-3fde-47df-9a6b-21ee9813529c",
+    "name": "trade barrier use",
+    "slug": "vyaapaar-baadha-naashak-prayog",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/13-Feb-2018_product_thumb_img_824370154.png",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "ee3c2320-aabb-4939-8e5b-c4f9d5aecb48",
+    "name": "Vaastu Remedies",
+    "slug": "architectural-measures",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-Jul-2018_product_thumb_img_1350721769.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "c24c00df-8719-4233-b2d0-17bdec882fef",
+    "name": "Vat Savitri Puja",
+    "slug": "वट-सावित्री-पूजा",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/09-May-2018_product_thumb_img_1427651052.jpeg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "22757834-7b95-494c-8c81-190f01bbd437",
+    "name": "Vishnu Puja",
+    "slug": "vishnu-puja",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "/pujaimages/vishnupuja.webp",
+        "type": "Local",
+        "status": "MISSING_FILE",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  },
+  {
+    "id": "285335b4-1797-42e2-9bb6-8ab7349f3047",
+    "name": "Vishnu Sahasranama",
+    "slug": "विष्णु-सहस्रनाम",
+    "is_active": true,
+    "validation": [
+      {
+        "source": "images",
+        "original": "http://mantrapuja.com/webroot/admin/upload/product/11-May-2018_product_thumb_img_469442384.jpg",
+        "type": "External",
+        "status": "BROKEN_URL",
+        "exists": false
+      }
+    ],
+    "status": "BROKEN"
+  }
+]

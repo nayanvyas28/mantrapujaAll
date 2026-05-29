@@ -16,7 +16,7 @@ export async function GET() {
 
         return NextResponse.json({ 
             total_bookings: count || 0,
-            tables: tablesData?.map(t => t.tablename) || [],
+            tables: tablesData?.map((t: any) => t.tablename) || [],
             error: countError?.message || tablesError?.message
         });
     } catch (error: any) {

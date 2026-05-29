@@ -5,6 +5,8 @@ export interface PujaData {
     tagline: string;
     heroImage: string;
     themeColor: string; // e.g., 'saffron', 'gold', 'blue' - useful for subtle dynamic styling
+    badge?: string;
+    gradient?: string;
 
     // Hero Section Benefits
     heroBenefits: string[];
@@ -118,7 +120,7 @@ export const pujas: PujaData[] = [
         slug: "kaal-sarp-dosh-puja",
         name: "Kaal Sarp Dosh Nivaran Puja",
         tagline: "Break Free from Life's Obstacles & Achieve Success",
-        heroImage: "/puja images/kaal sarp.png",
+        heroImage: "/pujaimages/kaal sarp.png",
         themeColor: "saffron",
         heroBenefits: [
             "Remove career & marriage blockages",

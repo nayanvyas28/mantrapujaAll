@@ -35,7 +35,7 @@ ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 
     console.log("✅ Table 'admins' exists. Seeding admin user...");
 
-    const email = 'admin@mantrapooja.com';
+    const email = 'admin@mantrapuja.com';
     const password = 'admin'; // Default password
     const hashedPassword = await bcrypt.hash(password, 10);
 

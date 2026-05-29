@@ -1,18 +1,13 @@
+export const dynamic = "force-dynamic";
 
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-// Initialize Supabase Admin client (Service Role)
-// This bypasses RLS policies, which is fine for fetching public navigation data.
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-        auth: {
-            persistSession: false
-        }
-    }
-);
+function getClient() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 function generateSlug(name: string): string {
     return name
@@ -29,7 +24,7 @@ export async function GET() {
     }
 
     try {
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getClient()
             .from('categories')
             .select('*')
             .order('order', { ascending: true });
@@ -61,7 +56,7 @@ export async function POST(request: Request) {
 
         // Webhook security
         if (!secret) {
-            await supabaseAdmin.from('system_logs').insert({
+            await getClient().from('system_logs').insert({
                 event_type: 'automation',
                 status: 'warning',
                 message: 'Category Webhook: Missing Secret',
@@ -71,7 +66,7 @@ export async function POST(request: Request) {
         }
 
         if (secret !== process.env.N8N_WEBHOOK_SECRET) {
-            await supabaseAdmin.from('system_logs').insert({
+            await getClient().from('system_logs').insert({
                 event_type: 'automation',
                 status: 'warning',
                 message: 'Category Webhook: Invalid Secret',
@@ -90,7 +85,7 @@ export async function POST(request: Request) {
             slug = generateSlug(name);
         }
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await getClient()
             .from('categories')
             .upsert([
                 {
@@ -107,7 +102,7 @@ export async function POST(request: Request) {
 
         if (error) {
             console.error("Supabase Insert Error:", error);
-            await supabaseAdmin.from('system_logs').insert({
+            await getClient().from('system_logs').insert({
                 event_type: 'automation',
                 status: 'failed',
                 message: `Category Webhook Failed: ${error.message}`,
@@ -117,7 +112,7 @@ export async function POST(request: Request) {
         }
 
         // Log Success
-        await supabaseAdmin.from('system_logs').insert({
+        await getClient().from('system_logs').insert({
             event_type: 'automation',
             status: 'success',
             message: `Category Created/Updated via Webhook: ${name}`,

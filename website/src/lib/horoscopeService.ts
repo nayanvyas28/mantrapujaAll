@@ -1,11 +1,7 @@
-
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { getSupabaseAdmin } from './supabaseServer';
 
 export interface HoroscopeRating {
     label: string;
@@ -26,6 +22,10 @@ export interface HoroscopeData {
 }
 
 export class HoroscopeService {
+
+    private static getSupabase() {
+        return getSupabaseAdmin();
+    }
 
     static buildUrl(sign: string, period: string): string {
         const s = sign.toLowerCase();
@@ -235,6 +235,9 @@ export class HoroscopeService {
             if (day !== 1) now.setHours(-24 * (day - 1)); 
             referenceDateStr = now.toISOString().split('T')[0];
         }
+
+        const supabase = this.getSupabase();
+        if (!supabase) return { sign, period_type: period, content: 'Service temporarily unavailable.', reference_date: referenceDateStr };
 
         // 1. Try DB cache first
         const { data: existing } = await supabase

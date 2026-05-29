@@ -87,19 +87,21 @@ export default function SpiritualFamilySection() {
                         </motion.a>
 
                         {/* Telegram */}
-                        <motion.div
+                        <motion.a
+                            href="https://t.me/mantrapuja"
+                            target="_blank"
                             whileHover={{ y: -8 }}
-                            className="bg-blue-50/50 dark:bg-blue-950/10 p-8 rounded-[32px] border border-blue-200/50 dark:border-blue-800/30 flex flex-col items-center text-center relative overflow-hidden group h-full"
+                            className="bg-blue-50/50 dark:bg-blue-950/10 p-8 rounded-[32px] border border-blue-200/50 dark:border-blue-800/30 flex flex-col items-center text-center relative overflow-hidden group h-full cursor-pointer"
                         >
                             <div className="w-24 h-24 rounded-full bg-blue-100/50 dark:bg-blue-900/20 flex items-center justify-center text-[#0088cc] mb-8 group-hover:scale-110 transition-transform duration-300">
                                 <Send className="w-10 h-10 ml-1" />
                             </div>
                             <h3 className="text-xl md:text-2xl font-bold mb-4" style={{ fontFamily: 'Georgia, serif' }}>Telegram Channel</h3>
                             <p className="text-base text-muted-foreground mb-10 leading-relaxed flex-grow">Instant alerts for auspicious timings (Muhurat) & reminders.</p>
-                            <button className="w-full h-16 rounded-full bg-[#0088cc] text-white font-bold text-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3">
+                            <div className="w-full h-16 rounded-full bg-[#0088cc] text-white font-bold text-xl shadow-lg shadow-blue-500/20 group-hover:shadow-xl group-hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3">
                                 Join Channel
-                            </button>
-                        </motion.div>
+                            </div>
+                        </motion.a>
                     </div>
 
                     {/* Social Media Section */}
@@ -115,14 +117,16 @@ export default function SpiritualFamilySection() {
 
                         <div className="flex flex-wrap justify-center gap-6 md:gap-8">
                             {[
-                                { icon: Instagram, color: "text-white", bg: "bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500", label: "Instagram", handle: "@mantrapooja" },
-                                { icon: Youtube, color: "text-white", bg: "bg-[#FF0000]", label: "YouTube", handle: "MantraPooja TV" },
-                                { icon: Facebook, color: "text-white", bg: "bg-[#1877F2]", label: "Facebook", handle: "MantraPooja" },
-                                { icon: Twitter, color: "text-white", bg: "bg-[#1DA1F2]", label: "Twitter", handle: "@mantra_pooja" }
+                                { icon: Instagram, color: "text-white", bg: "bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500", label: "Instagram", handle: "@mantrapujaa", href: "https://www.instagram.com/mantrapujaa" },
+                                { icon: Youtube, color: "text-white", bg: "bg-[#FF0000]", label: "YouTube", handle: "MantraPuja Officials", href: "https://www.youtube.com/@MantraPujaOfficials" },
+                                { icon: Facebook, color: "text-white", bg: "bg-[#1877F2]", label: "Facebook", handle: "MantraPuja", href: "https://www.facebook.com/mantrapujaa" },
+                                { icon: Twitter, color: "text-white", bg: "bg-[#000000]", label: "Twitter", handle: "@mantrapuja", href: "https://x.com/mantrapuja" }
                             ].map((social, idx) => (
                                 <motion.a
                                     key={idx}
-                                    href="#"
+                                    href={social.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     whileHover={{ y: -10, scale: 1.05 }}
                                     className="group relative w-32 h-32 md:w-40 md:h-40 rounded-[32px] bg-white dark:bg-card border border-border shadow-2xl flex flex-col items-center justify-center gap-4 hover:border-transparent transition-all overflow-hidden"
                                 >

@@ -1,31 +1,51 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Setup Supabase Admin
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+let configCache: { data: any; timestamp: number } | null = null;
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
+
+function getSupabaseAdmin() {
+    if (!supabaseAdmin) {
+        supabaseAdmin = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            { auth: { persistSession: false } }
+        );
+    }
+    return supabaseAdmin;
+}
 
 export async function GET() {
     try {
-        const { data, error } = await supabaseAdmin
+        const now = Date.now();
+        if (configCache && (now - configCache.timestamp < CACHE_TTL)) {
+            return NextResponse.json(configCache.data);
+        }
+
+        const adminClient = getSupabaseAdmin();
+        const { data, error } = await (adminClient
             .from('settings')
             .select('key, value')
-            .in('key', ['guru_ai_templates', 'guru_ai_greeting_en', 'guru_ai_greeting_hi']);
+            .in('key', ['guru_ai_templates', 'guru_ai_greeting_en', 'guru_ai_greeting_hi']) as any);
 
         if (error) throw error;
 
-        const templatesStr = data?.find(s => s.key === 'guru_ai_templates')?.value || '[]';
-        const greetingEn = data?.find(s => s.key === 'guru_ai_greeting_en')?.value || '';
-        const greetingHi = data?.find(s => s.key === 'guru_ai_greeting_hi')?.value || '';
+        const templatesStr = data?.find((s: any) => s.key === 'guru_ai_templates')?.value || '[]';
+        const greetingEn = data?.find((s: any) => s.key === 'guru_ai_greeting_en')?.value || '';
+        const greetingHi = data?.find((s: any) => s.key === 'guru_ai_greeting_hi')?.value || '';
         
-        return NextResponse.json({ 
+        const responseData = { 
             templates: JSON.parse(templatesStr),
             greetingEn,
             greetingHi
-        });
+        };
+
+        configCache = { data: responseData, timestamp: now };
+        
+        return NextResponse.json(responseData);
     } catch (err: any) {
+        console.error("[GuruAI Config] Error:", err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }

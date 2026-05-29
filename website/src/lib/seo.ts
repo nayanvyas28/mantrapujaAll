@@ -1,16 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
 import { Metadata } from 'next';
-
-// Use service role key for server-side fetching to ensure we can read everything needed
-// (though seo_metadata is public, good practice for server utils)
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { auth: { persistSession: false } }
-);
+import { getSupabaseAdmin } from './supabaseServer';
 
 export async function getSeoMetadata(path: string, defaultMetadata: Metadata): Promise<Metadata> {
     try {
+        const supabase = getSupabaseAdmin();
+        if (!supabase) return defaultMetadata;
+
         const { data, error } = await supabase
             .from('seo_metadata')
             .select('*')

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseServer';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getAdmin() {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) throw new Error("Supabase client not initialized");
+    return supabase;
+}
 
 export async function GET(req: Request) {
     try {
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: 'Missing userId or sessionId' }, { status: 400 });
         }
 
-        let query = supabaseAdmin
+        let query = getAdmin()
             .from('guru_chat_messages')
             .select('*')
             .order('created_at', { ascending: false })
@@ -52,13 +53,13 @@ export async function DELETE(req: Request) {
 
         if (userId) {
             // Delete all messages for user
-            await supabaseAdmin.from('guru_chat_messages').delete().eq('user_id', userId);
+            await getAdmin().from('guru_chat_messages').delete().eq('user_id', userId);
             // Delete all sessions for user
-            await supabaseAdmin.from('guru_chat_sessions').delete().eq('user_id', userId);
+            await getAdmin().from('guru_chat_sessions').delete().eq('user_id', userId);
         } else {
             // Delete specific session
-            await supabaseAdmin.from('guru_chat_messages').delete().eq('session_id', sessionId);
-            await supabaseAdmin.from('guru_chat_sessions').delete().eq('id', sessionId);
+            await getAdmin().from('guru_chat_messages').delete().eq('session_id', sessionId);
+            await getAdmin().from('guru_chat_sessions').delete().eq('id', sessionId);
         }
 
         return NextResponse.json({ success: true });
