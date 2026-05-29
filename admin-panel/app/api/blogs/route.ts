@@ -1,6 +1,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +15,7 @@ export async function GET(req: Request) {
 
     if (id) {
       const { data, error } = await supabase
-        .from('blogs')
+        .from('Final_blog')
         .select('*')
         .eq('id', id)
         .single();
@@ -23,9 +24,9 @@ export async function GET(req: Request) {
     }
 
     const { data, error } = await supabase
-      .from('blogs')
-      .select('*')
-      .order('created_at', { ascending: false });
+        .from('Final_blog')
+        .select('*')
+        .order('created_at', { ascending: false });
     
     if (error) throw error;
     return NextResponse.json(data);
@@ -37,10 +38,17 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    // body includes title, content, slug, excerpt, image_url, category, author_name, etc.
+    
+    // Generate UUID if not provided, since Final_blog doesn't auto-generate IDs
+    if (!body.id) {
+      body.id = crypto.randomUUID();
+    }
+    
+    // Ensure the blog is active so it appears on the website
+    body.is_active = true;
     
     const { data, error } = await supabase
-      .from('blogs')
+      .from('Final_blog')
       .insert([body])
       .select()
       .single();
@@ -58,7 +66,7 @@ export async function PUT(req: Request) {
     const { id, ...updates } = body;
 
     const { data, error } = await supabase
-      .from('blogs')
+      .from('Final_blog')
       .update(updates)
       .eq('id', id)
       .select()
@@ -79,7 +87,7 @@ export async function DELETE(req: Request) {
     if (!id) throw new Error("ID required");
 
     const { error } = await supabase
-      .from('blogs')
+      .from('Final_blog')
       .delete()
       .eq('id', id);
 
@@ -89,3 +97,4 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

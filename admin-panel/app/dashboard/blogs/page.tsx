@@ -17,7 +17,8 @@ import {
   User,
   Tag,
   Image as ImageIcon,
-  ExternalLink
+  ExternalLink,
+  Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -49,6 +50,43 @@ export default function BlogsPage() {
   const [currentBlog, setCurrentBlog] = useState<Partial<Blog> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Show local preview immediately so the UI is responsive
+    const localUrl = URL.createObjectURL(file);
+    setCurrentBlog(prev => ({ ...prev, image_url: localUrl }));
+
+    setIsUploading(true);
+    setError('');
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'blogs');
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      if (data.url) {
+        setCurrentBlog(prev => ({ ...prev, image_url: data.url }));
+      }
+    } catch (err: any) {
+      setError('Upload failed: ' + err.message);
+      // Fallback to default logo/placeholder on upload failure
+      setCurrentBlog(prev => ({ ...prev, image_url: '/logo.png' }));
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -227,7 +265,7 @@ export default function BlogsPage() {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 overflow-hidden flex-shrink-0">
-                            <img src={blog.image_url} alt="" className="w-full h-full object-cover" />
+                            <img src={blog.image_url || '/logo.png'} alt="" className="w-full h-full object-cover" />
                         </div>
                         <div className="flex flex-col">
                             <span className="text-sm font-bold text-white group-hover:text-saffron transition-colors line-clamp-1">{blog.title}</span>
@@ -242,7 +280,7 @@ export default function BlogsPage() {
                     </td>
                     <td className="px-8 py-6">
                         <div className="flex items-center gap-2">
-                            <img src={blog.author_avatar} className="w-5 h-5 rounded-full" alt="" />
+                            <img src={blog.author_avatar || '/logo.png'} className="w-5 h-5 rounded-full" alt="" />
                             <span className="text-xs text-gray-400 font-medium">{blog.author_name}</span>
                         </div>
                     </td>
@@ -449,22 +487,64 @@ export default function BlogsPage() {
 
                         {/* Image Preview Card */}
                         <div className="p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 space-y-4">
-                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                <ImageIcon size={12} className="text-saffron" /> Cover Image URL
-                            </label>
-                            <div className="aspect-video rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-2xl group relative">
-                                <img src={currentBlog?.image_url} alt="Cover" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                                <div className="absolute inset-0 bg-[#0f172a]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <ImageIcon size={32} className="text-white/50" />
+                            <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                    <ImageIcon size={12} className="text-saffron" /> Cover Image
+                                </label>
+                                <span className="text-[9px] text-[#f97316] font-bold uppercase tracking-wider bg-[#f97316]/10 px-2.5 py-1 rounded-lg border border-[#f97316]/20">
+                                    Ratio: 4:3 (e.g. 800x600 px)
+                                </span>
+                            </div>
+                            
+                            <div className="aspect-video rounded-2xl bg-white/5 border border-white/10 overflow-hidden shadow-2xl group relative cursor-pointer">
+                                <img src={currentBlog?.image_url || '/logo.png'} alt="Cover" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                <div className="absolute inset-0 bg-[#0f172a]/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-white">
+                                    {isUploading ? (
+                                        <RefreshCw size={24} className="animate-spin text-saffron" />
+                                    ) : (
+                                        <>
+                                            <Upload size={24} className="text-saffron" />
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">Click to Upload</span>
+                                        </>
+                                    )}
+                                </div>
+                                {isUploading && (
+                                    <div className="absolute inset-0 bg-[#0f172a]/60 flex items-center justify-center">
+                                        <RefreshCw size={24} className="animate-spin text-saffron" />
+                                    </div>
+                                )}
+                                <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                />
+                            </div>
+
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    value={currentBlog?.image_url || ''}
+                                    onChange={(e) => setCurrentBlog(prev => ({ ...prev, image_url: e.target.value }))}
+                                    placeholder="Paste URL or upload image..."
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-mono text-gray-500 focus:outline-none focus:border-saffron/50 transition-all"
+                                />
+                                <div className="relative overflow-hidden shrink-0">
+                                    <button
+                                        type="button"
+                                        disabled={isUploading}
+                                        className="px-4 py-2 bg-[#f97316]/10 hover:bg-[#f97316]/20 border border-[#f97316]/20 rounded-xl text-[10px] font-bold text-saffron uppercase tracking-wider transition-all"
+                                    >
+                                        Upload
+                                    </button>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                    />
                                 </div>
                             </div>
-                            <input 
-                                type="text" 
-                                value={currentBlog?.image_url || ''}
-                                onChange={(e) => setCurrentBlog(prev => ({ ...prev, image_url: e.target.value }))}
-                                placeholder="Paste image URL here..."
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-mono text-gray-500 focus:outline-none focus:border-saffron/50 transition-all"
-                            />
                         </div>
 
                         <div className="p-6 rounded-[2rem] bg-orange-500/5 border border-orange-500/10 space-y-3">
@@ -499,7 +579,7 @@ export default function BlogsPage() {
                   </button>
                   <button 
                     onClick={handleSave}
-                    disabled={isSaving}
+                    disabled={isSaving || isUploading}
                     type="button"
                     className="group relative flex-[1.5] flex items-center justify-center gap-3 px-8 py-5 bg-[#f97316] rounded-3xl text-white font-bold uppercase tracking-[0.2em] text-[10px] shadow-[0_0_30px_rgba(249,115,22,0.4)] hover:shadow-[0_0_45px_rgba(249,115,22,0.6)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all overflow-hidden"
                   >

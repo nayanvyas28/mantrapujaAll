@@ -21,12 +21,26 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Process with SHARP
-    const optimizedBuffer = await sharp(buffer)
-      .resize(800, 800, { // Standard max size
+    // Process with SHARP based on folder requirements
+    let sharpInstance = sharp(buffer);
+    if (folder === 'blogs') {
+      sharpInstance = sharpInstance.resize(800, 600, { // 4:3 Aspect Ratio
+        fit: 'cover',
+        position: 'center'
+      });
+    } else if (folder === 'writers' || folder === 'avatars') {
+      sharpInstance = sharpInstance.resize(300, 300, { // 1:1 Aspect Ratio
+        fit: 'cover',
+        position: 'center'
+      });
+    } else {
+      sharpInstance = sharpInstance.resize(800, 800, {
         fit: 'inside',
         withoutEnlargement: true
-      })
+      });
+    }
+
+    const optimizedBuffer = await sharpInstance
       .webp({ quality: 85, effort: 6 }) // Sharp webp optimization
       .toBuffer();
 

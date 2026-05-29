@@ -21,6 +21,209 @@ import CollapsibleText from '@/components/ui/CollapsibleText';
 import { UnifiedPujaBackground } from "@/components/UnifiedPujaBackground";
 import { getBlogCategoryStyle } from '@/lib/uiMapping';
 
+// Helpers to automatically structure and format blog content
+function checkIfLineIsHeading(line: string, i: number, lines: string[]): boolean {
+    if (!line) return false;
+    return line.startsWith('#') || 
+        (line.length < 100 && 
+         !line.endsWith('.') && 
+         !line.endsWith('!') && 
+         !line.startsWith('-') && 
+         !line.startsWith('*') && 
+         !line.startsWith('•') &&
+         !/^\d+$/.test(line) && // Not just a number
+         (i === 0 || lines[i - 1].trim() === ''));
+}
+
+// Helpers to automatically structure and format blog content
+function parseRawContentToStructured(content: string) {
+    const lines = content.split('\n');
+    const sections: any[] = [];
+    let introduction = "";
+    let conclusion = "";
+    const faq: any[] = [];
+    
+    let currentSection: any = null;
+    let introDone = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
+        
+        const isHeading = checkIfLineIsHeading(line, i, lines);
+             
+        if (isHeading) {
+            const headingText = line.replace(/^#+\s*/, '').trim();
+            
+            // Conclusion
+            if (headingText.toLowerCase().includes('conclusion') || headingText.toLowerCase().includes('conclusion —') || headingText.toLowerCase().includes('निष्कर्ष') || headingText.toLowerCase().includes('summary')) {
+                let conclLines = [];
+                for (let j = i + 1; j < lines.length; j++) {
+                    conclLines.push(lines[j]);
+                }
+                conclusion = conclLines.join('\n').trim();
+                break;
+            }
+            
+            // FAQ
+            if (headingText.toLowerCase().includes('faq') || headingText.toLowerCase().includes('frequently asked') || headingText.toLowerCase().includes('question')) {
+                let currentQ = "";
+                let currentA = "";
+                for (let j = i + 1; j < lines.length; j++) {
+                    const faqLine = lines[j].trim();
+                    if (!faqLine) continue;
+                    
+                    const isFaqHeading = checkIfLineIsHeading(faqLine, j, lines);
+                         
+                    if (isFaqHeading) {
+                        i = j - 1;
+                        break;
+                    }
+                    
+                    const lowerFaqLine = faqLine.toLowerCase();
+                    if (lowerFaqLine.startsWith('q:') || lowerFaqLine.startsWith('q.') || faqLine.startsWith('प्रश्न') || faqLine.includes('?')) {
+                        if (currentQ && currentA) {
+                            faq.push({ question: currentQ, answer: currentA });
+                        }
+                        
+                        const qMarkIndex = faqLine.indexOf('?');
+                        if (qMarkIndex !== -1 && qMarkIndex < faqLine.length - 1) {
+                            currentQ = faqLine.substring(0, qMarkIndex + 1).replace(/^(q:|q\.|प्रश्न)\s*/i, '').trim();
+                            currentA = faqLine.substring(qMarkIndex + 1).trim();
+                        } else {
+                            currentQ = faqLine.replace(/^(q:|q\.|प्रश्न)\s*/i, '').trim();
+                            currentA = "";
+                        }
+                    } else if (lowerFaqLine.startsWith('a:') || lowerFaqLine.startsWith('a.') || faqLine.startsWith('उत्तर')) {
+                        currentA = faqLine.replace(/^(a:|a\.|उत्तर)\s*/i, '').trim();
+                    } else {
+                        if (currentA) {
+                            currentA += "\n" + faqLine;
+                        } else if (currentQ) {
+                            currentA = faqLine;
+                        }
+                    }
+                }
+                if (currentQ && currentA) {
+                    faq.push({ question: currentQ, answer: currentA });
+                }
+                if (currentSection) {
+                    sections.push(currentSection);
+                    currentSection = null;
+                }
+                introDone = true;
+                continue;
+            }
+            
+            if (currentSection) {
+                sections.push(currentSection);
+            }
+            
+            currentSection = {
+                heading: headingText,
+                content: "",
+                key_points: []
+            };
+            introDone = true;
+        } else {
+            if (!introDone) {
+                if (introduction) introduction += "\n\n";
+                introduction += line;
+            } else if (currentSection) {
+                if (line.startsWith('-') || line.startsWith('*') || line.startsWith('•')) {
+                    const point = line.replace(/^[-*•]\s*/, '').trim();
+                    currentSection.key_points.push(point);
+                } else {
+                    if (currentSection.content) currentSection.content += "\n\n";
+                    currentSection.content += line;
+                }
+            } else {
+                if (introduction) introduction += "\n\n";
+                introduction += line;
+            }
+        }
+    }
+    
+    if (currentSection) {
+        sections.push(currentSection);
+    }
+    
+    // Promote first section to introduction if it's named 'Introduction' and intro is empty
+    if (sections.length > 0 && (!introduction || !introduction.trim())) {
+        const firstSec = sections[0];
+        const h = firstSec.heading.toLowerCase();
+        if (h === 'introduction' || h === 'intro' || h === 'प्रस्तावना' || h === 'भूमिका' || h === 'prastavana') {
+            introduction = firstSec.content;
+            sections.shift();
+        }
+    }
+    
+    // Auto-structure simple plain text if no sections were parsed
+    if (sections.length === 0) {
+        const paragraphs = content.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+        if (paragraphs.length > 0) {
+            if (!introduction || !introduction.trim()) {
+                introduction = paragraphs[0];
+                if (paragraphs.length > 1) {
+                    sections.push({
+                        heading: "Divine Wisdom",
+                        content: paragraphs.slice(1).join('\n\n'),
+                        key_points: []
+                    });
+                }
+            } else {
+                sections.push({
+                    heading: "Divine Wisdom",
+                    content: paragraphs.join('\n\n'),
+                    key_points: []
+                });
+            }
+        }
+    }
+    
+    return {
+        introduction,
+        sections,
+        faq,
+        conclusion
+    };
+}
+
+function formatPlainContentToHtml(content: string) {
+    if (!content) return "";
+    
+    // Check if it already contains HTML tags
+    const hasHtml = /<[a-z][\s\S]*>/i.test(content);
+    if (hasHtml) return content;
+    
+    let html = content
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+        
+    // Headings
+    html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+    
+    // Bold
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // List items
+    html = html.replace(/^[-*•]\s+(.*?)$/gm, '<li>$1</li>');
+    
+    // Paragraphs
+    const paragraphs = html.split(/\n\s*\n/);
+    html = paragraphs.map(p => {
+        p = p.trim();
+        if (!p) return "";
+        if (/^<(h[1-6]|li)/i.test(p)) return p;
+        return `<p>${p.replace(/\n/g, '<br />')}</p>`;
+    }).join('\n');
+    
+    return html;
+}
+
 interface BlogDetailClientProps {
     blog: any;
 }
@@ -147,23 +350,34 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                             console.error("Failed to parse blog content JSON:", e);
                         }
 
+                        // Fallback: If not structured JSON, try to auto-structure the plain text / markdown content
+                        if (!structuredContent && typeof blog.content === 'string' && blog.content.trim()) {
+                            const parsed = parseRawContentToStructured(blog.content);
+                            // Only use auto-structured layout if it parsed at least one section
+                            if (parsed.sections.length > 0) {
+                                structuredContent = parsed;
+                            }
+                        }
+
                         if (structuredContent) {
                             return (
                                 <div className="space-y-20 relative z-10">
                                     {/* Introduction */}
-                                    <section>
-                                        <div className="border-l-4 border-saffron pl-8 italic relative">
-                                            <div className="absolute top-0 left-0 -translate-x-full pr-4 opacity-20">
-                                                <Sun className="w-12 h-12 text-saffron" />
+                                    {structuredContent.introduction && structuredContent.introduction.trim() && (
+                                        <section>
+                                            <div className="border-l-4 border-saffron pl-8 italic relative">
+                                                <div className="absolute top-0 left-0 -translate-x-full pr-4 opacity-20">
+                                                    <Sun className="w-12 h-12 text-saffron" />
+                                                </div>
+                                                <CollapsibleText
+                                                    text={structuredContent.introduction}
+                                                    lineClamp={4}
+                                                    className="text-xl md:text-2xl leading-relaxed font-serif font-medium text-foreground/90"
+                                                    buttonClassName="text-saffron font-black uppercase tracking-widest text-xs mt-4"
+                                                />
                                             </div>
-                                            <CollapsibleText
-                                                text={structuredContent.introduction}
-                                                lineClamp={4}
-                                                className="text-xl md:text-2xl leading-relaxed font-serif font-medium text-foreground/90"
-                                                buttonClassName="text-saffron font-black uppercase tracking-widest text-xs mt-4"
-                                            />
-                                        </div>
-                                    </section>
+                                        </section>
+                                    )}
 
                                     {/* Sections */}
                                     <div className="space-y-24">
@@ -239,13 +453,14 @@ export default function BlogDetailClient({ blog }: BlogDetailClientProps) {
                             );
                         } else {
                             // Fallback to legacy HTML rendering
+                            const formattedHtml = formatPlainContentToHtml(blog.content);
                             return (
                                 <div
                                     className="prose prose-lg md:prose-xl dark:prose-invert max-w-none 
                                     prose-headings:font-serif prose-headings:font-black prose-h1:text-4xl prose-h2:text-3xl prose-h2:mt-16 prose-h2:mb-8 prose-p:leading-relaxed prose-p:text-foreground/80
                                     prose-a:text-saffron prose-a:font-bold hover:prose-a:underline
                                     prose-img:rounded-[32px] prose-img:shadow-2xl prose-quoteless"
-                                    dangerouslySetInnerHTML={{ __html: blog.content }}
+                                    dangerouslySetInnerHTML={{ __html: formattedHtml }}
                                 />
                             );
                         }
