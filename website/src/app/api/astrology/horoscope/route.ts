@@ -9,8 +9,9 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Sign is required' }, { status: 400 });
     }
 
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:4000';
     try {
-        const res = await fetch(`http://127.0.0.1:4000/api/astrology/horoscope?sign=${sign}&period=${period}`, {
+        const res = await fetch(`${backendUrl}/api/astrology/horoscope?sign=${sign}&period=${period}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -25,9 +26,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:4000';
     try {
         const body = await req.json();
-        const res = await fetch('http://127.0.0.1:4000/api/astrology/horoscope', {
+        const res = await fetch(`${backendUrl}/api/astrology/horoscope`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

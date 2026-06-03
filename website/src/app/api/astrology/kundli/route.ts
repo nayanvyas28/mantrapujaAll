@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:4000';
     try {
         const body = await req.json();
-        const res = await fetch('http://127.0.0.1:4000/api/astrology/kundli', {
+        const res = await fetch(`${backendUrl}/api/astrology/kundli`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

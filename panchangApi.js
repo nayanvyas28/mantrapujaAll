@@ -155,7 +155,9 @@ const handlePanchangRequest = async (req, res) => {
             tzone
         };
 
-        console.log(`[PanchangAPI] Calling AstrologyAPI: ${url}`);
+        console.log(`[PanchangAPI] Requesting URL: ${url}`);
+        console.log(`[PanchangAPI] Payload:`, JSON.stringify(payload));
+        
         const apiResponse = await axios.post(url, payload, {
             headers: {
                 'Content-Type': 'application/json',
@@ -164,6 +166,9 @@ const handlePanchangRequest = async (req, res) => {
             },
             timeout: 15000
         });
+
+        console.log(`[PanchangAPI] Response Status: ${apiResponse.status}`);
+        console.log(`[PanchangAPI] Response Body:`, JSON.stringify(apiResponse.data));
 
         const mappedResult = mapPanchangResponse(apiResponse.data, referenceDateStr, lat, lon);
 
@@ -185,7 +190,11 @@ const handlePanchangRequest = async (req, res) => {
         return res.json({ success: true, data: mappedResult });
 
     } catch (error) {
-        console.error('[PanchangAPI] Error:', error.message);
+        console.error('[PanchangAPI] Error Stack:', error.stack || error.message);
+        if (error.response) {
+            console.error('[PanchangAPI] Error Response Status:', error.response.status);
+            console.error('[PanchangAPI] Error Response Body:', JSON.stringify(error.response.data));
+        }
         return res.status(500).json({ 
             success: false, 
             error: "INTERNAL_SERVER_ERROR", 

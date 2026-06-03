@@ -102,9 +102,12 @@ const handleHoroscopeRequest = async (req, res) => {
 
         const auth = `Basic ${Buffer.from(`${userId}:${apiKey}`).toString('base64')}`;
         const url = `${ASTROLOGY_API_BASE_URL}/sun_sign_prediction/${period}/${signLower}`;
+        const payload = { timezone: 5.5 };
 
-        console.log(`[RashifalAPI] Calling AstrologyAPI: ${url}`);
-        const apiResponse = await axios.post(url, { timezone: 5.5 }, {
+        console.log(`[RashifalAPI] Requesting URL: ${url}`);
+        console.log(`[RashifalAPI] Payload:`, JSON.stringify(payload));
+        
+        const apiResponse = await axios.post(url, payload, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': auth,
@@ -112,6 +115,9 @@ const handleHoroscopeRequest = async (req, res) => {
             },
             timeout: 15000
         });
+
+        console.log(`[RashifalAPI] Response Status: ${apiResponse.status}`);
+        console.log(`[RashifalAPI] Response Body:`, JSON.stringify(apiResponse.data));
 
         const resData = apiResponse.data;
         const prediction = resData.prediction || resData;
@@ -201,7 +207,11 @@ const handleHoroscopeRequest = async (req, res) => {
         return res.json({ success: true, data: mappedData });
 
     } catch (error) {
-        console.error('[RashifalAPI] Error:', error.message);
+        console.error('[RashifalAPI] Error Stack:', error.stack || error.message);
+        if (error.response) {
+            console.error('[RashifalAPI] Error Response Status:', error.response.status);
+            console.error('[RashifalAPI] Error Response Body:', JSON.stringify(error.response.data));
+        }
         return res.status(500).json({ 
             success: false, 
             error: "INTERNAL_SERVER_ERROR", 

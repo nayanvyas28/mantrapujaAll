@@ -50,8 +50,21 @@ const executeAstroRequest = async (endpoint, birthData, lang = 'en') => {
     };
 
     const url = `${ASTROLOGY_API_BASE_URL}/${endpoint}`;
-    const response = await axios.post(url, payload, { headers, timeout: 15000 });
-    return response.data;
+    console.log(`[KundliAPI] Requesting URL: ${url}`);
+    console.log(`[KundliAPI] Payload:`, JSON.stringify(payload));
+    try {
+        const response = await axios.post(url, payload, { headers, timeout: 15000 });
+        console.log(`[KundliAPI] Response Status for ${endpoint}: ${response.status}`);
+        console.log(`[KundliAPI] Response Body for ${endpoint}:`, JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        console.error(`[KundliAPI] Error requesting ${endpoint}:`, error.stack || error.message);
+        if (error.response) {
+            console.error(`[KundliAPI] Error Response Status: ${error.response.status}`);
+            console.error(`[KundliAPI] Error Response Body:`, JSON.stringify(error.response.data));
+        }
+        throw error;
+    }
 };
 
 /**

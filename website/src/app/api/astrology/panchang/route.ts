@@ -19,8 +19,9 @@ export async function GET(req: NextRequest) {
         query = `?${params.toString()}`;
     }
 
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:4000';
     try {
-        const res = await fetch(`http://127.0.0.1:4000/api/astrology/panchang${query}`, {
+        const res = await fetch(`${backendUrl}/api/astrology/panchang${query}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
