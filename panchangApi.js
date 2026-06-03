@@ -157,6 +157,8 @@ const handlePanchangRequest = async (req, res) => {
 
         console.log(`[PanchangAPI] Requesting URL: ${url}`);
         console.log(`[PanchangAPI] Payload:`, JSON.stringify(payload));
+        console.log("PANCHANG URL:", url);
+        console.log("PANCHANG PAYLOAD:", payload);
         
         const apiResponse = await axios.post(url, payload, {
             headers: {
@@ -190,6 +192,8 @@ const handlePanchangRequest = async (req, res) => {
         return res.json({ success: true, data: mappedResult });
 
     } catch (error) {
+        console.error(error);
+        console.error(error.stack);
         console.error('[PanchangAPI] Error Stack:', error.stack || error.message);
         if (error.response) {
             console.error('[PanchangAPI] Error Response Status:', error.response.status);

@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     }
 
     const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:4000';
+    console.log("BACKEND_URL:", process.env.BACKEND_URL);
     try {
         const res = await fetch(`${backendUrl}/api/astrology/horoscope?sign=${sign}&period=${period}`, {
             method: 'GET',
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:4000';
+    console.log("BACKEND_URL:", process.env.BACKEND_URL);
     try {
         const body = await req.json();
         const res = await fetch(`${backendUrl}/api/astrology/horoscope`, {
