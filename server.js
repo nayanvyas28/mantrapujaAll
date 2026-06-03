@@ -21,6 +21,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Request Logging Middleware (Detailed Logging)
+app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.url}`);
+    next();
+});
+
+
 // Import Astrology API Routers
 const rashifalRouter = require('./rashifalApi');
 const panchangRouter = require('./panchangApi');
@@ -35,12 +42,15 @@ app.use('/api', kundliRouter);
 app.get('/health', (req, res) => {
     res.json({
         status: 'ok',
-        timestamp: new Date().toISOString(),
-        service: 'Astrology API Service',
-        config: {
-            hasUserId: !!process.env.ASTROLOGY_USER_ID,
-            hasApiKey: !!process.env.ASTROLOGY_API_KEY
-        }
+        service: 'Astrology API Service'
+    });
+});
+
+// Proxied Health Check Endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        service: 'Astrology API Service'
     });
 });
 

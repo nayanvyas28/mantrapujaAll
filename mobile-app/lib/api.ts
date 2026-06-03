@@ -5,6 +5,10 @@ const getAdminUrl = () => {
   if (process.env.EXPO_PUBLIC_ADMIN_URL) {
     return process.env.EXPO_PUBLIC_ADMIN_URL;
   }
+  // If this is a production build (non-dev mode), default to the public production website URL
+  if (typeof __DEV__ !== 'undefined' ? !__DEV__ : process.env.NODE_ENV === 'production') {
+    return 'https://mantrapuja.com';
+  }
   const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest?.hostUri;
   const ip = hostUri ? hostUri.split(":")[0] : null;
   if (ip) {
