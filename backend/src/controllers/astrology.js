@@ -1,4 +1,7 @@
 const { supabase } = require('../utils/supabase');
+const HoroscopeService = require('../services/horoscopeService');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 const ASTROLOGY_API_BASE_URL = "https://json.astrologyapi.com/v1";
 
@@ -194,7 +197,116 @@ const getKundliData = async (req, res) => {
     }
 };
 
+const getHoroscopeData = async (req, res) => {
+    try {
+        const sign = req.query.sign || req.body.sign;
+        const period = req.query.period || req.body.period || 'daily';
+
+        if (!sign) {
+            return res.status(400).json({ error: "Sign is required" });
+        }
+
+        const validPeriods = ['daily', 'weekly', 'monthly', 'yearly'];
+        if (!validPeriods.includes(period)) {
+            return res.status(400).json({ error: "Invalid period. Must be 'daily', 'weekly', 'monthly', or 'yearly'" });
+        }
+
+        console.log(`[HoroscopeController] Fetching ${period} horoscope for sign: ${sign}`);
+        const data = await HoroscopeService.getHoroscope(sign, period);
+        return res.json({ success: true, data });
+    } catch (error) {
+        console.error('[HoroscopeController] Error:', error);
+        return res.status(500).json({ error: "INTERNAL_SERVER_ERROR", msg: error.message });
+    }
+};
+
+const getPanchangData = async (req, res) => {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        console.log(`[PanchangController] Scraping fresh live Panchang from AstroSage...`);
+
+        const url = 'https://panchang.astrosage.com/panchang/aajkapanchang?language=en';
+        
+        const { data: html } = await axios.get(url, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml',
+            },
+            timeout: 20000,
+        });
+
+        const $ = cheerio.load(html);
+        
+        const result = {
+            reference_date: today,
+            title: '',
+            location: '',
+            panchang_for_today: {},
+            sun_moon_calculations: {},
+            hindu_month_year: {},
+            inauspicious_timings: {},
+            auspicious_timings: {},
+        };
+
+        const titleText = $('title').text().trim();
+        result.title = titleText.split('Panchangam for')[0].trim() || 'Today Panchang';
+        result.location = titleText.split('Panchangam for')[1]?.trim() || 'New Delhi, India';
+
+        const parseSection = (sectionTitle, targetObj) => {
+            $(`h4:contains("${sectionTitle}")`).next('.row').find('.pan-row').each((_, el) => {
+                const label = $(el).find('div').first().text().trim();
+                let value = $(el).find('div').last().text().trim();
+                value = value.replace(/\s+/g, ' ').trim();
+                if (label && value) {
+                    targetObj[label] = value;
+                }
+            });
+        };
+
+        parseSection('Panchang For Today', result.panchang_for_today);
+        parseSection('Sun And Moon Calculations', result.sun_moon_calculations);
+        parseSection('Hindu Month And Year', result.hindu_month_year);
+        parseSection('Inauspicious Timings', result.inauspicious_timings);
+        parseSection('Auspicious Timings', result.auspicious_timings);
+
+        // 3. Save to DB cache
+        if (supabase) {
+            const { error: saveError } = await supabase
+                .from('panchangs')
+                .upsert({
+                    reference_date: today,
+                    data: result
+                }, { onConflict: 'reference_date' });
+
+            if (saveError) console.error('[PanchangController] DB Save Error:', saveError);
+        }
+
+        return res.json({ success: true, data: result });
+    } catch (error) {
+        console.error('[PanchangController] Scraping failed, trying DB cache...', error.message);
+        try {
+            if (supabase) {
+                const { data: existing } = await supabase
+                    .from('panchangs')
+                    .select('*')
+                    .eq('reference_date', today)
+                    .maybeSingle();
+
+                if (existing && existing.data) {
+                    console.log(`[PanchangController] DB fallback success.`);
+                    return res.json({ success: true, data: existing.data });
+                }
+            }
+        } catch (dbErr) {
+            console.error('[PanchangController] DB fallback error:', dbErr.message);
+        }
+        return res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", msg: error.message });
+    }
+};
+
 module.exports = {
     proxyAstroRequest,
-    getKundliData
+    getKundliData,
+    getHoroscopeData,
+    getPanchangData
 };

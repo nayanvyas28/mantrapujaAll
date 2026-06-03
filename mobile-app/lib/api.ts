@@ -1,6 +1,20 @@
 import { supabase } from './supabase';
-const ADMIN_URL = process.env.EXPO_PUBLIC_ADMIN_URL;
-console.log(`[API] Initialized with ADMIN_URL: ${ADMIN_URL}`);
+import Constants from 'expo-constants';
+
+const getAdminUrl = () => {
+  if (process.env.EXPO_PUBLIC_ADMIN_URL) {
+    return process.env.EXPO_PUBLIC_ADMIN_URL;
+  }
+  const hostUri = Constants.expoConfig?.hostUri || (Constants as any).manifest?.hostUri;
+  const ip = hostUri ? hostUri.split(":")[0] : null;
+  if (ip) {
+    return `http://${ip}:4000`;
+  }
+  return 'http://localhost:4000';
+};
+
+const ADMIN_URL = getAdminUrl();
+console.log(`[API] Dynamic Resolution of ADMIN_URL: ${ADMIN_URL}`);
 
 const fetchWithTimeout = async (url: string, options: any = {}, timeout = 60000) => {
   const controller = new AbortController();
@@ -126,6 +140,16 @@ export const api = {
 
   // --- Astrology API ---
   astrology: {
+    getHoroscopeData: async (sign: string, period: 'daily' | 'weekly' | 'monthly' | 'yearly' = 'daily') => {
+      try {
+        const response = await fetchWithTimeout(`${ADMIN_URL}/api/astrology/horoscope?sign=${sign}&period=${period}`);
+        return await response.json();
+      } catch (error) {
+        console.error('getHoroscopeData error:', error);
+        throw error;
+      }
+    },
+
     getKundliData: async (birthData: any, language: string = 'en') => {
       try {
         const response = await fetchWithTimeout(`${ADMIN_URL}/api/astrology/kundli`, {
@@ -180,6 +204,16 @@ export const api = {
         return true;
       } catch (error) {
         console.error('deleteKundali error:', error);
+        throw error;
+      }
+    },
+
+    getPanchangData: async () => {
+      try {
+        const response = await fetchWithTimeout(`${ADMIN_URL}/api/astrology/panchang`);
+        return await response.json();
+      } catch (error) {
+        console.error('getPanchangData error:', error);
         throw error;
       }
     }
