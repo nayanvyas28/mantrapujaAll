@@ -63,13 +63,13 @@ export class PanchangService {
         parseSection('Inauspicious Timings', result.inauspicious_timings!);
         parseSection('Auspicious Timings', result.auspicious_timings!);
 
-        result.reference_date = new Date().toISOString().split('T')[0];
+        result.reference_date = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
 
         return result as PanchangData;
     }
 
     static async getTodayPanchang(): Promise<PanchangData> {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
         const supabase = this.getSupabase();
 
         if (!supabase) {

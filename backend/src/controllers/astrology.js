@@ -222,7 +222,7 @@ const getHoroscopeData = async (req, res) => {
 
 const getPanchangData = async (req, res) => {
     try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
         console.log(`[PanchangController] Scraping fresh live Panchang from AstroSage...`);
 
         const url = 'https://panchang.astrosage.com/panchang/aajkapanchang?language=en';
