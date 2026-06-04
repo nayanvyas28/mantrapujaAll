@@ -221,19 +221,20 @@ export class HoroscopeService {
     }
 
     static async getHoroscope(sign: string, period: 'daily' | 'weekly' | 'monthly' | 'yearly'): Promise<HoroscopeData> {
-        // Calculate the cache key date based on the period
-        const now = new Date();
-        let referenceDateStr = now.toISOString().split('T')[0]; // Default to today
+        // Calculate the cache key date based on the period (using India timezone)
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+        const nowKolkata = new Date(`${todayStr}T00:00:00Z`);
+        let referenceDateStr = todayStr;
 
         if (period === 'monthly') {
-            referenceDateStr = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]; // 1st of month
+            referenceDateStr = `${nowKolkata.getUTCFullYear()}-${String(nowKolkata.getUTCMonth() + 1).padStart(2, '0')}-01`;
         } else if (period === 'yearly') {
-            referenceDateStr = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]; // Jan 1st
+            referenceDateStr = `${nowKolkata.getUTCFullYear()}-01-01`;
         } else if (period === 'weekly') {
-            // Find Monday of the current week
-            const day = now.getDay() || 7; // Get current day number, converting Sun. to 7
-            if (day !== 1) now.setHours(-24 * (day - 1)); 
-            referenceDateStr = now.toISOString().split('T')[0];
+            const day = nowKolkata.getUTCDay() || 7; // Sunday = 7, Monday = 1
+            const monday = new Date(nowKolkata);
+            monday.setUTCDate(nowKolkata.getUTCDate() - (day - 1));
+            referenceDateStr = monday.toISOString().split('T')[0];
         }
 
         const supabase = this.getSupabase();

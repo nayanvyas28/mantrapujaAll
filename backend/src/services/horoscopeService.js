@@ -195,17 +195,20 @@ class HoroscopeService {
      * Retrieves horoscope from cache or fetches a fresh one, caching the result in Supabase.
      */
     static async getHoroscope(sign, period) {
-        const now = new Date();
-        let referenceDateStr = now.toISOString().split('T')[0];
+        // Calculate the cache key date based on the period (using India timezone)
+        const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+        const nowKolkata = new Date(`${todayStr}T00:00:00Z`);
+        let referenceDateStr = todayStr;
 
         if (period === 'monthly') {
-            referenceDateStr = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            referenceDateStr = `${nowKolkata.getUTCFullYear()}-${String(nowKolkata.getUTCMonth() + 1).padStart(2, '0')}-01`;
         } else if (period === 'yearly') {
-            referenceDateStr = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+            referenceDateStr = `${nowKolkata.getUTCFullYear()}-01-01`;
         } else if (period === 'weekly') {
-            const day = now.getDay() || 7;
-            if (day !== 1) now.setHours(-24 * (day - 1)); 
-            referenceDateStr = now.toISOString().split('T')[0];
+            const day = nowKolkata.getUTCDay() || 7; // Sunday = 7, Monday = 1
+            const monday = new Date(nowKolkata);
+            monday.setUTCDate(nowKolkata.getUTCDate() - (day - 1));
+            referenceDateStr = monday.toISOString().split('T')[0];
         }
 
         if (!supabase) {
