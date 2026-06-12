@@ -1,6 +1,7 @@
 import { supabase as defaultSupabase } from './supabaseClient';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Category, Page } from '@/types/content';
+import { cache } from 'react';
 
 // --- Robust Client Selection ---
 // On the server, we use the Service Role key to bypass RLS issues for public data.
@@ -466,7 +467,7 @@ export const getBlogs = async (): Promise<Blog[]> => {
     }));
 };
 
-export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
+export const getBlogBySlug = cache(async (slug: string): Promise<Blog | null> => {
     try {
         const supabase = getClient();
 
@@ -542,7 +543,7 @@ export const getBlogBySlug = async (slug: string): Promise<Blog | null> => {
         console.error('[getBlogBySlug] Critical fetch error:', err);
         return null;
     }
-};
+});
 
 export const getPaginatedBlogs = async (
     page: number = 1,

@@ -1,4 +1,5 @@
 import { getSupabaseServer } from '@/lib/supabaseServer';
+import { cache } from 'react';
 
 export type LocationType = 'Char Dham' | 'Jyotirlinga' | 'Shakti Peeth' | 'Jyotirlinga & Shakti Peeth' | 'Kumbh Mela' | 'Spiritual City' | 'Sacred Destination' | 'All';
 
@@ -102,7 +103,7 @@ export async function getActiveDestinations(): Promise<Location[]> {
     });
 }
 
-export async function getDestinationBySlug(slug: string): Promise<LocationDetail | null> {
+export const getDestinationBySlug = cache(async (slug: string): Promise<LocationDetail | null> => {
     const supabase = getSupabaseServer();
     if (!supabase) return null;
 
@@ -146,4 +147,4 @@ export async function getDestinationBySlug(slug: string): Promise<LocationDetail
         size: dbDest.size === 15 ? 'large' : dbDest.size >= 12 ? 'medium' : 'small',
         ...content
     };
-}
+});
