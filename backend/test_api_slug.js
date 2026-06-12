@@ -1,5 +1,5 @@
 async function testApi() {
-    const url = `http://10.210.37.64:4000/api/pujas/detail/shiv-puja`;
+    const url = `http://34.126.219.127:4000/api/pujas/detail/shiv-puja`;
     console.log(`Testing: ${url}`);
     try {
         const response = await fetch(url);

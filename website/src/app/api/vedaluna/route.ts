@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
         // 🔄 ADVANCED MULTI-NODE FAILOVER ENGINE
         const activeNodes = (settings?.setting_value?.apis || []).filter((node: any) => node.is_enabled);
-        const fallbackNodes = activeNodes.length > 0 ? activeNodes : [{ user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', name: 'Fallback-Trial' }];
+        const fallbackNodes = activeNodes.length > 0 ? activeNodes : [{ user_id: '652693', api_key: 'ak-78d22f4e9a7680c4ac68ce28053f9d09fd3d56bf', name: 'Fallback-AstrologyEngine3' }];
 
         const fetchWithRetry = async (url: string, payload: any) => {
             let lastError = null;

@@ -100,6 +100,6 @@ Forwards a request to the configured Astrology API.
 
 ## 5. Technical Constants
 
-**Base URL**: http://lk8ogw0kkok0sso484swc0wc.34.93.68.183.sslip.io
+**Base URL**: http://lk8ogw0kkok0sso484swc0wc.34.126.219.127.sslip.io
 **Authentication**: Most admin routes require a Supabase Service Role key or valid Admin session.
 **Phone Formatting**: The backend automatically normalizes phone numbers to a 10-digit format for consistency.

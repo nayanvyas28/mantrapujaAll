@@ -2,7 +2,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Load from credentials (same as before)
-const SUPABASE_URL = "http://supabasekong-t4kssg8owoocg48swk04kw88.34.93.68.183.sslip.io";
+const SUPABASE_URL = "http://supabasekong-t4kssg8owoocg48swk04kw88.34.126.219.127.sslip.io";
 const SUPABASE_SERVICE_ROLE_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3MDgxNzU2MCwiZXhwIjo0OTI2NDkxMTYwLCJyb2xlIjoic2VydmljZV9yb2xlIn0.kh1BMtLMlRERIVE4eOJ70Jma6L4U9xXgpmtjIImsXJ4";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {

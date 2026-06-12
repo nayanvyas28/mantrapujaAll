@@ -3,7 +3,7 @@ const { createClient } = require('@supabase/supabase-js');
 const bcrypt = require('bcryptjs');
 
 // Load from .env.local logic (simplified)
-const SUPABASE_URL = "http://supabasekong-ikokgwcgw8s44s4g0kckwgsw.34.93.68.183.sslip.io";
+const SUPABASE_URL = "http://supabasekong-ikokgwcgw8s44s4g0kckwgsw.34.126.219.127.sslip.io";
 const SUPABASE_SERVICE_ROLE_KEY = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3MDkxNDk0MCwiZXhwIjo0OTI2NTg4NTQwLCJyb2xlIjoic2VydmljZV9yb2xlIn0.BXBg0x_XqZXJIpNO3O0SwRlgyfRa1pg6A0hyngwEPro";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

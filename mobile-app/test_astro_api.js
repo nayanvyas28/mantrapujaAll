@@ -1,4 +1,4 @@
-const ADMIN_URL = 'http://10.210.37.64:4000'; // Updated to your current IP
+const ADMIN_URL = 'http://34.126.219.127:4000'; // Updated to your current IP
 
 const testData = {
     birthData: {

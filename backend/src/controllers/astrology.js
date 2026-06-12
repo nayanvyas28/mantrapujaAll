@@ -12,8 +12,8 @@ const executeNodeRequest = async (node, endpoint, body, lang) => {
     let provider = node.provider || (node.api_key ? 'astrologyapi' : null);
     
     // 🔗 Basic Auth for AstrologyAPI (Match Website)
-    const userId = node.user_id || '629910'; // Fallback to premium if missing
-    const apiKey = node.api_key;
+    const userId = node.user_id || '652693'; // Fallback to working node if missing
+    const apiKey = node.api_key || 'ak-78d22f4e9a7680c4ac68ce28053f9d09fd3d56bf';
     const auth = `Basic ${Buffer.from(`${userId}:${apiKey}`).toString('base64')}`;
 
     let headers = {
@@ -62,7 +62,14 @@ const proxyAstroRequest = async (req, res) => {
 
     try {
         const { data: settings } = await supabase.from('kundli_settings').select('setting_value').eq('setting_key', 'api_config').single();
-        const config = settings?.setting_value || { apis: [{ name: 'Default', user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true }], failover_enabled: true };
+        const config = settings?.setting_value || { 
+            apis: [
+                { name: 'Primary Key 1', user_id: '651550', api_key: 'ak-36483fc8a7f94df8504faacc4db3a46cafb353bd', is_enabled: true },
+                { name: 'Fallback Key 2', user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true },
+                { name: 'Astrology Engine 3', user_id: '652693', api_key: 'ak-78d22f4e9a7680c4ac68ce28053f9d09fd3d56bf', is_enabled: true }
+            ], 
+            failover_enabled: true 
+        };
 
         const nodes = config.apis.filter(api => api.is_enabled);
         let lastError = null;
@@ -70,12 +77,18 @@ const proxyAstroRequest = async (req, res) => {
         for (const node of nodes) {
             try {
                 const result = await executeNodeRequest(node, endpoint, body, lang);
-                const isLimit = result.data.msg?.toLowerCase().includes('limit') || result.data.msg?.toLowerCase().includes('expired');
+                const bodyMsg = result.data?.msg || result.data?.message || "";
+                const isLimitOrExpired = bodyMsg.toLowerCase().includes('limit') || 
+                                         bodyMsg.toLowerCase().includes('expired') || 
+                                         bodyMsg.toLowerCase().includes('invalid') ||
+                                         bodyMsg.toLowerCase().includes('plan') ||
+                                         bodyMsg.toLowerCase().includes('authorized');
+                const isFailedStatus = result.data?.status === false;
 
-                if (result.ok && !isLimit) {
+                if (result.ok && !isLimitOrExpired && !isFailedStatus) {
                     return res.status(result.status).json(result.data);
                 }
-                lastError = { status: result.status, msg: result.data.msg || "Node Error" };
+                lastError = { status: result.status, msg: bodyMsg || "Node Error" };
                 if (!config.failover_enabled) break;
             } catch (err) {
                 lastError = { status: 500, msg: err.message };
@@ -101,7 +114,13 @@ const getKundliData = async (req, res) => {
         console.log(`[AstroBundler] Payload:`, JSON.stringify(bData));
 
         const { data: settings } = await supabase.from('kundli_settings').select('setting_value').eq('setting_key', 'api_config').single();
-        const config = settings?.setting_value || { apis: [{ name: 'Premium', user_id: '629910', api_key: 'd33e9d8924b10499e15df332f99580b0', is_enabled: true }] };
+        const config = settings?.setting_value || { 
+            apis: [
+                { name: 'Primary Key 1', user_id: '651550', api_key: 'ak-36483fc8a7f94df8504faacc4db3a46cafb353bd', is_enabled: true },
+                { name: 'Fallback Key 2', user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true },
+                { name: 'Astrology Engine 3', user_id: '652693', api_key: 'ak-78d22f4e9a7680c4ac68ce28053f9d09fd3d56bf', is_enabled: true }
+            ] 
+        };
         const nodes = config.apis.filter(api => api.is_enabled);
 
         const endpoints = [
@@ -111,14 +130,14 @@ const getKundliData = async (req, res) => {
             { key: 'current_dasha', url: 'current_vdasha' },
             { key: 'gemstone', url: 'basic_gem_suggestion' },
             { key: 'rudraksha', url: 'rudraksha_suggestion' },
-            { key: 'character', url: 'personal_characteristics' },
+            { key: 'character', url: 'general_ascendant_report' },
             { key: 'career', url: 'career_report' },
             { key: 'health', url: 'health_report' },
-            { key: 'love', url: 'love_report' },
-            { key: 'physical', url: 'physique_report' },
+            { key: 'love', url: 'manglik' },
+            { key: 'physical', url: 'general_ascendant_report' },
             { key: 'numero_table', url: 'numero_table' },
             { key: 'numero_report', url: 'numero_report' },
-            { key: 'numero_time', url: 'numero_time' },
+            { key: 'numero_time', url: 'numero_fav_time' },
             { key: 'numero_place_vastu', url: 'numero_place_vastu' },
             { key: 'planets', url: 'planets' },
             { key: 'yoga_report', url: 'yoga_report' },
@@ -156,11 +175,17 @@ const getKundliData = async (req, res) => {
                     if (result.ok) {
                         const resData = result.data;
                         
-                        // Check for plan/authorization errors in the response body even if status is 200
-                        const bodyMsg = resData.msg || resData.message || "";
-                        if (bodyMsg.toLowerCase().includes('plan') || bodyMsg.toLowerCase().includes('authorized')) {
-                            lastError = bodyMsg;
-                            console.warn(`[AstroBundler] ⚠️ ${ep.key} unauthorized on ${node.name}: ${lastError}. Retrying next node...`);
+                        // Check for errors in the response body even if status is 200
+                        const bodyMsg = resData?.msg || resData?.message || "";
+                        const isLimitOrExpired = bodyMsg.toLowerCase().includes('limit') || 
+                                                 bodyMsg.toLowerCase().includes('expired') || 
+                                                 bodyMsg.toLowerCase().includes('invalid') ||
+                                                 bodyMsg.toLowerCase().includes('plan') ||
+                                                 bodyMsg.toLowerCase().includes('authorized');
+                                                 
+                        if (resData?.status === false || isLimitOrExpired) {
+                            lastError = bodyMsg || "Response status false";
+                            console.warn(`[AstroBundler] ⚠️ ${ep.key} failed/unauthorized on ${node.name}: ${lastError}. Retrying next node...`);
                             continue; 
                         }
 
