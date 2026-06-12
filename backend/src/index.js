@@ -18,6 +18,7 @@ const pujaRoutes = require('./routes/pujas');
 
 // Import Services
 const { initializeScheduler } = require('./services/notificationService');
+const { startNotificationDispatcher } = require('./services/notificationDispatcher');
 
 const app = express();
 
@@ -53,6 +54,13 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         console.log('📅 Notification scheduler initialized.');
     } catch (err) {
         console.error('❌ Failed to initialize scheduler:', err.message);
+    }
+    
+    // Start Push Notification Dispatcher Loop
+    try {
+        startNotificationDispatcher();
+    } catch (err) {
+        console.error('❌ Failed to start notification dispatcher:', err.message);
     }
 });
 
