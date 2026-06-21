@@ -33,7 +33,7 @@ RUN npm run build
 
 # Stage 2: Production server
 FROM node:20-alpine AS runner
-WORKDIR /app/website
+WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
@@ -42,10 +42,9 @@ RUN apk add --no-cache libc6-compat
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/website/public ./public
-COPY --from=builder /app/website/package.json ./package.json
-COPY --from=builder /app/website/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/website/.next ./.next
+COPY --from=builder --chown=nextjs:nodejs /app/website/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/website/.next/static ./website/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/website/public ./website/public
 
 USER nextjs
 
@@ -54,4 +53,4 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["npm", "start"]
+CMD ["node", "website/server.js"]

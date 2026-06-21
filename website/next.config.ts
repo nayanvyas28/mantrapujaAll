@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   staticPageGenerationTimeout: 300,
   allowedDevOrigins: ['10.126.135.92'],
   typescript: {
