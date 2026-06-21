@@ -1,19 +1,26 @@
-node_modules
-.next
-out
-dist
-build
+**/node_modules
+**/.next
+**/out
+**/dist
+**/build
 .git
+**/.git
+*.sql
+**/*.sql
 .env*
+**/.env*
 npm-debug.log*
 .DS_Store
+**/.DS_Store
 Thumbs.db
 
-# Exclude other workspaces from website build context
+# Exclude other workspaces and unnecessary directories from build context
 mobile-app
 admin-panel
 backend
+standalone-astrology-api
 .agents
 scratch
 artifacts
 .gemini
+.planning
