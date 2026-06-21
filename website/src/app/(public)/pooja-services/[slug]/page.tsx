@@ -5,29 +5,10 @@ import { cache } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { getPujaBySlug, PujaData } from '@/lib/pujaData';
 
-// Pre-generate paths for the top 50 most important pujas.
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-    try {
-        const { data, error } = await supabase
-            .from('poojas')
-            .select('slug')
-            .eq('is_active', true)
-            .not('slug', 'is', null)
-            .order('is_featured', { ascending: false })
-            .order('is_special_offer', { ascending: false })
-            .limit(20);
-
-        if (error || !data) return [];
-
-        return (data as any[])
-            .filter((puja: any) => puja.slug && typeof puja.slug === 'string' && puja.slug.trim() !== '')
-            .map((puja: any) => ({
-                slug: puja.slug.trim(),
-            }));
-    } catch (e) {
-        console.error('[generateStaticParams] Critical error for pujas:', e);
-        return [];
-    }
+    return [];
 }
 
 export const revalidate = 3600; // Revalidate every hour

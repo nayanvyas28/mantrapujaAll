@@ -16,38 +16,10 @@ import { createClient } from '@supabase/supabase-js';
 // Revalidate every minute
 export const revalidate = 60;
 
-/**
- * Pre-generate paths for the top 50 most important blogs.
- */
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-    try {
-        const supabase = createClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-
-        const { data, error } = await supabase
-            .from('Final_blog')
-            .select('slug')
-            .eq('published', true)
-            .eq('is_active', true)
-            .not('slug', 'is', null)
-            .order('is_featured', { ascending: false })
-            .order('views', { ascending: false })
-            .order('created_at', { ascending: false })
-            .limit(20);
-
-        if (error || !data) return [];
-
-        return data
-            .filter(blog => blog.slug && typeof blog.slug === 'string' && blog.slug.trim() !== '')
-            .map((blog) => ({
-                slug: blog.slug.trim().toLowerCase(),
-            }));
-    } catch (e) {
-        console.error('[generateStaticParams] Critical error:', e);
-        return [];
-    }
+    return [];
 }
 
 // Dynamic Metadata for SEO

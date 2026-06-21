@@ -30,16 +30,10 @@ interface PageProps {
 }
 
 export const revalidate = 3600;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
-    try {
-        const locations = await getActiveDestinations();
-        return locations.map((loc) => ({
-            slug: loc.slug,
-        }));
-    } catch (e) {
-        return [];
-    }
+    return [];
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
