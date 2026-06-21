@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   staticPageGenerationTimeout: 300,
   allowedDevOrigins: ['10.126.135.92'],
+  experimental: {
+    workerThreads: false,
+    cpus: 1,
+  },
   images: {
     unoptimized: true,
     remotePatterns: [

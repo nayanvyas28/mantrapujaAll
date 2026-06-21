@@ -12,8 +12,8 @@ COPY admin-panel/package.json ./admin-panel/
 COPY backend/package.json ./backend/
 COPY packages ./packages
 
-# Install dependencies from the root
-RUN npm install --legacy-peer-deps
+# Install dependencies from the root (only for website workspace to reduce memory/disk overhead)
+RUN npm install --legacy-peer-deps --workspace=website --include-workspace-root
 
 # Now copy the rest of the source
 COPY website ./website
@@ -21,6 +21,7 @@ COPY website ./website
 # Build the website
 WORKDIR /app/website
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_OPTIONS="--max-old-space-size=1536"
 
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
