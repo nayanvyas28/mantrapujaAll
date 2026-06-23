@@ -9,7 +9,7 @@ COPY packages ./packages
 COPY . .
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --include=dev
 
 # Build the website
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -13,7 +13,7 @@ COPY backend/package.json ./backend/
 COPY packages ./packages
 
 # Install dependencies from the root (only for website workspace to reduce memory/disk overhead)
-RUN npm install --legacy-peer-deps --workspace=website --include-workspace-root
+RUN npm install --legacy-peer-deps --workspace=website --include-workspace-root --include=dev
 
 # Now copy the rest of the source
 COPY website ./website
