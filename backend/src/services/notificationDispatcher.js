@@ -5,11 +5,16 @@ const axios = require('axios');
 const supabaseUrl = process.env.APP_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.APP_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
+let supabase = null;
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('⚠️ [Notification Dispatcher] Supabase credentials missing. Dispatcher inactive.');
+} else {
+  try {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+  } catch (err) {
+    console.error('❌ [Notification Dispatcher] Failed to initialize Supabase client:', err.message);
+  }
 }
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let isProcessing = false;
 
@@ -18,6 +23,7 @@ let isProcessing = false;
  */
 async function checkAndDispatchNotifications() {
   if (isProcessing) return;
+  if (!supabase) return;
   isProcessing = true;
 
   try {
