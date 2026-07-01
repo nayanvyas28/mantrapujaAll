@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { LogOut, User as UserIcon, LogIn, ChevronDown, Calendar, Settings, MapPin, Search, X, Compass, Calculator, MessageSquare, Scroll, ChevronRight } from "lucide-react";
+import { LogOut, User as UserIcon, LogIn, ChevronDown, Calendar, Settings, MapPin, Search, X, Compass, Calculator, MessageSquare, Scroll, ChevronRight, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -181,10 +181,21 @@ const Header = () => {
 
                 {/* Actions */}
                 <div className="flex items-center space-x-2 sm:space-x-4">
-                    {/* 3D Primary Button: Book A Pooja */}
+                    {/* Standalone 3D Shop Button (Gold/Amber) */}
+                    <a
+                        href="https://shop.mantrapuja.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hidden md:inline-flex items-center justify-center h-11 px-7 gap-2 font-black text-xs text-white bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 rounded-full shadow-[0_4px_0_0_#b45309] hover:translate-y-[1px] active:translate-y-[4px] active:shadow-none hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all tracking-widest group"
+                    >
+                        <ShoppingBag size={14} className="text-white group-hover:scale-110 transition-transform duration-300" />
+                        Shop
+                    </a>
+
+                    {/* 3D Primary Button: Book A Pooja (Orange/Red) */}
                     <Link
                         href="/pooja-services"
-                        className="hidden sm:inline-flex items-center justify-center h-11 px-8 font-black text-xs text-white bg-gradient-to-r from-orange-500 to-red-500 rounded-full shadow-[0_4px_0_0_#9a3412] hover:translate-y-[1px] active:translate-y-[4px] transition-all tracking-widest"
+                        className="hidden sm:inline-flex items-center justify-center h-11 px-8 font-black text-xs text-white bg-gradient-to-r from-orange-500 via-red-500 to-rose-600 rounded-full shadow-[0_4px_0_0_#9a3412] hover:translate-y-[1px] active:translate-y-[4px] active:shadow-none hover:shadow-[0_0_20px_rgba(239,68,68,0.4)] transition-all tracking-widest"
                     >
                         Book Puja
                     </Link>
@@ -373,6 +384,16 @@ const Header = () => {
                                         <MessageSquare size={18} />
                                         Guru AI Chat
                                     </button>
+                                    <a
+                                        href="https://shop.mantrapuja.com/"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="w-full flex items-center justify-center gap-3 p-4 bg-amber-500/10 dark:bg-amber-500/5 text-amber-600 dark:text-amber-400 border border-amber-500/10 rounded-2xl font-black transition-all active:scale-95"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        <ShoppingBag size={18} />
+                                        Visit Shop
+                                    </a>
                                     <Link
                                         href="/pooja-services"
                                         className="w-full flex items-center justify-center gap-3 p-5 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-2xl font-black shadow-lg shadow-orange-500/20 transition-all active:scale-95"
