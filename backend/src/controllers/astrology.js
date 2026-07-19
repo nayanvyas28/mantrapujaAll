@@ -245,86 +245,265 @@ const getHoroscopeData = async (req, res) => {
     }
 };
 
+const resolveLanguage = (req) => {
+    const raw = String(
+        req.headers['x-accept-language'] ||
+        req.body?.language ||
+        req.query?.language ||
+        req.body?.locale ||
+        req.query?.locale ||
+        req.headers['accept-language'] ||
+        'en'
+    ).toLowerCase();
+    
+    return ['hi', 'hi-in', 'hi_in'].includes(raw) ? 'hi' : 'en';
+};
+
+const mapPanchangResponse = (apiData, referenceDate, lat, lon, locale = 'en') => {
+    const isHindi = locale === 'hi';
+    const formatTime = (t) => {
+        if (!t) return 'N/A';
+        if (typeof t === 'string') return t;
+        return `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}:${String(t.second || 0).padStart(2, '0')}`;
+    };
+
+    const getEndString = (elem) => {
+        if (!elem || !elem.details) return 'N/A';
+        const name = elem.details.tithi_name || elem.details.nak_name || elem.details.yog_name || elem.details.karan_name || 'N/A';
+        if (elem.end_time) {
+            const endsText = isHindi ? 'समाप्त' : 'ends at';
+            return `${name} (${endsText} ${String(elem.end_time.hour).padStart(2, '0')}:${String(elem.end_time.minute).padStart(2, '0')})`;
+        }
+        return name;
+    };
+
+    const weekday = apiData.day || 'N/A';
+    const tithi = getEndString(apiData.tithi);
+    const paksha = apiData.paksha || 'N/A';
+    const sunrise = formatTime(apiData.sunrise || apiData.sun?.sunrise);
+    const sunset = formatTime(apiData.sunset || apiData.sun?.sunset);
+    const moonrise = formatTime(apiData.moonrise || apiData.moon?.moonrise);
+    const moonset = formatTime(apiData.moonset || apiData.moon?.moonset);
+
+    return {
+        // Flat properties for app/(tabs)/home.tsx compatibility
+        day: weekday,
+        tithi,
+        paksha,
+        sunrise,
+        sunset,
+        moonrise,
+        moonset,
+        shubh_color: isHindi ? 'पीला' : 'Yellow',
+        lucky_number: '7',
+        mantra: isHindi ? 'ॐ नमः शिवाय' : 'Om Namah Shivaya',
+        current_muhurat: isHindi ? 'अमृत' : 'Amrit',
+        current_muhurat_time: isHindi ? '09:30 AM से 11:00 AM' : '09:30 AM - 11:00 AM',
+        next_muhurat: isHindi ? 'शुभ' : 'Shubh',
+        next_muhurat_time: isHindi ? '11:00 AM से 12:30 PM' : '11:00 AM - 12:30 PM',
+
+        // Nested properties for app/panchang.tsx compatibility
+        reference_date: referenceDate,
+        title: isHindi ? `${referenceDate} का पंचांग` : `Panchang for ${referenceDate}`,
+        location: isHindi 
+            ? `अक्षांश: ${lat.toFixed(4)}, रेखांश: ${lon.toFixed(4)}` 
+            : `Latitude: ${lat.toFixed(4)}, Longitude: ${lon.toFixed(4)}`,
+        panchang_for_today: {
+            "Day": weekday,
+            "Yoga": getEndString(apiData.yog || apiData.yoga),
+            "Tithi": tithi,
+            "Karana": getEndString(apiData.karan),
+            "Paksha": paksha,
+            "Nakshatra": getEndString(apiData.nakshatra),
+            "Sun Sign": apiData.sun?.sun_sign || apiData.sun_sign || 'N/A'
+        },
+        sun_moon_calculations: {
+            "Ritu": apiData.ritu || 'N/A',
+            "Sun Set": sunset,
+            "Moon Set": moonset,
+            "Sun Rise": sunrise,
+            "Moon Rise": moonrise,
+            "Moon Sign": apiData.moon?.moon_sign || apiData.moon_sign || 'N/A'
+        },
+        hindu_month_year: {
+            "Shaka Samvat": apiData.shaka_samvat ? `${apiData.shaka_samvat.year || apiData.shaka_samvat} (${apiData.shaka_samvat.samvat_name || apiData.shaka_samvat_name || ''})` : 'N/A',
+            "Vikram Samvat": apiData.vikram_samvat ? `${apiData.vikram_samvat.year || apiData.vikram_samvat} (${apiData.vikram_samvat.samvat_name || apiData.vkram_samvat_name || ''})` : 'N/A',
+            "Month Amanta": apiData.hindu_maheena?.amanta || apiData.hindu_maah?.amanta || 'N/A',
+            "Month Purnimanta": apiData.hindu_maheena?.purnimanta || apiData.hindu_maah?.purnimanta || 'N/A'
+        },
+        inauspicious_timings: {
+            "Rahu Kaal": apiData.rahukaal ? `${apiData.rahukaal.start_time || apiData.rahukaal.start || 'N/A'}` : 'N/A',
+            "Yamaganda": apiData.yamghant_kaal ? `${apiData.yamghant_kaal.start_time || apiData.yamghant_kaal.start || 'N/A'}` : 'N/A',
+            "Gulika Kaal": apiData.guli_kaal || apiData.guliKaal ? `${(apiData.guli_kaal || apiData.guliKaal).start_time || (apiData.guli_kaal || apiData.guliKaal).start || 'N/A'}` : 'N/A'
+        },
+        auspicious_timings: {
+            "Abhijit": apiData.abhijit_muhurta ? `${apiData.abhijit_muhurta.start_time || apiData.abhijit_muhurta.start || 'N/A'}` : 'N/A'
+        }
+    };
+};
+
 const getPanchangData = async (req, res) => {
+    const lang = resolveLanguage(req);
+    const now = new Date();
+    
+    const day = Number(req.query.day || req.body?.day || now.getDate());
+    const month = Number(req.query.month || req.body?.month || (now.getMonth() + 1));
+    const year = Number(req.query.year || req.body?.year || now.getFullYear());
+    const hour = Number(req.query.hour || req.body?.hour || now.getHours());
+    const min = Number(req.query.min || req.body?.min || now.getMinutes());
+    
+    const lat = Number(req.query.lat || req.body?.lat || 28.6139);
+    const lon = Number(req.query.lon || req.body?.lon || 77.2090);
+    const tzone = Number(req.query.tzone || req.body?.tzone || 5.5);
+
+    const referenceDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const latFixed = Number(lat.toFixed(1));
+    const lonFixed = Number(lon.toFixed(1));
+    const tzoneFixed = Number(tzone.toFixed(1));
+
     try {
-        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-        console.log(`[PanchangController] Scraping fresh live Panchang from AstroSage...`);
+        // 1. Try DB cache first
+        if (supabase) {
+            try {
+                const { data: existing } = await supabase
+                    .from('panchangs')
+                    .select('*')
+                    .eq('reference_date', referenceDateStr)
+                    .eq('lat', latFixed)
+                    .eq('lon', lonFixed)
+                    .eq('tzone', tzoneFixed)
+                    .eq('locale', lang)
+                    .maybeSingle();
 
-        const url = 'https://panchang.astrosage.com/panchang/aajkapanchang?language=en';
-        
-        const { data: html } = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml',
-            },
-            timeout: 20000,
-        });
-
-        const $ = cheerio.load(html);
-        
-        const result = {
-            reference_date: today,
-            title: '',
-            location: '',
-            panchang_for_today: {},
-            sun_moon_calculations: {},
-            hindu_month_year: {},
-            inauspicious_timings: {},
-            auspicious_timings: {},
-        };
-
-        const titleText = $('title').text().trim();
-        result.title = titleText.split('Panchangam for')[0].trim() || 'Today Panchang';
-        result.location = titleText.split('Panchangam for')[1]?.trim() || 'New Delhi, India';
-
-        const parseSection = (sectionTitle, targetObj) => {
-            $(`h4:contains("${sectionTitle}")`).next('.row').find('.pan-row').each((_, el) => {
-                const label = $(el).find('div').first().text().trim();
-                let value = $(el).find('div').last().text().trim();
-                value = value.replace(/\s+/g, ' ').trim();
-                if (label && value) {
-                    targetObj[label] = value;
+                if (existing && existing.data) {
+                    console.log(`[PanchangController] DB cache hit for ${referenceDateStr} [${lang}]`);
+                    return res.json({ success: true, data: existing.data });
                 }
-            });
+            } catch (dbErr) {
+                console.error('[PanchangController] DB Cache read error:', dbErr.message);
+            }
+        }
+
+        // 2. Fetch API configuration settings from Supabase
+        const { data: settings } = await supabase
+            .from('kundli_settings')
+            .select('setting_value')
+            .eq('setting_key', 'api_config')
+            .single();
+
+        const config = settings?.setting_value || { 
+            apis: [
+                { name: 'Primary Key 1', user_id: '651550', api_key: 'ak-36483fc8a7f94df8504faacc4db3a46cafb353bd', is_enabled: true },
+                { name: 'Fallback Key 2', user_id: '637158', api_key: 'ak-66b9096f4750db40bac3636c3ab52a00122319d0', is_enabled: true },
+                { name: 'Astrology Engine 3', user_id: '652693', api_key: 'ak-78d22f4e9a7680c4ac68ce28053f9d09fd3d56bf', is_enabled: true }
+            ], 
+            failover_enabled: true 
         };
 
-        parseSection('Panchang For Today', result.panchang_for_today);
-        parseSection('Sun And Moon Calculations', result.sun_moon_calculations);
-        parseSection('Hindu Month And Year', result.hindu_month_year);
-        parseSection('Inauspicious Timings', result.inauspicious_timings);
-        parseSection('Auspicious Timings', result.auspicious_timings);
+        const nodes = config.apis.filter(api => api.is_enabled);
+        let apiData = null;
+        let lastError = null;
+
+        const payload = {
+            day,
+            month,
+            year,
+            hour,
+            min,
+            lat: Number(lat.toFixed(4)),
+            lon: Number(lon.toFixed(4)),
+            tzone: tzoneFixed,
+            lan: lang,
+            language: lang
+        };
+
+        for (const node of nodes) {
+            try {
+                const userId = node.user_id;
+                const apiKey = node.api_key;
+                const auth = `Basic ${Buffer.from(`${userId}:${apiKey}`).toString('base64')}`;
+                
+                const url = `${ASTROLOGY_API_BASE_URL}/advanced_panchang`;
+                console.log(`[PanchangController] Node ${node.name} calling advanced_panchang for User: ${userId} [${lang}]`);
+                
+                const response = await axios.post(url, payload, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': auth,
+                        'x-astrologyapi-key': apiKey,
+                        'Accept-Language': lang,
+                        'x-astrologyapi-language': lang
+                    },
+                    timeout: 15000
+                });
+
+                const bodyMsg = response.data?.msg || response.data?.message || "";
+                const isLimitOrExpired = bodyMsg.toLowerCase().includes('limit') || 
+                                         bodyMsg.toLowerCase().includes('expired') || 
+                                         bodyMsg.toLowerCase().includes('invalid') ||
+                                         bodyMsg.toLowerCase().includes('plan') ||
+                                         bodyMsg.toLowerCase().includes('authorized');
+                const isFailedStatus = response.data?.status === false;
+
+                if (response.status === 200 && !isLimitOrExpired && !isFailedStatus) {
+                    apiData = response.data;
+                    break;
+                }
+                lastError = { status: response.status, msg: bodyMsg || "Node Error" };
+                if (!config.failover_enabled) break;
+            } catch (err) {
+                lastError = { status: 500, msg: err.response?.data?.msg || err.message };
+            }
+        }
+
+        if (!apiData) {
+            throw new Error(lastError?.msg || "ALL_NODES_EXHAUSTED");
+        }
+
+        const mappedResult = mapPanchangResponse(apiData, referenceDateStr, lat, lon, lang);
 
         // 3. Save to DB cache
         if (supabase) {
-            const { error: saveError } = await supabase
-                .from('panchangs')
-                .upsert({
-                    reference_date: today,
-                    data: result
-                }, { onConflict: 'reference_date' });
-
-            if (saveError) console.error('[PanchangController] DB Save Error:', saveError);
+            try {
+                await supabase
+                    .from('panchangs')
+                    .upsert({
+                        reference_date: referenceDateStr,
+                        lat: latFixed,
+                        lon: lonFixed,
+                        tzone: tzoneFixed,
+                        locale: lang,
+                        data: mappedResult
+                    }, { onConflict: 'reference_date,lat,lon,tzone,locale' });
+                console.log(`[PanchangController] Saved to cache for ${referenceDateStr} [${lang}]`);
+            } catch (saveError) {
+                console.error('[PanchangController] DB Cache save error:', saveError.message);
+            }
         }
 
-        return res.json({ success: true, data: result });
+        return res.json({ success: true, data: mappedResult });
     } catch (error) {
-        console.error('[PanchangController] Scraping failed, trying DB cache...', error.message);
+        console.error('[PanchangController] Failed:', error.message);
+        
+        // Final DB Fallback query (ignoring lat/lon match to maximize resilience if everything fails)
         try {
             if (supabase) {
                 const { data: existing } = await supabase
                     .from('panchangs')
                     .select('*')
-                    .eq('reference_date', today)
+                    .eq('reference_date', referenceDateStr)
+                    .eq('locale', lang)
                     .maybeSingle();
 
                 if (existing && existing.data) {
-                    console.log(`[PanchangController] DB fallback success.`);
+                    console.log(`[PanchangController] DB recovery fallback success.`);
                     return res.json({ success: true, data: existing.data });
                 }
             }
         } catch (dbErr) {
-            console.error('[PanchangController] DB fallback error:', dbErr.message);
+            console.error('[PanchangController] DB recovery fallback error:', dbErr.message);
         }
+
         return res.status(500).json({ success: false, error: "INTERNAL_SERVER_ERROR", msg: error.message });
     }
 };

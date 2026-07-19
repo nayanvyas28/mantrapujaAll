@@ -21,9 +21,10 @@ router.get('/horoscope', getHoroscopeData);
 router.post('/horoscope', getHoroscopeData);
 
 /**
- * Endpoint: GET /api/astrology/panchang
+ * Endpoint: GET/POST /api/astrology/panchang
  * Fetches today's live Panchang details
  */
 router.get('/panchang', getPanchangData);
+router.post('/panchang', getPanchangData);
 
 module.exports = router;
