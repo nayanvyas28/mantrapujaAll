@@ -48,7 +48,11 @@ async function checkAndDispatchNotifications() {
       .eq('status', 'pending');
 
     if (error) {
-      console.error('❌ [Notification Dispatcher] Error fetching pending notifications:', error.message);
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        console.warn('⚠️ [Notification Dispatcher] push_notifications table does not exist in Supabase database. Please execute create_push_notifications.sql to enable notification dispatching.');
+      } else {
+        console.error('❌ [Notification Dispatcher] Error fetching pending notifications:', error.message);
+      }
       isProcessing = false;
       return;
     }
