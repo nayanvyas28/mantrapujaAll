@@ -34,6 +34,15 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/music', musicRoutes);
 app.use('/api/pujas', pujaRoutes);
 
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        message: 'Mantra Puja Backend API',
+        status: 'online',
+        health: '/health'
+    });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({
