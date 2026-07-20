@@ -1,3 +1,13 @@
+// Polyfill global File object for undici / Supabase JS on Node versions < 20
+if (typeof globalThis.File === 'undefined') {
+    try {
+        const { File } = require('node:buffer');
+        if (File) globalThis.File = File;
+    } catch (e) {
+        // Fallback
+    }
+}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
